@@ -17,7 +17,7 @@ def sync(sec):
     print "Synchonized on {0}={1} seconds...".format(sec, datetime.now().second)
 
 
-def startThread(s, CHANLIST):
+def startThread(s, ndate, sentences, CHANLIST):
     sync (60);
     while 1:
         minute = datetime.now ().minute
@@ -27,15 +27,20 @@ def startThread(s, CHANLIST):
             for chan in CHANLIST.split():
                 newyear.special (s, chan)
 
+        elif minute == 0 and datetime.now ().hour == 6 and datetime.now ().day == 18 and datetime.now ().month == 1:
+            print("WikiEnd!")
+            for chan in CHANLIST.split():
+                newyear.special (s, chan)
+
         if minute == 18:
             for chan in CHANLIST.split():
-                newyear.launch (s, chan, 0)
+                newyear.launch (s, chan, datetime(2012, 1, 18, 6, 0, 1), sentences, 0)
 
         if minute == 42:
             sync(42)
             print("42!")
-            for chan in CHANLIST.split():
-                s.send("PRIVMSG %s :42 !\r\n" % chan)
+#            for chan in CHANLIST.split():
+#                s.send("PRIVMSG %s :42 !\r\n" % chan)
 
         if datetime.now ().second != 0:
             sync(60)

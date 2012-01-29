@@ -4,24 +4,22 @@ import os
 from datetime import datetime
 import time
 
-def launch(s, chan, msgpart):
-    #What is the next year?
-    nyear = datetime.today().year + 1;
+def launch(s, chan, ndate, sentences, msgpart):
 
-    if msgpart != 0 and len(msgpart) > 1:
-        os.environ['TZ'] = msgpart[1]
-        time.tzset()
+#    if msgpart != 0 and len(msgpart) > 1:
+#        os.environ['TZ'] = msgpart[1]
+#        time.tzset()
 
     sentence_c = "PRIVMSG " + chan + " :"
 
     #Calculate time before new year
-    if datetime.now() > datetime(nyear, 1, 1, 0, 0, 1):
-        sentence_c += "Nous faisons déjà la fête depuis{0}"
-        delta = datetime.now() - datetime(nyear, 1, 1, 0, 0, 1)
+    if datetime.now() > ndate:
+        sentence_c += sentences[1]
+        delta = datetime.now() - ndate
 
     else:
-        sentence_c += "Il reste{0} avant la nouvelle année"
-        delta = datetime(nyear, 1, 1, 0, 0, 1) - datetime.now()
+        sentence_c += sentences[0]
+        delta = ndate - datetime.now()
 
     sec = delta.seconds
     hours, remainder = divmod(sec, 3600)
@@ -64,4 +62,5 @@ def launch(s, chan, msgpart):
         os.environ['TZ'] = "Europe/Paris"
 
 def special(s, chan):
-    s.send("PRIVMSG {0} :Bonne année {1} !\r\n".format(chan, datetime.today().year))
+#    s.send("PRIVMSG {0} :Bonne année {1} !\r\n".format(chan, datetime.today().year))
+    s.send("PRIVMSG {0} :Wikipédia vient de sombrer :(\r\n".format(chan))

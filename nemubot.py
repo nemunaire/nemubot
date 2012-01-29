@@ -8,10 +8,14 @@ import string
 import os
 import re
 import thread
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
 
 import norme
 import newyear
 import ontime
+import watchWebsite
 
 if len(sys.argv) > 1:
     sys.exit(0)
@@ -25,8 +29,15 @@ IDENT='nemubot'
 REALNAME='nemubot'
 OWNER='nemunaire' #The bot owner's nick
 #CHANLIST='#nemutest'
-CHANLIST='#42sh #nemutest'
+CHANLIST='#42sh #nemutest #tc'
 readbuffer='' #Here we store all the messages from server
+
+birthdays = {"maxence23": datetime(1991, 8, 11),
+             "nemunaire": datetime(1991, 12, 4, 6, 42),
+             "xetal": datetime(1991, 2, 23),
+             "bob": datetime(1991, 2, 2),
+             "test": datetime(1991, 1, 25),
+             "colona": datetime(1991, 7, 16)}
 
 s = socket.socket( ) #Create the socket
 s.connect((HOST, PORT)) #Connect to server
@@ -38,6 +49,7 @@ s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
 print("Welcome on Nemubot. I operate on %s. My PID is %i" % (CHANLIST, os.getpid()))
 
 def parsemsg(msg):
+    global birthdays
     complete = msg[1:].split(':',1) #Parse the message into useful data
     info = complete[0].split(' ')
     msgpart = complete[1]
@@ -46,10 +58,149 @@ def parsemsg(msg):
     if CHANLIST.find(info[2]) != -1 and re.match(".*(norme|coding style).*", msgpart) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", msgpart) is not None:
         norme.launch (s, sender, msgpart)
 
-    elif msgpart[0] == '!' and CHANLIST.find(info[2]) != -1: #Treat all messages starting with '!' as command
-        cmd=msgpart[1:].split(' ')
+    elif CHANLIST.find(info[2]) != -1 and msgpart.find("%s:"%NICK) == 0: #Treat all messages starting with 'nemubot:' as distinct commands
+        msgpartl = msgpart.lower()
+        print msgpartl
+        if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|ping).*", msgpartl) is not None:
+            s.send("PRIVMSG {0} :{1}: pong\r\n".format(info[2], sender[0]))
+        elif re.match(".*(date de naissance|birthday|geburtstag|née?|nee? le|born on).*", msgpartl) is not None:
+            result = re.match("[^0-9]+(([0-9]{1,4})[^0-9]+([0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|obtobre|novembre|november|decembre|décembre|december)([^0-9]+([0-9]{1,4}))?)[^0-9]+(([0-9]{1,2})[^0-9]*[h':][^0-9]*([0-9]{1,2}))?.*", msgpartl)
+
+#            if re.match(".*(je|i|I).*") is not None:
+#                target = sender[0]
+#            elif re.match(".*().*") is not None:
+
+            if result is None:
+                s.send("PRIVMSG {0} :{1}: je ne reconnais pas le format de ta date de naissance :(\r\n".format(info[2], sender[0]))
+            else:
+                day = result.group(2)
+                if len(day) == 4:
+                    year = day
+                    day = 0
+                month = result.group(3)
+                if month == "janvier" or month == "january" or month == "januar":
+                    month = 1
+                elif month == "fevrier" or month == "février" or month == "february":
+                    month = 2
+                elif month == "mars" or month == "march":
+                    month = 3
+                elif month == "avril" or month == "april":
+                    month = 4
+                elif month == "mai" or month == "may" or month == "maï":
+                    month = 5
+                elif month == "juin" or month == "juni" or month == "junni":
+                    month = 6
+                elif month == "juillet" or month == "jully" or month == "july":
+                    month = 7
+                elif month == "aout" or month == "août" or month == "august":
+                    month = 8
+                elif month == "september" or month == "septembre":
+                    month = 9
+                elif month == "october" or month == "october" or month == "oktober":
+                    month = 10
+                elif month == "november" or month == "novembre":
+                    month = 11
+                elif month == "december" or month == "decembre" or month == "décembre":
+                    month = 12
+                if day == 0:
+                    day = result.group(5)
+                else:
+                    year = result.group(5)
+
+                hour = result.group(7)
+                minute = result.group(8)
+
+                print "Chaîne reconnue : %s/%s/%s %s:%s"%(day, month, year, hour, minute)
+                if year == None:
+                    year = date.today().year
+                if hour == None:
+                    hour = 0
+                if minute == None:
+                    minute = 0
+
+                try:
+                    newdate = datetime(int(year), int(month), int(day), int(hour), int(minute))
+                    birthdays[sender[0].lower()] = newdate
+                    s.send("PRIVMSG {0} :{1}: ok, c'est noté, ta date de naissance est le {2}\r\n".format(info[2], sender[0], newdate.strftime("%A %d %B %Y à %H:%M")))
+                except ValueError:
+                    s.send("PRIVMSG {0} :{1}: ta date de naissance me paraît peu probable...\r\n".format(info[2], sender[0]))                
+
+    elif CHANLIST.find(info[2]) != -1 and msgpart[0] == '!': #Treat all messages starting with '!' as command
+        cmd = msgpart[1:].split(' ')
+        if cmd[0] == 'help' or cmd[0] == 'h':
+            s.send("PRIVMSG {0} :Pour me demander quelque chose, commencer votre message par !.\nVoici ce dont je suis capable :\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !new-year !newyear !ny : Affiche le temps restant avant la nouvelle année\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !end-of-world !worldend !eow : Temps restant avant la fin du monde\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !weekend !week-end !we : Affiche le temps restant avant le prochain week-end\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !partiels : Affiche le temps restant avant les prochains partiels\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !vacs !vacances !holidays !free-time : Affiche le temps restant avant les prochaines vacances\r\n".format(sender[0]))
+            s.send("PRIVMSG {0} :  - !jpo !next-jpo : Affiche le temps restant avant la prochaine JPO\r\n".format(sender[0]))
+
         if cmd[0] == 'new-year' or cmd[0] == 'newyear' or cmd[0] == 'ny':
-            newyear.launch (s, info[2], cmd)
+            #What is the next year?
+            nyear = datetime.today().year + 1
+            ndate = datetime(nyear, 1, 1, 0, 0, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant la nouvelle année", "Nous faisons déjà la fête depuis{0}"], cmd)
+        if cmd[0] == 'end-of-world' or cmd[0] == 'endofworld' or cmd[0] == 'worldend' or cmd[0] == 'eow':
+            ndate = datetime(2012, 12, 12, 12, 12, 13)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant la fin du monde", "Non, cela ne peut pas arriver, la fin du monde s'est produite il y a maintenant {0}. Vous n'êtes vraiment pas mort ? :("], cmd)
+        if cmd[0] == 'weekend' or cmd[0] == 'week-end' or cmd[0] == 'we':
+            ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
+            ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant le week-end, courrage ;)", "Youhou, on est en week-end depuis{0}"], cmd)
+        if cmd[0] == 'endweekend' or cmd[0] == 'end-week-end' or cmd[0] == 'endwe' or cmd[0] == 'eowe':
+            ndate = datetime.today() + timedelta(7 - datetime.today().weekday())
+            ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
+            if datetime.today().weekday() >= 5:
+                newyear.launch (s, info[2], ndate, ["Plus que{0} avant la fin du week-end :(", ""], cmd)
+            else:
+                newyear.launch (s, info[2], ndate, ["Encore{0} avant la prochaine semaine", ""], cmd)
+        if cmd[0] == 'partiels' or cmd[0] == 'partiel':
+            ndate = datetime(2012, 3, 26, 9, 0, 1)
+            #ndate = datetime(2012, 1, 23, 9, 0, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant les partiels :-o", "Les partiels ont commencés depuis maintenant{0}"], cmd)
+        if cmd[0] == 'vacs' or cmd[0] == 'vacances' or cmd[0] == 'holiday' or cmd[0] == 'holidays' or cmd[0] == 'free-time':
+            ndate = datetime(2012, 3, 30, 18, 0, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant les vacances :)", "Profitons, c'est les vacances depuis{0}"], cmd)
+        if cmd[0] == 'anniv':
+            if len(cmd) < 2 or cmd[1].lower() == "moi":
+                name = sender[0].lower()
+            else:
+                name = cmd[1].lower()
+
+            matches = []
+
+            if name in birthdays:
+                matches.append(name)
+            else:
+                for k in birthdays.keys():
+                    if k.find(name) == 0:
+                        matches.append(k)
+
+            if len(matches) == 1:
+                (n, d) = (matches[0], birthdays[matches[0]])
+                tyd = d
+                tyd = datetime(date.today().year, tyd.month, tyd.day)
+
+                if tyd.day == datetime.today().day and tyd.month == datetime.today().month:
+                    newyear.launch (s, info[2], d, ["", "C'est aujourd'hui l'anniversaire de %s ! Il a{0}. Joyeux anniversaire :)" % n], cmd)
+                else:
+                    if tyd < datetime.today():
+                        tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
+
+                    newyear.launch (s, info[2], tyd, ["Il reste{0} avant l'anniversaire de %s !" % n, ""], cmd)
+            else:
+                s.send("PRIVMSG {0} :{1}: désolé, je ne connais pas la date d'anniversaire de {2}. Quand est-il né ?\r\n".format(info[2], sender[0], name))
+
+        if cmd[0] == 'jpo' or cmd[0] == 'JPO' or cmd[0] == 'next-jpo':
+            #ndate = datetime(2012, 5, 12, 8, 30, 1)
+            #ndate = datetime(2012, 3, 31, 8, 30, 1)
+            #ndate = datetime(2012, 3, 17, 8, 30, 1)
+            ndate = datetime(2012, 2, 4, 8, 30, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant la prochaine JPO... We want you!", "Nous somme en pleine JPO depuis{0}"], cmd)
+        if cmd[0] == 'professional-project' or cmd[0] == 'project-professionnel' or cmd[0] == 'projet-professionnel' or cmd[0] == 'project-professionel' or cmd[0] == 'projet-professionel' or cmd[0] == 'next-rendu' or cmd[0] == 'pp' or cmd[0] == 'rendu':
+            ndate = datetime(2012, 1, 18, 16, 0, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste{0} avant la fermeture du rendu du projet professionnel, vite bullshitons !", "À {0} près, il aurait encore été possible de rendre"], cmd)
 
 
     elif msgpart[0] == '`' and sender[0] == OWNER and CHANLIST.find(info[2]) != -1: #Treat all messages starting with '`' as command
@@ -64,7 +215,7 @@ def parsemsg(msg):
             s.send('MODE '+info[2]+' -v '+cmd[1]+'n')
         if cmd[0]=='restart':
             print "Restarting thread"
-            thread.start_new_thread(ontime.startThread, (s,CHANLIST))
+            launch(s)
         if cmd[0]=='stop':
             print "Bye!"
             s.send("PRIVMSG {0} :Bye!\r\n".format(info[2]))
@@ -97,5 +248,10 @@ def read():
             if(line[0] == 'PING'): #If server pings then pong
                 s.send("PONG %s\r\n" % line[1])
 
-thread.start_new_thread(ontime.startThread, (s,CHANLIST))
+def launch(s):
+#    thread.start_new_thread(ontime.startThread, (s,datetime(2012, 1, 18, 6, 0, 1),["Il reste{0} avant la fin de Wikipédia", "C'est fini, Wikipédia a sombrée depuis{0}"],CHANLIST))
+    thread.start_new_thread(watchWebsite.startThread, (s, "you.p0m.fr", "", "#42sh"))
+    print "Launched successfuly"
+
+launch(s)
 read()
