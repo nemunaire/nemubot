@@ -30,7 +30,7 @@ def launch(s, chan, ndate, sentences, msgpart):
 
     if force or delta.days > 0:
         force = 1
-        sentence += " {0} jour".format(delta.days)
+        sentence += " %i jour"%(delta.days)
 
         if delta.days > 1:
             sentence += "s"
@@ -38,29 +38,29 @@ def launch(s, chan, ndate, sentences, msgpart):
 
     if force or hours > 0:
         force = 1
-        sentence += " {0} heure".format(hours)
+        sentence += " %i heure"%(hours)
         if hours > 1:
             sentence += "s"
         sentence += ","
 
     if force or minutes > 0:
         force = 1
-        sentence += " {0} minute".format(minutes)
+        sentence += " %i minute"%(minutes)
         if minutes > 1:
             sentence += "s"
         sentence += " et"
 
     if force or seconds > 0:
         force = 1
-        sentence += " {0} seconde".format(seconds)
+        sentence += " %i seconde"%(seconds)
         if seconds > 1:
             sentence += "s"
 
-    s.send(sentence_c.format(sentence) + "\r\n")
+    s.send(sentence_c%(sentence) + "\r\n")
 
     if msgpart != 0 and len(msgpart) > 1:
         os.environ['TZ'] = "Europe/Paris"
 
 def special(s, chan):
-#    s.send("PRIVMSG {0} :Bonne année {1} !\r\n".format(chan, datetime.today().year))
-    s.send("PRIVMSG {0} :Wikipédia vient de sombrer :(\r\n".format(chan))
+#    s.send("PRIVMSG %s :Bonne année %i !\r\n"%(chan, datetime.today().year))
+    s.send("PRIVMSG %s :Wikipédia vient de sombrer :(\r\n"%(chan))
