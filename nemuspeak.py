@@ -9,56 +9,53 @@ import re
 import subprocess
 from datetime import datetime
 from datetime import timedelta
+from xml.dom.minidom import parse
 import thread
 
-if len(sys.argv) < 3:
-    print "This script takes at least 2 args: server port [channel [channel [...]]]"
-    sys.exit(0)
+if len(sys.argv) == 1:
+    print "This script takes exactly 1 arg: a XML config file"
+    sys.exit(1)
 
-#HOST='192.168.0.242'
-#HOST = 'nemunai.re'
-#PORT = 2778
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
-#HOST = 'irc.rezosup.org'
-#PORT = 6667
-NICK = 'nemunaire'
-IDENT = 'nemuspeak'
-REALNAME = 'nemubot speaker'
-OWNER = 'nemunaire' #The bot owner's nick
-#CHANLIST = ['#42sh', '#korteam']
-CHANLIST = []
-if len(sys.argv) > 3:
-    for i in range(3, len(sys.argv)):
-        CHANLIST.append(sys.argv[i])
-readbuffer = '' #Here we store all the messages from server
-
-queue = []
+SERVER = list()
+SMILEY = list()
+g_queue = list()
 talkEC = 0
 stopSpk = 0
 lastmsg = []
 
-s = socket.socket( ) #Create the socket
-s.connect((HOST, PORT)) #Connect to server
-s.send("PASS %s\r\n" % "McsuapTesbuf")
-s.send("NICK %s\r\n" % NICK)
-s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-#s.send("JOIN %s\r\n" % CHANLIST)
+dom = parse(sys.argv[1])
 
-print("Welcome on Nemubot speaker. I operate on %s. My PID is %i" % (CHANLIST, os.getpid()))
+config = dom.getElementsByTagName('config')[0]
+
+if config.hasAttribute("nick"):
+    NICK = config.getAttribute("nick")
+else:
+    NICK = "bot"
+if config.hasAttribute("owner"):
+    OWNER = config.getAttribute("owner")
+else:
+    OWNER = " "
+if config.hasAttribute("realname"):
+    REALNAME = config.getAttribute("realname")
+else:
+    REALNAME = OWNER + "'s bot"
+
+for smiley in config.getElementsByTagName('smiley'):
+    if smiley.hasAttribute("txt") and smiley.hasAttribute("mood"):
+        SMILEY.append((smiley.getAttribute("txt"), smiley.getAttribute("mood")))
+print ("%d smileys loaded"%len(SMILEY))
 
 def speak(endstate):
-    global lastmsg, queue, talkEC, stopSpk
+    global lastmsg, g_queue, talkEC, stopSpk
     talkEC = 1
     stopSpk = 0
 
     if len(lastmsg) < 1:
-        lastmsg = queue.pop(0)
+        lastmsg = g_queue.pop(0)
 
-    while not stopSpk and len(queue) > 0:
-        msg = queue.pop(0)
+    while not stopSpk and len(g_queue) > 0:
+        msg = g_queue.pop(0)
         lang = "fr"
-
         sentence = ""
         force = 0
 
@@ -73,55 +70,19 @@ def speak(endstate):
                 sentence += "Sur " + msg[0] + ". "
             force = 1
 
+        action = 0
         if msg[3].find("ACTION ") == 1:
             sentence += msg[1] + " "
             msg[3] = msg[3].replace("ACTION ", "")
-        elif msg[3].find(":)") >= 0:
-            sentence += msg[1] + " sourit : "
-            msg[3] = msg[3].replace(":)", "")
-        elif msg[3].find(";)") >= 0:
-            sentence += msg[1] + " fait un clin d'oeil : "
-            msg[3] = msg[3].replace(";)", "")
-        elif msg[3].find(":(") >= 0:
-            sentence += msg[1] + " est triste : "
-            msg[3] = msg[3].replace(":(", "")
-        elif msg[3].find("<3") >= 0:
-            sentence += msg[1] + " aime : "
-            msg[3] = msg[3].replace("<3", "")
-        elif msg[3].find(":'(") >= 0 or msg[3].find(";(") >= 0:
-            sentence += msg[1] + " pleure : "
-            msg[3] = msg[3].replace(":'(", "")
-            msg[3] = msg[3].replace(";(", "")
-        elif msg[3].find(":D") >= 0 or msg[3].find(":d") >= 0:
-            sentence += msg[1] + " rit : "
-            msg[3] = msg[3].replace(":D", "")
-            msg[3] = msg[3].replace(":d", "")
-        elif msg[3].find(":P") >= 0 or msg[3].find(":p") >= 0:
-            sentence += msg[1] + " tire la langue : "
-            msg[3] = msg[3].replace(":P", "")
-            msg[3] = msg[3].replace(":p", "")
-        elif msg[3].find(":S") >= 0 or msg[3].find(":s") >= 0:
-            sentence += msg[1] + " est embarassé : "
-            msg[3] = msg[3].replace(":S", "")
-            msg[3] = msg[3].replace(":s", "")
-        elif msg[3].find("XD") >= 0 or msg[3].find("xd") >= 0 or msg[3].find("xD") >= 0 or msg[3].find("Xd") >= 0 or msg[3].find("X)") >= 0 or msg[3].find("x)") >= 0:
-            sentence += msg[1] + " se marre : "
-            msg[3] = msg[3].replace("xd", "")
-            msg[3] = msg[3].replace("XD", "")
-            msg[3] = msg[3].replace("Xd", "")
-            msg[3] = msg[3].replace("xD", "")
-            msg[3] = msg[3].replace("X)", "")
-            msg[3] = msg[3].replace("x)", "")
-        elif msg[3].find("\\o/") >= 0 or msg[3].find("\\O/") >= 0:
-            sentence += msg[1] + " fait une accolade : "
-            msg[3] = msg[3].replace("\\o/", "")
-            msg[3] = msg[3].replace("\\O/", "")
-        elif msg[3].find("/o/") >= 0 or msg[3].find("\\o\\") >= 0:
-            sentence += msg[1] + " danse : "
-            msg[3] = msg[3].replace("/o/", "")
-            msg[3] = msg[3].replace("\\o\\", "")
+            action = 1
+        for (txt, mood) in SMILEY:
+            if msg[3].find(txt) >= 1:
+                sentence += msg[1] + " %s : "%mood
+                msg[3] = msg[3].replace(txt, "")
+                action = 1
+                break
 
-        elif force or msg[1] != lastmsg[1]:
+        if action == 0 and (force or msg[1] != lastmsg[1]):
             sentence += msg[1] + " dit : "
 
         if re.match(".*(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+.*", msg[3]) is not None:
@@ -132,14 +93,16 @@ def speak(endstate):
 
         if re.match("^ *[^a-zA-Z0-9 ][a-zA-Z]{2}[^a-zA-Z0-9 ]", msg[3]) is not None:
             if sentence != "":
-                subprocess.call(["espeak", "-v", "fr", sentence])
+                intro = subprocess.call(["espeak", "-v", "fr", sentence])
+                #intro.wait()
 
             lang = msg[3][1:3].lower()
             sentence = msg[3][4:]
         else:
             sentence += msg[3]
 
-        subprocess.call(["espeak", "-v", lang, sentence])
+        spk = subprocess.call(["espeak", "-v", lang, sentence])
+        #spk.wait()
 
         lastmsg = msg
 
@@ -149,12 +112,16 @@ def speak(endstate):
         talkEC = 1
 
 
-def parsemsg(msg):
-    global talkEC, stopSpk, queue
+def parsemsg (msg, CHANLIST):
+    global g_queue, NICK, stopSpk, talkEC
     complete = msg[1:].split(':',1) #Parse the message into useful data
     info = complete[0].split(' ')
     msgpart = complete[1]
     sender = info[0].split('!')
+
+    #Skip on empty content
+    if len(msgpart) <= 0:
+        return
 
     #Bad format, try to fix that
     if len(info) == 1:
@@ -179,13 +146,16 @@ def parsemsg(msg):
                 thread.start_new_thread(speak, (0,))
 
             elif cmd[0] == 'reset':
-                while len(queue) > 0:
-                    queue.pop()
+                while len(g_queue) > 0:
+                    g_queue.pop()
 
             elif cmd[0] == 'save':
                 if talkEC == 0:
                     talkEC = 1
                 stopSpk = 1
+
+            elif cmd[0] == 'test':
+                parsemsg(":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(CHANLIST[0]), CHANLIST)
 
             elif cmd[0] == 'list':
                 print "Currently listened channels:"
@@ -205,27 +175,67 @@ def parsemsg(msg):
                     print cmd[1] + " not in listened channels"
 
         elif sender[0] != OWNER and (len(CHANLIST) == 0 or CHANLIST.count(info[2]) > 0 or info[2] == NICK):
-            queue.append([info[2], sender[0], datetime.now(), msgpart])
+            g_queue.append([info[2], sender[0], datetime.now(), msgpart])
             if talkEC == 0:
                 thread.start_new_thread(speak, (0,))
 
 
-def read():
-    global s, readbuffer
-    while 1:
-        readbuffer = readbuffer + s.recv(1024) #recieve server messages
-        temp = readbuffer.split("\n")
-        readbuffer = temp.pop( )
+class Server:
+    def __init__(self, server):
+        if server.hasAttribute("server"):
+            self.host = server.getAttribute("server")
+        else:
+            self.host = "localhost"
+        if server.hasAttribute("port"):
+            self.port = int(server.getAttribute("port"))
+        else:
+            self.port = 6667
+        if server.hasAttribute("password"):
+            self.password = server.getAttribute("password")
+        else:
+            self.password = None
 
-        for line in temp:
-            line = line.rstrip() #remove trailing 'rn'
+        self.channels = list()
+        for channel in server.getElementsByTagName('channel'):
+            self.channels.append(channel.getAttribute("name"))
 
-            if line.find('PRIVMSG') != -1: #Call a parsing function
-                parsemsg(line)
+    def launch(self):
+        thread.start_new_thread(self.connect, ())
 
-            line = line.split()
+    def read(self):
+        readbuffer = "" #Here we store all the messages from server
+        while 1:
+            readbuffer = readbuffer + self.s.recv(1024) #recieve server messages
+            temp = readbuffer.split("\n")
+            readbuffer = temp.pop( )
 
-            if(line[0] == 'PING'): #If server pings then pong
-                s.send("PONG %s\r\n" % line[1])
+            for line in temp:
+                line = line.rstrip() #remove trailing 'rn'
 
-read()
+                if line.find('PRIVMSG') != -1: #Call a parsing function
+                    parsemsg(line, self.channels)
+
+                line = line.split()
+
+                if(line[0] == 'PING'): #If server pings then pong
+                    self.s.send("PONG %s\r\n" % line[1])
+
+    def connect(self):
+        self.s = socket.socket( ) #Create the socket
+        self.s.connect((self.host, self.port)) #Connect to server
+        if self.password != None:
+            self.s.send("PASS %s\r\n" % self.password)
+        self.s.send("NICK %s\r\n" % NICK)
+        self.s.send("USER %s %s bla :%s\r\n" % (NICK, self.host, REALNAME))
+        self.read()
+
+for server in config.getElementsByTagName('server'):
+    srv = Server(server)
+    srv.launch()
+
+print ("Nemuspeak ready, waiting for new messages...")
+prompt=""
+while prompt != "quit":
+    prompt=sys.stdin.readlines ()
+
+sys.exit(0)
