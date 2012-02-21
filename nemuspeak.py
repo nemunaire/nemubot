@@ -16,7 +16,6 @@ if len(sys.argv) == 1:
     print "This script takes exactly 1 arg: a XML config file"
     sys.exit(1)
 
-SERVER = list()
 SMILEY = list()
 g_queue = list()
 talkEC = 0
@@ -77,7 +76,7 @@ def speak(endstate):
             action = 1
         for (txt, mood) in SMILEY:
             if msg[3].find(txt) >= 1:
-                sentence += msg[1] + " %s : "%mood
+                sentence += msg[1] + (" %s : "%mood)
                 msg[3] = msg[3].replace(txt, "")
                 action = 1
                 break
