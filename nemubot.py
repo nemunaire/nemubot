@@ -55,6 +55,9 @@ def parsemsg(msg):
     msgpart = complete[1]
     sender = info[0].split('!')
 
+    if len(msgpart) <= 0:
+        return
+
     if CHANLIST.find(info[2]) != -1 and re.match(".*(norme|coding style).*", msgpart) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", msgpart) is not None:
         norme.launch (s, sender, msgpart)
 

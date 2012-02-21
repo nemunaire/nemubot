@@ -63,7 +63,7 @@ def speak(endstate):
             force = 1
 
         if force or msg[0] != lastmsg[0]:
-            if msg[0] == NICK:
+            if msg[0] == OWNER:
                 sentence += "En message privé. "
             else:
                 sentence += "Sur " + msg[0] + ". "
@@ -75,7 +75,7 @@ def speak(endstate):
             msg[3] = msg[3].replace("ACTION ", "")
             action = 1
         for (txt, mood) in SMILEY:
-            if msg[3].find(txt) >= 1:
+            if msg[3].find(txt) >= 0:
                 sentence += msg[1] + (" %s : "%mood)
                 msg[3] = msg[3].replace(txt, "")
                 action = 1
@@ -173,7 +173,7 @@ def parsemsg (msg, CHANLIST):
                 else:
                     print cmd[1] + " not in listened channels"
 
-        elif sender[0] != OWNER and (len(CHANLIST) == 0 or CHANLIST.count(info[2]) > 0 or info[2] == NICK):
+        elif sender[0] != OWNER and (len(CHANLIST) == 0 or CHANLIST.count(info[2]) > 0 or info[2] == OWNER):
             g_queue.append([info[2], sender[0], datetime.now(), msgpart])
             if talkEC == 0:
                 thread.start_new_thread(speak, (0,))
@@ -212,7 +212,7 @@ class Server:
                 line = line.rstrip() #remove trailing 'rn'
 
                 if line.find('PRIVMSG') != -1: #Call a parsing function
-                    parsemsg(line, self.channels)
+                    parsemsg(unicode(line, encoding='utf-8'), self.channels)
 
                 line = line.split()
 
