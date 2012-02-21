@@ -1,7 +1,6 @@
 #!/usr/bin/python2.7
 # coding=utf-8
 
-#import signal
 import sys
 import socket
 import string
@@ -11,50 +10,109 @@ import thread
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from xml.dom.minidom import parse
 
+import birthday
 import norme
 import newyear
 import ontime
 import watchWebsite
 import qd
 
-if len(sys.argv) > 1:
-    sys.exit(0)
+if len(sys.argv) == 1:
+    print "This script takes exactly 1 arg: a XML config file"
+    sys.exit(1)
 
-HOST='127.0.0.1'
-PORT=2770
-#HOST='irc.rezosup.org'
-#PORT=6667
-NICK='nemubot'
-IDENT='nemubot'
-REALNAME='nemubot'
-OWNER='nemunaire' #The bot owner's nick
-#CHANLIST='#nemutest'
-CHANLIST='#42sh #nemutest #tc #epitagueule'
-readbuffer='' #Here we store all the messages from server
 
-birthdays = {"maxence23": datetime(1991, 8, 11),
-             "nemunaire": datetime(1991, 12, 4, 6, 42),
-             "xetal": datetime(1991, 2, 23),
-             "bob": datetime(1991, 2, 1),
-             "test": datetime(1991, 1, 25),
-             "colona": datetime(1991, 7, 16)}
 
-#score42 = {"bob": (datetime.now(), 10, 3, 1, 0, 0, 5),
-#           "benf": (datetime.now(), 3, 4, 0, 0, 0, 0),
-#           "colona": (datetime.now(), 10, 0, 4, 0, 1, 1),
-#           "maxence23": (datetime.now(), 16, 2, 4, 0, 0, 11),
-#           "nemunaire": (datetime.now(), 15, 3, 4, 0, 1, 2),
-#           "xetal": (datetime.now(), 6, 0, 0, 0, 0, 0)}
+class Server:
+    def __init__(self, server):
+        if server.hasAttribute("server"):
+            self.host = server.getAttribute("server")
+        else:
+            self.host = "localhost"
+        if server.hasAttribute("port"):
+            self.port = int(server.getAttribute("port"))
+        else:
+            self.port = 6667
+        if server.hasAttribute("password"):
+            self.password = server.getAttribute("password")
+        else:
+            self.password = None
 
-s = socket.socket( ) #Create the socket
-s.connect((HOST, PORT)) #Connect to server
-s.send("PASS %s\r\n" % "McsuapTesbuf")
-s.send("NICK %s\r\n" % NICK)
-s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-#s.send("JOIN %s\r\n" % CHANLIST)
+        self.channels = list()
+        for channel in server.getElementsByTagName('channel'):
+            self.channels.append(channel.getAttribute("name"))
 
-print("Welcome on Nemubot. I operate on %s. My PID is %i" % (CHANLIST, os.getpid()))
+    def launch(self):
+        thread.start_new_thread(self.connect, ())
+
+    def accepted_channel(self, channel):
+        return (self.channels.find(channel) != -1)
+
+    def read(self):
+        readbuffer = "" #Here we store all the messages from server
+        while 1:
+            readbuffer = readbuffer + self.s.recv(1024) #recieve server messages
+            temp = readbuffer.split("\n")
+            readbuffer = temp.pop( )
+
+            for line in temp:
+                line = line.rstrip() #remove trailing 'rn'
+
+                if line.find('PRIVMSG') != -1: #Call a parsing function
+                    complete = line[1:].split(':',1) #Parse the message into useful data
+                    info = complete[0].split(' ')
+                    msgpart = complete[1]
+                    sender = info[0].split('!')
+                    if len(msgpart) > 0 and self.accepted_channel(info[2]):
+                        parsemsg(info[2], sender[0], msgpart)
+
+                line = line.split()
+
+                if(line[0] == 'PING'): #If server pings then pong
+                    self.s.send("PONG %s\r\n" % line[1])
+
+    def parsemsg(self, channel, sender, msg):
+        if re.match(".*(norme|coding style).*", msg) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", msg) is not None:
+            norme.launch (self.s, sender, msg)
+
+        elif msg.find("%s:"%NICK) == 0: #Treat all messages starting with 'nemubot:' as distinct commands
+            msgl = msg.lower()
+            if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|ping).*", msgl) is not None:
+                self.s.send("PRIVMSG %s :%s: pong\r\n"%(channel, sender))
+            elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", msgl) is not None:
+                result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", msg)
+                self.s.send("PRIVMSG %s :%s: %s\r\n"%(channel, result.group(2), result.group(5)))
+            elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", msgl) is not None:
+                result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", msg)
+                self.s.send("PRIVMSG %s :%s: %s\r\n"%(channel, result.group(3), result.group(1)))
+            else:
+                if not birthday.parseask(self.s, channel, sender, msgl):
+                    return
+
+
+
+    def connect(self):
+        self.s = socket.socket( ) #Create the socket
+        self.s.connect((self.host, self.port)) #Connect to server
+        if self.password != None:
+            self.s.send("PASS %s\r\n" % self.password)
+        self.s.send("NICK %s\r\n" % NICK)
+        self.s.send("USER %s %s bla :%s\r\n" % (NICK, self.host, REALNAME))
+        #s.send("JOIN %s\r\n" % CHANLIST)
+        self.read()
+
+for server in config.getElementsByTagName('server'):
+    srv = Server(server)
+    srv.launch()
+
+print ("Nemubot ready, I operate on %s. My PID is %i" % (CHANLIST, os.getpid()))
+prompt=""
+while prompt != "quit":
+    prompt=sys.stdin.readlines ()
+
+sys.exit(0)
 
 def parsemsg(msg):
     global birthdays, score42
@@ -70,91 +128,6 @@ def parsemsg(msg):
 
     if CHANLIST.find(info[2]) != -1 and re.match(".*(norme|coding style).*", msgpart) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", msgpart) is not None:
         norme.launch (s, sender, msgpart)
-
-    elif CHANLIST.find(info[2]) != -1 and msgpart.find("%s:"%NICK) == 0: #Treat all messages starting with 'nemubot:' as distinct commands
-        msgpartl = msgpart.lower()
-        print msgpartl
-        if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|ping).*", msgpartl) is not None:
-            s.send("PRIVMSG %s :%s: pong\r\n"%(info[2], sender[0]))
-        elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", msgpart) is not None:
-            result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", msgpart)
-            s.send("PRIVMSG %s :%s: %s\r\n"%(info[2], result.group(2), result.group(5)))
-        elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", msgpart) is not None:
-            result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", msgpart)
-            if CHANLIST.find(result.group(1)):
-                s.send("PRIVMSG %s :%s\r\n"%(result.group(1), result.group(2)))
-            else:
-                print "Channel non autorisé"
-        elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", msgpart) is not None:
-            result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", msgpart)
-            if CHANLIST.find(result.group(2)):
-                s.send("PRIVMSG %s :%s\r\n"%(result.group(2), result.group(1)))
-            else:
-                print "Channel non autorisé"
-        elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", msgpart) is not None:
-            result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", msgpart)
-            s.send("PRIVMSG %s :%s: %s\r\n"%(info[2], result.group(3), result.group(1)))
-        elif re.match(".*(date de naissance|birthday|geburtstag|née?|nee? le|born on).*", msgpartl) is not None:
-            result = re.match("[^0-9]+(([0-9]{1,4})[^0-9]+([0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|obtobre|novembre|november|decembre|décembre|december)([^0-9]+([0-9]{1,4}))?)[^0-9]+(([0-9]{1,2})[^0-9]*[h':][^0-9]*([0-9]{1,2}))?.*", msgpartl)
-
-#            if re.match(".*(je|i|I).*") is not None:
-#                target = sender[0]
-#            elif re.match(".*().*") is not None:
-
-            if result is None:
-                s.send("PRIVMSG %s :%s: je ne reconnais pas le format de ta date de naissance :(\r\n"%(info[2], sender[0]))
-            else:
-                day = result.group(2)
-                if len(day) == 4:
-                    year = day
-                    day = 0
-                month = result.group(3)
-                if month == "janvier" or month == "january" or month == "januar":
-                    month = 1
-                elif month == "fevrier" or month == "février" or month == "february":
-                    month = 2
-                elif month == "mars" or month == "march":
-                    month = 3
-                elif month == "avril" or month == "april":
-                    month = 4
-                elif month == "mai" or month == "may" or month == "maï":
-                    month = 5
-                elif month == "juin" or month == "juni" or month == "junni":
-                    month = 6
-                elif month == "juillet" or month == "jully" or month == "july":
-                    month = 7
-                elif month == "aout" or month == "août" or month == "august":
-                    month = 8
-                elif month == "september" or month == "septembre":
-                    month = 9
-                elif month == "october" or month == "october" or month == "oktober":
-                    month = 10
-                elif month == "november" or month == "novembre":
-                    month = 11
-                elif month == "december" or month == "decembre" or month == "décembre":
-                    month = 12
-                if day == 0:
-                    day = result.group(5)
-                else:
-                    year = result.group(5)
-
-                hour = result.group(7)
-                minute = result.group(8)
-
-                print "Chaîne reconnue : %s/%s/%s %s:%s"%(day, month, year, hour, minute)
-                if year == None:
-                    year = date.today().year
-                if hour == None:
-                    hour = 0
-                if minute == None:
-                    minute = 0
-
-                try:
-                    newdate = datetime(int(year), int(month), int(day), int(hour), int(minute))
-                    birthdays[sender[0].lower()] = newdate
-                    s.send("PRIVMSG %s :%s: ok, c'est noté, ta date de naissance est le %s\r\n"%(info[2], sender[0], newdate.strftime("%A %d %B %Y à %H:%M")))
-                except ValueError:
-                    s.send("PRIVMSG %s :%s: ta date de naissance me paraît peu probable...\r\n"%(info[2], sender[0]))
 
     elif CHANLIST.find(info[2]) != -1 and msgpart[0] == '!': #Treat all messages starting with '!' as command
         cmd = msgpart[1:].split(' ')
