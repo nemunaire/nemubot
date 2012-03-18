@@ -4,6 +4,7 @@
 import sys
 import socket
 import string
+import signal
 import os
 import re
 import subprocess
@@ -16,7 +17,10 @@ if len(sys.argv) == 1:
     print "This script takes exactly 1 arg: a XML config file"
     sys.exit(1)
 
+
+
 SMILEY = list()
+CORRECTIONS = list()
 g_queue = list()
 talkEC = 0
 stopSpk = 0
@@ -44,6 +48,11 @@ for smiley in config.getElementsByTagName('smiley'):
         SMILEY.append((smiley.getAttribute("txt"), smiley.getAttribute("mood")))
 print ("%d smileys loaded"%len(SMILEY))
 
+for correct in config.getElementsByTagName('correction'):
+    if correct.hasAttribute("bad") and correct.hasAttribute("good"):
+        CORRECTIONS.append((" " + (correct.getAttribute("bad") + " "), (" " + correct.getAttribute("good") + " ")))
+print ("%d corrections loaded"%len(CORRECTIONS))
+
 def speak(endstate):
     global lastmsg, g_queue, talkEC, stopSpk
     talkEC = 1
@@ -59,12 +68,12 @@ def speak(endstate):
         force = 0
 
         if force or msg[2] - lastmsg[2] > timedelta(0, 500):
-            sentence += "À {0} heure {1} : ".format(msg[2].hour, msg[2].minute)
+            sentence += "A {0} heure {1} : ".format(msg[2].hour, msg[2].minute)
             force = 1
 
         if force or msg[0] != lastmsg[0]:
             if msg[0] == OWNER:
-                sentence += "En message privé. "
+                sentence += "En message priver. " #Just to avoid é :p
             else:
                 sentence += "Sur " + msg[0] + ". "
             force = 1
@@ -80,6 +89,10 @@ def speak(endstate):
                 msg[3] = msg[3].replace(txt, "")
                 action = 1
                 break
+
+        for (bad, good) in CORRECTIONS:
+            if msg[3].find(bad) >= 0:
+                msg[3] = (" " + msg[3] + " ").replace(bad, good)
 
         if action == 0 and (force or msg[1] != lastmsg[1]):
             sentence += msg[1] + " dit : "
@@ -212,7 +225,7 @@ class Server:
                 line = line.rstrip() #remove trailing 'rn'
 
                 if line.find('PRIVMSG') != -1: #Call a parsing function
-                    parsemsg(unicode(line, encoding='utf-8'), self.channels)
+                    parsemsg(unicode(line, encoding='utf-8', errors='ignore'), self.channels)
 
                 line = line.split()
 
@@ -231,6 +244,17 @@ class Server:
 for server in config.getElementsByTagName('server'):
     srv = Server(server)
     srv.launch()
+
+def sighup_h(signum, frame):
+    print "Signal reçu..."
+    if os.path.exists("/tmp/isPresent"):
+        thread.start_new_thread(speak, (0,))
+    else:
+        if talkEC == 0:
+            talkEC = 1
+        stopSpk = 1
+
+signal.signal(signal.SIGHUP, sighup_h)
 
 print ("Nemuspeak ready, waiting for new messages...")
 prompt=""
