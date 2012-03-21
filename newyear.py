@@ -29,11 +29,22 @@ def launch(s, chan, ndate, sentences, msgpart):
     force = 0
 
     if force or delta.days > 0:
-        force = 1
-        sentence += " %i jour"%(delta.days)
+        if delta.days > 366:
+            year = delta.days / 365
+            days = delta.days % 365 - year / 4
+            sentence += " %i an"%(year)
+            if year > 1:
+                sentence += "s"
+            sentence += ","
+            sentence += " %i jour"%(days)
+            if days > 1:
+                sentence += "s"
+        else:
+            sentence += " %i jour"%(delta.days)
+            if delta.days > 1:
+                sentence += "s"
 
-        if delta.days > 1:
-            sentence += "s"
+        force = 1
         sentence += ","
 
     if force or hours > 0:
@@ -63,4 +74,5 @@ def launch(s, chan, ndate, sentences, msgpart):
 
 def special(s, chan):
 #    s.send("PRIVMSG %s :Bonne année %i !\r\n"%(chan, datetime.today().year))
-    s.send("PRIVMSG %s :Wikipédia vient de sombrer :(\r\n"%(chan))
+#    s.send("PRIVMSG %s :Wikipédia vient de sombrer :(\r\n"%(chan))
+    s.send("PRIVMSG %s :Joyeux anniversaire Xetal !\r\n"%(chan))

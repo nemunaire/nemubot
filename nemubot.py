@@ -16,6 +16,7 @@ import norme
 import newyear
 import ontime
 import watchWebsite
+import qd
 
 if len(sys.argv) > 1:
     sys.exit(0)
@@ -29,7 +30,7 @@ IDENT='nemubot'
 REALNAME='nemubot'
 OWNER='nemunaire' #The bot owner's nick
 #CHANLIST='#nemutest'
-CHANLIST='#42sh #nemutest #tc'
+CHANLIST='#42sh #nemutest #tc #epitagueule'
 readbuffer='' #Here we store all the messages from server
 
 birthdays = {"maxence23": datetime(1991, 8, 11),
@@ -38,6 +39,13 @@ birthdays = {"maxence23": datetime(1991, 8, 11),
              "bob": datetime(1991, 2, 1),
              "test": datetime(1991, 1, 25),
              "colona": datetime(1991, 7, 16)}
+
+#score42 = {"bob": (datetime.now(), 10, 3, 1, 0, 0, 5),
+#           "benf": (datetime.now(), 3, 4, 0, 0, 0, 0),
+#           "colona": (datetime.now(), 10, 0, 4, 0, 1, 1),
+#           "maxence23": (datetime.now(), 16, 2, 4, 0, 0, 11),
+#           "nemunaire": (datetime.now(), 15, 3, 4, 0, 1, 2),
+#           "xetal": (datetime.now(), 6, 0, 0, 0, 0, 0)}
 
 s = socket.socket( ) #Create the socket
 s.connect((HOST, PORT)) #Connect to server
@@ -49,7 +57,7 @@ s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
 print("Welcome on Nemubot. I operate on %s. My PID is %i" % (CHANLIST, os.getpid()))
 
 def parsemsg(msg):
-    global birthdays
+    global birthdays, score42
     complete = msg[1:].split(':',1) #Parse the message into useful data
     info = complete[0].split(' ')
     msgpart = complete[1]
@@ -57,6 +65,8 @@ def parsemsg(msg):
 
     if len(msgpart) <= 0:
         return
+
+    qd.go (s, sender, msgpart, info[2])
 
     if CHANLIST.find(info[2]) != -1 and re.match(".*(norme|coding style).*", msgpart) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", msgpart) is not None:
         norme.launch (s, sender, msgpart)
@@ -69,6 +79,18 @@ def parsemsg(msg):
         elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", msgpart) is not None:
             result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", msgpart)
             s.send("PRIVMSG %s :%s: %s\r\n"%(info[2], result.group(2), result.group(5)))
+        elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", msgpart) is not None:
+            result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", msgpart)
+            if CHANLIST.find(result.group(1)):
+                s.send("PRIVMSG %s :%s\r\n"%(result.group(1), result.group(2)))
+            else:
+                print "Channel non autorisé"
+        elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", msgpart) is not None:
+            result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", msgpart)
+            if CHANLIST.find(result.group(2)):
+                s.send("PRIVMSG %s :%s\r\n"%(result.group(2), result.group(1)))
+            else:
+                print "Channel non autorisé"
         elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", msgpart) is not None:
             result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", msgpart)
             s.send("PRIVMSG %s :%s: %s\r\n"%(info[2], result.group(3), result.group(1)))
@@ -132,7 +154,7 @@ def parsemsg(msg):
                     birthdays[sender[0].lower()] = newdate
                     s.send("PRIVMSG %s :%s: ok, c'est noté, ta date de naissance est le %s\r\n"%(info[2], sender[0], newdate.strftime("%A %d %B %Y à %H:%M")))
                 except ValueError:
-                    s.send("PRIVMSG %s :%s: ta date de naissance me paraît peu probable...\r\n"%(info[2], sender[0]))                
+                    s.send("PRIVMSG %s :%s: ta date de naissance me paraît peu probable...\r\n"%(info[2], sender[0]))
 
     elif CHANLIST.find(info[2]) != -1 and msgpart[0] == '!': #Treat all messages starting with '!' as command
         cmd = msgpart[1:].split(' ')
@@ -144,6 +166,13 @@ def parsemsg(msg):
             s.send("PRIVMSG %s :  - !partiels : Affiche le temps restant avant les prochains partiels\r\n"%(sender[0]))
             s.send("PRIVMSG %s :  - !vacs !vacances !holidays !free-time : Affiche le temps restant avant les prochaines vacances\r\n"%(sender[0]))
             s.send("PRIVMSG %s :  - !jpo !next-jpo : Affiche le temps restant avant la prochaine JPO\r\n"%(sender[0]))
+            s.send("PRIVMSG %s :  - !42 !scores : Affiche les scores des gens\r\n"%(sender[0]))
+
+        if cmd[0] == 'score' or cmd[0] == 'scores' or cmd[0] == '42':
+            qd.scores(s, cmd, info[2])
+
+        if cmd[0] == 'chronos' or cmd[0] == 'edt' or cmd[0] == 'cours':
+            s.send("PRIVMSG %s :chronos\r\n"%(info[2]))
 
         if cmd[0] == 'new-year' or cmd[0] == 'newyear' or cmd[0] == 'ny':
             #What is the next year?
@@ -177,7 +206,7 @@ def parsemsg(msg):
         if cmd[0] == 'katy' or cmd[0] == 'album':
             ndate = datetime(2012, 3, 26, 8, 0, 0)
             newyear.launch (s, info[2], ndate, ["Il reste%s avant la sortie du prochain album de Katy Perry :)", "Vite, courrons s'acheter le nouvel album de Katy Perry, il est sorti depuis%s"], cmd)
-        if cmd[0] == 'anniv':
+        if cmd[0] == 'anniv' or cmd[0] == 'age':
             if len(cmd) < 2 or cmd[1].lower() == "moi":
                 name = sender[0].lower()
             else:
@@ -203,7 +232,10 @@ def parsemsg(msg):
                     if tyd < datetime.today():
                         tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
 
-                    newyear.launch (s, info[2], tyd, ["Il reste%s avant l'anniversaire de %s !" % ("%s", n), ""], cmd)
+                    if cmd[0] == 'age':
+                        newyear.launch (s, info[2], d, ["", "%s a%s aujourd'hui !" % (n, "%s")], cmd)
+                    else:
+                        newyear.launch (s, info[2], tyd, ["Il reste%s avant l'anniversaire de %s !" % ("%s", n), ""], cmd)
             else:
                 s.send("PRIVMSG %s :%s: désolé, je ne connais pas la date d'anniversaire de %s. Quand est-il né ?\r\n"%(info[2], sender[0], name))
 
@@ -214,8 +246,8 @@ def parsemsg(msg):
             #ndate = datetime(2012, 2, 4, 8, 30, 1)
             newyear.launch (s, info[2], ndate, ["Il reste%s avant la prochaine JPO... We want you!", "Nous somme en pleine JPO depuis%s"], cmd)
         if cmd[0] == 'professional-project' or cmd[0] == 'project-professionnel' or cmd[0] == 'projet-professionnel' or cmd[0] == 'project-professionel' or cmd[0] == 'tc' or cmd[0] == 'next-rendu' or cmd[0] == 'rendu':
-            ndate = datetime(2012, 3, 4, 23, 42, 1)
-            newyear.launch (s, info[2], ndate, ["Il reste%s avant la fermeture du rendu de TC-4, vite au boulot !", "À %s près, il aurait encore été possible de rendre"], cmd)
+            ndate = datetime(2012, 3, 18, 23, 42, 1)
+            newyear.launch (s, info[2], ndate, ["Il reste%s avant la fermeture du rendu de TC-5 et de corewar, vite au boulot !", "À %s près, il aurait encore été possible de rendre"], cmd)
 
 
     elif msgpart[0] == '`' and sender[0] == OWNER and CHANLIST.find(info[2]) != -1: #Treat all messages starting with '`' as command
@@ -252,7 +284,6 @@ def read():
         #signal.signal(signal.SIGHUP, onSignal)
 
         for line in temp:
-            print line
             line = line.rstrip() #remove trailing 'rn'
 
             if line.find('PRIVMSG') != -1: #Call a parsing function
@@ -265,7 +296,8 @@ def read():
 
 def launch(s):
 #    thread.start_new_thread(ontime.startThread, (s,datetime(2012, 1, 18, 6, 0, 1),["Il reste%s avant la fin de Wikipédia", "C'est fini, Wikipédia a sombrée depuis%s"],CHANLIST))
-    thread.start_new_thread(watchWebsite.startThread, (s, "you.p0m.fr", "", "#42sh", "Oh, quelle est cette nouvelle image sur http://you.p0m.fr/ ? :p"))
+#    thread.start_new_thread(ontime.startThread, (s,datetime(2012, 2, 23, 0, 0, 1),[],CHANLIST))
+    thread.start_new_thread(watchWebsite.startThread, (s, "you.p0m.fr", "", "#42sh #epitaguele", "Oh, quelle est cette nouvelle image sur http://you.p0m.fr/ ? :p"))
     thread.start_new_thread(watchWebsite.startThread, (s, "intra.nbr23.com", "", "#42sh", "Oh, quel est ce nouveau film sur http://intra.nbr23.com/ ? :p"))
     print "Launched successfuly"
 

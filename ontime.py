@@ -32,6 +32,11 @@ def startThread(s, ndate, sentences, CHANLIST):
             for chan in CHANLIST.split():
                 newyear.special (s, chan)
 
+        elif minute == 0 and datetime.now ().hour == 0 and datetime.now ().day == 23 and datetime.now ().month == 2:
+            print("Anniv Xetal!")
+            for chan in CHANLIST.split():
+                newyear.special (s, chan)
+
         if minute == 18:
             for chan in CHANLIST.split():
                 newyear.launch (s, chan, datetime(2012, 1, 18, 6, 0, 1), sentences, 0)
