@@ -15,7 +15,7 @@ imports_launch = ["watchWebsite"]
 mods = list ()
 import server
 
-if len(sys.argv) == 1:
+if len(sys.argv) != 2 and len(sys.argv) != 3:
     print ("This script takes exactly 1 arg: a XML config file")
     sys.exit(1)
 
@@ -29,6 +29,11 @@ def onSignal(signum, frame):
     sys.exit (0)
 signal.signal(signal.SIGINT, onSignal)
 
+if len(sys.argv) == 3:
+    basedir = sys.argv[2]
+else:
+    basedir = "./"
+print (basedir, len(sys.argv))
 
 dom = parse(sys.argv[1])
 config = dom.getElementsByTagName('config')[0]
@@ -37,7 +42,7 @@ servers = list ()
 for imp in imports:
     mod = __import__ (imp)
     mods.append (mod)
-    mod.load_module ("datas/")
+    mod.load_module (basedir + "/datas/")
 
 for serveur in config.getElementsByTagName('server'):
     srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
@@ -46,7 +51,7 @@ for serveur in config.getElementsByTagName('server'):
 
 for imp in imports_launch:
     mod = __import__ (imp)
-    mod.load_module ("datas/")
+    mod.load_module (basedir + "/datas/")
     mod.launch (servers)
 
 print ("Nemubot ready, my PID is %i!" % (os.getpid()))

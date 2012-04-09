@@ -13,10 +13,14 @@ from datetime import timedelta
 from xml.dom.minidom import parse
 import thread
 
-if len(sys.argv) == 1:
+if len(sys.argv) <= 1:
     print "This script takes exactly 1 arg: a XML config file"
     sys.exit(1)
 
+def onSignal(signum, frame):
+    print ("\nSIGINT receive, saving states and close")
+    sys.exit (0)
+signal.signal(signal.SIGINT, onSignal)
 
 
 SMILEY = list()
