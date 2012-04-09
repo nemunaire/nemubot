@@ -10,9 +10,20 @@ class AtomEntry:
   def __init__ (self, node):
     self.id = node.getElementsByTagName("id")[0].firstChild.nodeValue
     self.title = node.getElementsByTagName("title")[0].firstChild.nodeValue
-    self.updated = time.strptime(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:19], "%Y-%m-%dT%H:%M:%S")
+    try:
+      self.updated = time.strptime(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:19], "%Y-%m-%dT%H:%M:%S")
+    except:
+      try:
+        self.updated = time.strptime(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10], "%Y-%m-%d")
+      except:
+        print (node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10])
+        self.updated = time.localtime ()
     self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
     self.link = node.getElementsByTagName("link")[0].getAttribute ("href")
+    if len (node.getElementsByTagName("link")) > 1:
+      self.link2 = node.getElementsByTagName("link")[1].getAttribute ("href")
+    else:
+      self.link2 = None
 
 class Atom:
   def __init__ (self, string):

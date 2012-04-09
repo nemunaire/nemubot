@@ -32,8 +32,8 @@ def xmlparse(node):
             manche.getAttribute("winner"),
             int(manche.getAttribute("winner_score")),
             manche.getAttribute("who"),
-            datetime.now ())
-#            time.strptime (manche.getAttribute("date")))
+#            datetime.now ())
+            datetime.fromtimestamp (time.mktime (time.strptime (manche.getAttribute("date")[:19], "%Y-%m-%d %H:%M:%S"))))
 
 def load_module(datas_path):
   """Load this module"""

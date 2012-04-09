@@ -46,13 +46,20 @@ class Server:
     def read(self, mods):
       self.readbuffer = "" #Here we store all the messages from server
       while 1:
-        self.readbuffer = self.readbuffer + self.s.recv(1024).decode() #recieve server messages
+        try:
+            self.readbuffer = self.readbuffer + self.s.recv(1024).decode() #recieve server messages
+        except UnicodeDecodeError:
+            print ("ERREUR de décodage unicode")
+            continue
         temp = self.readbuffer.split("\n")
         self.readbuffer = temp.pop( )
 
         for line in temp:
           msg = message.Message (self, line)
-          msg.treat (mods)
+          try:
+              msg.treat (mods)
+          except:
+              print ("Une erreur est survenue lors du traitement du message : %s"%line)
 
 
     def connect(self, mods):

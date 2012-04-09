@@ -10,6 +10,7 @@ from xml.dom.minidom import parseString
 from xml.dom.minidom import getDOMImplementation
 
 import atom
+import youtube
 
 filename = ""
 SITES = []
@@ -67,6 +68,9 @@ def treat_atom (lastpage, content, message):
                     else:
                         messageI = message % ("quel est ce nouveau fichier", "%s")
                     send_global (messageI % unquote (d.link))
+            elif f.id == "http://musik.p0m.fr/atom.php?nemubot":
+                for d in diff:
+                    youtube.send_global (d.link2, message % (d.title, unquote (d.link)))
             elif message.find ("%s") >= 0:
                 for d in diff:
                     send_global (message % unquote (d.link))
