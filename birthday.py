@@ -1,12 +1,18 @@
 # coding=utf-8
 
-import counter
+import re
 from datetime import datetime
+from datetime import date
+from xml.dom.minidom import parse
+from xml.dom.minidom import parseString
+from xml.dom.minidom import getDOMImplementation
 
-BIRTHDAYS = list()
+filename = ""
+BIRTHDAYS = {}
 
 def xmlparse(node):
-  for item in node.getElementsByTagName("item"):
+  """Parse the given node and add birthdays to the global list."""
+  for item in node.getElementsByTagName("birthday"):
     if (item.hasAttribute("year")):
       year = int(item.getAttribute("year"))
     else:
@@ -29,102 +35,101 @@ def xmlparse(node):
       minute = 0
     second = 1
 
-    BIRTHDAYS.append((item.getAttribute("name"), datetime(year, month, day, hour, minute, second)))
+    BIRTHDAYS[item.getAttribute("name")] = datetime(year, month, day, hour, minute, second)
 
-def xmlsave(doc):
-  top = doc.createTextNode("birthday")
-  for brth in BIRTHDAYS:
-    item = doc.createTextNode("item")
-    item.setAttribute("", "")
+
+def load_module(datas_path):
+  """Load this module"""
+  global BIRTHDAYS, filename
+  BIRTHDAYS = {}
+  filename = datas_path + "/birthdays.xml"
+
+  print ("Loading birthdays ...",)
+  dom = parse(filename)
+  xmlparse (dom.getElementsByTagName('birthdays')[0])
+  print ("done (%d loaded)" % len(BIRTHDAYS))
+
+
+def save_module():
+  """Save the dates"""
+  global filename
+  print ("Saving birthdays ...",)
+
+  impl = getDOMImplementation()
+  newdoc = impl.createDocument(None, 'birthdays', None)
+  top = newdoc.documentElement
+
+  for name in BIRTHDAYS.keys():
+    day = BIRTHDAYS[name]
+    bonus=""
+    if day.hour != 0:
+      bonus += 'hour="%s" ' % day.hour
+    if day.minute != 0:
+      bonus += 'minute="%s" ' % day.minute
+    item = parseString ('<birthday name="%s" year="%d" month="%d" day="%d" %s />' % (name, day.year, day.month, day.day, bonus)).documentElement
     top.appendChild(item);
-  
-def parseanswer(s, channel, sender, cmd):
-  if len(cmd) < 2 or cmd[1].lower() == "moi":
-    name = sender.lower()
-  else:
-    name = cmd[1].lower()
 
-  matches = []
+  with open(filename, "w") as f:
+    newdoc.writexml (f)
+  print ("done")
 
-  if name in birthdays:
-    matches.append(name)
-  else:
-    for k in birthdays.keys():
-      if k.find(name) == 0:
-        matches.append(k)
 
-  if len(matches) == 1:
-    (n, d) = (matches[0], birthdays[matches[0]])
-    tyd = d
-    tyd = datetime(date.today().year, tyd.month, tyd.day)
+def help_tiny ():
+  """Line inserted in the response to the command !help"""
+  return "!anniv /who/: gives the remaining time before the anniversary of /who/"
 
-    if tyd.day == datetime.today().day and tyd.month == datetime.today().month:
-      newyear.launch (s, info[2], d, ["", "C'est aujourd'hui l'anniversaire de %s ! Il a%s. Joyeux anniversaire :)" % (n, "%s")], cmd)
+
+def help_full ():
+  return "!anniv /who/: gives the remaining time before the anniversary of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
+
+
+def parseanswer(msg):
+  if msg.cmd[0] == "anniv":
+    if len(msg.cmd) < 2 or msg.cmd[1].lower() == "moi" or msg.cmd[1].lower() == "me":
+      name = msg.sender.lower()
     else:
-      if tyd < datetime.today():
-        tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
+      name = msg.cmd[1].lower()
 
-      newyear.launch (s, info[2], tyd, ["Il reste%s avant l'anniversaire de %s !" % ("%s", n), ""], cmd)
-  else:
-    s.send("PRIVMSG %s :%s: désolé, je ne connais pas la date d'anniversaire de %s. Quand est-il né ?\r\n"%(info[2], sender[0], name))
+    matches = []
 
-
-def parseask(s, channel, sender, msgl):
-  if re.match(".*(date de naissance|birthday|geburtstag|née?|nee? le|born on).*", msgl) is not None:
-    result = re.match("[^0-9]+(([0-9]{1,4})[^0-9]+([0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|obtobre|novembre|november|decembre|décembre|december)([^0-9]+([0-9]{1,4}))?)[^0-9]+(([0-9]{1,2})[^0-9]*[h':][^0-9]*([0-9]{1,2}))?.*", msgl)
-    if result is None:
-      s.send("PRIVMSG %s :%s: je ne reconnais pas le format de ta date de naissance :(\r\n"%(channel, sender))
+    if name in BIRTHDAYS:
+      matches.append(name)
     else:
-      day = result.group(2)
-      if len(day) == 4:
-        year = day
-        day = 0
-      month = result.group(3)
-      if month == "janvier" or month == "january" or month == "januar":
-        month = 1
-      elif month == "fevrier" or month == "février" or month == "february":
-        month = 2
-      elif month == "mars" or month == "march":
-        month = 3
-      elif month == "avril" or month == "april":
-        month = 4
-      elif month == "mai" or month == "may" or month == "maï":
-        month = 5
-      elif month == "juin" or month == "juni" or month == "junni":
-        month = 6
-      elif month == "juillet" or month == "jully" or month == "july":
-        month = 7
-      elif month == "aout" or month == "août" or month == "august":
-        month = 8
-      elif month == "september" or month == "septembre":
-        month = 9
-      elif month == "october" or month == "october" or month == "oktober":
-        month = 10
-      elif month == "november" or month == "novembre":
-        month = 11
-      elif month == "december" or month == "decembre" or month == "décembre":
-        month = 12
-        if day == 0:
-          day = result.group(5)
-        else:
-          year = result.group(5)
+      for k in BIRTHDAYS.keys ():
+        if k.find (name) == 0:
+          matches.append (k)
 
-        hour = result.group(7)
-        minute = result.group(8)
+    if len(matches) == 1:
+      (n, d) = (matches[0], BIRTHDAYS[matches[0]])
+      tyd = d
+      tyd = datetime(date.today().year, tyd.month, tyd.day)
 
-        print "Chaîne reconnue : %s/%s/%s %s:%s"%(day, month, year, hour, minute)
-        if year == None:
-          year = date.today().year
-        if hour == None:
-          hour = 0
-        if minute == None:
-          minute = 0
+      if tyd.day == datetime.today().day and tyd.month == datetime.today().month:
+        msg.send_chn (msg.countdown_format (d, "", "C'est aujourd'hui l'anniversaire de %s ! Il a%s. Joyeux anniversaire :)" % (n, "%s")))
+      else:
+        if tyd < datetime.today():
+          tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
 
-        try:
-          newdate = datetime(int(year), int(month), int(day), int(hour), int(minute))
-          birthdays[sender[0].lower()] = newdate
-          s.send("PRIVMSG %s :%s: ok, c'est noté, ta date de naissance est le %s\r\n"%(channel, sender, newdate.strftime("%A %d %B %Y à %H:%M")))
-        except ValueError:
-          s.send("PRIVMSG %s :%s: ta date de naissance me paraît peu probable...\r\n"%(channel, sender))
+        msg.send_chn (msg.countdown_format (tyd, "Il reste%s avant l'anniversaire de %s !" % ("%s", n), ""))
+    else:
+      msg.send_chn ("%s: désolé, je ne connais pas la date d'anniversaire de %s. Quand est-il né ?"%(msg.sender, name))
     return True
+  else:
+    return False
+
+
+def parseask(msg):
+  msgl = msg.content.lower ()
+  if re.match("^.*(date de naissance|birthday|geburtstag|née?|nee? le|born on).*$", msgl) is not None:
+    extDate = msg.extractDate ()
+    if extDate is None:
+      msg.send_chn ("%s: ta date de naissance ne paraît pas valide..." % (msg.sender))
+    else:
+      BIRTHDAYS[msg.sender.lower()] = extDate
+      msg.send_chn ("%s: ok, c'est noté, ta date de naissance est le %s" % (msg.sender, extDate.strftime("%A %d %B %Y à %H:%M")))
+      save_module ()
+    return True
+  return False
+
+def parselisten (msg):
   return False
