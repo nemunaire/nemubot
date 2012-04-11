@@ -154,15 +154,12 @@ class Message:
 
 
   def parsemsg (self, mods):
-    if re.match(".*(norme|coding style).*", self.content) is not None and re.match(".*(please|give|obtenir|now|plz|stp|svp|s'il (te|vous) pla.t|check).*", self.content) is not None:
-      norme.launch (self.srv.s, self.sender, self.content)
-
     #Treat all messages starting with 'nemubot:' as distinct commands
-    elif self.content.find("%s:"%self.srv.nick) == 0:
+    if self.content.find("%s:"%self.srv.nick) == 0:
       messagel = self.content.lower()
 
       #Is it a simple response?
-      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping).*", messagel) is not None:
+      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
         self.send_chn ("%s: pong"%(self.sender))
 
       elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:

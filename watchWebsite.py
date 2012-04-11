@@ -2,6 +2,7 @@
 
 import http.client
 import hashlib
+import sys
 import time
 import _thread
 from urllib.parse import unquote
@@ -16,15 +17,118 @@ filename = ""
 SITES = []
 SRVS = None
 
-def xmlparse(node):
-  """Parse the given node and add events to the global list."""
-  for item in node.getElementsByTagName("watch"):
-      if item.getAttribute("type"):
-          type = item.getAttribute("type")
-      else:
-          type = "hash"
+class Site:
+  def __init__(self, item):
+    self.server = item.getAttribute("server")
+    self.page = item.getAttribute("page")
+    if item.getAttribute("type"):
+      self.type = item.getAttribute("type")
+    else:
+      self.type = "hash"
+    self.message = item.getAttribute("message")
 
-      SITES.append ((item.getAttribute("server"), item.getAttribute("page"), type, item.getAttribute("message"), None, 40))
+    self.thread = None
+    if item.getAttribute("time"):
+      self.updateTime = int(item.getAttribute("time"))
+    else:
+      self.updateTime = 60
+    self.lastChange = 0
+    self.lastpage = None
+    self.run = True
+
+    self.channels = list()
+    for channel in item.getElementsByTagName('channel'):
+      self.channels.append(channel.getAttribute("name"))
+
+
+  def start (self):
+    self.thread = _thread.start_new_thread (startThread, (self,))
+
+  def send_message (self, msg):
+    global SRVS
+    if len(self.channels) > 0:
+      for server in SRVS:
+        for chan in self.channels:
+          server.send_msg (chan, msg)
+    else:
+      for server in SRVS:
+        server.send_global (msg)
+
+  def treat_atom (self, content):
+    change=False
+    f = atom.Atom (content)
+    if self.lastpage is not None:
+      diff = self.lastpage.diff (f)
+      if len(diff) > 0:
+        print ("[%s] Page differ!"%self.server)
+        if f.id == "http://public.nbr23.com/rss.php":
+          for d in diff:
+            if d.category == None:
+              messageI = self.message % ("quel est ce nouveau fichier", "%s")
+            elif d.category == "Music":
+              messageI = self.message % ("quelles sont ces nouvelles musiques", "%s")
+            elif d.category == "TV_Shows":
+              messageI = self.message % ("quelle est cette nouvelle série", "%s")
+            elif d.category == "Movies":
+              messageI = self.message % ("quel est ce nouveau film", "%s")
+            elif d.category == "Books":
+              messageI = self.message % ("quel est ce nouveau livre", "%s")
+            else:
+              messageI = self.message % ("quel est ce nouveau fichier", "%s")
+            self.send_message (messageI % unquote (d.link))
+        elif f.id == "http://musik.p0m.fr/atom.php?nemubot":
+          for d in diff:
+            youtube.send_global (d.link2, self.message % (d.title, unquote (d.link)))
+        elif self.message.find ("%s") >= 0:
+          print ("[%s] Send message!"%self.server)
+          for d in diff:
+            self.send_message (self.message % unquote (d.title))
+        else:
+          self.send_message (self.message)
+        change=True
+    return (f, change)
+
+  def check (self):
+    while self.run:
+      try:
+#        print ("Check %s/%s"%(self.server, self.page))
+        content = getPage(self.server, self.page)
+
+        if self.type == "atom":
+          (self.lastpage, change) = self.treat_atom (content)
+          if change:
+            if self.lastChange <= 0:
+              self.lastChange -= 1
+            else:
+              self.lastChange = 0
+          else:
+            self.lastChange += 1
+        else:
+          hash = hashlib.sha224(content).hexdigest()
+          if hash != self.lastpage:
+            if self.lastpage is not None:
+              self.send_message ()
+            self.lastpage = hash
+            if self.lastChange <= 0:
+              self.lastChange -= 1
+            else:
+              self.lastChange = 0
+          else:
+            self.lastChange += 1
+
+        #Update check time intervalle
+          #TODO
+
+        if self.updateTime < 10:
+          self.updateTime = 10
+        if self.updateTime > 400:
+          self.updateTime = 400
+
+        time.sleep(self.updateTime)
+      except:
+        print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
+        time.sleep(self.updateTime * 3)
+
 
 
 def load_module(datas_path):
@@ -33,9 +137,10 @@ def load_module(datas_path):
   SITES = []
   filename = datas_path + "/watch.xml"
 
-  print ("Loading watchsites ...",)
+  sys.stdout.write ("Loading watchsites ... ")
   dom = parse(filename)
-  xmlparse (dom.documentElement)
+  for item in dom.documentElement.getElementsByTagName("watch"):
+      SITES.append (Site (item))
   print ("done (%d loaded)" % len(SITES))
 
 
@@ -43,101 +148,57 @@ def launch (servers):
     global SRVS
     SRVS = servers
     for site in SITES:
-        _thread.start_new_thread (startThread, (site,))
+        site.start ()
 
-def send_global (msg):
-    for server in SRVS:
-        server.send_global (msg)
+def save_module():
+  """Save the module state"""
+  global filename
+  sys.stdout.write ("Saving watched sites ... ")
+  impl = getDOMImplementation()
+  newdoc = impl.createDocument(None, 'service', None)
+  top = newdoc.documentElement
 
-def treat_atom (lastpage, content, message):
-    change=False
-    f = atom.Atom (content)
-    if lastpage is not None:
-        diff = lastpage.diff (f)
-        if len(diff) > 0:
-            if f.id == "http://public.nbr23.com/rss.php":
-                for d in diff:
-                    if d.summary == "Music":
-                        messageI = message % ("quelles sont ces nouvelles musiques", "%s")
-                    elif d.summary == "TV_Shows":
-                        messageI = message % ("quelle est cette nouvelle série", "%s")
-                    elif d.summary == "Movies":
-                        messageI = message % ("quel est ce nouveau film", "%s")
-                    elif d.summary == "Books":
-                        messageI = message % ("quel est ce nouveau livre", "%s")
-                    else:
-                        messageI = message % ("quel est ce nouveau fichier", "%s")
-                    send_global (messageI % unquote (d.link))
-            elif f.id == "http://musik.p0m.fr/atom.php?nemubot":
-                for d in diff:
-                    youtube.send_global (d.link2, message % (d.title, unquote (d.link)))
-            elif message.find ("%s") >= 0:
-                for d in diff:
-                    send_global (message % unquote (d.link))
-            else:
-                send_global (message)
-            change=True
-    return (f,change)
+  for site in SITES:
+    item = parseString ('<watch server="%s" page="%s" message="%s" type="%s" time="%d" />' % (site.server, site.page, site.message, site.type, site.updateTime)).documentElement
+    if len(site.channels) > 0:
+      for chan in site.channels:
+        item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
+    top.appendChild(item);
+
+  with open(filename, "w") as f:
+    newdoc.writexml (f)
+  print ("done")
+
+
+def help_tiny ():
+  """Line inserted in the response to the command !help"""
+  return None
+
+def help_full ():
+  return None
+
+def parseanswer (msg):
+  if msg.cmd[0] == "watch":
+    print ("print states here")
+    return True
+  return False
+
+def parseask (msg):
+  return False
+
+def parselisten (msg):
+  return False
+
 
 def getPage (s, p):
-    conn = http.client.HTTPConnection(s)
-    conn.request("GET", "/%s"%(p))
+  conn = http.client.HTTPConnection(s)
+  conn.request("GET", "/%s"%(p))
 
-    res = conn.getresponse()
-    data = res.read()
+  res = conn.getresponse()
+  data = res.read()
 
-    conn.close()
-    return data
+  conn.close()
+  return data
 
 def startThread(site):
-    (srv, page, type, message, lastpage, updateTime) = site
-
-    lastChange = 0
-
-    while 1:
-        content = getPage(srv, page)
-
-        if type == "atom":
-            (lastpage, change) = treat_atom (lastpage, content, message)
-            if change:
-                if lastChange <= 0:
-                    lastChange -= 1
-                else:
-                    lastChange = 0
-            else:
-                lastChange += 1
-        else:
-            hash = hashlib.sha224(content).hexdigest()
-            if hash != lastpage:
-                if lastpage is not None:
-                    send_global (message)
-                lastpage = hash
-                if lastChange <= 0:
-                    lastChange -= 1
-                else:
-                    lastChange = 0
-            else:
-                lastChange += 1
-
-        #Update check time intervalle
-        if lastChange >= 1 and updateTime < 60:
-            updateTime *= 2
-        elif lastChange >= 10 and updateTime < 200:
-            updateTime *= 1.25
-        elif lastChange >= 50 and updateTime < 500:
-            updateTime *= 1.1
-        elif lastChange < 0 and updateTime < 60:
-            updateTime /= 2
-        elif lastChange <= 0 and updateTime < 200:
-            updateTime /= 3
-        elif lastChange <= 0 and updateTime > 350:
-            updateTime /= 7
-        elif lastChange <= 0:
-            updateTime /= 4.5
-
-        if updateTime < 10:
-            updateTime = 10
-        if updateTime > 500:
-            updateTime = 500
-
-        time.sleep(updateTime)
+  site.check ()

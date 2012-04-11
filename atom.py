@@ -18,8 +18,18 @@ class AtomEntry:
       except:
         print (node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10])
         self.updated = time.localtime ()
-    self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
-    self.link = node.getElementsByTagName("link")[0].getAttribute ("href")
+    if len(node.getElementsByTagName("summary")) > 0:
+      self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
+    else:
+      self.summary = None
+    if len(node.getElementsByTagName("link")) > 0:
+      self.link = node.getElementsByTagName("link")[0].getAttribute ("href")
+    else:
+      self.link = None
+    if len (node.getElementsByTagName("category")) > 1:
+      self.category = node.getElementsByTagName("category")[0].getAttribute ("term")
+    else:
+      self.category = None
     if len (node.getElementsByTagName("link")) > 1:
       self.link2 = node.getElementsByTagName("link")[1].getAttribute ("href")
     else:
@@ -42,6 +52,8 @@ class Atom:
   def diff (self, other):
     differ = list ()
     for k in other.entries.keys ():
+      if self.updated is None and k not in self.entries:
+        self.updated = entry.updated
       if k not in self.entries and other.entries[k].updated >= self.updated:
         differ.append (other.entries[k])
     return differ
@@ -62,3 +74,4 @@ if __name__ == "__main__":
   print (b.updated)
 
   diff = a.diff (b)
+  print (diff)

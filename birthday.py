@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import re
+import sys
 from datetime import datetime
 from datetime import date
 from xml.dom.minidom import parse
@@ -44,7 +45,7 @@ def load_module(datas_path):
   BIRTHDAYS = {}
   filename = datas_path + "/birthdays.xml"
 
-  print ("Loading birthdays ...",)
+  sys.stdout.write ("Loading birthdays ... ")
   dom = parse(filename)
   xmlparse (dom.getElementsByTagName('birthdays')[0])
   print ("done (%d loaded)" % len(BIRTHDAYS))
@@ -53,7 +54,7 @@ def load_module(datas_path):
 def save_module():
   """Save the dates"""
   global filename
-  print ("Saving birthdays ...",)
+  sys.stdout.write ("Saving birthdays ... ")
 
   impl = getDOMImplementation()
   newdoc = impl.createDocument(None, 'birthdays', None)

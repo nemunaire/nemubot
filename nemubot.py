@@ -10,7 +10,7 @@ from datetime import datetime
 from datetime import timedelta
 from xml.dom.minidom import parse
 
-imports = ["birthday", "qd", "events", "youtube"]
+imports = ["birthday", "qd", "events", "youtube", "watchWebsite"]
 imports_launch = ["watchWebsite"]
 mods = list ()
 import server
@@ -51,7 +51,6 @@ for serveur in config.getElementsByTagName('server'):
 
 for imp in imports_launch:
     mod = __import__ (imp)
-    mod.load_module (basedir + "/datas/")
     mod.launch (servers)
 
 print ("Nemubot ready, my PID is %i!" % (os.getpid()))

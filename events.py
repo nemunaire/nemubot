@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import re
+import sys
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
@@ -51,7 +52,7 @@ def load_module(datas_path):
   EVENTS = {}
   filename = datas_path + "/events.xml"
 
-  print ("Loading events ...",)
+  sys.stdout.write ("Loading events ... ")
   dom = parse(filename)
   xmlparse (dom.getElementsByTagName('events')[0])
   print ("done (%d loaded)" % len(EVENTS))
@@ -60,7 +61,7 @@ def load_module(datas_path):
 def save_module():
   """Save the dates"""
   global filename
-  print ("Saving events ...",)
+  sys.stdout.write ("Saving events ... ")
 
   impl = getDOMImplementation()
   newdoc = impl.createDocument(None, 'events', None)

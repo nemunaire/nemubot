@@ -29,7 +29,7 @@ class Server:
 
     def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
       for line in msg.split("\n"):
-        if line != "":
+        if line != "" and self.accepted_channel(channel):
           self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
 
     def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
@@ -41,7 +41,7 @@ class Server:
       _thread.start_new_thread(self.connect, (mods,))
 
     def accepted_channel(self, channel):
-      return (self.channels.find(channel) != -1)
+      return (self.channels.count(channel) != -1)
 
     def read(self, mods):
       self.readbuffer = "" #Here we store all the messages from server
@@ -56,10 +56,10 @@ class Server:
 
         for line in temp:
           msg = message.Message (self, line)
-          try:
-              msg.treat (mods)
-          except:
-              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+#          try:
+          msg.treat (mods)
+#          except:
+#              print ("Une erreur est survenue lors du traitement du message : %s"%line)
 
 
     def connect(self, mods):
