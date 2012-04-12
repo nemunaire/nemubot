@@ -82,6 +82,44 @@ class Message:
     self.srv.send_msg (self.sender, msg)
 
 
+  def just_countdown (self, delta):
+    sec = delta.seconds
+    hours, remainder = divmod(sec, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    sentence = ""
+    force = False
+
+    if force or delta.days > 0:
+      force = True
+      sentence += " %i jour"%(delta.days)
+
+      if delta.days > 1:
+        sentence += "s"
+      sentence += ","
+
+    if force or hours > 0:
+      force = True
+      sentence += " %i heure"%(hours)
+      if hours > 1:
+        sentence += "s"
+      sentence += ","
+
+    if force or minutes > 0:
+      force = True
+      sentence += " %i minute"%(minutes)
+      if minutes > 1:
+        sentence += "s"
+      sentence += " et"
+
+    if force or seconds > 0:
+      force = True
+      sentence += " %i seconde"%(seconds)
+      if seconds > 1:
+        sentence += "s"
+    return sentence[1:]
+
+
   def countdown_format (self, date, msg_before, msg_after, timezone = None):
     if timezone != None:
       os.environ['TZ'] = timezone
@@ -95,45 +133,10 @@ class Message:
         sentence_c = msg_before
         delta = date - datetime.now()
 
-    sec = delta.seconds
-    hours, remainder = divmod(sec, 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    sentence = ""
-    force = 0
-
-    if force or delta.days > 0:
-      force = 1
-      sentence += " %i jour"%(delta.days)
-
-      if delta.days > 1:
-        sentence += "s"
-      sentence += ","
-
-    if force or hours > 0:
-      force = 1
-      sentence += " %i heure"%(hours)
-      if hours > 1:
-        sentence += "s"
-      sentence += ","
-
-    if force or minutes > 0:
-      force = 1
-      sentence += " %i minute"%(minutes)
-      if minutes > 1:
-        sentence += "s"
-      sentence += " et"
-
-    if force or seconds > 0:
-      force = 1
-      sentence += " %i seconde"%(seconds)
-      if seconds > 1:
-        sentence += "s"
-
-    return sentence_c % sentence[1:]
-
     if timezone != None:
       os.environ['TZ'] = "Europe/Paris"
+
+    return sentence_c % self.just_countdown(delta)
 
 
   def treat (self, mods):
