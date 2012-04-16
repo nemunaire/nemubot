@@ -6,6 +6,7 @@ import re
 import socket
 import string
 import time
+import imp
 
 class Message:
   def __init__ (self, srv, line):
@@ -82,37 +83,57 @@ class Message:
     self.srv.send_msg (self.sender, msg)
 
 
-  def just_countdown (self, delta):
+  def just_countdown (self, delta, resolution = 5):
     sec = delta.seconds
     hours, remainder = divmod(sec, 3600)
     minutes, seconds = divmod(remainder, 60)
+    an = int(delta.days / 365.25)
+    days = delta.days % 365.25
 
     sentence = ""
     force = False
 
-    if force or delta.days > 0:
+    if resolution > 0 and (force or an > 0):
       force = True
-      sentence += " %i jour"%(delta.days)
+      sentence += " %i an"%(an)
 
-      if delta.days > 1:
+      if an > 1:
         sentence += "s"
-      sentence += ","
+      if resolution > 2:
+        sentence += ","
+      elif resolution > 1:
+        sentence += " et"
 
-    if force or hours > 0:
+    if resolution > 1 and (force or days > 0):
+      force = True
+      sentence += " %i jour"%(days)
+
+      if days > 1:
+        sentence += "s"
+      if resolution > 3:
+        sentence += ","
+      elif resolution > 2:
+        sentence += " et"
+
+    if resolution > 2 and (force or hours > 0):
       force = True
       sentence += " %i heure"%(hours)
       if hours > 1:
         sentence += "s"
-      sentence += ","
+      if resolution > 4:
+        sentence += ","
+      elif resolution > 3:
+        sentence += " et"
 
-    if force or minutes > 0:
+    if resolution > 3 and (force or minutes > 0):
       force = True
       sentence += " %i minute"%(minutes)
       if minutes > 1:
         sentence += "s"
-      sentence += " et"
+      if resolution > 4:
+        sentence += " et"
 
-    if force or seconds > 0:
+    if resolution > 4 and (force or seconds > 0):
       force = True
       sentence += " %i seconde"%(seconds)
       if seconds > 1:
@@ -165,6 +186,10 @@ class Message:
       if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
         self.send_chn ("%s: pong"%(self.sender))
 
+      elif re.match(".*(quel(le)? heure est[ -]il|what time is it)", messagel) is not None:
+        now = datetime.now()
+        self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
+
       elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
         result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
         self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
@@ -182,9 +207,24 @@ class Message:
           self.send_msg(result.group(2), result.group(1))
 
       else:
-        for imp in mods:
-          if imp.parseask(self):
+        for im in mods.keys():
+          if mods[im].parseask(self):
             return
+
+    elif self.content[0] == '`' and self.sender == self.srv.owner:
+      self.cmd = self.content[1:].split(' ')
+      if self.cmd[0] == "reload":
+        if len(self.cmd) > 1:
+          if self.cmd[1] in mods:
+            mods[self.cmd[1]].save_module ()
+            imp.reload(mods[self.cmd[1]])
+            mods[self.cmd[1]].load_module (self.srv.datas_dir)
+            self.send_snd ("Module %s rechargé avec succès."%self.cmd[1])
+          else:
+            self.send_snd ("Module inconnu %s."%self.cmd[1])
+        else:
+          self.send_snd ("Usage: `reload /module/.")
+          self.send_snd ("Loaded modules: " + ', '.join(mods.keys()) + ".")
 
     elif self.content[0] == '!':
       self.cmd = self.content[1:].split(' ')
@@ -196,16 +236,16 @@ class Message:
             self.send_snd("No help for command %s" % self.cmd[1])
         else:
           self.send_snd("Pour me demander quelque chose, commencez votre message par mon nom ou par l'une des commandes suivantes :")
-          for imp in mods:
-            self.send_snd("  - %s" % imp.help_tiny ())
+          for im in mods:
+            self.send_snd("  - %s" % im.help_tiny ())
 
-      for imp in mods:
-        if imp.parseanswer(self):
+      for im in mods.keys():
+        if mods[im].parseanswer(self):
           return
 
     else:
-      for imp in mods:
-        if imp.parselisten(self):
+      for im in mods.keys():
+        if mods[im].parselisten(self):
           return
 
   def extractDate (self):

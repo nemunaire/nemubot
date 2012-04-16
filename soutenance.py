@@ -69,7 +69,9 @@ class SiteSoutenances:
             last.end = None
           
   def update(self):
-    if datetime.now () - self.updated < timedelta(hours=1):
+    if self.findLast() is not None and datetime.now () - self.updated > timedelta(minutes=2):
+      return None
+    elif datetime.now () - self.updated < timedelta(hours=1):
       return self
     else:
       return None
@@ -85,7 +87,7 @@ class SiteSoutenances:
   def findLast(self):
     close = None
     for s in self.souts:
-      if s.state != "En attente" and s.start is not None and (close.start is None or close.start < s.start):
+      if s.state != "En attente" and s.start is not None and (close is None or close.rank < s.rank or close.hour.day > s.hour.day):
         close = s
     return close
 
@@ -100,7 +102,10 @@ class SiteSoutenances:
     ss = self.findAll(login)
     close = None
     for s in ss:
-      if close is None or close.hour > s.hour:
+      if close is not None:
+        print (close.hour)
+      print (s.hour)
+      if close is None or (close.hour < s.hour and close.hour.day >= datetime.datetime().day):
         close = s
     return close
 
@@ -137,11 +142,17 @@ def parseanswer (msg):
           msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
         else:
           if soutenance.start > soutenance.hour:
-            avre = "%s de retard"%msg.just_countdown(soutenance.hour - soutenance.start)
+            avre = "%s de *retard*"%msg.just_countdown(soutenance.start - soutenance.hour, 4)
           else:
-            avre = "%s d'avance"%msg.just_countdown(soutenance.start - soutenance.hour)
-          msg.send_chn ("Actuellement à la soutenance numéro %d commencée il y a %s avec %s."%(soutenance.rank, msg.just_countdown(datetime.now () - soutenance.start), avre))
+            avre = "%s *d'avance*"%msg.just_countdown(soutenance.hour - soutenance.start, 4)
+          msg.send_chn ("Actuellement à la soutenance numéro %d, commencée il y a %s avec %s."%(soutenance.rank, msg.just_countdown(datetime.now () - soutenance.start, 4), avre))
       
+    elif msg.cmd[1] == "assistants" or msg.cmd[1] == "assistant" or msg.cmd[1] == "yaka" or msg.cmd[1] == "yakas" or msg.cmd[1] == "acu" or msg.cmd[1] == "acus":
+      assistants = datas.findAssistants()
+      if len(assistants) > 0:
+        msg.send_chn ("Les %d assistants faisant passer les soutenances sont : %s." % (len(assistants), ', '.join(assistants.keys())))
+      else:
+        msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
     else:
       name = msg.cmd[1]
 
@@ -153,11 +164,18 @@ def parseanswer (msg):
           if soutenance.state == "En cours":
             msg.send_chn ("%s est actuellement en soutenance avec %s. Elle était prévue à %s, position %d."%(name, soutenance.assistant, soutenance.hour, soutenance.rank))
           elif soutenance.state == "Effectue":
-            msg.send_chn ("%s a passé sa soutenance avec %s. Elle a duré %s."%(name, soutenance.assistant, msg.just_countdown(soutenance.end - soutenance.start)))
+            msg.send_chn ("%s a passé sa soutenance avec %s. Elle a duré %s."%(name, soutenance.assistant, msg.just_countdown(soutenance.end - soutenance.start, 4)))
           elif soutenance.state == "Retard":
             msg.send_chn ("%s était en retard à sa soutenance de %s."%(name, soutenance.hour))
           else:
-            msg.send_chn ("Soutenance de %s : %s, position %d."%(name, soutenance.hour, soutenance.rank))
+            last = datas.findLast()
+            if last is not None:
+              if soutenance.hour + (last.start - last.hour) > datetime.now ():
+                msg.send_chn ("Soutenance de %s : %s, position %d ; estimation du passage : dans %s."%(name, soutenance.hour, soutenance.rank, msg.just_countdown((soutenance.hour - datetime.now ()) + (last.start - last.hour))))
+              else:
+                msg.send_chn ("Soutenance de %s : %s, position %d ; passage imminent."%(name, soutenance.hour, soutenance.rank))
+            else:
+              msg.send_chn ("Soutenance de %s : %s, position %d."%(name, soutenance.hour, soutenance.rank))
 
       elif msg.cmd[0] == "soutenances":
         souts = datas.findAll(name)
@@ -167,10 +185,10 @@ def parseanswer (msg):
           first = True
           for s in souts:
             if first:
-              msg.send_snd ("Soutenance(s) de %s : - %s ;"%(name, s.hour))
+              msg.send_snd ("Soutenance(s) de %s : - %s (position %d) ;"%(name, s.hour, s.rank))
               first = False
             else:
-              msg.send_snd ("                  %s  - %s ;"%(len(name)*' ', s.hour))
+              msg.send_snd ("                  %s  - %s (position %d) ;"%(len(name)*' ', s.hour, s.rank))
 
     return True
   return False

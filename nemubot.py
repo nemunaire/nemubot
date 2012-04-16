@@ -12,7 +12,7 @@ from xml.dom.minidom import parse
 
 imports = ["birthday", "qd", "events", "youtube", "watchWebsite", "soutenance"]
 imports_launch = ["watchWebsite"]
-mods = list ()
+mods = {}
 import server
 
 if len(sys.argv) != 2 and len(sys.argv) != 3:
@@ -23,8 +23,8 @@ if len(sys.argv) != 2 and len(sys.argv) != 3:
 def onSignal(signum, frame):
     print ("\nSIGINT receive, saving states and close")
 
-    for imp in mods:
-        imp.save_module ()
+    for imp in mods.keys():
+        mods[imp].save_module ()
 
     sys.exit (0)
 signal.signal(signal.SIGINT, onSignal)
@@ -41,12 +41,12 @@ servers = list ()
 
 for imp in imports:
     mod = __import__ (imp)
-    mods.append (mod)
+    mods[imp] = mod
     mod.load_module (basedir + "/datas/")
 
 for serveur in config.getElementsByTagName('server'):
     srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
-    srv.launch(mods)
+    srv.launch(mods, basedir + "/datas/")
     servers.append (srv)
 
 for imp in imports_launch:

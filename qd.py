@@ -161,7 +161,7 @@ def help_tiny ():
   return "!42: display scores\n!42 help: display the performed calculate\n!42 manche: display information about current round\n!42 /who/: show the /who/'s scores"
 
 def help_full ():
-  return "!anniv /who/: gives the remaining time before the anniversary of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
+  return "Help for 42 todo"
 
 
 def rev (tupl):
@@ -277,7 +277,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if len (msg.content) < 12 and (msg.content.strip().lower().startswith("leet time") or msg.content.strip().lower().startswith("leettime") or msg.content.strip().lower().startswith("l33t time") or msg.content.strip().lower().startswith("1337")):
+    if len (msg.content) < 12 and (msg.content.strip().lower().startswith("leet time") or msg.content.strip().lower().startswith("leettime") or msg.content.strip().lower().startswith("leetime") or msg.content.strip().lower().startswith("l33t time") or msg.content.strip().lower().startswith("1337")):
       if datetime.now().hour == 13 and datetime.now().minute == 37:
         if datetime.now().second == 0:
           getUser(msg.sender).playGreat()

@@ -37,7 +37,8 @@ class Server:
         self.send_msg (channel, msg, cmd, endl)
 
 
-    def launch(self, mods):
+    def launch(self, mods, datas_dir):
+      self.datas_dir = datas_dir
       _thread.start_new_thread(self.connect, (mods,))
 
     def accepted_channel(self, channel):
@@ -56,10 +57,10 @@ class Server:
 
         for line in temp:
           msg = message.Message (self, line)
-#          try:
-          msg.treat (mods)
-#          except:
-#              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+          try:
+              msg.treat (mods)
+          except:
+              print ("Une erreur est survenue lors du traitement du message : %s"%line)
 
 
     def connect(self, mods):
