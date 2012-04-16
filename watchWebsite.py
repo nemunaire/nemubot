@@ -126,8 +126,10 @@ class Site:
 
         time.sleep(self.updateTime)
       except:
-        print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
-        time.sleep(self.updateTime * 3)
+          print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          traceback.print_tb(exc_traceback)
+          time.sleep(self.updateTime * 3)
 
 
 
@@ -163,6 +165,7 @@ def save_module():
     if len(site.channels) > 0:
       for chan in site.channels:
         item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
+    item.appendChild(dom.createElement("state").appendChild(dom.createTextNode(pickle.dumps(site.lastpage))));
     top.appendChild(item);
 
   with open(filename, "w") as f:
