@@ -3,7 +3,10 @@
 import http.client
 import hashlib
 import sys
+import traceback
 import time
+import pickle
+import base64
 import _thread
 from urllib.parse import unquote
 from xml.dom.minidom import parse
@@ -33,7 +36,14 @@ class Site:
     else:
       self.updateTime = 60
     self.lastChange = 0
-    self.lastpage = None
+    if len(item.childNodes) > 0 and item.childNodes[0].nodeValue is not None:
+      self.lastpage = pickle.loads(base64.b64decode(item.childNodes[0].nodeValue.encode()))
+    elif item.nodeValue is not None:
+      self.lastpage = pickle.loads(base64.b64decode(item.nodeValue.encode()))
+    else:
+      self.lastpage = None
+    print (self.server, self.lastpage)
+
     self.run = True
 
     self.channels = list()
@@ -126,8 +136,10 @@ class Site:
 
         time.sleep(self.updateTime)
       except:
-        print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
-        time.sleep(self.updateTime * 3)
+          print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          traceback.print_tb(exc_traceback)
+          time.sleep(self.updateTime * 3)
 
 
 
@@ -163,6 +175,9 @@ def save_module():
     if len(site.channels) > 0:
       for chan in site.channels:
         item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
+    b64 = base64.b64encode(pickle.dumps(site.lastpage)).decode()
+    item.appendChild(newdoc.createTextNode(b64));
+    print (site.server)
     top.appendChild(item);
 
   with open(filename, "w") as f:
@@ -172,10 +187,10 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return None
+  return "Alert on changes on websites"
 
 def help_full ():
-  return None
+  return "This module is autonomous you can't interract with it."
 
 def parseanswer (msg):
   if msg.cmd[0] == "watch":

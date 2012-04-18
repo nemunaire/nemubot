@@ -53,7 +53,7 @@ class Atom:
     differ = list ()
     for k in other.entries.keys ():
       if self.updated is None and k not in self.entries:
-        self.updated = entry.updated
+        self.updated = other.entries[k].updated
       if k not in self.entries and other.entries[k].updated >= self.updated:
         differ.append (other.entries[k])
     return differ
@@ -61,11 +61,11 @@ class Atom:
 
 if __name__ == "__main__":
   content1 = ""
-  with open("rss.php", "r") as f:
+  with open("rss.php.1", "r") as f:
     for line in f:
       content1 += line
   content2 = ""
-  with open("rss.php.1", "r") as f:
+  with open("rss.php", "r") as f:
     for line in f:
       content2 += line
   a = Atom (content1)

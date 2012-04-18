@@ -83,6 +83,106 @@ class Message:
     self.srv.send_msg (self.sender, msg)
 
 
+
+
+  def treat (self, mods):
+    if self.cmd == "PING":
+      self.pong ()
+    elif self.cmd == "PRIVMSG" and self.srv.accepted_channel(self.channel):
+      self.parsemsg (mods)
+    elif self.cmd == "NICK":
+      print ("%s change de nom pour %s" % (self.sender, self.content))
+    elif self.cmd == "PART":
+      print ("%s vient de quitter %s" % (self.sender, self.channel))
+    elif self.cmd == "JOIN":
+      print ("%s arrive sur %s" % (self.sender, self.channel))
+
+
+  def pong (self):
+    self.srv.s.send(("PONG %s\r\n" % self.content).encode ())
+
+
+  def parsemsg (self, mods):
+    #Treat all messages starting with 'nemubot:' as distinct commands
+    if self.content.find("%s:"%self.srv.nick) == 0:
+      messagel = self.content.lower()
+
+      #Is it a simple response?
+      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
+        self.send_chn ("%s: pong"%(self.sender))
+
+      elif re.match(".*(quel(le)? heure est[ -]il|what time is it)", messagel) is not None:
+        now = datetime.now()
+        self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
+
+      elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
+        result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
+        self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
+      elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", messagel) is not None:
+        result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", self.content)
+        self.send_chn ("%s: %s"%(result.group(3), result.group(1)))
+
+      elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content) is not None:
+        result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content)
+        if self.srv.channels.count(result.group(1)):
+          self.send_msg(result.group(1), result.group(2))
+      elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content) is not None:
+        result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content)
+        if self.srv.channels.count(result.group(2)):
+          self.send_msg(result.group(2), result.group(1))
+
+      #Try modules
+      else:
+        for im in mods.keys():
+          if mods[im].parseask(self):
+            return
+
+    #Owner commands
+    elif self.content[0] == '`' and self.sender == self.srv.owner:
+      self.cmd = self.content[1:].split(' ')
+      if self.cmd[0] == "reload":
+        if len(self.cmd) > 1:
+          if self.cmd[1] in mods:
+            mods[self.cmd[1]].save_module ()
+            imp.reload(mods[self.cmd[1]])
+            mods[self.cmd[1]].load_module (self.srv.datas_dir)
+            self.send_snd ("Module %s rechargé avec succès."%self.cmd[1])
+          else:
+            self.send_snd ("Module inconnu %s."%self.cmd[1])
+        else:
+          self.send_snd ("Usage: `reload /module/.")
+          self.send_snd ("Loaded modules: " + ', '.join(mods.keys()) + ".")
+
+    #Messages stating with !
+    elif self.content[0] == '!':
+      self.cmd = self.content[1:].split(' ')
+      if self.cmd[0] == "help":
+        if len (self.cmd) > 1:
+          if self.cmd[1] in mods:
+            self.send_snd(mods[self.cmd[1]].help_full ())
+          else:
+            self.send_snd("No help for command %s" % self.cmd[1])
+        else:
+          self.send_snd("Pour me demander quelque chose, commencez votre message par mon nom ; je réagis à certain messages commençant par !, consulter l'aide de chaque module :")
+          for im in mods.keys():
+            self.send_snd("  - !help %s: %s" % (im, mods[im].help_tiny ()))
+
+      for im in mods.keys():
+        if mods[im].parseanswer(self):
+          return
+
+    else:
+      for im in mods.keys():
+        if mods[im].parselisten(self):
+          return
+
+
+##############################
+#                            #
+#   Extraction/Format text   #
+#                            #
+##############################
+
   def just_countdown (self, delta, resolution = 5):
     sec = delta.seconds
     hours, remainder = divmod(sec, 3600)
@@ -142,6 +242,7 @@ class Message:
 
 
   def countdown_format (self, date, msg_before, msg_after, timezone = None):
+    """Replace in a text %s by a sentence incidated the remaining time before/after an event"""
     if timezone != None:
       os.environ['TZ'] = timezone
       time.tzset()
@@ -160,95 +261,8 @@ class Message:
     return sentence_c % self.just_countdown(delta)
 
 
-  def treat (self, mods):
-    if self.cmd == "PING":
-      self.pong ()
-    elif self.cmd == "PRIVMSG":
-      self.parsemsg (mods)
-    elif self.cmd == "NICK":
-      print ("%s change de nom pour %s" % (self.sender, self.content))
-    elif self.cmd == "PART":
-      print ("%s vient de quitter %s" % (self.sender, self.channel))
-    elif self.cmd == "JOIN":
-      print ("%s arrive sur %s" % (self.sender, self.channel))
-
-
-  def pong (self):
-    self.srv.s.send(("PONG %s\r\n" % self.content).encode ())
-
-
-  def parsemsg (self, mods):
-    #Treat all messages starting with 'nemubot:' as distinct commands
-    if self.content.find("%s:"%self.srv.nick) == 0:
-      messagel = self.content.lower()
-
-      #Is it a simple response?
-      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
-        self.send_chn ("%s: pong"%(self.sender))
-
-      elif re.match(".*(quel(le)? heure est[ -]il|what time is it)", messagel) is not None:
-        now = datetime.now()
-        self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
-
-      elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
-        result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
-        self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
-      elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", messagel) is not None:
-        result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", self.content)
-        self.send_chn ("%s: %s"%(result.group(3), result.group(1)))
-
-      elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content) is not None:
-        result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content)
-        if self.srv.channels.count(result.group(1)):
-          self.send_msg(result.group(1), result.group(2))
-      elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content) is not None:
-        result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content)
-        if self.srv.channels.count(result.group(2)):
-          self.send_msg(result.group(2), result.group(1))
-
-      else:
-        for im in mods.keys():
-          if mods[im].parseask(self):
-            return
-
-    elif self.content[0] == '`' and self.sender == self.srv.owner:
-      self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "reload":
-        if len(self.cmd) > 1:
-          if self.cmd[1] in mods:
-            mods[self.cmd[1]].save_module ()
-            imp.reload(mods[self.cmd[1]])
-            mods[self.cmd[1]].load_module (self.srv.datas_dir)
-            self.send_snd ("Module %s rechargé avec succès."%self.cmd[1])
-          else:
-            self.send_snd ("Module inconnu %s."%self.cmd[1])
-        else:
-          self.send_snd ("Usage: `reload /module/.")
-          self.send_snd ("Loaded modules: " + ', '.join(mods.keys()) + ".")
-
-    elif self.content[0] == '!':
-      self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "help":
-        if len (self.cmd) > 1:
-          if self.cmd[1] in mods:
-            self.send_snd(mods[self.cmd[1]].help_full ())
-          else:
-            self.send_snd("No help for command %s" % self.cmd[1])
-        else:
-          self.send_snd("Pour me demander quelque chose, commencez votre message par mon nom ou par l'une des commandes suivantes :")
-          for im in mods:
-            self.send_snd("  - %s" % im.help_tiny ())
-
-      for im in mods.keys():
-        if mods[im].parseanswer(self):
-          return
-
-    else:
-      for im in mods.keys():
-        if mods[im].parselisten(self):
-          return
-
   def extractDate (self):
+    """Parse a message to extract a time and date"""
     msgl = self.content.lower ()
     result = re.match("^[^0-9]+(([0-9]{1,4})[^0-9]+([0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|octobre|oktober|novembre|november|decembre|décembre|december)([^0-9]+([0-9]{1,4}))?)[^0-9]+(([0-9]{1,2})[^0-9]*[h':]([^0-9]*([0-9]{1,2})([^0-9]*[m\":][^0-9]*([0-9]{1,2}))?)?)?.*$", msgl + " TXT")
     if result is not None:

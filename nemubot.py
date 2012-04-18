@@ -10,7 +10,7 @@ from datetime import datetime
 from datetime import timedelta
 from xml.dom.minidom import parse
 
-imports = ["birthday", "qd", "events", "youtube", "watchWebsite", "soutenance"]
+imports = ["birthday", "qd", "events", "youtube", "watchWebsite", "soutenance", "whereis"]
 imports_launch = ["watchWebsite"]
 mods = {}
 import server

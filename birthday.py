@@ -77,11 +77,11 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return "!anniv /who/: gives the remaining time before the anniversary of /who/"
+  return "People birthdays and ages"
 
 
 def help_full ():
-  return "!anniv /who/: gives the remaining time before the anniversary of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
+  return "!anniv /who/: gives the remaining time before the anniversary of /who/\n!age /who/: gives the age of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
 
 
 def findName(msg): 

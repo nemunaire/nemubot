@@ -16,10 +16,10 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return
+  return "music extractor"
 
 def help_full ():
-  return
+  return "To launch a convertion task, juste paste a youtube link (or compatible service) and wait for nemubot answer!"
 
 def parseanswer(msg):
   return False

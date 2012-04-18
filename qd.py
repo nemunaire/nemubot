@@ -158,10 +158,10 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return "!42: display scores\n!42 help: display the performed calculate\n!42 manche: display information about current round\n!42 /who/: show the /who/'s scores"
+  return "42 game!"
 
 def help_full ():
-  return "Help for 42 todo"
+  return "!42: display scores\n!42 help: display the performed calculate\n!42 manche: display information about current round\n!42 /who/: show the /who/'s scores"
 
 
 def rev (tupl):

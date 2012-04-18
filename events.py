@@ -89,11 +89,10 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return "!events FIXME"
-
+  return "events manager"
 
 def help_full ():
-  return "FIXME"
+  return "This module store a lot of events: ny, we, vacs, " + (", ".join(EVENTS.keys()))
 
 
 def parseanswer(msg):

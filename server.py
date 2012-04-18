@@ -28,13 +28,14 @@ class Server:
         self.channels.append(channel.getAttribute("name"))
 
     def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
-      for line in msg.split("\n"):
-        if line != "" and self.accepted_channel(channel):
-          self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+        if msg is not None and channel is not None:
+            for line in msg.split("\n"):
+                if line != "" and self.accepted_channel(channel):
+                    self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
 
     def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
-      for channel in self.channels:
-        self.send_msg (channel, msg, cmd, endl)
+        for channel in self.channels:
+            self.send_msg (channel, msg, cmd, endl)
 
 
     def launch(self, mods, datas_dir):
@@ -57,10 +58,10 @@ class Server:
 
         for line in temp:
           msg = message.Message (self, line)
-          try:
-              msg.treat (mods)
-          except:
-              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+          #try:
+          msg.treat (mods)
+          #except:
+              #print ("Une erreur est survenue lors du traitement du message : %s"%line)
 
 
     def connect(self, mods):

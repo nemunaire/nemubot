@@ -7,8 +7,6 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 
-stack = list()
-
 def getPage ():
   conn = http.client.HTTPSConnection("intra.acu.epita.fr")
   conn.request("GET", "/intra/sout_liste.html")
@@ -87,7 +85,7 @@ class SiteSoutenances:
   def findLast(self):
     close = None
     for s in self.souts:
-      if s.state != "En attente" and s.start is not None and (close is None or close.rank < s.rank or close.hour.day > s.hour.day):
+      if (s.state != "En attente" and s.start is not None and (close is None or close.rank < s.rank or close.hour.day > s.hour.day)) and (close is None or s.hour - close.hour < timedelta(seconds=1499)):
         close = s
     return close
 
@@ -120,10 +118,10 @@ def save_module():
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
-  return None
+  return "EPITA ING1 defenses module"
 
 def help_full ():
-  return None
+  return "!soutenance: gives information about current defenses state\n!soutenance /who/: gives the date of the next defense of /who/.\n!soutenances /who/: gives all defense dates of /who/"
 
 datas = None
 
