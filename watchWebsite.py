@@ -117,7 +117,7 @@ class Site:
           hash = hashlib.sha224(content).hexdigest()
           if hash != self.lastpage:
             if self.lastpage is not None:
-              self.send_message ()
+              self.send_message (self.message)
             self.lastpage = hash
             if self.lastChange <= 0:
               self.lastChange -= 1
@@ -138,7 +138,7 @@ class Site:
       except:
           print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
           exc_type, exc_value, exc_traceback = sys.exc_info()
-          traceback.print_tb(exc_traceback)
+          traceback.print_exception(exc_type, exc_value, exc_traceback)
           time.sleep(self.updateTime * 3)
 
 
@@ -177,7 +177,7 @@ def save_module():
         item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
     b64 = base64.b64encode(pickle.dumps(site.lastpage)).decode()
     item.appendChild(newdoc.createTextNode(b64));
-    print (site.server)
+    #print (site.server)
     top.appendChild(item);
 
   with open(filename, "w") as f:

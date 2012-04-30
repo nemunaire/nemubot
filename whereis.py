@@ -52,10 +52,8 @@ class User(object):
             return 'en midlab'
         elif self.ip.startswith('10.250'):
             return 'en cisco'
-        elif self.ip.startswith('10'):
-            return 'quelque part sur le PIE (%s)'%self.ip
         else:
-            return "chez lui"
+            return None
 
     @property
     def poste(self):
@@ -103,27 +101,40 @@ def help_tiny ():
   return "Find a user on the PIE"
 
 def help_full ():
-  return "!whereis /who/: gives the position of /who/."
+  return "!whereis /who/: gives the position of /who/.\n!whereare /who/ [/other who/ ...]: gives the position of /who/."
 
 datas = None
 
 def parseanswer (msg):
   global datas
-  if msg.cmd[0] == "whereis" or msg.cmd[0] == "ouest":
+  if msg.cmd[0] == "whereis" or msg.cmd[0] == "whereare" or msg.cmd[0] == "ouest" or msg.cmd[0] == "ousont":
     if datas is not None:
       datas = datas.update ()
     if datas is None:
       datas = UpdatedStorage()
 
-    if len(msg.cmd) >= 2:
-      name = msg.cmd[1]
-    else:
-      name = msg.sender
+    if len(msg.cmd) > 10:
+      msg.send_snd ("Demande moi moins de personnes à la fois dans ton !%s" % msg.cmd[0])
+      return True
 
-    if name in datas.users:
-      msg.send_chn ("%s est %s (%s)." %(name, datas.users[name].poste, unquote(datas.users[name].location)))
-    else:
-      msg.send_chn ("%s n'est pas connecté sur le PIE." % name)
+    pasla = list()
+
+    for name in msg.cmd:
+      if name == "whereis" or name == "whereare" or name == "ouest" or name == "ousont":
+        if len(msg.cmd) >= 2:
+          continue
+        else:
+          name = msg.sender
+
+      if name in datas.users:
+        msg.send_chn ("%s est %s (%s)." %(name, datas.users[name].poste, unquote(datas.users[name].location)))
+      else:
+        pasla.append(name)
+
+    if len(pasla) == 1:
+      msg.send_chn ("%s n'est pas connecté sur le PIE." % pasla[0])
+    elif len(pasla) > 1:
+      msg.send_chn ("%s ne sont pas connectés sur le PIE." % ", ".join(pasla))
 
     return True
   elif msg.cmd[0] == "ip":

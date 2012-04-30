@@ -57,35 +57,27 @@ class Score:
   def playFtt(self):
     if self.canPlay():
       self.ftt += 1
-      self.last = datetime.now()
   def playTwt(self):
     if self.canPlay():
       self.twt += 1
-      self.last = datetime.now()
   def playPi(self):
     if self.canPlay():
       self.pi += 1
-      self.last = datetime.now()
   def playNoutfound(self):
     if self.canPlay():
       self.notfound += 1
-      self.last = datetime.now()
   def playTen(self):
     if self.canPlay():
       self.tententen += 1
-      self.last = datetime.now()
   def playLeet(self):
     if self.canPlay():
       self.leet += 1
-      self.last = datetime.now()
   def playGreat(self):
     if self.canPlay():
       self.great += 1
-      self.last = datetime.now()
   def playBad(self):
     if self.canPlay():
       self.bad += 1
-      self.last = datetime.now()
 
   def toTuple(self):
     return (self.ftt, self.twt, self.pi, self.notfound, self.tententen, self.leet, self.great, self.bad)
@@ -97,6 +89,7 @@ class Score:
   def hasChanged(self):
     if self.changed:
       self.changed = False
+      self.last = datetime.now()
       return True
     else:
       return False
@@ -186,10 +179,12 @@ def parseanswer (msg):
           phrase = " %s n'a encore jamais joué,"%(msg.cmd[1])
       else:
         for nom, scr in sorted(SCORES.items(), key=rev, reverse=True):
-          if phrase == "":
-            phrase = " *%s: %d*,"%(nom, scr.score())
-          else:
-            phrase += " %s: %d,"%(nom, scr.score())
+          score = scr.score()
+          if score != 0:
+            if phrase == "":
+              phrase = " *%s: %d*,"%(nom, score)
+            else:
+              phrase += " %s: %d,"%(nom, score)
 
       msg.send_chn ("Scores :%s" % (phrase[0:len(phrase)-1]))
     return True
@@ -197,9 +192,9 @@ def parseanswer (msg):
     return False
 
 
-def win(s, who):
+def win(msg):
   global SCORES, MANCHE
-  who = who.lower()
+  who = msg.sender.lower()
 
   (num_manche, winner, nb_points, whosef, dayte) = MANCHE
 
@@ -207,7 +202,7 @@ def win(s, who):
   maxi_name = None
 
   for player in SCORES.keys():
-    scr = score(player)
+    scr = SCORES[player].score()
     if scr > maxi_scor:
       maxi_scor = scr
       maxi_name = player
@@ -216,12 +211,12 @@ def win(s, who):
   SCORES = dict()
 #  SCORES[maxi_name] = (-10, 0, -4, 0, 0, -2, 0)
 #  SCORES[maxi_name] = (0, 0, 0, 0, 0, 0, 0)
-  SCORES[who].newWinner
+  SCORES[who].newWinner()
 
   if who != maxi_name:
-    msg.send_global ("Félicitations %s, tu remportes cette manche terminée par %s, avec un score de %d !"%(maxi_name, who, maxi_scor))
+    msg.send_chn ("Félicitations %s, tu remportes cette manche terminée par %s, avec un score de %d !"%(maxi_name, who, maxi_scor))
   else:
-    msg.send_global ("Félicitations %s, tu remportes cette manche avec %d points !"%(maxi_name, maxi_scor))
+    msg.send_chn ("Félicitations %s, tu remportes cette manche avec %d points !"%(maxi_name, maxi_scor))
 
   MANCHE = (num_manche + 1, maxi_name, maxi_scor, who, datetime.now ())
 
@@ -244,58 +239,58 @@ def parselisten (msg):
 #  if msg.channel == "#nemutest":
   if msg.channel != "#nemutest":
     if (msg.content.strip().startswith("42") and len (msg.content) < 5) or ((msg.content.strip().lower().startswith("quarante-deux") or msg.content.strip().lower().startswith("quarante deux")) and len (msg.content) < 17):
-      if datetime.now().minute == 10 and datetime.now().second == 10 and datetime.now().hour == 10:
+      if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
         getUser(msg.sender).playTen()
         getUser(msg.sender).playGreat()
-      elif datetime.now().minute == 42:
-        if datetime.now().second == 0:
+      elif msg.time.minute == 42:
+        if msg.time.second == 0:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playFtt()
       else:
         getUser(msg.sender).playBad()
 
     if (msg.content.strip().startswith("23") and len (msg.content) < 5) or ((msg.content.strip().lower().startswith("vingt-trois") or msg.content.strip().lower().startswith("vingt trois")) and len (msg.content) < 14):
-      if datetime.now().minute == 23:
-        if datetime.now().second == 0:
+      if msg.time.minute == 23:
+        if msg.time.second == 0:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playTwt()
       else:
         getUser(msg.sender).playBad()
 
     if (msg.content.strip().startswith("101010") and len (msg.content) < 9):
-      if datetime.now().minute == 10 and datetime.now().hour == 10:
-        if datetime.now().second == 10:
+      if msg.time.minute == 10 and msg.time.hour == 10:
+        if msg.time.second == 10:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playTen()
       else:
         getUser(msg.sender).playBad()
 
     if (msg.content.strip().startswith("12345") and len (msg.content) < 8) or (msg.content.strip().startswith("012345") and len (msg.content) < 9):
-      if datetime.now().hour == 1 and datetime.now().minute == 23 and datetime.now().second == 45:
+      if msg.time.hour == 1 and msg.time.minute == 23 and msg.time.second == 45:
         getUser(msg.sender).playGreat()
         getUser(msg.sender).playTwt()
       else:
         getUser(msg.sender).playBad()
 
     if len (msg.content) < 12 and (msg.content.strip().lower().startswith("leet time") or msg.content.strip().lower().startswith("leettime") or msg.content.strip().lower().startswith("leetime") or msg.content.strip().lower().startswith("l33t time") or msg.content.strip().lower().startswith("1337")):
-      if datetime.now().hour == 13 and datetime.now().minute == 37:
-        if datetime.now().second == 0:
+      if msg.time.hour == 13 and msg.time.minute == 37:
+        if msg.time.second == 0:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playLeet()
       else:
         getUser(msg.sender).playBad()
 
     if len (msg.content) < 11 and (msg.content.strip().lower().startswith("pi time") or msg.content.strip().lower().startswith("pitime") or msg.content.strip().lower().startswith("3.14 time")):
-      if datetime.now().hour == 3 and datetime.now().minute == 14:
-        if datetime.now().second == 15 or datetime.now().second == 16:
+      if msg.time.hour == 3 and msg.time.minute == 14:
+        if msg.time.second == 15 or msg.time.second == 16:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playPi()
       else:
         getUser(msg.sender).playBad()
 
     if len (msg.content) < 16 and (msg.content.strip().lower().startswith("time not found") or msg.content.strip().lower().startswith("timenotfound") or msg.content.strip().lower().startswith("404 time")) or (len (msg.content) < 6 and msg.content.strip().lower().startswith("404")):
-      if datetime.now().hour == 4 and datetime.now().minute == 4:
-        if datetime.now().second == 0 or datetime.now().second == 4:
+      if msg.time.hour == 4 and msg.time.minute == 4:
+        if msg.time.second == 0 or msg.time.second == 4:
           getUser(msg.sender).playGreat()
         getUser(msg.sender).playNotfound()
       else:
@@ -303,7 +298,7 @@ def parselisten (msg):
 
     if getUser(msg.sender).isWinner():
       print ("Nous avons un vainqueur ! Nouvelle manche :p")
-      win(s, msg.sender)
+      win(msg)
     elif getUser(msg.sender).hasChanged():
       save_module ()
   return False

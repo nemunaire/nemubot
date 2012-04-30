@@ -1,3 +1,5 @@
+import sys
+import traceback
 import socket
 import _thread
 import time
@@ -23,15 +25,25 @@ class Server:
       else:
         self.password = None
 
+      self.listen_nick = True
+
       self.channels = list()
       for channel in server.getElementsByTagName('channel'):
         self.channels.append(channel.getAttribute("name"))
 
-    def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+    def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if msg is not None and channel is not None:
             for line in msg.split("\n"):
-                if line != "" and self.accepted_channel(channel):
+                if line != "":
                     self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+
+    def send_msg_usr (self, user, msg):
+        if user is not None and user[0] != "#":
+            self.send_msg_final(user, msg)
+
+    def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        if self.accepted_channel(channel):
+            self.send_msg_final(channel, msg, cmd, endl)
 
     def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
         for channel in self.channels:
@@ -43,7 +55,10 @@ class Server:
       _thread.start_new_thread(self.connect, (mods,))
 
     def accepted_channel(self, channel):
-      return (self.channels.count(channel) != -1)
+        if self.listen_nick:
+            return self.channels.count(channel) or channel == self.nick
+        else:
+            return self.channels.count(channel)
 
     def read(self, mods):
       self.readbuffer = "" #Here we store all the messages from server
@@ -58,10 +73,12 @@ class Server:
 
         for line in temp:
           msg = message.Message (self, line)
-          #try:
-          msg.treat (mods)
-          #except:
-              #print ("Une erreur est survenue lors du traitement du message : %s"%line)
+          try:
+              msg.treat (mods)
+          except:
+              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+              exc_type, exc_value, exc_traceback = sys.exc_info()
+              traceback.print_exception(exc_type, exc_value, exc_traceback)
 
 
     def connect(self, mods):

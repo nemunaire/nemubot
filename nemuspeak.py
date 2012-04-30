@@ -1,9 +1,8 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
 # coding=utf-8
 
 import sys
 import socket
-import string
 import signal
 import os
 import re
@@ -11,10 +10,10 @@ import subprocess
 from datetime import datetime
 from datetime import timedelta
 from xml.dom.minidom import parse
-import thread
+import _thread
 
 if len(sys.argv) <= 1:
-    print "This script takes exactly 1 arg: a XML config file"
+    print ("This script takes exactly 1 arg: a XML config file")
     sys.exit(1)
 
 def onSignal(signum, frame):
@@ -22,13 +21,19 @@ def onSignal(signum, frame):
     sys.exit (0)
 signal.signal(signal.SIGINT, onSignal)
 
+if len(sys.argv) == 3:
+    basedir = sys.argv[2]
+else:
+    basedir = "./"
+
+import message
 
 SMILEY = list()
 CORRECTIONS = list()
 g_queue = list()
 talkEC = 0
 stopSpk = 0
-lastmsg = []
+lastmsg = None
 
 dom = parse(sys.argv[1])
 
@@ -57,13 +62,14 @@ for correct in config.getElementsByTagName('correction'):
         CORRECTIONS.append((" " + (correct.getAttribute("bad") + " "), (" " + correct.getAttribute("good") + " ")))
 print ("%d corrections loaded"%len(CORRECTIONS))
 
+
 def speak(endstate):
     global lastmsg, g_queue, talkEC, stopSpk
     talkEC = 1
     stopSpk = 0
 
-    if len(lastmsg) < 1:
-        lastmsg = g_queue.pop(0)
+    if lastmsg is None:
+        lastmsg = message.Message(None, "")
 
     while not stopSpk and len(g_queue) > 0:
         msg = g_queue.pop(0)
@@ -71,51 +77,55 @@ def speak(endstate):
         sentence = ""
         force = 0
 
-        if force or msg[2] - lastmsg[2] > timedelta(0, 500):
-            sentence += "A {0} heure {1} : ".format(msg[2].hour, msg[2].minute)
+        #Skip identic body
+        if msg.content == lastmsg.content:
+            continue
+
+        if force or msg.time - lastmsg.time > timedelta(0, 500):
+            sentence += "A {0} heure {1} : ".format(msg.time.hour, msg.time.minute)
             force = 1
 
-        if force or msg[0] != lastmsg[0]:
-            if msg[0] == OWNER:
+        if force or msg.channel != lastmsg.channel:
+            if msg.channel == OWNER:
                 sentence += "En message priver. " #Just to avoid é :p
             else:
-                sentence += "Sur " + msg[0] + ". "
+                sentence += "Sur " + msg.channel + ". "
             force = 1
 
         action = 0
-        if msg[3].find("ACTION ") == 1:
-            sentence += msg[1] + " "
-            msg[3] = msg[3].replace("ACTION ", "")
+        if msg.content.find("ACTION ") == 1:
+            sentence += msg.sender + " "
+            msg.content = msg.content.replace("ACTION ", "")
             action = 1
         for (txt, mood) in SMILEY:
-            if msg[3].find(txt) >= 0:
-                sentence += msg[1] + (" %s : "%mood)
-                msg[3] = msg[3].replace(txt, "")
+            if msg.content.find(txt) >= 0:
+                sentence += msg.sender + (" %s : "%mood)
+                msg.content = msg.content.replace(txt, "")
                 action = 1
                 break
 
         for (bad, good) in CORRECTIONS:
-            if msg[3].find(bad) >= 0:
-                msg[3] = (" " + msg[3] + " ").replace(bad, good)
+            if msg.content.find(bad) >= 0:
+                msg.content = (" " + msg.content + " ").replace(bad, good)
 
-        if action == 0 and (force or msg[1] != lastmsg[1]):
-            sentence += msg[1] + " dit : "
+        if action == 0 and (force or msg.sender != lastmsg.sender):
+            sentence += msg.sender + " dit : "
 
-        if re.match(".*(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+.*", msg[3]) is not None:
-            msg[3] = re.sub("(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+", " U.R.L Y.C.C ", msg[3])
+        if re.match(".*(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+.*", msg.content) is not None:
+            msg.content = re.sub("(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+", " U.R.L Y.C.C ", msg.content)
 
-        if re.match(".*https?://.*", msg[3]) is not None:
-            msg[3] = re.sub(r'https?://[^ ]+', " U.R.L ", msg[3])
+        if re.match(".*https?://.*", msg.content) is not None:
+            msg.content = re.sub(r'https?://[^ ]+', " U.R.L ", msg.content)
 
-        if re.match("^ *[^a-zA-Z0-9 ][a-zA-Z]{2}[^a-zA-Z0-9 ]", msg[3]) is not None:
+        if re.match("^ *[^a-zA-Z0-9 ][a-zA-Z]{2}[^a-zA-Z0-9 ]", msg.content) is not None:
             if sentence != "":
                 intro = subprocess.call(["espeak", "-v", "fr", sentence])
                 #intro.wait()
 
-            lang = msg[3][1:3].lower()
-            sentence = msg[3][4:]
+            lang = msg.content[1:3].lower()
+            sentence = msg.content[4:]
         else:
-            sentence += msg[3]
+            sentence += msg.content
 
         spk = subprocess.call(["espeak", "-v", lang, sentence])
         #spk.wait()
@@ -126,74 +136,6 @@ def speak(endstate):
         talkEC = endstate
     else:
         talkEC = 1
-
-
-def parsemsg (msg, CHANLIST):
-    global g_queue, NICK, stopSpk, talkEC
-    complete = msg[1:].split(':',1) #Parse the message into useful data
-    info = complete[0].split(' ')
-    msgpart = complete[1]
-    sender = info[0].split('!')
-
-    #Skip on empty content
-    if len(msgpart) <= 0:
-        return
-
-    #Bad format, try to fix that
-    if len(info) == 1:
-        pv = msg.index(" ", msg.index("PRIVMSG") + 9)
-        complete = [ msg[1:pv], msg[pv:] ]
-        info = complete[0].split(' ')
-        msgpart = complete[1].strip()
-        if msgpart[0] == ":":
-            msgpart = msgpart[1:]
-        sender = info[0].split('!')
-
-    if len(CHANLIST) == 0 or CHANLIST.count(info[2]) >= 0 or info[2] == NICK:
-        #Treat all messages starting with '`' as command
-        if msgpart[0] == '`' and sender[0] == OWNER:
-            cmd=msgpart[1:].split(' ')
-
-            if cmd[0] == 'stop':
-                print "Bye!"
-                sys.exit (0)
-
-            elif cmd[0] == 'speak':
-                thread.start_new_thread(speak, (0,))
-
-            elif cmd[0] == 'reset':
-                while len(g_queue) > 0:
-                    g_queue.pop()
-
-            elif cmd[0] == 'save':
-                if talkEC == 0:
-                    talkEC = 1
-                stopSpk = 1
-
-            elif cmd[0] == 'test':
-                parsemsg(":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(CHANLIST[0]), CHANLIST)
-
-            elif cmd[0] == 'list':
-                print "Currently listened channels:"
-                for chan in CHANLIST:
-                    print chan
-                print "-- "
-
-            elif cmd[0] == 'add' and len(cmd) > 1:
-                CHANLIST.append(cmd[1])
-                print cmd[1] + " added to listened channels"
-
-            elif cmd[0] == 'del' and len(cmd) > 1:
-                if CHANLIST.count(cmd[1]) > 0:
-                    CHANLIST.remove(cmd[1])
-                    print cmd[1] + " removed from listened channels"
-                else:
-                    print cmd[1] + " not in listened channels"
-
-        elif sender[0] != OWNER and (len(CHANLIST) == 0 or CHANLIST.count(info[2]) > 0 or info[2] == OWNER):
-            g_queue.append([info[2], sender[0], datetime.now(), msgpart])
-            if talkEC == 0:
-                thread.start_new_thread(speak, (0,))
 
 
 class Server:
@@ -216,33 +158,38 @@ class Server:
             self.channels.append(channel.getAttribute("name"))
 
     def launch(self):
-        thread.start_new_thread(self.connect, ())
+        _thread.start_new_thread(self.connect, ())
+
+    def authorize(self, msg):
+        return msg.sender != OWNER and (msg.channel == OWNER or msg.channel in self.channels)
 
     def read(self):
         readbuffer = "" #Here we store all the messages from server
         while 1:
-            readbuffer = readbuffer + self.s.recv(1024) #recieve server messages
+            try:
+                readbuffer = readbuffer + self.s.recv(1024).decode() #recieve server messages
+            except UnicodeDecodeError:
+                print ("ERREUR de décodage unicode")
+                continue
             temp = readbuffer.split("\n")
             readbuffer = temp.pop( )
 
             for line in temp:
-                line = line.rstrip() #remove trailing 'rn'
-
-                if line.find('PRIVMSG') != -1: #Call a parsing function
-                    parsemsg(unicode(line, encoding='utf-8', errors='ignore'), self.channels)
-
-                line = line.split()
-
-                if(line[0] == 'PING'): #If server pings then pong
-                    self.s.send("PONG %s\r\n" % line[1])
+                msg = message.Message(self, line)
+                if msg.cmd == "PING":
+                    self.s.send(("PONG %s\r\n" % msg.content).encode ())
+                elif msg.cmd == "PRIVMSG" and self.authorize(msg):
+                    g_queue.append(msg)
+                    if talkEC == 0:
+                        _thread.start_new_thread(speak, (0,))
 
     def connect(self):
         self.s = socket.socket( ) #Create the socket
         self.s.connect((self.host, self.port)) #Connect to server
         if self.password != None:
-            self.s.send("PASS %s\r\n" % self.password)
-        self.s.send("NICK %s\r\n" % NICK)
-        self.s.send("USER %s %s bla :%s\r\n" % (NICK, self.host, REALNAME))
+            self.s.send(("PASS %s\r\n" % self.password).encode())
+        self.s.send(("NICK %s\r\n" % NICK).encode())
+        self.s.send(("USER %s %s bla :%s\r\n" % (NICK, self.host, REALNAME)).encode())
         self.read()
 
 for server in config.getElementsByTagName('server'):
@@ -250,7 +197,7 @@ for server in config.getElementsByTagName('server'):
     srv.launch()
 
 def sighup_h(signum, frame):
-    print "Signal reçu..."
+    print ("Signal reçu...")
     if os.path.exists("/tmp/isPresent"):
         thread.start_new_thread(speak, (0,))
     else:

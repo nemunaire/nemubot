@@ -26,7 +26,7 @@ class AtomEntry:
       self.link = node.getElementsByTagName("link")[0].getAttribute ("href")
     else:
       self.link = None
-    if len (node.getElementsByTagName("category")) > 1:
+    if len (node.getElementsByTagName("category")) >= 1:
       self.category = node.getElementsByTagName("category")[0].getAttribute ("term")
     else:
       self.category = None

@@ -5,15 +5,30 @@ import sys
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
+import time
 from xml.dom.minidom import parse
 from xml.dom.minidom import parseString
 from xml.dom.minidom import getDOMImplementation
 
 filename = ""
 EVENTS = {}
+STREND = {}
+
+class Strend:
+  def __init__(self, item):
+    if item is not None:
+      self.name = item.getAttribute("name")
+      self.start = datetime.fromtimestamp (time.mktime (time.strptime (item.getAttribute("start")[:19], "%Y-%m-%d %H:%M:%S")))
+      self.proprio = item.getAttribute("proprio")
+    else:
+      self.start = datetime.now()
+
 
 def xmlparse(node):
   """Parse the given node and add events to the global list."""
+  for item in node.getElementsByTagName("strend"):
+    STREND[item.getAttribute("name")] = Strend(item)
+
   for item in node.getElementsByTagName("event"):
     if (item.hasAttribute("year")):
       year = int(item.getAttribute("year"))
@@ -48,8 +63,9 @@ def xmlparse(node):
 
 def load_module(datas_path):
   """Load this module"""
-  global EVENTS, filename
+  global EVENTS, STREND, filename
   EVENTS = {}
+  STREND = {}
   filename = datas_path + "/events.xml"
 
   sys.stdout.write ("Loading events ... ")
@@ -66,6 +82,10 @@ def save_module():
   impl = getDOMImplementation()
   newdoc = impl.createDocument(None, 'events', None)
   top = newdoc.documentElement
+
+  for name in STREND.keys():
+    item = parseString ('<strend name="%s" start="%s" proprio="%s" />' % (name, STREND[name].start, STREND[name].proprio)).documentElement
+    top.appendChild(item);
 
   for name in EVENTS.keys():
     (day, msg_before, msg_after) = EVENTS[name]
@@ -96,6 +116,7 @@ def help_full ():
 
 
 def parseanswer(msg):
+  global STREND
   if msg.cmd[0] == "we" or msg.cmd[0] == "week-end" or msg.cmd[0] == "weekend":
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
@@ -116,6 +137,30 @@ def parseanswer(msg):
                             "Il reste %s avant les vacances :)",
                             "Profitons, c'est les vacances depuis %s."))
     return True
+  elif msg.cmd[0] == "start" and len(msg.cmd) > 1:
+    if msg.cmd[1] not in STREND:
+      STREND[msg.cmd[1]] = Strend(None)
+      STREND[msg.cmd[1]].proprio = msg.sender
+      STREND[msg.cmd[1]].name = msg.cmd[1]
+
+      msg.send_snd ("%s commencé le %s"% (msg.cmd[1], datetime.now()))
+    else:
+      msg.send_snd ("%s existe déjà."% (msg.cmd[1]))
+
+  elif msg.cmd[0] == "end" and len(msg.cmd) > 1:
+    if msg.cmd[1] in STREND:
+      msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - STREND[msg.cmd[1]].start)))
+      if STREND[msg.cmd[1]].proprio == msg.sender:
+        del STREND[msg.cmd[1]]
+      else:
+        msg.send_snd ("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmd[1], STREND[msg.cmd[1]].proprio))
+    else:
+      msg.send_snd ("%s n'est pas un compteur connu."% (msg.cmd[1]))
+
+  elif msg.cmd[0] == "eventslist" or msg.cmd[0] == "eventlist" or msg.cmd[0] == "eventsliste" or msg.cmd[0] == "eventliste":
+    msg.send_snd ("Compteurs connus : %s." % ", ".join(STREND.keys()))
+  elif msg.cmd[0] in STREND:
+    msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - STREND[msg.cmd[0]].start)))
   elif msg.cmd[0] in EVENTS:
     (day, msg_before, msg_after) = EVENTS[msg.cmd[0]]
     if day is None:

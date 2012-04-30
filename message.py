@@ -1,17 +1,95 @@
-#!/usr/bin/python2.7
 # coding=utf-8
 
 from datetime import datetime
+from datetime import timedelta
 import re
-import socket
+import sys
 import string
 import time
 import imp
+import random
+from xml.dom.minidom import parse
+from xml.dom.minidom import parseString
+from xml.dom.minidom import getDOMImplementation
+
+BANLIST = []
+CREDITS = {}
+filename = ""
+
+def load_module(datas_path):
+  global BANLIST, CREDITS, filename
+  CREDITS = dict ()
+
+  BANLIST = list ()
+  filename = datas_path + "/general.xml"
+
+  sys.stdout.write ("Loading banlist ... ")
+  dom = parse(filename)
+  for item in dom.documentElement.getElementsByTagName("ban"):
+    BANLIST.append(item.getAttribute("name"))
+  print ("done (%d users banned)" % (len(BANLIST)))
+
+
+def save_module():
+  global BANLIST, ALIAS, filename
+  sys.stdout.write ("Saving banlist ... ")
+
+  impl = getDOMImplementation()
+  newdoc = impl.createDocument(None, 'global', None)
+  top = newdoc.documentElement
+
+  for name in BANLIST:
+    item = parseString ('<ban name="%s" />' % (name)).documentElement
+    top.appendChild(item);
+
+  with open(filename, "w") as f:
+    newdoc.writexml (f)
+  print ("done")
+
+
+class Credits:
+  def __init__ (self, name):
+    self.name = name
+    self.credits = 5
+    self.randsec = timedelta(seconds=random.randint(0, 55))
+    self.lastmessage = datetime.now() + self.randsec
+    self.iask = True
+
+  def ask(self):
+    if self.name in BANLIST:
+      return False
+
+    now = datetime.now() + self.randsec
+    if self.lastmessage.minute == now.minute and (self.lastmessage.second == now.second or self.lastmessage.second == now.second - 1):
+      print("AUTOBAN %s: too low time between messages" % self.name)
+      BANLIST.append(self.name)
+      #self.credits -= self.credits / 2 #Une alternative
+      return False
+
+    self.iask = True
+    return self.credits > 0 or self.lastmessage.minute != now.minute
+
+  def speak(self):
+    if self.iask:
+      self.iask = False
+      now = datetime.now() + self.randsec
+      if self.lastmessage.minute != now.minute:
+        self.credits = min (15, self.credits + 5)
+      self.lastmessage = now
+
+    self.credits -= 1
+    return self.credits > -3
+
+  def to_string(self):
+    print ("%s: %d ; reset: %d" % (self.name, self.credits, self.randsec.seconds))
+
 
 class Message:
   def __init__ (self, srv, line):
     self.srv = srv
     self.time = datetime.now ()
+    self.channel = ""
+    self.content = ""
     line = line.rstrip() #remove trailing 'rn'
 
     if line.find(' PRIVMSG ') != -1: #Call a parsing function
@@ -20,9 +98,20 @@ class Message:
 
       self.cmd = "PRIVMSG"
       self.sender = (info[0].split('!'))[0]
+      self.realname = (info[0].split('!'))[1]
       self.channel = info[2]
       self.content = complete[1]
 
+    elif line.find(' ACTION ') != -1:
+      complete = line[1:].split(':',1) #Parse the message into useful data
+      info = complete[0].split(' ')
+
+      self.cmd = "ACTION"
+      self.sender = (info[0].split('!'))[0]
+      self.realname = (info[0].split('!'))[1]
+      self.channel = info[2]
+      self.content = complete[1]
+      
     elif line.find(' NICK ') != -1:
       complete = line[1:].split(':',1) #Parse the message into useful data
       if len(complete) > 1:
@@ -30,6 +119,7 @@ class Message:
 
         self.cmd = "NICK"
         self.sender = (info[0].split('!'))[0]
+        self.realname = (info[0].split('!'))[1]
         self.content = complete[1]
       else:
         self.cmd = "NONE"
@@ -41,6 +131,7 @@ class Message:
 
         self.cmd = "JOIN"
         self.sender = (info[0].split('!'))[0]
+        self.realname = (info[0].split('!'))[1]
         self.channel = complete[1]
       else:
         self.cmd = "NONE"
@@ -51,11 +142,22 @@ class Message:
 
       self.cmd = "PART"
       self.sender = (info[0].split('!'))[0]
+      self.realname = (info[0].split('!'))[1]
       self.channel = info[2]
       if len (complete) > 1:
         self.content = complete[1]
       else:
         self.content = ""
+
+    elif line.find(' MODE ') != -1:
+      complete = line[1:].split(' ')
+      if len(complete) >= 5:
+        self.cmd = "MODE"
+        self.channel = complete[2]
+        self.mode = complete[3]
+        self.sender = complete[4]
+      else:
+        self.cmd = "NONE"
 
     elif line.find(' PING ') != -1: #If server pings then pong
       line = line.split()
@@ -69,26 +171,41 @@ class Message:
 
 
   def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
-    self.srv.send_msg (channel, msg, cmd, endl)
+    if CREDITS[self.realname].speak():
+      self.srv.send_msg (channel, msg, cmd, endl)
 
   def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
-    self.srv.send_global (msg, cmd, endl)
+    if CREDITS[self.realname].speak():
+      self.srv.send_global (msg, cmd, endl)
 
   def send_chn (self, msg):
     """Send msg on the same channel as receive message"""
-    self.srv.send_msg (self.channel, msg)
+    if CREDITS[self.realname].speak():
+      if self.channel == self.srv.nick:
+        self.send_snd (msg)
+      else:
+        self.srv.send_msg (self.channel, msg)
 
   def send_snd (self, msg):
     """Send msg to the sender who send the original message"""
-    self.srv.send_msg (self.sender, msg)
+    if CREDITS[self.realname].speak():
+      self.srv.send_msg_usr (self.sender, msg)
 
 
 
+  def authorize (self):
+    if self.realname not in CREDITS:
+      CREDITS[self.realname] = Credits(self.realname)
+    elif self.content[0] == '`':
+      return True
+    elif not CREDITS[self.realname].ask():
+      return False
+    return self.srv.accepted_channel(self.channel)
 
   def treat (self, mods):
     if self.cmd == "PING":
       self.pong ()
-    elif self.cmd == "PRIVMSG" and self.srv.accepted_channel(self.channel):
+    elif self.cmd == "PRIVMSG" and self.authorize():
       self.parsemsg (mods)
     elif self.cmd == "NICK":
       print ("%s change de nom pour %s" % (self.sender, self.content))
@@ -101,6 +218,12 @@ class Message:
   def pong (self):
     self.srv.s.send(("PONG %s\r\n" % self.content).encode ())
 
+
+  def reparsemsg(self):
+    if self.mods is not None:
+      self.parsemsg(self.mods)
+    else:
+      print ("Can't reparse message")
 
   def parsemsg (self, mods):
     #Treat all messages starting with 'nemubot:' as distinct commands
@@ -124,12 +247,10 @@ class Message:
 
       elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content) is not None:
         result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content)
-        if self.srv.channels.count(result.group(1)):
-          self.send_msg(result.group(1), result.group(2))
+        self.send_msg(result.group(1), result.group(2))
       elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content) is not None:
         result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content)
-        if self.srv.channels.count(result.group(2)):
-          self.send_msg(result.group(2), result.group(1))
+        self.send_msg(result.group(2), result.group(1))
 
       #Try modules
       else:
@@ -153,8 +274,27 @@ class Message:
           self.send_snd ("Usage: `reload /module/.")
           self.send_snd ("Loaded modules: " + ', '.join(mods.keys()) + ".")
 
+      elif self.cmd[0] == "ban":
+        if len(self.cmd) > 1:
+          BANLIST.append(self.cmd[1])
+        else:
+          print (BANLIST)
+      elif self.cmd[0] == "banlist":
+          print (BANLIST)
+      elif self.cmd[0] == "unban":
+        if len(self.cmd) > 1:
+          BANLIST.remove(self.cmd[1])
+
+      elif self.cmd[0] == "credits":
+        if len(self.cmd) > 1 and self.cmd[1] in CREDITS:
+          self.send_chn ("%s a %d crédits." % (self.cmd[1], CREDITS[self.cmd[1]]))
+        else:
+          for c in CREDITS.keys():
+            print (CREDITS[c].to_string())
+
     #Messages stating with !
     elif self.content[0] == '!':
+      self.mods = mods
       self.cmd = self.content[1:].split(' ')
       if self.cmd[0] == "help":
         if len (self.cmd) > 1:
