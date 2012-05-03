@@ -62,8 +62,8 @@ class Credits:
     now = datetime.now() + self.randsec
     if self.lastmessage.minute == now.minute and (self.lastmessage.second == now.second or self.lastmessage.second == now.second - 1):
       print("AUTOBAN %s: too low time between messages" % self.name)
-      BANLIST.append(self.name)
-      #self.credits -= self.credits / 2 #Une alternative
+      #BANLIST.append(self.name)
+      self.credits -= self.credits / 2 #Une alternative
       return False
 
     self.iask = True
@@ -168,6 +168,10 @@ class Message:
     else:
       self.cmd = "UNKNOWN"
       print (line)
+
+  @property
+  def is_owner(self):
+    return self.sender == self.srv.owner
 
 
   def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):

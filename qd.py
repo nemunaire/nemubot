@@ -41,6 +41,16 @@ class Score:
     self.great = int(item.getAttribute("great"))
     self.bad = int(item.getAttribute("bad"))
 
+  def merge(self, other):
+    self.ftt += other.ftt
+    self.twt += other.twt
+    self.pi += other.pi
+    self.notfound += other.notfound
+    self.tententen += other.tententen
+    self.leet += other.leet
+    self.great += other.great
+    self.bad += other.bad
+
   def newWinner(self):
     self.ftt = 0
     self.twt = 0
@@ -164,7 +174,17 @@ def rev (tupl):
 def parseanswer (msg):
   if msg.cmd[0] == "42" or msg.cmd[0] == "score" or msg.cmd[0] == "scores":
     global SCORES, MANCHE
-    if len(msg.cmd) > 1 and (msg.cmd[1] == "help" or msg.cmd[1] == "aide"):
+    if len(msg.cmd) > 3 and msg.is_owner and (msg.cmd[1] == "merge"):
+      if msg.cmd[2] in SCORES and msg.cmd[3] in SCORES:
+        SCORES[msg.cmd[2]].merge (SCORES[msg.cmd[3]])
+        del SCORES[msg.cmd[3]]
+        msg.send_chn ("%s a été correctement fusionné avec %s."%(msg.cmd[3], msg.cmd[2]))
+      else:
+        if msg.cmd[2] not in SCORES:
+          msg.send_chn ("%s n'est pas un joueur connu."%msg.cmd[2])
+        elif msg.cmd[3] not in SCORES:
+          msg.send_chn ("%s n'est pas un joueur connu."%msg.cmd[3])
+    elif len(msg.cmd) > 1 and (msg.cmd[1] == "help" or msg.cmd[1] == "aide"):
       msg.send_chn ("Formule : normal * 2 - bad * 10 + great * 5 + leet * 3 + pi * 3.1415 + dt + not_found * 4.04")
     elif len(msg.cmd) > 1 and (msg.cmd[1] == "manche" or msg.cmd[1] == "round"):
       msg.send_chn ("Nous sommes dans la %de manche, gagnée par %s avec %d points et commencée par %s le %s"%MANCHE)
@@ -173,8 +193,8 @@ def parseanswer (msg):
       phrase = ""
 
       if len(msg.cmd) > 1:
-        if msg.cmd[1].lower() in SCORES:
-          phrase += " " + msg.cmd[1] + ": " + SCORES[msg.cmd[1].lower()].details()
+        if msg.cmd[1] in SCORES:
+          phrase += " " + msg.cmd[1] + ": " + SCORES[msg.cmd[1]].details()
         else:
           phrase = " %s n'a encore jamais joué,"%(msg.cmd[1])
       else:
@@ -194,7 +214,7 @@ def parseanswer (msg):
 
 def win(msg):
   global SCORES, MANCHE
-  who = msg.sender.lower()
+  who = msg.sender
 
   (num_manche, winner, nb_points, whosef, dayte) = MANCHE
 

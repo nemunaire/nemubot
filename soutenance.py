@@ -3,6 +3,7 @@
 import http.client
 import time
 import re
+import _thread
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -124,72 +125,86 @@ def help_full ():
   return "!soutenance: gives information about current defenses state\n!soutenance /who/: gives the date of the next defense of /who/.\n!soutenances /who/: gives all defense dates of /who/"
 
 datas = None
+THREAD = None
+wait = list()
 
 def parseanswer (msg):
-  global datas
+  global THREAD, wait
   if msg.cmd[0] == "soutenance" or msg.cmd[0] == "soutenances":
-    #Starts by updating datas
-    if datas is not None:
-      datas = datas.update ()
-    if datas is None:
-      datas = SiteSoutenances(getPage().decode())
-
-    if len(msg.cmd) == 1 or msg.cmd[1] == "next":
-        soutenance = datas.findLast()
-        if soutenance is None:
-          msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
-        else:
-          if soutenance.start > soutenance.hour:
-            avre = "%s de *retard*"%msg.just_countdown(soutenance.start - soutenance.hour, 4)
-          else:
-            avre = "%s *d'avance*"%msg.just_countdown(soutenance.hour - soutenance.start, 4)
-          msg.send_chn ("Actuellement à la soutenance numéro %d, commencée il y a %s avec %s."%(soutenance.rank, msg.just_countdown(datetime.now () - soutenance.start, 4), avre))
-      
-    elif msg.cmd[1] == "assistants" or msg.cmd[1] == "assistant" or msg.cmd[1] == "yaka" or msg.cmd[1] == "yakas" or msg.cmd[1] == "acu" or msg.cmd[1] == "acus":
-      assistants = datas.findAssistants()
-      if len(assistants) > 0:
-        msg.send_chn ("Les %d assistants faisant passer les soutenances sont : %s." % (len(assistants), ', '.join(assistants.keys())))
-      else:
-        msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
+    if THREAD is None:
+      THREAD = _thread.start_new_thread (startSoutenance, (msg,))
     else:
-      name = msg.cmd[1]
-
-      if msg.cmd[0] == "soutenance":
-        soutenance = datas.findClose(name)
-        if soutenance is None:
-          msg.send_chn ("Pas d'horaire de soutenance pour %s."%name)
-        else:
-          if soutenance.state == "En cours":
-            msg.send_chn ("%s est actuellement en soutenance avec %s. Elle était prévue à %s, position %d."%(name, soutenance.assistant, soutenance.hour, soutenance.rank))
-          elif soutenance.state == "Effectue":
-            msg.send_chn ("%s a passé sa soutenance avec %s. Elle a duré %s."%(name, soutenance.assistant, msg.just_countdown(soutenance.end - soutenance.start, 4)))
-          elif soutenance.state == "Retard":
-            msg.send_chn ("%s était en retard à sa soutenance de %s."%(name, soutenance.hour))
-          else:
-            last = datas.findLast()
-            if last is not None:
-              if soutenance.hour + (last.start - last.hour) > datetime.now ():
-                msg.send_chn ("Soutenance de %s : %s, position %d ; estimation du passage : dans %s."%(name, soutenance.hour, soutenance.rank, msg.just_countdown((soutenance.hour - datetime.now ()) + (last.start - last.hour))))
-              else:
-                msg.send_chn ("Soutenance de %s : %s, position %d ; passage imminent."%(name, soutenance.hour, soutenance.rank))
-            else:
-              msg.send_chn ("Soutenance de %s : %s, position %d."%(name, soutenance.hour, soutenance.rank))
-
-      elif msg.cmd[0] == "soutenances":
-        souts = datas.findAll(name)
-        if souts is None:
-          msg.send_snd ("Pas de soutenance prévues pour %s."%name)
-        else:
-          first = True
-          for s in souts:
-            if first:
-              msg.send_snd ("Soutenance(s) de %s : - %s (position %d) ;"%(name, s.hour, s.rank))
-              first = False
-            else:
-              msg.send_snd ("                  %s  - %s (position %d) ;"%(len(name)*' ', s.hour, s.rank))
-
+      wait.append(msg)
     return True
   return False
+
+
+def startSoutenance (msg):
+  global datas, THREAD, wait
+
+  #Starts by updating datas
+  if datas is not None:
+    datas = datas.update ()
+  if datas is None:
+    datas = SiteSoutenances(getPage().decode())
+
+  if len(msg.cmd) == 1 or msg.cmd[1] == "next":
+    soutenance = datas.findLast()
+    if soutenance is None:
+      msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
+    else:
+      if soutenance.start > soutenance.hour:
+        avre = "%s de *retard*"%msg.just_countdown(soutenance.start - soutenance.hour, 4)
+      else:
+        avre = "%s *d'avance*"%msg.just_countdown(soutenance.hour - soutenance.start, 4)
+      msg.send_chn ("Actuellement à la soutenance numéro %d, commencée il y a %s avec %s."%(soutenance.rank, msg.just_countdown(datetime.now () - soutenance.start, 4), avre))
+      
+  elif msg.cmd[1] == "assistants" or msg.cmd[1] == "assistant" or msg.cmd[1] == "yaka" or msg.cmd[1] == "yakas" or msg.cmd[1] == "acu" or msg.cmd[1] == "acus":
+    assistants = datas.findAssistants()
+    if len(assistants) > 0:
+      msg.send_chn ("Les %d assistants faisant passer les soutenances sont : %s." % (len(assistants), ', '.join(assistants.keys())))
+    else:
+      msg.send_chn ("Il ne semble pas y avoir de soutenance pour le moment.")
+  else:
+    name = msg.cmd[1]
+
+    if msg.cmd[0] == "soutenance":
+      soutenance = datas.findClose(name)
+      if soutenance is None:
+        msg.send_chn ("Pas d'horaire de soutenance pour %s."%name)
+      else:
+        if soutenance.state == "En cours":
+          msg.send_chn ("%s est actuellement en soutenance avec %s. Elle était prévue à %s, position %d."%(name, soutenance.assistant, soutenance.hour, soutenance.rank))
+        elif soutenance.state == "Effectue":
+          msg.send_chn ("%s a passé sa soutenance avec %s. Elle a duré %s."%(name, soutenance.assistant, msg.just_countdown(soutenance.end - soutenance.start, 4)))
+        elif soutenance.state == "Retard":
+          msg.send_chn ("%s était en retard à sa soutenance de %s."%(name, soutenance.hour))
+        else:
+          last = datas.findLast()
+          if last is not None:
+            if soutenance.hour + (last.start - last.hour) > datetime.now ():
+              msg.send_chn ("Soutenance de %s : %s, position %d ; estimation du passage : dans %s."%(name, soutenance.hour, soutenance.rank, msg.just_countdown((soutenance.hour - datetime.now ()) + (last.start - last.hour))))
+            else:
+              msg.send_chn ("Soutenance de %s : %s, position %d ; passage imminent."%(name, soutenance.hour, soutenance.rank))
+          else:
+            msg.send_chn ("Soutenance de %s : %s, position %d."%(name, soutenance.hour, soutenance.rank))
+
+    elif msg.cmd[0] == "soutenances":
+      souts = datas.findAll(name)
+      if souts is None:
+        msg.send_snd ("Pas de soutenance prévues pour %s."%name)
+      else:
+        first = True
+        for s in souts:
+          if first:
+            msg.send_snd ("Soutenance(s) de %s : - %s (position %d) ;"%(name, s.hour, s.rank))
+            first = False
+          else:
+            msg.send_snd ("                  %s  - %s (position %d) ;"%(len(name)*' ', s.hour, s.rank))
+  THREAD = None
+  if len(wait) > 0:
+    startSoutenance(wait.pop())
+
 
 def parseask (msg):
   return False

@@ -164,6 +164,7 @@ class Server:
         return msg.sender != OWNER and (msg.channel == OWNER or msg.channel in self.channels)
 
     def read(self):
+        global stopSpk, talkEC, g_queue
         readbuffer = "" #Here we store all the messages from server
         while 1:
             try:
@@ -178,10 +179,39 @@ class Server:
                 msg = message.Message(self, line)
                 if msg.cmd == "PING":
                     self.s.send(("PONG %s\r\n" % msg.content).encode ())
-                elif msg.cmd == "PRIVMSG" and self.authorize(msg):
-                    g_queue.append(msg)
-                    if talkEC == 0:
-                        _thread.start_new_thread(speak, (0,))
+                elif msg.cmd == "PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
+                    if msg.content[0] == '`' and msg.sender == OWNER:
+                        cmd = msg.content[1:].split(' ')
+                        if cmd[0] == "speak":
+                            _thread.start_new_thread(speak, (0,))
+                        elif cmd[0] == 'reset':
+                            while len(g_queue) > 0:
+                                g_queue.pop()
+                        elif cmd[0] == 'save':
+                            if talkEC == 0:
+                                talkEC = 1
+                            stopSpk = 1
+                        elif cmd[0] == 'test':
+                            g_queue.append(message.Message(self, ":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(self.channels)))
+                        elif cmd[0] == 'list':
+                            print ("Currently listened channels:")
+                            for chan in self.channels:
+                                print (chan)
+                            print ("-- ")
+                        elif cmd[0] == 'add' and len(cmd) > 1:
+                            self.channels.append(cmd[1])
+                            print (cmd[1] + " added to listened channels")
+                        elif cmd[0] == 'del' and len(cmd) > 1:
+                            if self.channels.count(cmd[1]) > 0:
+                                self.channels.remove(cmd[1])
+                                print (cmd[1] + " removed from listened channels")
+                            else:
+                                print (cmd[1] + " not in listened channels")
+
+                    else:
+                        g_queue.append(msg)
+                        if talkEC == 0:
+                            _thread.start_new_thread(speak, (0,))
 
     def connect(self):
         self.s = socket.socket( ) #Create the socket
