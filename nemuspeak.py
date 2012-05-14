@@ -176,7 +176,11 @@ class Server:
             readbuffer = temp.pop( )
 
             for line in temp:
-                msg = message.Message(self, line)
+                try:
+                    msg = message.Message(self, line)
+                except:
+                    continue
+
                 if msg.cmd == "PING":
                     self.s.send(("PONG %s\r\n" % msg.content).encode ())
                 elif msg.cmd == "PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
@@ -227,14 +231,16 @@ for server in config.getElementsByTagName('server'):
     srv.launch()
 
 def sighup_h(signum, frame):
-    print ("Signal reçu...")
+    global talkEC, stopSpk
+    sys.stdout.write ("Signal reçu ... ")
     if os.path.exists("/tmp/isPresent"):
-        thread.start_new_thread(speak, (0,))
+        _thread.start_new_thread(speak, (0,))
+        print ("Morning!")
     else:
+        print ("Sleeping!")
         if talkEC == 0:
             talkEC = 1
         stopSpk = 1
-
 signal.signal(signal.SIGHUP, sighup_h)
 
 print ("Nemuspeak ready, waiting for new messages...")

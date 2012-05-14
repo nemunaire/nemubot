@@ -2,7 +2,9 @@
 
 import re
 import time
+import random
 import sys
+import threading
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
@@ -13,6 +15,7 @@ from xml.dom.minidom import getDOMImplementation
 filename = ""
 channels = "#nemutest #42sh #epitagueule"
 MANCHE = None
+QUESTIONS = list()
 SCORES = dict ()
 temps = dict ()
 
@@ -70,10 +73,14 @@ class Score:
   def playTwt(self):
     if self.canPlay():
       self.twt += 1
+  def playSuite(self):
+    self.canPlay()
+    self.twt += 1
+    self.great += 1
   def playPi(self):
     if self.canPlay():
       self.pi += 1
-  def playNoutfound(self):
+  def playNotfound(self):
     if self.canPlay():
       self.notfound += 1
   def playTen(self):
@@ -88,6 +95,10 @@ class Score:
   def playBad(self):
     if self.canPlay():
       self.bad += 1
+  def playTriche(self):
+    self.bad += 5
+  def oupsTriche(self):
+    self.bad -= 5
 
   def toTuple(self):
     return (self.ftt, self.twt, self.pi, self.notfound, self.tententen, self.leet, self.great, self.bad)
@@ -118,6 +129,9 @@ def xmlparse(node):
     SCORES[item.getAttribute("name")] = Score ()
     SCORES[item.getAttribute("name")].parse(item)
 
+  for item in node.getElementsByTagName("question"):
+    QUESTIONS.append((item.getAttribute("question"),item.getAttribute("regexp"),item.getAttribute("great")))
+
   manche = node.getElementsByTagName("manche")[0]
   MANCHE = (int(manche.getAttribute("number")),
             manche.getAttribute("winner"),
@@ -136,7 +150,7 @@ def load_module(datas_path):
   sys.stdout.write ("Loading 42scores ... ")
   dom = parse(filename)
   xmlparse (dom.documentElement)
-  print ("done (%d loaded, currently in round %d)" % (len(SCORES), -42))
+  print ("done (%d loaded, %d questions, currently in round %d)" % (len(SCORES), len(QUESTIONS), -42))
 
 def save_module():
   """Save the scores"""
@@ -153,6 +167,9 @@ def save_module():
     top.appendChild(item);
 
   top.appendChild(parseString ('<manche number="%d" winner="%s" winner_score="%d" who="%s" date="%s" />' % MANCHE).documentElement)
+
+  for q in QUESTIONS:
+    top.appendChild(parseString ('<question question="%s" regexp="%s" great="%s" />' % q).documentElement)
 
   with open(filename, "w") as f:
     newdoc.writexml (f)
@@ -174,11 +191,14 @@ def rev (tupl):
 def parseanswer (msg):
   if msg.cmd[0] == "42" or msg.cmd[0] == "score" or msg.cmd[0] == "scores":
     global SCORES, MANCHE
-    if len(msg.cmd) > 3 and msg.is_owner and (msg.cmd[1] == "merge"):
-      if msg.cmd[2] in SCORES and msg.cmd[3] in SCORES:
-        SCORES[msg.cmd[2]].merge (SCORES[msg.cmd[3]])
-        del SCORES[msg.cmd[3]]
-        msg.send_chn ("%s a été correctement fusionné avec %s."%(msg.cmd[3], msg.cmd[2]))
+    if len(msg.cmd) > 2 and msg.is_owner and ((msg.cmd[1] == "merge" and len(msg.cmd) > 3) or msg.cmd[1] == "oupstriche"):
+      if msg.cmd[2] in SCORES and (len(msg.cmd) <= 3 or msg.cmd[3] in SCORES):
+        if msg.cmd[1] == "merge":
+          SCORES[msg.cmd[2]].merge (SCORES[msg.cmd[3]])
+          del SCORES[msg.cmd[3]]
+          msg.send_chn ("%s a été correctement fusionné avec %s."%(msg.cmd[3], msg.cmd[2]))
+        elif msg.cmd[1] == "oupstriche":
+          SCORES[msg.cmd[2]].oupsTriche()
       else:
         if msg.cmd[2] not in SCORES:
           msg.send_chn ("%s n'est pas un joueur connu."%msg.cmd[2])
@@ -202,9 +222,9 @@ def parseanswer (msg):
           score = scr.score()
           if score != 0:
             if phrase == "":
-              phrase = " *%s: %d*,"%(nom, score)
+              phrase = " *%s.%s: %d*,"%(nom[0:1], nom[1:len(nom)], score)
             else:
-              phrase += " %s: %d,"%(nom, score)
+              phrase += " %s.%s: %d,"%(nom[0:1], nom[1:len(nom)], score)
 
       msg.send_chn ("Scores :%s" % (phrase[0:len(phrase)-1]))
     return True
@@ -231,6 +251,7 @@ def win(msg):
   SCORES = dict()
 #  SCORES[maxi_name] = (-10, 0, -4, 0, 0, -2, 0)
 #  SCORES[maxi_name] = (0, 0, 0, 0, 0, 0, 0)
+  SCORES[who] = Score()
   SCORES[who].newWinner()
 
   if who != maxi_name:
@@ -245,6 +266,11 @@ def win(msg):
 
 
 def parseask (msg):
+  if len(DELAYED) > 0:
+    if msg.sender in DELAYED:
+      DELAYED[msg.sender].msg = msg.content[9:]
+      DELAYED[msg.sender].delayEvnt.set()
+      return True
   return False
 
 
@@ -256,8 +282,12 @@ def getUser(name):
     
 
 def parselisten (msg):
-#  if msg.channel == "#nemutest":
-  if msg.channel != "#nemutest":
+#  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
+  if msg.channel != "#nemutest" and msg.sender not in DELAYED:
+    if len(DELAYED) > 0:
+      if msg.sender in DELAYED and not DELAYED[msg.sender].triche(msg.content):
+        msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.sender)
+
     if (msg.content.strip().startswith("42") and len (msg.content) < 5) or ((msg.content.strip().lower().startswith("quarante-deux") or msg.content.strip().lower().startswith("quarante deux")) and len (msg.content) < 17):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
         getUser(msg.sender).playTen()
@@ -286,9 +316,8 @@ def parselisten (msg):
         getUser(msg.sender).playBad()
 
     if (msg.content.strip().startswith("12345") and len (msg.content) < 8) or (msg.content.strip().startswith("012345") and len (msg.content) < 9):
-      if msg.time.hour == 1 and msg.time.minute == 23 and msg.time.second == 45:
-        getUser(msg.sender).playGreat()
-        getUser(msg.sender).playTwt()
+      if msg.time.hour == 1 and msg.time.minute == 23 and (msg.time.second == 45 or (msg.time.second == 46 and msg.time.microsecond < 330000)):
+        getUser(msg.sender).playSuite()
       else:
         getUser(msg.sender).playBad()
 
@@ -319,6 +348,59 @@ def parselisten (msg):
     if getUser(msg.sender).isWinner():
       print ("Nous avons un vainqueur ! Nouvelle manche :p")
       win(msg)
+      return True
     elif getUser(msg.sender).hasChanged():
-      save_module ()
+      gu = GameUpdater(msg)
+      gu.start()
+      return True
   return False
+
+DELAYED = dict()
+
+class DelayedTuple:
+  def __init__(self, regexp):
+    self.delayEvnt = threading.Event()
+    self.msg = None
+    self.regexp = regexp
+
+  def triche(self, res):
+    if res is not None:
+      return re.match(".*" + self.regexp + ".*", res.lower() + " ") is None
+    else:
+      return True
+
+#<question question="Quel avion commercial est l'un des seuls a avoir volé à Mach 2 ?" regexp="(tu.[0-9]{3}|concorde|boeing|airbus)"/>
+#<question question="Quelle célébre barre est produite par Mars Incorporated ?" regexp="(mars|kite?kat|balisto|bounty|milky way|snickers|twix|skittles|freedent)"/>
+#<question question="Quel fleuve traverse Paris ?" regexp="(seine|fion|loire|garonn?e|rhin)"/>
+#<question question="Du roman et du gothique, lequel de ces arts est le plus récent ?" regexp="(roman|gothique)"/>
+#<question question="Quel célébre roi des éléphants, créé par Jean de Brunhoff, a épousé Céleste ?" regexp="babar"/>
+#<question question=" ?" regexp=""/>
+
+  def wait(self, timeout):
+    self.delayEvnt.wait(timeout)
+
+class GameUpdater(threading.Thread):
+  def __init__(self, msg):
+    self.msg = msg
+    threading.Thread.__init__(self)
+
+  def run(self):
+    global DELAYED, QUESTIONS
+
+    quest = random.randint(0, len(QUESTIONS) * 2)
+    if self.msg.channel == "#nemutest":
+      quest = 9
+
+    if quest < len(QUESTIONS):
+      (question, regexp, great) = QUESTIONS[quest]
+      self.msg.send_chn("%s: %s" % (self.msg.sender, question))
+
+      DELAYED[self.msg.sender] = DelayedTuple(regexp)
+
+      DELAYED[self.msg.sender].wait(20)
+
+      if DELAYED[self.msg.sender].triche(DELAYED[self.msg.sender].msg):
+        getUser(self.msg.sender).playTriche()
+        self.msg.send_chn("%s: Tricheur !" % self.msg.sender)
+      del DELAYED[self.msg.sender]
+    save_module ()

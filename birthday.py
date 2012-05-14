@@ -134,7 +134,7 @@ def parseanswer(msg):
 
 def parseask(msg):
   msgl = msg.content.lower ()
-  if re.match("^.*(date de naissance|birthday|geburtstag|née?|nee? le|born on).*$", msgl) is not None:
+  if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl) is not None:
     try:
       extDate = msg.extractDate ()
       if extDate is None:

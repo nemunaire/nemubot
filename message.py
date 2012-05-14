@@ -95,8 +95,23 @@ class Message:
     if line.find(' PRIVMSG ') != -1: #Call a parsing function
       complete = line[1:].split(':',1) #Parse the message into useful data
       info = complete[0].split(' ')
-
       self.cmd = "PRIVMSG"
+      if len(complete) < 2 or len (info) < 3:
+        last = ""
+        info = list()
+        for lettre in line:
+          if len(info) > 2:
+            complete[1] += lettre
+          elif lettre == ":" or lettre == " ":
+            if last != "":
+              info.append(last)
+              if len(info) > 2:
+                complete = list()
+                complete.append(" ".join(info))
+                complete.append("")
+          else:
+            last += lettre
+
       self.sender = (info[0].split('!'))[0]
       self.realname = (info[0].split('!'))[1]
       self.channel = info[2]
@@ -141,6 +156,19 @@ class Message:
       info = complete[0].split(' ')
 
       self.cmd = "PART"
+      self.sender = (info[0].split('!'))[0]
+      self.realname = (info[0].split('!'))[1]
+      self.channel = info[2]
+      if len (complete) > 1:
+        self.content = complete[1]
+      else:
+        self.content = ""
+
+    elif line.find(' QUIT ') != -1:
+      complete = line[1:].split(':',1) #Parse the message into useful data
+      info = complete[0].split(' ')
+
+      self.cmd = "QUIT"
       self.sender = (info[0].split('!'))[0]
       self.realname = (info[0].split('!'))[1]
       self.channel = info[2]
@@ -242,6 +270,10 @@ class Message:
         now = datetime.now()
         self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
 
+      elif re.match(".*qui est ([a-zA-Z0-9_-]+)", messagel) is not None:
+        result = re.match(".*qui est ([a-zA-Z0-9_-]+).*", self.content)
+        self.send_chn ("!whois %s"%(result.group(1)))
+
       elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
         result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
         self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
@@ -265,10 +297,11 @@ class Message:
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
       self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "reload":
+      if self.cmd[0] == "reload" or self.cmd[0] == "reload_nosave":
         if len(self.cmd) > 1:
           if self.cmd[1] in mods:
-            mods[self.cmd[1]].save_module ()
+            if self.cmd[0] == "reload":
+              mods[self.cmd[1]].save_module ()
             imp.reload(mods[self.cmd[1]])
             mods[self.cmd[1]].load_module (self.srv.datas_dir)
             self.send_snd ("Module %s rechargé avec succès."%self.cmd[1])
@@ -312,8 +345,12 @@ class Message:
             self.send_snd("  - !help %s: %s" % (im, mods[im].help_tiny ()))
 
       for im in mods.keys():
+        if im == "alias":
+          continue
         if mods[im].parseanswer(self):
           return
+      if mods["alias"].parseanswer(self):
+        return
 
     else:
       for im in mods.keys():

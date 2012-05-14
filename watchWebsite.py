@@ -4,8 +4,8 @@ import http.client
 import hashlib
 import sys
 import traceback
+import socket
 import time
-import pickle
 import base64
 import _thread
 from urllib.parse import unquote
@@ -36,13 +36,7 @@ class Site:
     else:
       self.updateTime = 60
     self.lastChange = 0
-    if len(item.childNodes) > 0 and item.childNodes[0].nodeValue is not None:
-      self.lastpage = pickle.loads(base64.b64decode(item.childNodes[0].nodeValue.encode()))
-    elif item.nodeValue is not None:
-      self.lastpage = pickle.loads(base64.b64decode(item.nodeValue.encode()))
-    else:
-      self.lastpage = None
-    print (self.server, self.lastpage)
+    self.lastpage = None
 
     self.run = True
 
@@ -57,12 +51,12 @@ class Site:
   def send_message (self, msg):
     global SRVS
     if len(self.channels) > 0:
-      for server in SRVS:
+      for server in SRVS.keys():
         for chan in self.channels:
-          server.send_msg (chan, msg)
+          SRVS[server].send_msg (chan, msg)
     else:
-      for server in SRVS:
-        server.send_global (msg)
+      for server in SRVS.keys():
+        SRVS[server].send_global (msg)
 
   def treat_atom (self, content):
     change=False
@@ -103,6 +97,8 @@ class Site:
       try:
 #        print ("Check %s/%s"%(self.server, self.page))
         content = getPage(self.server, self.page)
+        if content is None:
+          return
 
         if self.type == "atom":
           (self.lastpage, change) = self.treat_atom (content)
@@ -161,6 +157,8 @@ def launch (servers):
     SRVS = servers
     for site in SITES:
         site.start ()
+def stop():
+  return
 
 def save_module():
   """Save the module state"""
@@ -175,8 +173,6 @@ def save_module():
     if len(site.channels) > 0:
       for chan in site.channels:
         item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
-    b64 = base64.b64encode(pickle.dumps(site.lastpage)).decode()
-    item.appendChild(newdoc.createTextNode(b64));
     #print (site.server)
     top.appendChild(item);
 
@@ -207,7 +203,11 @@ def parselisten (msg):
 
 def getPage (s, p):
   conn = http.client.HTTPConnection(s)
-  conn.request("GET", "/%s"%(p))
+  try:
+    conn.request("GET", "/%s"%(p))
+  except socket.gaierror:
+    print ("[%s] impossible de récupérer la page %s."%(s, p))
+    return None
 
   res = conn.getresponse()
   data = res.read()

@@ -6,6 +6,11 @@ import time
 
 import message
 
+#class WaitedAnswer:
+#    def __init__(self, channel):
+#        self.channel = channel
+#        self.module
+
 class Server:
     def __init__(self, server, nick, owner, realname):
       self.nick = nick
@@ -25,17 +30,27 @@ class Server:
       else:
         self.password = None
 
+      self.waited_answer = list()
+
       self.listen_nick = True
+      self.partner = "nbr23"
 
       self.channels = list()
       for channel in server.getElementsByTagName('channel'):
         self.channels.append(channel.getAttribute("name"))
+
+    @property
+    def id(self):
+        return self.host + ":" + str(self.port)
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if msg is not None and channel is not None:
             for line in msg.split("\n"):
                 if line != "":
                     self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+
+    def send_msg_prtn (self, msg):
+        self.send_msg_final(self.partner, msg)
 
     def send_msg_usr (self, user, msg):
         if user is not None and user[0] != "#":
@@ -49,6 +64,9 @@ class Server:
         for channel in self.channels:
             self.send_msg (channel, msg, cmd, endl)
 
+
+    def register_answer(self, channel, ):
+        self.waited_answer.append(channel)
 
     def launch(self, mods, datas_dir):
       self.datas_dir = datas_dir

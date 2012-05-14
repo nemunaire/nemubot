@@ -4,6 +4,7 @@ import http.client
 import time
 import re
 import _thread
+import threading
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -27,6 +28,18 @@ class Soutenance:
     self.assistant = None
     self.start = None
     self.end = None
+
+DELAYED = dict()
+
+class Delayed:
+  def __init__(self, name):
+    self.name = name
+    self.res = None
+    self.evt = threading.Event()
+
+  def wait(self, timeout):
+    self.evt.clear()
+    self.evt.wait(timeout)
 
 class SiteSoutenances:
   def __init__(self, page):
@@ -171,6 +184,15 @@ def startSoutenance (msg):
     if msg.cmd[0] == "soutenance":
       soutenance = datas.findClose(name)
       if soutenance is None:
+        global DELAYED
+        DELAYED[msg] = Delayed(name)
+        msg.srv.send_msg_prtn ("~whois %s" % name)
+        DELAYED[msg].wait(5)
+        if DELAYED[msg].res is not None:
+          name = DELAYED[msg].res
+          soutenance = datas.findClose(name)
+
+      if soutenance is None:
         msg.send_chn ("Pas d'horaire de soutenance pour %s."%name)
       else:
         if soutenance.state == "En cours":
@@ -207,6 +229,18 @@ def startSoutenance (msg):
 
 
 def parseask (msg):
+  if len(DELAYED) > 0 and msg.sender == msg.srv.partner:
+    treat = False
+    for part in msg.content.split(';'):
+      if part is None:
+        continue
+      for d in DELAYED.keys():
+        if DELAYED[d].res is None and part.find(DELAYED[d].name) >= 0:
+          result = re.match(".* est (.*[^.])\.?", part)
+          if result is not None:
+            DELAYED[d].res = result.group(1)
+            DELAYED[d].evt.set()
+    return treat
   return False
 
 def parselisten (msg):

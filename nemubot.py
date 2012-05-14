@@ -11,7 +11,7 @@ from datetime import timedelta
 from xml.dom.minidom import parse
 
 imports = ["birthday", "qd", "events", "youtube", "watchWebsite", "soutenance", "whereis", "alias"]
-imports_launch = ["watchWebsite"]
+imports_launch = ["watchWebsite", "events"]
 mods = {}
 import server, message
 
@@ -26,6 +26,9 @@ def onSignal(signum, frame):
     for imp in mods.keys():
         mods[imp].save_module ()
 
+    for imp in imports_launch:
+        mods[imp].stop ()
+
     #Save banlist before quit
     message.save_module ()
 
@@ -39,7 +42,7 @@ else:
 
 dom = parse(sys.argv[1])
 config = dom.getElementsByTagName('config')[0]
-servers = list ()
+servers = dict ()
 
 message.load_module (basedir + "/datas/")
 
@@ -51,7 +54,7 @@ for imp in imports:
 for serveur in config.getElementsByTagName('server'):
     srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
     srv.launch(mods, basedir + "/datas/")
-    servers.append (srv)
+    servers[srv.id] = srv
 
 for imp in imports_launch:
     mod = __import__ (imp)
