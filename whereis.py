@@ -68,25 +68,51 @@ class User(object):
             return 'cisco'
         elif self.ip.startswith('10.41.'):
             return 'wifi'
+        elif self.ip.startswith('10.223.3.'):
+            return 'épimac'
+        elif self.ip.startswith('10.223.4.'):
+            return 'wcube'
+        elif self.ip.startswith('10.223.5.'):
+            return 'cycom'
+        elif self.ip.startswith('10.223.6.'):
+            return 'epitv'
+        elif self.ip.startswith('10.223.7.'):
+            return 'prologin'
+        elif self.ip.startswith('10.223'):
+            return 'assos'
+        elif self.ip.startswith('10.226.7.'):
+            return 'gistre'
+        elif self.ip.startswith('10.224.1.'):
+            return 'astek'
+        elif self.ip.startswith('10.224.2.'):
+            return 'acu'
+        elif self.ip.startswith('10.224.4.'):
+            return 'lse'
+        elif self.ip.startswith('10.224.8.'):
+            return 'eip'
+        elif self.ip.startswith('10.224.16.'):
+            return 'evolutek'
+        elif self.ip.startswith('10.224.18.'):
+            return 'mslab'
+        elif self.ip.startswith('10.2.'):
+            return 'adm'
+        elif self.ip.startswith('10.10.'):
+            return 'vpn'
         else:
             return None
 
     @property
     def poste(self):
       if self.sm is None:
-        if self.ip.startswith('10'):
+        if self.ip.startswith('10.'):
             return 'quelque part sur le PIE (%s)'%self.ip
         else:
             return "chez lui"
       else:
-        if self.ip.startswith('10.200'):
-          sm = self.sm
-          if sm == "SM02":
-            return "en " + sm
-          else:
-            return "en " + sm + " poste " + self.ip.split('.')[3]
-        else:
+        if self.ip.startswith('10.247') or self.ip.startswith('10.248') or self.ip.startswith('10.249') or self.ip.startswith('10.250'):
           return "en " + self.sm + " rangée " + self.ip.split('.')[2] + " poste " + self.ip.split('.')[3]
+        else:
+          return "en " + self.sm
 
     def __cmp__(self, other):
         return cmp(self.login, other.login)
@@ -145,7 +171,7 @@ def startWhereis(msg):
 
   if msg.cmd[0] == "peoplein":
     peoplein(msg)
-  elif msg.cmd[0] == "whoison":
+  elif msg.cmd[0] == "whoison" or msg.cmd[0] == "whoisin":
     whoison(msg)
   else:
     whereis_msg(msg)
@@ -177,18 +203,21 @@ def whoison(msg):
   if len(msg.cmd) > 1:
     for pb in msg.cmd:
       pc = pb.lower()
-      if pc == "whoison":
+      if pc == "whoison" or pc == "whoisin":
         continue
       else:
         found = list()
         print (len(datas.users))
         for userC in datas.users:
           for user in datas.users[userC]:
-            if user.ip[:len(pc)] == pc or user.location.lower() == pc:
+            if (msg.cmd[0] == "whoison" and (user.ip[:len(pc)] == pc or user.location.lower() == pc)) or (msg.cmd[0] == "whoisin" and user.sm == pc):
               found.append(user.login)
         if len(found) > 0:
           if len(found) <= 15:
-            msg.send_chn ("%s correspond à %s" % (pb, ", ".join(found)))
+            if pc == "whoisin":
+              msg.send_chn ("En %s, il y a %s" % (pb, ", ".join(found)))
+            else:
+              msg.send_chn ("%s correspond à %s" % (pb, ", ".join(found)))
           else:
             msg.send_chn ("%s: %d personnes" % (pb, len(found)))
         else:
@@ -274,7 +303,7 @@ def whereis(msg, names):
 
 def parseanswer (msg):
   global datas, THREAD, search
-  if msg.cmd[0] == "whereis" or msg.cmd[0] == "whereare" or msg.cmd[0] == "ouest" or msg.cmd[0] == "ousont" or msg.cmd[0] == "ip" or msg.cmd[0] == "peoplein" or msg.cmd[0] == "whoison":
+  if msg.cmd[0] == "whereis" or msg.cmd[0] == "whereare" or msg.cmd[0] == "ouest" or msg.cmd[0] == "ousont" or msg.cmd[0] == "ip" or msg.cmd[0] == "peoplein" or msg.cmd[0] == "whoison" or msg.cmd[0] == "whoisin":
     if len(msg.cmd) > 10:
       msg.send_snd ("Demande moi moins de personnes à la fois dans ton !%s" % msg.cmd[0])
       return True

@@ -344,13 +344,14 @@ class Message:
           for im in mods.keys():
             self.send_snd("  - !help %s: %s" % (im, mods[im].help_tiny ()))
 
-      for im in mods.keys():
-        if im == "alias":
-          continue
-        if mods[im].parseanswer(self):
+      else:
+        for im in mods.keys():
+          if im == "alias":
+            continue
+          if mods[im].parseanswer(self):
+            return
+        if mods["alias"].parseanswer(self):
           return
-      if mods["alias"].parseanswer(self):
-        return
 
     else:
       for im in mods.keys():

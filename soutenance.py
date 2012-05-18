@@ -99,7 +99,7 @@ class SiteSoutenances:
   def findLast(self):
     close = None
     for s in self.souts:
-      if (s.state != "En attente" and s.start is not None and (close is None or close.rank < s.rank or close.hour.day > s.hour.day)) and (close is None or s.hour - close.hour < timedelta(seconds=1499)):
+      if (s.state != "En attente" and s.start is not None and (close is None or close.rank < s.rank or close.hour.day > s.hour.day)) and (close is None or s.hour - close.hour < timedelta(seconds=2499)):
         close = s
     return close
 

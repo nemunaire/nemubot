@@ -44,6 +44,10 @@ class Site:
     for channel in item.getElementsByTagName('channel'):
       self.channels.append(channel.getAttribute("name"))
 
+    self.categories = dict()
+    for category in item.getElementsByTagName('category'):
+      self.categories[category.getAttribute("term")] = category.getAttribute("part")
+
 
   def start (self):
     self.thread = _thread.start_new_thread (startThread, (self,))
@@ -65,30 +69,23 @@ class Site:
       diff = self.lastpage.diff (f)
       if len(diff) > 0:
         print ("[%s] Page differ!"%self.server)
-        if f.id == "http://public.nbr23.com/rss.php":
-          for d in diff:
-            if d.category == None:
-              messageI = self.message % ("quel est ce nouveau fichier", "%s")
-            elif d.category == "Music":
-              messageI = self.message % ("quelles sont ces nouvelles musiques", "%s")
-            elif d.category == "TV_Shows":
-              messageI = self.message % ("quelle est cette nouvelle série", "%s")
-            elif d.category == "Movies":
-              messageI = self.message % ("quel est ce nouveau film", "%s")
-            elif d.category == "Books":
-              messageI = self.message % ("quel est ce nouveau livre", "%s")
+        diff.reverse()
+        for d in diff:
+          if self.message.count("%s") == 2 and len(self.categories) > 0:
+            if d.category is None or d.category not in self.categories:
+              messageI = self.message % (self.categories[""], "%s")
             else:
-              messageI = self.message % ("quel est ce nouveau fichier", "%s")
+              messageI = self.message % (self.categories[d.category], "%s")
             self.send_message (messageI % unquote (d.link))
-        elif f.id == "http://musik.p0m.fr/atom.php?nemubot":
-          for d in diff:
-            youtube.send_global (d.link2, self.message % (d.title, unquote (d.link)))
-        elif self.message.find ("%s") >= 0:
-          print ("[%s] Send message!"%self.server)
-          for d in diff:
-            self.send_message (self.message % unquote (d.title))
-        else:
-          self.send_message (self.message)
+          elif self.message.count("%s") == 2:
+            if f.id == youtube.idAtom:
+              youtube.send_global (d.link2, self.message % (d.title, unquote (d.link)))
+            else:
+              self.send_message (self.message % (d.title, unquote (d.link)))
+          elif self.message.count("%s") == 1:
+            self.send_message(self.message % unquote (d.title))
+          else:
+            self.send_message(self.message)
         change=True
     return (f, change)
 
@@ -173,6 +170,9 @@ def save_module():
     if len(site.channels) > 0:
       for chan in site.channels:
         item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
+    if len(site.categories) > 0:
+      for categ in site.categories.keys():
+        item.appendChild(parseString ('<category term="%s" part="%s"/>' % (categ, site.categories[categ])).documentElement);
     #print (site.server)
     top.appendChild(item);
 

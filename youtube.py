@@ -3,6 +3,7 @@
 import re
 import http.client
 
+idAtom = "http://musik.p0m.fr/atom.php?nemubot"
 URLS = dict ()
 
 def load_module(datas_path):

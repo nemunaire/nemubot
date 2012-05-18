@@ -13,7 +13,7 @@ from xml.dom.minidom import parseString
 from xml.dom.minidom import getDOMImplementation
 
 filename = ""
-channels = "#nemutest #42sh #epitagueule"
+channels = "#nemutest #42sh #ykar #epitagueule"
 MANCHE = None
 QUESTIONS = list()
 SCORES = dict ()
@@ -96,16 +96,21 @@ class Score:
     if self.canPlay():
       self.bad += 1
   def playTriche(self):
+    self.changed = True
     self.bad += 5
   def oupsTriche(self):
+    self.changed = True
     self.bad -= 5
+  def bonusQuestion(self):
+    self.changed = True
 
   def toTuple(self):
     return (self.ftt, self.twt, self.pi, self.notfound, self.tententen, self.leet, self.great, self.bad)
 
   def canPlay(self):
-    self.changed = True
-    return self.last == None or self.last.minute != datetime.now().minute or self.last.hour != datetime.now().hour or self.last.day != datetime.now().day
+    ret = self.last == None or self.last.minute != datetime.now().minute or self.last.hour != datetime.now().hour or self.last.day != datetime.now().day
+    self.changed = self.changed or ret
+    return ret
 
   def hasChanged(self):
     if self.changed:
@@ -282,13 +287,13 @@ def getUser(name):
     
 
 def parselisten (msg):
+  if len(DELAYED) > 0 and msg.sender in DELAYED and DELAYED[msg.sender].good(msg.content):
+    msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.sender)
+
 #  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
   if msg.channel != "#nemutest" and msg.sender not in DELAYED:
-    if len(DELAYED) > 0:
-      if msg.sender in DELAYED and not DELAYED[msg.sender].triche(msg.content):
-        msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.sender)
 
-    if (msg.content.strip().startswith("42") and len (msg.content) < 5) or ((msg.content.strip().lower().startswith("quarante-deux") or msg.content.strip().lower().startswith("quarante deux")) and len (msg.content) < 17):
+    if re.match("(42|quarante[- ]?deux).{,2}", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
         getUser(msg.sender).playTen()
         getUser(msg.sender).playGreat()
@@ -299,7 +304,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if (msg.content.strip().startswith("23") and len (msg.content) < 5) or ((msg.content.strip().lower().startswith("vingt-trois") or msg.content.strip().lower().startswith("vingt trois")) and len (msg.content) < 14):
+    if re.match("(23|vingt[ -]?trois).{,2}", msg.content.strip().lower()):
       if msg.time.minute == 23:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -307,7 +312,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if (msg.content.strip().startswith("101010") and len (msg.content) < 9):
+    if re.match("(10){3}.{,2}", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.hour == 10:
         if msg.time.second == 10:
           getUser(msg.sender).playGreat()
@@ -315,13 +320,13 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if (msg.content.strip().startswith("12345") and len (msg.content) < 8) or (msg.content.strip().startswith("012345") and len (msg.content) < 9):
+    if re.match("0?12345.{,2}", msg.content.strip().lower()):
       if msg.time.hour == 1 and msg.time.minute == 23 and (msg.time.second == 45 or (msg.time.second == 46 and msg.time.microsecond < 330000)):
         getUser(msg.sender).playSuite()
       else:
         getUser(msg.sender).playBad()
 
-    if len (msg.content) < 12 and (msg.content.strip().lower().startswith("leet time") or msg.content.strip().lower().startswith("leettime") or msg.content.strip().lower().startswith("leetime") or msg.content.strip().lower().startswith("l33t time") or msg.content.strip().lower().startswith("1337")):
+    if re.match("[1l][e3]{2}[t7] ?time.{,2}", msg.content.strip().lower()):
       if msg.time.hour == 13 and msg.time.minute == 37:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -329,7 +334,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if len (msg.content) < 11 and (msg.content.strip().lower().startswith("pi time") or msg.content.strip().lower().startswith("pitime") or msg.content.strip().lower().startswith("3.14 time")):
+    if re.match("(pi|3.14) ?time.{,2}", msg.content.strip().lower()):
       if msg.time.hour == 3 and msg.time.minute == 14:
         if msg.time.second == 15 or msg.time.second == 16:
           getUser(msg.sender).playGreat()
@@ -337,7 +342,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if len (msg.content) < 16 and (msg.content.strip().lower().startswith("time not found") or msg.content.strip().lower().startswith("timenotfound") or msg.content.strip().lower().startswith("404 time")) or (len (msg.content) < 6 and msg.content.strip().lower().startswith("404")):
+    if re.match("(404( ?time)?|time ?not ?found).{,2}", msg.content.strip().lower()):
       if msg.time.hour == 4 and msg.time.minute == 4:
         if msg.time.second == 0 or msg.time.second == 4:
           getUser(msg.sender).playGreat()
@@ -358,10 +363,11 @@ def parselisten (msg):
 DELAYED = dict()
 
 class DelayedTuple:
-  def __init__(self, regexp):
+  def __init__(self, regexp, great):
     self.delayEvnt = threading.Event()
     self.msg = None
     self.regexp = regexp
+    self.great = great
 
   def triche(self, res):
     if res is not None:
@@ -369,15 +375,19 @@ class DelayedTuple:
     else:
       return True
 
-#<question question="Quel avion commercial est l'un des seuls a avoir volé à Mach 2 ?" regexp="(tu.[0-9]{3}|concorde|boeing|airbus)"/>
-#<question question="Quelle célébre barre est produite par Mars Incorporated ?" regexp="(mars|kite?kat|balisto|bounty|milky way|snickers|twix|skittles|freedent)"/>
-#<question question="Quel fleuve traverse Paris ?" regexp="(seine|fion|loire|garonn?e|rhin)"/>
-#<question question="Du roman et du gothique, lequel de ces arts est le plus récent ?" regexp="(roman|gothique)"/>
-#<question question="Quel célébre roi des éléphants, créé par Jean de Brunhoff, a épousé Céleste ?" regexp="babar"/>
+  def perfect(self, res):
+    if res is not None:
+      return re.match(".*" + self.great + ".*", res.lower() + " ") is not None
+    else:
+      return False
+
+#<question question=" ?" regexp="microprocesseur"/>
 #<question question=" ?" regexp=""/>
 
   def wait(self, timeout):
     self.delayEvnt.wait(timeout)
+
+LASTQUESTION = 99999
 
 class GameUpdater(threading.Thread):
   def __init__(self, msg):
@@ -385,22 +395,33 @@ class GameUpdater(threading.Thread):
     threading.Thread.__init__(self)
 
   def run(self):
-    global DELAYED, QUESTIONS
+    global DELAYED, QUESTIONS, LASTQUESTION
 
-    quest = random.randint(0, len(QUESTIONS) * 2)
-    if self.msg.channel == "#nemutest":
-      quest = 9
+    rnd = random.randint(0, 3)
+    print (rnd)
+    if rnd != 2:
+      if self.msg.channel == "#nemutest":
+        quest = 9
+      else:
+        if LASTQUESTION >= len(QUESTIONS):
+          random.shuffle(QUESTIONS)
+          LASTQUESTION = 0
+        quest = LASTQUESTION
+        LASTQUESTION += 1
 
-    if quest < len(QUESTIONS):
       (question, regexp, great) = QUESTIONS[quest]
       self.msg.send_chn("%s: %s" % (self.msg.sender, question))
 
-      DELAYED[self.msg.sender] = DelayedTuple(regexp)
+      DELAYED[self.msg.sender] = DelayedTuple(regexp, great)
 
       DELAYED[self.msg.sender].wait(20)
 
       if DELAYED[self.msg.sender].triche(DELAYED[self.msg.sender].msg):
         getUser(self.msg.sender).playTriche()
         self.msg.send_chn("%s: Tricheur !" % self.msg.sender)
+      elif DELAYED[self.msg.sender].perfect(DELAYED[self.msg.sender].msg):
+        if random.randint(0, 10) == 1:
+          getUser(self.msg.sender).bonusQuestion()
+        self.msg.send_chn("%s: Correct !" % self.msg.sender)
       del DELAYED[self.msg.sender]
     save_module ()
