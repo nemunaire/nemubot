@@ -11,11 +11,9 @@ from xml.dom.minidom import parse
 from xml.dom.minidom import parseString
 from xml.dom.minidom import getDOMImplementation
 
-filename = ""
-EVENTS = {}
-STREND = {}
-threadManager = None
-newStrendEvt = threading.Event()
+import imodule
+
+
 
 class Manager(threading.Thread):
   def __init__(self, servers):
@@ -44,16 +42,7 @@ class Manager(threading.Thread):
       if closer is not None and closer.end is not None and closer.end > datetime.now():
         timer.cancel()
 
-def launch (servers):
-  global threadManager
-  stop()
-  threadManager = Manager(servers)
-  threadManager.start()
 
-def stop ():
-  if threadManager is not None:
-    threadManager.stop = True
-    newStrendEvt.set()
 
 class Strend:
   def __init__(self, item):
@@ -84,41 +73,61 @@ class Strend:
     del STREND[self.name]
     newStrendEvt.set()
 
-def xmlparse(node):
-  """Parse the given node and add events to the global list."""
-  for item in node.getElementsByTagName("strend"):
-    STREND[item.getAttribute("name")] = Strend(item)
 
-  for item in node.getElementsByTagName("event"):
-    if (item.hasAttribute("year")):
-      year = int(item.getAttribute("year"))
-    else:
-      year = 0
-    if (item.hasAttribute("month")):
-      month = int(item.getAttribute("month"))
-    else:
-      month = 0
-    if (item.hasAttribute("day")):
-      day = int(item.getAttribute("day"))
-    else:
-      day = 0
-    if (item.hasAttribute("hour")):
-      hour = int(item.getAttribute("hour"))
-    else:
-      hour = 0
-    if (item.hasAttribute("minute")):
-      minute = int(item.getAttribute("minute"))
-    else:
-      minute = 0
-    if (item.hasAttribute("second")):
-      second = int(item.getAttribute("second"))
-    else:
-      second = 0
 
-    if year == month == day == hour == minute == second == 0:
-      EVENTS[item.getAttribute("name")] = (None, item.getAttribute("before_after"), None)
-    else:
-      EVENTS[item.getAttribute("name")] = (datetime(year, month, day, hour, minute, second),item.getAttribute("msg_before"), item.getAttribute("msg_after"))
+class Nemodule(imodule.ModuleBase):
+  filename = ""
+  events = dict()
+  strend = dict()
+  threadManager = None
+  newStrendEvt = threading.Event()
+
+  def launch (self, servers):
+    self.stop()
+    self.threadManager = Manager(servers)
+    self.threadManager.start()
+
+  def stop (self):
+    if self.threadManager is not None:
+      self.threadManager.stop = True
+      self.newStrendEvt.set()
+
+
+  def xmlparse(self, node):
+    """Parse the given node and add events to the global list."""
+    for item in node.getElementsByTagName("strend"):
+      strend[item.getAttribute("name")] = Strend(item)
+
+    for item in node.getElementsByTagName("event"):
+      if (item.hasAttribute("year")):
+        year = int(item.getAttribute("year"))
+      else:
+        year = 0
+      if (item.hasAttribute("month")):
+        month = int(item.getAttribute("month"))
+      else:
+        month = 0
+      if (item.hasAttribute("day")):
+        day = int(item.getAttribute("day"))
+      else:
+        day = 0
+      if (item.hasAttribute("hour")):
+        hour = int(item.getAttribute("hour"))
+      else:
+        hour = 0
+      if (item.hasAttribute("minute")):
+        minute = int(item.getAttribute("minute"))
+      else:
+        minute = 0
+      if (item.hasAttribute("second")):
+        second = int(item.getAttribute("second"))
+      else:
+        second = 0
+
+      if year == month == day == hour == minute == second == 0:
+        events[item.getAttribute("name")] = (None, item.getAttribute("before_after"), None)
+      else:
+        events[item.getAttribute("name")] = (datetime(year, month, day, hour, minute, second),item.getAttribute("msg_before"), item.getAttribute("msg_after"))
 
 
 def load_module(datas_path):

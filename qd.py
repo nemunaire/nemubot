@@ -293,7 +293,7 @@ def parselisten (msg):
 #  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
   if msg.channel != "#nemutest" and msg.sender not in DELAYED:
 
-    if re.match("(42|quarante[- ]?deux).{,2}", msg.content.strip().lower()):
+    if re.match("^(42|quarante[- ]?deux).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
         getUser(msg.sender).playTen()
         getUser(msg.sender).playGreat()
@@ -304,7 +304,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(23|vingt[ -]?trois).{,2}", msg.content.strip().lower()):
+    if re.match("^(23|vingt[ -]?trois).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 23:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -312,7 +312,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(10){3}.{,2}", msg.content.strip().lower()):
+    if re.match("^(10){3}.{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.hour == 10:
         if msg.time.second == 10:
           getUser(msg.sender).playGreat()
@@ -320,13 +320,13 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("0?12345.{,2}", msg.content.strip().lower()):
+    if re.match("^0?12345.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 1 and msg.time.minute == 23 and (msg.time.second == 45 or (msg.time.second == 46 and msg.time.microsecond < 330000)):
         getUser(msg.sender).playSuite()
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("[1l][e3]{2}[t7] ?time.{,2}", msg.content.strip().lower()):
+    if re.match("^[1l][e3]{2}[t7] ?time.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 13 and msg.time.minute == 37:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -334,7 +334,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(pi|3.14) ?time.{,2}", msg.content.strip().lower()):
+    if re.match("^(pi|3.14) ?time.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 3 and msg.time.minute == 14:
         if msg.time.second == 15 or msg.time.second == 16:
           getUser(msg.sender).playGreat()
@@ -342,7 +342,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(404( ?time)?|time ?not ?found).{,2}", msg.content.strip().lower()):
+    if re.match("^(404( ?time)?|time ?not ?found).{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 4 and msg.time.minute == 4:
         if msg.time.second == 0 or msg.time.second == 4:
           getUser(msg.sender).playGreat()
