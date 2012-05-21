@@ -1,10 +1,11 @@
 import sys
 import shlex
 import traceback
-import _thread
+import imp
 from xml.dom.minidom import parse
 
-import server
+server = __import__("server")
+imp.reload(server)
 
 selectedServer = None
 MODS = list()
@@ -82,6 +83,7 @@ def load(cmds, servers):
   return
 
 def close(cmds, servers):
+  global selectedServer
   if len(cmds) > 1:
     for s in cmds[1:]:
       if s in servers:
@@ -209,7 +211,7 @@ CAPS = {
   'exit': end, #Alias for quit
   'reset': end, #Reload the prompt
   'load': load, #Load a servers configuration file
-  'close': load, #Disconnect and remove a server from the list
+  'close': close, #Disconnect and remove a server from the list
   'select': select, #Select a server
   'list': liste, #Show lists
   'connect': connect, #Connect to a server

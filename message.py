@@ -88,114 +88,40 @@ class Message:
   def __init__ (self, srv, line):
     self.srv = srv
     self.time = datetime.now ()
-    self.channel = ""
-    self.content = ""
     line = line.rstrip() #remove trailing 'rn'
 
-    if line.find(' PRIVMSG ') != -1: #Call a parsing function
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      info = complete[0].split(' ')
-      self.cmd = "PRIVMSG"
-      if len(complete) < 2 or len (info) < 3:
-        last = ""
-        info = list()
-        for lettre in line:
-          if len(info) > 2:
-            complete[1] += lettre
-          elif lettre == ":" or lettre == " ":
-            if last != "":
-              info.append(last)
-              if len(info) > 2:
-                complete = list()
-                complete.append(" ".join(info))
-                complete.append("")
-          else:
-            last += lettre
-
-      self.sender = (info[0].split('!'))[0]
-      self.realname = (info[0].split('!'))[1]
-      self.channel = info[2]
-      self.content = complete[1]
-
-    elif line.find(' ACTION ') != -1:
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      info = complete[0].split(' ')
-
-      self.cmd = "ACTION"
-      self.sender = (info[0].split('!'))[0]
-      self.realname = (info[0].split('!'))[1]
-      self.channel = info[2]
-      self.content = complete[1]
-      
-    elif line.find(' NICK ') != -1:
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      if len(complete) > 1:
-        info = complete[0].split(' ')
-
-        self.cmd = "NICK"
-        self.sender = (info[0].split('!'))[0]
-        self.realname = (info[0].split('!'))[1]
-        self.content = complete[1]
-      else:
-        self.cmd = "NONE"
-
-    elif line.find(' JOIN ') != -1:
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      if len(complete) > 1:
-        info = complete[0].split(' ')
-
-        self.cmd = "JOIN"
-        self.sender = (info[0].split('!'))[0]
-        self.realname = (info[0].split('!'))[1]
-        self.channel = complete[1]
-      else:
-        self.cmd = "NONE"
-
-    elif line.find(' PART ') != -1:
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      info = complete[0].split(' ')
-
-      self.cmd = "PART"
-      self.sender = (info[0].split('!'))[0]
-      self.realname = (info[0].split('!'))[1]
-      self.channel = info[2]
-      if len (complete) > 1:
-        self.content = complete[1]
-      else:
-        self.content = ""
-
-    elif line.find(' QUIT ') != -1:
-      complete = line[1:].split(':',1) #Parse the message into useful data
-      info = complete[0].split(' ')
-
-      self.cmd = "QUIT"
-      self.sender = (info[0].split('!'))[0]
-      self.realname = (info[0].split('!'))[1]
-      self.channel = info[2]
-      if len (complete) > 1:
-        self.content = complete[1]
-      else:
-        self.content = ""
-
-    elif line.find(' MODE ') != -1:
-      complete = line[1:].split(' ')
-      if len(complete) >= 5:
-        self.cmd = "MODE"
-        self.channel = complete[2]
-        self.mode = complete[3]
-        self.sender = complete[4]
-      else:
-        self.cmd = "NONE"
-
-    elif line.find(' PING ') != -1: #If server pings then pong
-      line = line.split()
-
-      self.cmd = "PING"
-      self.content = line[1]
-
+    words = line.split(' ')
+    if words[0][0] == ':':
+      self.name = words[0][1:]
+      self.cmd = words[1]
     else:
-      self.cmd = "UNKNOWN"
-      print (line)
+      self.cmd = words[0]
+      self.name = None
+
+    if self.cmd == 'PING':
+      self.content = words[1]
+    elif self.name is not None:
+      self.sender = (self.name.split('!'))[0]
+      if self.sender != self.name:
+        self.realname = (self.name.split('!'))[1]
+      else:
+        self.realname = self.sender
+
+      if self.cmd == 'PRIVMSG':
+        self.channel = words[2]
+        self.content = words[3]
+        if self.content[0] == ':':
+          self.content = line.split(':', 2)[2]
+      else:
+        print (line)
+    else:
+      if self.cmd == 'PRIVMSG':
+        self.channel = words[2]
+        self.content = words[3]
+        if self.content[0] == ':':
+          self.content = line.split(':', 2)[2]
+      else:
+        print (line)
 
   @property
   def is_owner(self):
@@ -237,6 +163,8 @@ class Message:
   def treat (self, mods):
     if self.cmd == "PING":
       self.pong ()
+    elif self.cmd == "PRIVMSG" and self.name is None:
+      self.parsectcp ()
     elif self.cmd == "PRIVMSG" and self.authorize():
       self.parsemsg (mods)
     elif self.cmd == "NICK":
@@ -250,6 +178,10 @@ class Message:
   def pong (self):
     self.srv.s.send(("PONG %s\r\n" % self.content).encode ())
 
+
+  def parsectcp(self):
+    if self.content == 'VERSION':
+      self.srv.send_ctcp_response(self.channel, self.sender, "VERSION nemubot v3")
 
   def reparsemsg(self):
     if self.mods is not None:

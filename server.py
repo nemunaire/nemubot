@@ -3,8 +3,10 @@ import traceback
 import socket
 import threading
 import time
+import imp
 
-import message
+message = __import__("message")
+imp.reload(message)
 
 class Server(threading.Thread):
     def __init__(self, server, nick, owner, realname):
@@ -40,6 +42,12 @@ class Server(threading.Thread):
     @property
     def id(self):
         return self.host + ":" + str(self.port)
+
+    def send_ctcp_response(self, me, to, msg, cmd = "NOTICE", endl = "\r\n"):
+      if msg is not None and channel is not None:
+        for line in msg.split("\n"):
+          if line != "":
+            self.s.send ((":%s %s %s :%s%s" % (me, cmd, to, line, endl)).encode ())
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if msg is not None and channel is not None:
@@ -97,9 +105,10 @@ class Server(threading.Thread):
         self.s.send(b"PASS " + self.password.encode () + b"\r\n")
       self.s.send(("NICK %s\r\n" % self.nick).encode ())
       self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host, self.realname)).encode ())
-      print ("Connection to %s:%d completed" % (self.host, self.port))
+      print ("Connection to %s:%d completed with version 2.0" % (self.host, self.port))
 
-      self.s.send(("JOIN %s\r\n" % ' '.join (self.channels)).encode ())
+      if len(self.channels) > 0:
+          self.s.send(("JOIN %s\r\n" % ' '.join (self.channels)).encode ())
       print ("Listen to channels: %s" % ' '.join (self.channels))
 
       readbuffer = "" #Here we store all the messages from server
@@ -113,8 +122,8 @@ class Server(threading.Thread):
         readbuffer = temp.pop( )
 
         for line in temp:
-          msg = message.Message (self, line)
           try:
+              msg = message.Message (self, line)
               msg.treat (self.mods)
           except:
               print ("Une erreur est survenue lors du traitement du message : %s"%line)
