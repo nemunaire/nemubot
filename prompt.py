@@ -47,6 +47,9 @@ def launch(servers):
       cmds = parsecmd(sys.stdin.readline().strip())
     except KeyboardInterrupt:
       cmds = parsecmd("quit")
+    except:
+      exc_type, exc_value, exc_traceback = sys.exc_info()
+      sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
     if cmds is not None and len(cmds) > 0:
       try:
         ret = run(cmds, servers)
@@ -76,6 +79,20 @@ def load(cmds, servers):
           print ("  Server `%s' already added, skiped." % srv.id)
   else:
     print ("Not enough arguments. `load' takes an filename.")
+  return
+
+def close(cmds, servers):
+  if len(cmds) > 1:
+    for s in cmds[1:]:
+      if s in servers:
+        servers[s].disconnect()
+        del servers[s]
+      else:
+        print ("close: server `%s' not found." % s)
+  elif selectedServer is not None:
+    selectedServer.disconnect()
+    del servers[selectedServer.id]
+    selectedServer = None
   return
 
 def select(cmds, servers):
@@ -114,6 +131,44 @@ def connect(cmds, servers):
   else:
     print ("  Please SELECT a server or give its name in argument.")
 
+def send(cmds, servers):
+  rd = 1
+  if len(cmds) <= rd:
+    print ("send: not enough arguments.")
+    return
+
+  if cmds[rd] in servers:
+    srv = servers[cmds[rd]]
+    rd += 1
+  elif selectedServer is not None:
+    srv = selectedServer
+  else:
+    print ("  Please SELECT a server or give its name in argument.")
+    return
+
+  if len(cmds) <= rd:
+    print ("send: not enough arguments.")
+    return
+
+  #Check the server is connected
+  if not srv.connected:
+    print ("send: server `%s' not connected." % srv.id)
+    return
+
+  if cmds[rd] in srv.channels:
+    chan = cmds[rd]
+    rd += 1
+  else:
+    print ("send: channel `%s' not authorized in server `%s'." % (cmds[rd], srv.id))
+    return
+
+  if len(cmds) <= rd:
+    print ("send: not enough arguments.")
+    return
+
+  srv.send_msg_final(chan, cmds[rd])
+  return "done"
+
 def disconnect(cmds, servers):
   if len(cmds) > 1:
     for s in cmds[1:]:
@@ -128,6 +183,18 @@ def disconnect(cmds, servers):
   else:
     print ("  Please SELECT a server or give its name in argument.")
 
+def zap(cmds, servers):
+  if len(cmds) > 1:
+    for s in cmds[1:]:
+      if s in servers:
+        servers[s].connected = not servers[s].connected
+      else:
+        print ("disconnect: server `%s' not found." % s)
+  elif selectedServer is not None:
+    selectedServer.connected = not selectedServer.connected
+  else:
+    print ("  Please SELECT a server or give its name in argument.")
+
 def end(cmds, servers):
   if cmds[0] == "reset":
     return "reset"
@@ -138,12 +205,15 @@ def end(cmds, servers):
 
 #Register build-ins
 CAPS = {
-  'quit': end,
-  'exit': end,
-  'reset': end,
-  'load': load,
-  'select': select,
-  'list': liste,
-  'connect': connect,
-  'disconnect': disconnect,
+  'quit': end, #Disconnect all server and quit
+  'exit': end, #Alias for quit
+  'reset': end, #Reload the prompt
+  'load': load, #Load a servers configuration file
+  'close': load, #Disconnect and remove a server from the list
+  'select': select, #Select a server
+  'list': liste, #Show lists
+  'connect': connect, #Connect to a server
+  'send': send, #Send a message on a channel
+  'disconnect': disconnect, #Disconnect from a server
+  'zap': zap, #Reverse internal connection state without check
 }
