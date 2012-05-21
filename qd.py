@@ -406,9 +406,12 @@ class GameUpdater(threading.Thread):
   def run(self):
     global DELAYED, QUESTIONS, LASTQUESTION
 
-    seen = datetime.now() - self.bfrseen
+    if self.bfrseen is not None:
+      seen = datetime.now() - self.bfrseen
+      rnd = random.randint(0, seen.seconds/90)
+    else:
+      rnd = 1
 
-    rnd = random.randint(0, seen.seconds/90)
     if rnd != 0:
       if self.msg.channel == "#nemutest":
         quest = 9
