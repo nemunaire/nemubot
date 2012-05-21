@@ -38,6 +38,9 @@ class ModuleBase:
   def load(self):
     return True
 
+  def reload(self):
+    return self.save() and self.load()
+
   def save(self):
     return True
 
@@ -63,4 +66,7 @@ class ModuleBase:
     return False
 
   def parselisten(self, msg):
+    return False
+
+  def parseadmin(self, msg):
     return False

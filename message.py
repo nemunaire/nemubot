@@ -16,7 +16,7 @@ BANLIST = []
 CREDITS = {}
 filename = ""
 
-def load_module(datas_path):
+def load(datas_path):
   global BANLIST, CREDITS, filename
   CREDITS = dict ()
 
@@ -341,21 +341,17 @@ class Message:
             self.send_snd("No help for command %s" % self.cmd[1])
         else:
           self.send_snd("Pour me demander quelque chose, commencez votre message par mon nom ; je réagis à certain messages commençant par !, consulter l'aide de chaque module :")
-          for im in mods.keys():
-            self.send_snd("  - !help %s: %s" % (im, mods[im].help_tiny ()))
+          for im in mods:
+            self.send_snd("  - !help %s: %s" % (im.name, im.help_tiny ()))
 
       else:
-        for im in mods.keys():
-          if im == "alias":
-            continue
-          if mods[im].parseanswer(self):
+        for im in mods:
+          if im.parseanswer(self):
             return
-        if mods["alias"].parseanswer(self):
-          return
 
     else:
-      for im in mods.keys():
-        if mods[im].parselisten(self):
+      for im in mods:
+        if im.parselisten(self):
           return
 
 

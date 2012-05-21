@@ -1,18 +1,16 @@
 import sys
 import traceback
 import socket
-import _thread
+import threading
 import time
 
 import message
 
-#class WaitedAnswer:
-#    def __init__(self, channel):
-#        self.channel = channel
-#        self.module
-
-class Server:
+class Server(threading.Thread):
     def __init__(self, server, nick, owner, realname):
+      self.stop = False
+      self.stopping = threading.Event()
+      self.connected = False
       self.nick = nick
       self.owner = owner
       self.realname = realname
@@ -30,14 +28,14 @@ class Server:
       else:
         self.password = None
 
-      self.waited_answer = list()
-
       self.listen_nick = True
       self.partner = "nbr23"
 
       self.channels = list()
       for channel in server.getElementsByTagName('channel'):
         self.channels.append(channel.getAttribute("name"))
+
+      threading.Thread.__init__(self)
 
     @property
     def id(self):
@@ -65,43 +63,35 @@ class Server:
             self.send_msg (channel, msg, cmd, endl)
 
 
-    def register_answer(self, channel, ):
-        self.waited_answer.append(channel)
-
-    def launch(self, mods, datas_dir):
-      self.datas_dir = datas_dir
-      _thread.start_new_thread(self.connect, (mods,))
-
     def accepted_channel(self, channel):
         if self.listen_nick:
             return self.channels.count(channel) or channel == self.nick
         else:
             return self.channels.count(channel)
 
-    def read(self, mods):
-      self.readbuffer = "" #Here we store all the messages from server
-      while 1:
-        try:
-            self.readbuffer = self.readbuffer + self.s.recv(1024).decode() #recieve server messages
-        except UnicodeDecodeError:
-            print ("ERREUR de décodage unicode")
-            continue
-        temp = self.readbuffer.split("\n")
-        self.readbuffer = temp.pop( )
+    def disconnect(self):
+        if self.connected:
+            self.stop = True
+            self.s.shutdown(socket.SHUT_RDWR)
+            self.stopping.wait()
+            return True
+        else:
+            return False
 
-        for line in temp:
-          msg = message.Message (self, line)
-          try:
-              msg.treat (mods)
-          except:
-              print ("Une erreur est survenue lors du traitement du message : %s"%line)
-              exc_type, exc_value, exc_traceback = sys.exc_info()
-              traceback.print_exception(exc_type, exc_value, exc_traceback)
+    def launch(self, mods):
+        if not self.connected:
+            self.stop = False
+            #self.datas_dir = datas_dir #DEPRECATED
+            self.mods = mods
+            self.start()
+        else:
+            print ("  Already connected.")
 
-
-    def connect(self, mods):
+    def run(self):
       self.s = socket.socket( ) #Create the socket
       self.s.connect((self.host, self.port)) #Connect to server
+      self.stopping.clear()
+      self.connected = True
 
       if self.password != None:
         self.s.send(b"PASS " + self.password.encode () + b"\r\n")
@@ -112,4 +102,26 @@ class Server:
       self.s.send(("JOIN %s\r\n" % ' '.join (self.channels)).encode ())
       print ("Listen to channels: %s" % ' '.join (self.channels))
 
-      self.read(mods)
+      readbuffer = "" #Here we store all the messages from server
+      while not self.stop:
+        try:
+            readbuffer = readbuffer + self.s.recv(1024).decode() #recieve server messages
+        except UnicodeDecodeError:
+            print ("ERREUR de décodage unicode")
+            continue
+        temp = readbuffer.split("\n")
+        readbuffer = temp.pop( )
+
+        for line in temp:
+          msg = message.Message (self, line)
+          try:
+              msg.treat (self.mods)
+          except:
+              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+              exc_type, exc_value, exc_traceback = sys.exc_info()
+              traceback.print_exception(exc_type, exc_value, exc_traceback)
+      self.connected = False
+      print ("Server `%s' successfully stopped." % self.id)
+      self.stopping.set()
+      #Rearm Thread
+      threading.Thread.__init__(self)
