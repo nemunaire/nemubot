@@ -408,7 +408,7 @@ class GameUpdater(threading.Thread):
 
     if self.bfrseen is not None:
       seen = datetime.now() - self.bfrseen
-      rnd = random.randint(0, seen.seconds/90)
+      rnd = random.randint(0, int(seen.seconds/90))
     else:
       rnd = 1
 
