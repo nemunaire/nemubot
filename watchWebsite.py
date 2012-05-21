@@ -92,7 +92,7 @@ class Site:
   def check (self):
     while self.run:
       try:
-#        print ("Check %s/%s"%(self.server, self.page))
+        #print ("Check %s/%s"%(self.server, self.page))
         content = getPage(self.server, self.page)
         if content is None:
           return
