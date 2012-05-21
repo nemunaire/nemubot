@@ -17,6 +17,7 @@ channels = "#nemutest #42sh #ykar #epitagueule"
 MANCHE = None
 QUESTIONS = list()
 SCORES = dict ()
+LASTSEEN = dict ()
 temps = dict ()
 
 class Score:
@@ -31,6 +32,7 @@ class Score:
     self.leet = 0
     self.great = 0
     self.bad = 0
+    self.triche = 0
     self.last = None
     self.changed = False
 
@@ -43,6 +45,7 @@ class Score:
     self.leet = int(item.getAttribute("leet"))
     self.great = int(item.getAttribute("great"))
     self.bad = int(item.getAttribute("bad"))
+    self.triche = int(item.getAttribute("triche"))
 
   def merge(self, other):
     self.ftt += other.ftt
@@ -53,6 +56,7 @@ class Score:
     self.leet += other.leet
     self.great += other.great
     self.bad += other.bad
+    self.triche += other.triche
 
   def newWinner(self):
     self.ftt = 0
@@ -63,6 +67,7 @@ class Score:
     self.leet = 1
     self.great = -1
     self.bad = -4
+    self.triche = 0
 
   def isWinner(self):
     return self.great >= 42
@@ -96,16 +101,14 @@ class Score:
     if self.canPlay():
       self.bad += 1
   def playTriche(self):
-    self.changed = True
-    self.bad += 5
+    self.triche += 1
   def oupsTriche(self):
-    self.changed = True
-    self.bad -= 5
+    self.triche -= 1
   def bonusQuestion(self):
-    self.changed = True
+    return
 
   def toTuple(self):
-    return (self.ftt, self.twt, self.pi, self.notfound, self.tententen, self.leet, self.great, self.bad)
+    return (self.ftt, self.twt, self.pi, self.notfound, self.tententen, self.leet, self.great, self.bad, self.triche)
 
   def canPlay(self):
     ret = self.last == None or self.last.minute != datetime.now().minute or self.last.hour != datetime.now().hour or self.last.day != datetime.now().day
@@ -121,10 +124,10 @@ class Score:
       return False
 
   def score(self):
-    return (self.ftt * 2 - self.bad * 10 + self.great * 5 + self.leet * 3 + self.pi * 3.1415 + self.twt + self.notfound * 4.04)
+    return (self.ftt * 2 + self.great * 5 + self.leet * 13.37 + (self.pi + 1) * 3.1415 * (self.notfound + 1) + self.tententen * 10 + self.twt - (self.bad + 1) * 10 * (self.triche * 5 + 1) + 7)
 
   def details(self):
-    return "42: %d, 23: %d, bad: %d, great: %d, leet: %d, pi: %d, 404: %d, 10: %d = %d."%(self.ftt, self.twt, self.bad, self.great, self.leet, self.pi, self.notfound, self.tententen, self.score())
+    return "42: %d, 23: %d, leet: %d, pi: %d, 404: %d, 10: %d, great: %d, bad: %d, triche: %d = %d."%(self.ftt, self.twt, self.leet, self.pi, self.notfound, self.tententen, self.great, self.bad, self.triche, self.score())
 
 
 def xmlparse(node):
@@ -167,7 +170,7 @@ def save_module():
   top = newdoc.documentElement
 
   for name in SCORES.keys():
-    scr = 'fourtytwo="%d" twentythree="%d" pi="%d" notfound="%d" tententen="%d" leet="%d" great="%d" bad="%d"'% SCORES[name].toTuple()
+    scr = 'fourtytwo="%d" twentythree="%d" pi="%d" notfound="%d" tententen="%d" leet="%d" great="%d" bad="%d" triche="%d"'% SCORES[name].toTuple()
     item = parseString ('<score name="%s" %s />' % (name, scr)).documentElement
     top.appendChild(item);
 
@@ -210,10 +213,10 @@ def parseanswer (msg):
         elif msg.cmd[3] not in SCORES:
           msg.send_chn ("%s n'est pas un joueur connu."%msg.cmd[3])
     elif len(msg.cmd) > 1 and (msg.cmd[1] == "help" or msg.cmd[1] == "aide"):
-      msg.send_chn ("Formule : normal * 2 - bad * 10 + great * 5 + leet * 3 + pi * 3.1415 + dt + not_found * 4.04")
+      msg.send_chn ("Formule : \"42\" * 2 + great * 5 + leet * 13.37 + (pi + 1) * 3.1415 * (not_found + 1) + tententen * 10 + \"23\" - (bad + 1) * 10 * (triche * 5 + 1) + 7")
     elif len(msg.cmd) > 1 and (msg.cmd[1] == "manche" or msg.cmd[1] == "round"):
       msg.send_chn ("Nous sommes dans la %de manche, gagnée par %s avec %d points et commencée par %s le %s"%MANCHE)
-  #elif where == "#nemutest":
+    #elif msg.channel == "#nemutest":
     else:
       phrase = ""
 
@@ -290,10 +293,15 @@ def parselisten (msg):
   if len(DELAYED) > 0 and msg.sender in DELAYED and DELAYED[msg.sender].good(msg.content):
     msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.sender)
 
+  bfrseen = None
+  if msg.realname in LASTSEEN:
+    bfrseen = LASTSEEN[msg.realname]
+  LASTSEEN[msg.realname] = datetime.now()
+
 #  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
   if msg.channel != "#nemutest" and msg.sender not in DELAYED:
 
-    if re.match("(42|quarante[- ]?deux).{,2}", msg.content.strip().lower()):
+    if re.match("^(42|quarante[- ]?deux).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
         getUser(msg.sender).playTen()
         getUser(msg.sender).playGreat()
@@ -304,7 +312,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(23|vingt[ -]?trois).{,2}", msg.content.strip().lower()):
+    if re.match("^(23|vingt[ -]?trois).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 23:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -312,7 +320,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(10){3}.{,2}", msg.content.strip().lower()):
+    if re.match("^(10){3}.{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.hour == 10:
         if msg.time.second == 10:
           getUser(msg.sender).playGreat()
@@ -320,13 +328,13 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("0?12345.{,2}", msg.content.strip().lower()):
+    if re.match("^0?12345.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 1 and msg.time.minute == 23 and (msg.time.second == 45 or (msg.time.second == 46 and msg.time.microsecond < 330000)):
         getUser(msg.sender).playSuite()
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("[1l][e3]{2}[t7] ?time.{,2}", msg.content.strip().lower()):
+    if re.match("^[1l][e3]{2}[t7] ?t?ime.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 13 and msg.time.minute == 37:
         if msg.time.second == 0:
           getUser(msg.sender).playGreat()
@@ -334,7 +342,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(pi|3.14) ?time.{,2}", msg.content.strip().lower()):
+    if re.match("^(pi|3.14) ?time.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 3 and msg.time.minute == 14:
         if msg.time.second == 15 or msg.time.second == 16:
           getUser(msg.sender).playGreat()
@@ -342,7 +350,7 @@ def parselisten (msg):
       else:
         getUser(msg.sender).playBad()
 
-    if re.match("(404( ?time)?|time ?not ?found).{,2}", msg.content.strip().lower()):
+    if re.match("^(404( ?time)?|time ?not ?found).{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 4 and msg.time.minute == 4:
         if msg.time.second == 0 or msg.time.second == 4:
           getUser(msg.sender).playGreat()
@@ -355,7 +363,7 @@ def parselisten (msg):
       win(msg)
       return True
     elif getUser(msg.sender).hasChanged():
-      gu = GameUpdater(msg)
+      gu = GameUpdater(msg, bfrseen)
       gu.start()
       return True
   return False
@@ -390,16 +398,18 @@ class DelayedTuple:
 LASTQUESTION = 99999
 
 class GameUpdater(threading.Thread):
-  def __init__(self, msg):
+  def __init__(self, msg, bfrseen):
     self.msg = msg
+    self.bfrseen = bfrseen
     threading.Thread.__init__(self)
 
   def run(self):
     global DELAYED, QUESTIONS, LASTQUESTION
 
-    rnd = random.randint(0, 3)
-    print (rnd)
-    if rnd != 2:
+    seen = datetime.now() - self.bfrseen
+
+    rnd = random.randint(0, seen.seconds/90)
+    if rnd != 0:
       if self.msg.channel == "#nemutest":
         quest = 9
       else:
@@ -423,5 +433,7 @@ class GameUpdater(threading.Thread):
         if random.randint(0, 10) == 1:
           getUser(self.msg.sender).bonusQuestion()
         self.msg.send_chn("%s: Correct !" % self.msg.sender)
+      else:
+        self.msg.send_chn("%s: J'accepte" % self.msg.sender)
       del DELAYED[self.msg.sender]
     save_module ()

@@ -18,7 +18,7 @@ class AtomEntry:
       except:
         print (node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10])
         self.updated = time.localtime ()
-    if len(node.getElementsByTagName("summary")) > 0:
+    if len(node.getElementsByTagName("summary")) > 0 and node.getElementsByTagName("summary")[0].firstChild is not None:
       self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
     else:
       self.summary = None
