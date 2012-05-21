@@ -115,6 +115,12 @@ def liste(cmds, servers):
       if l == "server" or l == "servers":
         for srv in servers.keys():
           print ("  - %s ;" % srv)
+      elif l == "chan" or l == "channel" or l == "channels":
+        if selectedServer is not None:
+          for chn in selectedServer.channels:
+            print ("  - %s ;" % chn)
+        else:
+          print ("  Please SELECT a server before ask for channels list.")
       else:
         print ("  Unknown list `%s'" % l)
   else:
@@ -132,6 +138,30 @@ def connect(cmds, servers):
     selectedServer.launch(MODS)
   else:
     print ("  Please SELECT a server or give its name in argument.")
+
+def join(cmds, servers):
+  rd = 1
+  if len(cmds) <= rd:
+    print ("%s: not enough arguments." % cmds[0])
+    return
+
+  if cmds[rd] in servers:
+    srv = servers[cmds[rd]]
+    rd += 1
+  elif selectedServer is not None:
+    srv = selectedServer
+  else:
+    print ("  Please SELECT a server or give its name in argument.")
+    return
+
+  if len(cmds) <= rd:
+    print ("%s: not enough arguments."  % cmds[0])
+    return
+
+  if cmds[0] == "join":
+    srv.join(cmds[rd])
+  elif cmds[0] == "leave" or cmds[0] == "part":
+    srv.leave(cmds[rd])
 
 def send(cmds, servers):
   rd = 1
@@ -215,6 +245,8 @@ CAPS = {
   'select': select, #Select a server
   'list': liste, #Show lists
   'connect': connect, #Connect to a server
+  'join': join, #Join a new channel
+  'leave': join, #Leave a channel
   'send': send, #Send a message on a channel
   'disconnect': disconnect, #Disconnect from a server
   'zap': zap, #Reverse internal connection state without check

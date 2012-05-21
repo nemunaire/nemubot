@@ -107,21 +107,22 @@ class Message:
       else:
         self.realname = self.sender
 
-      if self.cmd == 'PRIVMSG':
+      if len(words) > 2:
         self.channel = words[2]
+
+      if self.cmd == 'PRIVMSG':
         self.content = words[3]
         if self.content[0] == ':':
           self.content = line.split(':', 2)[2]
       else:
         print (line)
     else:
+      print (line)
       if self.cmd == 'PRIVMSG':
         self.channel = words[2]
         self.content = words[3]
         if self.content[0] == ':':
           self.content = line.split(':', 2)[2]
-      else:
-        print (line)
 
   @property
   def is_owner(self):
@@ -167,12 +168,12 @@ class Message:
       self.parsectcp ()
     elif self.cmd == "PRIVMSG" and self.authorize():
       self.parsemsg (mods)
-    elif self.cmd == "NICK":
-      print ("%s change de nom pour %s" % (self.sender, self.content))
-    elif self.cmd == "PART":
-      print ("%s vient de quitter %s" % (self.sender, self.channel))
-    elif self.cmd == "JOIN":
-      print ("%s arrive sur %s" % (self.sender, self.channel))
+#    elif self.cmd == "NICK":
+#      print ("%s change de nom pour %s" % (self.sender, self.content))
+#    elif self.cmd == "PART":
+#      print ("%s vient de quitter %s" % (self.sender, self.channel))
+#    elif self.cmd == "JOIN":
+#      print ("%s arrive sur %s" % (self.sender, self.channel))
 
 
   def pong (self):

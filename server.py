@@ -86,6 +86,22 @@ class Server(threading.Thread):
         else:
             return False
 
+    def join(self, channel):
+        if channel is not None and self.connected:
+            self.channels.append(channel)
+            self.s.send(("JOIN %s\r\n" % channel).encode ())
+            return True
+        else:
+            return False
+
+    def leave(self, channel):
+        if channel is not None and self.connected and channel in self.channels:
+            self.channels.remove(channel)
+            self.s.send(("PART %s\r\n" % channel.split()[0]).encode ())
+            return True
+        else:
+            return False
+
     def launch(self, mods):
         if not self.connected:
             self.stop = False

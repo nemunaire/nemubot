@@ -69,7 +69,7 @@ def speak(endstate):
     stopSpk = 0
 
     if lastmsg is None:
-        lastmsg = message.Message(None, "")
+        lastmsg = message.Message(None, ":Quelqun!someone@p0m.fr PRIVMSG channel nothing")
 
     while not stopSpk and len(g_queue) > 0:
         msg = g_queue.pop(0)
@@ -179,6 +179,9 @@ class Server:
                 try:
                     msg = message.Message(self, line)
                 except:
+                    print ("Une erreur est survenue lors du traitement du message : %s"%line)
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_traceback)
                     continue
 
                 if msg.cmd == "PING":
