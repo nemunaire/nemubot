@@ -296,7 +296,8 @@ def parselisten (msg):
   bfrseen = None
   if msg.realname in LASTSEEN:
     bfrseen = LASTSEEN[msg.realname]
-  LASTSEEN[msg.realname] = datetime.now()
+  if (datetime.now().minute != 41 and datetime.now().minute != 22) or (bfrseen is not None and bfrseen.minute - 1 == datetime.now().minute):
+    LASTSEEN[msg.realname] = datetime.now()
 
 #  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
   if msg.channel != "#nemutest" and msg.sender not in DELAYED:

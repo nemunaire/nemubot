@@ -35,11 +35,15 @@ def save_module():
   top = newdoc.documentElement
 
   for name in ALIAS.keys():
-    item = parseString ('<alias alias="%s" origin="%s" />' % (name, ALIAS[name])).documentElement
+    item = newdoc.createElement("alias")
+    item.setAttribute("alias", name)
+    item.setAttribute("origin", ALIAS[name])
     top.appendChild(item);
 
   for name in variables.keys():
-    item = parseString ('<variable name="%s" value="%s" />' % (name, variables[name])).documentElement
+    item = newdoc.createElement("variable")
+    item.setAttribute("name", name)
+    item.setAttribute("value", variables[name])
     top.appendChild(item);
 
   with open(filename, "w") as f:
