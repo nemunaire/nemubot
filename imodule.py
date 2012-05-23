@@ -9,6 +9,31 @@ class ModuleException(Exception):
 
 
 class ModuleState:
+  def __init__(self, name):
+    self.name = name
+    self.attributes = dict()
+    self.childs = list()
+
+  def getName(self):
+    return self.name
+
+  def getAttribute(self, name):
+    if name in self.attributes:
+      return self.attributes[name]
+    else:
+      return None
+
+  def setAttribute(self, name, value):
+    self.attributes[name] = value
+
+  def getChilds(self):
+    return self.childs
+
+  def addChild(self, child):
+    self.childs.append(child)
+
+
+class ModuleStateFile:
   def __init__(self, filename):
     self.filename = filename
 

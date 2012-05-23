@@ -287,6 +287,8 @@ class Message:
         if im.parselisten(self):
           return
 
+#  def parseOwnerCmd(self, cmd):
+
 
 ##############################
 #                            #
