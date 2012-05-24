@@ -408,8 +408,11 @@ class GameUpdater(threading.Thread):
     global DELAYED, QUESTIONS, LASTQUESTION
 
     if self.bfrseen is not None:
-      seen = datetime.now() - self.bfrseen
-      rnd = random.randint(0, int(seen.seconds/90))
+      try:
+        seen = datetime.now() - self.bfrseen
+        rnd = random.randint(0, int(seen.seconds/90))
+      except:
+        rnd = 1
     else:
       rnd = 1
 
