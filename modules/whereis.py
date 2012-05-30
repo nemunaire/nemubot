@@ -10,9 +10,10 @@ from datetime import datetime
 from datetime import date
 from datetime import timedelta
 from urllib.parse import unquote
-from xml.dom.minidom import parse
-from xml.dom.minidom import parseString
-from xml.dom.minidom import getDOMImplementation
+
+from module_state import ModuleState
+
+nemubotversion = 3.0
 
 NS_SERVER = 'ns-server.epita.fr'
 NS_PORT = 4242
@@ -22,7 +23,8 @@ search = list()
 
 class UpdatedStorage:
   def __init__(self):
-    sock = connect_to_ns(NS_SERVER, NS_PORT)
+    sock = connect_to_ns(CONF.getNode("server")["url"],
+                         CONF.getNode("server").getInt("port"))
     self.users = dict()
     if sock != None:
       for l in list_users(sock):
@@ -50,56 +52,10 @@ class User(object):
 
     @property
     def sm(self):
-        if self.ip.startswith('10.200'):
-          ip = self.ip.split('.')
-          if 20 < int(ip[2]) < 30:
-            return 'SM02'
-          else:
-            return 'SM' + self.ip.split('.')[2]
-        elif self.ip.startswith('10.242'):
-            return 'bocal'
-        elif self.ip.startswith('10.247'):
-            return 'pasteur'
-        elif self.ip.startswith('10.248'):
-            return 'srlab'
-        elif self.ip.startswith('10.249'):
-            return 'midlab'
-        elif self.ip.startswith('10.250'):
-            return 'cisco'
-        elif self.ip.startswith('10.41.'):
-            return 'wifi'
-        elif self.ip.startswith('10.223.3.'):
-            return 'épimac'
-        elif self.ip.startswith('10.223.4.'):
-            return 'wcube'
-        elif self.ip.startswith('10.223.5.'):
-            return 'cycom'
-        elif self.ip.startswith('10.223.6.'):
-            return 'epitv'
-        elif self.ip.startswith('10.223.7.'):
-            return 'prologin'
-        elif self.ip.startswith('10.223'):
-            return 'assos'
-        elif self.ip.startswith('10.226.7.'):
-            return 'gistre'
-        elif self.ip.startswith('10.224.1.'):
-            return 'astek'
-        elif self.ip.startswith('10.224.2.'):
-            return 'acu'
-        elif self.ip.startswith('10.224.4.'):
-            return 'lse'
-        elif self.ip.startswith('10.224.8.'):
-            return 'eip'
-        elif self.ip.startswith('10.224.16.'):
-            return 'evolutek'
-        elif self.ip.startswith('10.224.18.'):
-            return 'mslab'
-        elif self.ip.startswith('10.2.'):
-            return 'adm'
-        elif self.ip.startswith('10.10.'):
-            return 'vpn'
-        else:
-            return None
+      for sm in CONF.getNodes("sm"):
+        if self.ip.startswith(sm["ip"]):
+            return sm["name"]
+      return None
 
     @property
     def poste(self):
@@ -139,15 +95,6 @@ def list_users(sock):
         if '\nrep 002' in tmp or tmp == '':
             break
     return buf.split('\n')[:-2]
-
-
-def load_module(datas_path):
-  """Load this module"""
-  return
-
-def save_module():
-  """Save the module state"""
-  return
 
 
 def help_tiny ():
@@ -207,7 +154,6 @@ def whoison(msg):
         continue
       else:
         found = list()
-        print (len(datas.users))
         for userC in datas.users:
           for user in datas.users[userC]:
             if (msg.cmd[0] == "whoison" and (user.ip[:len(pc)] == pc or user.location.lower() == pc)) or (msg.cmd[0] == "whoisin" and user.sm == pc):
