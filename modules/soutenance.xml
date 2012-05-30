@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="soutenance">
+  <server ip="intra.acu.epita.fr" url="/intra/sout_liste.html" />
+</nemubotmodule>

@@ -9,9 +9,13 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 
+from module_state import ModuleState
+
+nemubotversion = 3.0
+
 def getPage ():
-  conn = http.client.HTTPSConnection("intra.acu.epita.fr")
-  conn.request("GET", "/intra/sout_liste.html")
+  conn = http.client.HTTPSConnection(CONF.getNode("server")["ip"])
+  conn.request("GET", CONF.getNode("server")["url"])
 
   res = conn.getresponse()
   data = res.read()
@@ -121,14 +125,6 @@ class SiteSoutenances:
         close = s
     return close
 
-
-def load_module(datas_path):
-  """Load this module"""
-  return
-
-def save_module():
-  """Save the module state"""
-  return
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -242,10 +238,3 @@ def parseask (msg):
             DELAYED[d].evt.set()
     return treat
   return False
-
-def parselisten (msg):
-  return False
-
-
-def startThread(site):
-  site.check ()
