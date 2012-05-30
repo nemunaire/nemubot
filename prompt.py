@@ -2,12 +2,17 @@ import sys
 import shlex
 import traceback
 import imp
-from xml.dom.minidom import parse
 
 server = __import__("server")
 imp.reload(server)
 
+xmlparser = __import__("module_states_file")
+imp.reload(xmlparser)
+
 selectedServer = None
+modules_path = "./modules/"
+datas_path = "./datas/"
+
 MODS = list()
 
 def parsecmd(msg):
@@ -39,13 +44,17 @@ def getPS1():
 
 def launch(servers):
   """Launch the prompt"""
+  for srv in servers:
+    servers[srv].update_mods(MODS)
+
   ret = ""
   cmds = list()
   while ret != "quit" and ret != "reset":
-    sys.stdout.write("\033[0;33m%s§\033[0m " % getPS1())
-    sys.stdout.flush()
+   sys.stdout.write("\033[0;33m%s§\033[0m " % getPS1())
+   sys.stdout.flush()
+   for k in sys.stdin.readline().strip().split(";"):
     try:
-      cmds = parsecmd(sys.stdin.readline().strip())
+      cmds = parsecmd(k)
     except KeyboardInterrupt:
       cmds = parsecmd("quit")
     except:
@@ -66,23 +75,77 @@ def launch(servers):
 #                        #
 ##########################
 
+def load_module(config, servers):
+  global MODS
+  if config.hasAttribute("name"):
+    try:
+      #Import the module code
+      mod = imp.load_source(config["name"], modules_path + "/" + config["name"] + ".py")
+      try:
+        if mod.nemubotversion < 3.0:
+          print ("  Module `%s' is not compatible with this version." % config["name"])
+          return
+
+        #Set module common functions and datas
+        mod.name = config["name"]
+        mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
+        mod.DATAS = xmlparser.parse_file(datas_path + "/" + config["name"] + ".xml")
+        mod.CONF = config
+        mod.save = lambda: mod.DATAS.save(datas_path + "/" + config["name"] + ".xml")
+
+        try:
+          mod.load()
+          print ("  Module `%s' successfully loaded." % config["name"])
+        except AttributeError:
+          print ("  Module `%s' successfully added." % config["name"])
+        MODS.append(mod)
+      except AttributeError:
+        print ("  Module `%s' is not a nemubot module." % config["name"])
+      for srv in servers:
+        servers[srv].update_mods(MODS)
+    except IOError:
+      print ("  Module `%s' not loaded: unable to find module implementation." % config["name"])
+  
+
 def load(cmds, servers):
+  """Load an XML configuration file"""
   if len(cmds) > 1:
     for f in cmds[1:]:
-      dom = parse(f)
-      config = dom.getElementsByTagName('config')[0]
-      for serveur in config.getElementsByTagName('server'):
-        srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
-        if srv.id not in servers:
-          servers[srv.id] = srv
-          print ("  Server `%s' successfully added." % srv.id)
-        else:
-          print ("  Server `%s' already added, skiped." % srv.id)
+      config = xmlparser.parse_file(f)
+      if config.getName() == "nemubotconfig" or config.getName() == "config":
+        #Preset each server in this file
+        for serveur in config.getChilds():
+          srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
+          if srv.id not in servers:
+            servers[srv.id] = srv
+            print ("  Server `%s' successfully added." % srv.id)
+          else:
+            print ("  Server `%s' already added, skiped." % srv.id)
+
+      elif config.getName() == "nemubotmodule":
+        load_module(config, servers)
+      else:
+        print ("  Can't load `%s'; this is not a valid nemubot configuration file." % f)
   else:
     print ("Not enough arguments. `load' takes an filename.")
   return
 
+def unload(cmds, servers):
+  """Unload a module"""
+  global MODS
+  if len(cmds) == 2 and cmds[1] == "all":
+    for mod in MODS:
+      try:
+        mod.unload()
+      except AttributeError:
+        continue
+    while len(MODS) > 0:
+      MODS.pop()
+  elif len(cmds) > 1:
+    print("Ok")
+
 def close(cmds, servers):
+  """Disconnect and forget (remove from the servers list) the server"""
   global selectedServer
   if len(cmds) > 1:
     for s in cmds[1:]:
@@ -98,6 +161,7 @@ def close(cmds, servers):
   return
 
 def select(cmds, servers):
+  """Select the current server"""
   global selectedServer
   if len(cmds) == 2 and cmds[1] != "None" and cmds[1] != "nemubot" and cmds[1] != "none":
     if cmds[1] in servers:
@@ -109,12 +173,16 @@ def select(cmds, servers):
   return
 
 def liste(cmds, servers):
+  """Show some lists"""
   if len(cmds) > 1:
     for l in cmds[1:]:
       l = l.lower()
       if l == "server" or l == "servers":
         for srv in servers.keys():
           print ("  - %s ;" % srv)
+      elif l == "mod" or l == "mods" or l == "module" or l == "modules":
+        for mod in MODS:
+          print ("  - %s ;" % mod.name)
       elif l == "chan" or l == "channel" or l == "channels":
         if selectedServer is not None:
           for chn in selectedServer.channels:
@@ -127,6 +195,7 @@ def liste(cmds, servers):
     print ("  Please give a list to show: servers, ...")
 
 def connect(cmds, servers):
+  """Make the connexion to a server"""
   if len(cmds) > 1:
     for s in cmds[1:]:
       if s in servers:
@@ -140,6 +209,7 @@ def connect(cmds, servers):
     print ("  Please SELECT a server or give its name in argument.")
 
 def join(cmds, servers):
+  """Join or leave a channel"""
   rd = 1
   if len(cmds) <= rd:
     print ("%s: not enough arguments." % cmds[0])
@@ -164,6 +234,7 @@ def join(cmds, servers):
     srv.leave(cmds[rd])
 
 def send(cmds, servers):
+  """Built-on that send a message on a channel"""
   rd = 1
   if len(cmds) <= rd:
     print ("send: not enough arguments.")
@@ -202,6 +273,7 @@ def send(cmds, servers):
   return "done"
 
 def disconnect(cmds, servers):
+  """Close the connection to a server"""
   if len(cmds) > 1:
     for s in cmds[1:]:
       if s in servers:
@@ -216,6 +288,7 @@ def disconnect(cmds, servers):
     print ("  Please SELECT a server or give its name in argument.")
 
 def zap(cmds, servers):
+  """Hard change connexion state"""
   if len(cmds) > 1:
     for s in cmds[1:]:
       if s in servers:
@@ -228,6 +301,7 @@ def zap(cmds, servers):
     print ("  Please SELECT a server or give its name in argument.")
 
 def end(cmds, servers):
+  """Quit the prompt for reload or exit"""
   if cmds[0] == "reset":
     return "reset"
   else:
@@ -240,8 +314,9 @@ CAPS = {
   'quit': end, #Disconnect all server and quit
   'exit': end, #Alias for quit
   'reset': end, #Reload the prompt
-  'load': load, #Load a servers configuration file
+  'load': load, #Load a servers or module configuration file
   'close': close, #Disconnect and remove a server from the list
+  'unload': unload, #Unload a module and remove it from the list
   'select': select, #Select a server
   'list': liste, #Show lists
   'connect': connect, #Connect to a server

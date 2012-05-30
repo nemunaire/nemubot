@@ -8,17 +8,59 @@ import threading
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
-from xml.dom.minidom import parse
-from xml.dom.minidom import parseString
-from xml.dom.minidom import getDOMImplementation
 
-filename = ""
+from module_state import ModuleState
+
+nemubotversion = 3.0
+
 channels = "#nemutest #42sh #ykar #epitagueule"
-MANCHE = None
-QUESTIONS = list()
-SCORES = dict ()
 LASTSEEN = dict ()
 temps = dict ()
+
+class Wrapper:
+  def __init__(self):
+    self.cache = dict()
+
+  def items(self):
+    global DATAS
+    ret = list()
+    for k in DATAS.index.keys():
+      ret.append((k, self[k]))
+    return ret
+
+  def __contains__(self, i):
+    global DATAS
+    return i in DATAS.index
+
+  def __getitem__(self, i):
+    global DATAS
+    if i in self.cache:
+      return self.cache[i]
+    else:
+      sc = Score()
+      sc.parse(DATAS.index[i])
+      self.cache[i] = sc
+      return sc
+
+  def __setitem__(self, i, j):
+    global DATAS
+    ms = ModuleState("player")
+    ms.setAttribute("name", i)
+    j.save(ms)
+    DATAS.addChild(ms)
+    DATAS.setIndex("name", "player")
+
+  def __delitem__(self, i):
+    global DATAS
+    del DATAS.index[i]
+
+  def save(self, i):
+    if i in self.cache:
+      self.cache[i].save(DATAS.index[i])
+      del self.cache[i]
+      
+
+SCORES = Wrapper()
 
 class Score:
   def __init__(self):
@@ -37,15 +79,26 @@ class Score:
     self.changed = False
 
   def parse(self, item):
-    self.ftt = int(item.getAttribute("fourtytwo"))
-    self.twt = int(item.getAttribute("twentythree"))
-    self.pi = int(item.getAttribute("pi"))
-    self.notfound = int(item.getAttribute("notfound"))
-    self.tententen = int(item.getAttribute("tententen"))
-    self.leet = int(item.getAttribute("leet"))
-    self.great = int(item.getAttribute("great"))
-    self.bad = int(item.getAttribute("bad"))
-    self.triche = int(item.getAttribute("triche"))
+    self.ftt = item.getInt("fourtytwo")
+    self.twt = item.getInt("twentythree")
+    self.pi = item.getInt("pi")
+    self.notfound = item.getInt("notfound")
+    self.tententen = item.getInt("tententen")
+    self.leet = item.getInt("leet")
+    self.great = item.getInt("great")
+    self.bad = item.getInt("bad")
+    self.triche = item.getInt("triche")
+
+  def save(self, state):
+    state.setAttribute("fourtytwo", self.ftt)
+    state.setAttribute("twentythree", self.twt)
+    state.setAttribute("pi", self.pi)
+    state.setAttribute("notfound", self.notfound)
+    state.setAttribute("tententen", self.tententen)
+    state.setAttribute("leet", self.leet)
+    state.setAttribute("great", self.great)
+    state.setAttribute("bad", self.bad)
+    state.setAttribute("triche", self.triche)
 
   def merge(self, other):
     self.ftt += other.ftt
@@ -100,6 +153,7 @@ class Score:
   def playBad(self):
     if self.canPlay():
       self.bad += 1
+      self.great += 1
   def playTriche(self):
     self.triche += 1
   def oupsTriche(self):
@@ -130,58 +184,9 @@ class Score:
     return "42: %d, 23: %d, leet: %d, pi: %d, 404: %d, 10: %d, great: %d, bad: %d, triche: %d = %d."%(self.ftt, self.twt, self.leet, self.pi, self.notfound, self.tententen, self.great, self.bad, self.triche, self.score())
 
 
-def xmlparse(node):
-  """Parse the given node and add scores to the global list."""
-  global SCORES, MANCHE
-  for item in node.getElementsByTagName("score"):
-    SCORES[item.getAttribute("name")] = Score ()
-    SCORES[item.getAttribute("name")].parse(item)
-
-  for item in node.getElementsByTagName("question"):
-    QUESTIONS.append((item.getAttribute("question"),item.getAttribute("regexp"),item.getAttribute("great")))
-
-  manche = node.getElementsByTagName("manche")[0]
-  MANCHE = (int(manche.getAttribute("number")),
-            manche.getAttribute("winner"),
-            int(manche.getAttribute("winner_score")),
-            manche.getAttribute("who"),
-#            datetime.now ())
-            datetime.fromtimestamp (time.mktime (time.strptime (manche.getAttribute("date")[:19], "%Y-%m-%d %H:%M:%S"))))
-
-def load_module(datas_path):
-  """Load this module"""
-  global MANCHE, SCORES, filename
-  MANCHE = None
-  SCORES = dict ()
-  filename = datas_path + "/42.xml"
-
-  sys.stdout.write ("Loading 42scores ... ")
-  dom = parse(filename)
-  xmlparse (dom.documentElement)
-  print ("done (%d loaded, %d questions, currently in round %d)" % (len(SCORES), len(QUESTIONS), -42))
-
-def save_module():
-  """Save the scores"""
-  global filename
-  sys.stdout.write ("Saving 42scores ... ")
-
-  impl = getDOMImplementation()
-  newdoc = impl.createDocument(None, 'game', None)
-  top = newdoc.documentElement
-
-  for name in SCORES.keys():
-    scr = 'fourtytwo="%d" twentythree="%d" pi="%d" notfound="%d" tententen="%d" leet="%d" great="%d" bad="%d" triche="%d"'% SCORES[name].toTuple()
-    item = parseString ('<score name="%s" %s />' % (name, scr)).documentElement
-    top.appendChild(item);
-
-  top.appendChild(parseString ('<manche number="%d" winner="%s" winner_score="%d" who="%s" date="%s" />' % MANCHE).documentElement)
-
-  for q in QUESTIONS:
-    top.appendChild(parseString ('<question question="%s" regexp="%s" great="%s" />' % q).documentElement)
-
-  with open(filename, "w") as f:
-    newdoc.writexml (f)
-  print ("done")
+def load():
+  global DATAS
+  DATAS.setIndex("name", "player")
 
 
 def help_tiny ():
@@ -198,7 +203,7 @@ def rev (tupl):
 
 def parseanswer (msg):
   if msg.cmd[0] == "42" or msg.cmd[0] == "score" or msg.cmd[0] == "scores":
-    global SCORES, MANCHE
+    global SCORES
     if len(msg.cmd) > 2 and msg.is_owner and ((msg.cmd[1] == "merge" and len(msg.cmd) > 3) or msg.cmd[1] == "oupstriche"):
       if msg.cmd[2] in SCORES and (len(msg.cmd) <= 3 or msg.cmd[3] in SCORES):
         if msg.cmd[1] == "merge":
@@ -215,7 +220,8 @@ def parseanswer (msg):
     elif len(msg.cmd) > 1 and (msg.cmd[1] == "help" or msg.cmd[1] == "aide"):
       msg.send_chn ("Formule : \"42\" * 2 + great * 5 + leet * 13.37 + (pi + 1) * 3.1415 * (not_found + 1) + tententen * 10 + \"23\" - (bad + 1) * 10 * (triche * 5 + 1) + 7")
     elif len(msg.cmd) > 1 and (msg.cmd[1] == "manche" or msg.cmd[1] == "round"):
-      msg.send_chn ("Nous sommes dans la %de manche, gagnée par %s avec %d points et commencée par %s le %s"%MANCHE)
+      manche = DATAS.getNode("manche")
+      msg.send_chn ("Nous sommes dans la %de manche, gagnée par %s avec %d points et commencée par %s le %s." % (manche.getInt("number"), manche["winner"], manche.getInt("winner_score"), manche["who"], manche.getDate("date")))
     #elif msg.channel == "#nemutest":
     else:
       phrase = ""
@@ -241,15 +247,15 @@ def parseanswer (msg):
 
 
 def win(msg):
-  global SCORES, MANCHE
+  global SCORES
   who = msg.sender
 
-  (num_manche, winner, nb_points, whosef, dayte) = MANCHE
+  manche = DATAS.getNode("manche")
 
   maxi_scor = 0
   maxi_name = None
 
-  for player in SCORES.keys():
+  for player in DATAS.index.keys():
     scr = SCORES[player].score()
     if scr > maxi_scor:
       maxi_scor = scr
@@ -267,10 +273,14 @@ def win(msg):
   else:
     msg.send_chn ("Félicitations %s, tu remportes cette manche avec %d points !"%(maxi_name, maxi_scor))
 
-  MANCHE = (num_manche + 1, maxi_name, maxi_scor, who, datetime.now ())
+  manche.setAttribute("number", manche.getInt("number") + 1)
+  manche.setAttribute("winner", maxi_name)
+  manche.setAttribute("winner_score", maxi_scor)
+  manche.setAttribute("who", who)
+  manche.setAttribute("date", datetime.now())
 
-  print ("Nouvelle manche :", MANCHE)
-  save_module ()
+  print ("Nouvelle manche !")
+  save()
 
 
 def parseask (msg):
@@ -298,8 +308,8 @@ def parselisten (msg):
     bfrseen = LASTSEEN[msg.realname]
   LASTSEEN[msg.realname] = datetime.now()
 
-#  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
-  if msg.channel != "#nemutest" and msg.sender not in DELAYED:
+  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
+#  if msg.channel != "#nemutest" and msg.sender not in DELAYED:
 
     if re.match("^(42|quarante[- ]?deux).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
@@ -389,9 +399,6 @@ class DelayedTuple:
     else:
       return False
 
-#<question question=" ?" regexp="microprocesseur"/>
-#<question question=" ?" regexp=""/>
-
   def wait(self, timeout):
     self.delayEvnt.wait(timeout)
 
@@ -404,12 +411,17 @@ class GameUpdater(threading.Thread):
     threading.Thread.__init__(self)
 
   def run(self):
-    global DELAYED, QUESTIONS, LASTQUESTION
+    global DELAYED, LASTQUESTION
 
-    seen = datetime.now() - self.bfrseen
+    if self.bfrseen is not None:
+      seen = datetime.now() - self.bfrseen
+      rnd = random.randint(0, int(seen.seconds/90))
+    else:
+      rnd = 1
 
-    rnd = random.randint(0, seen.seconds/90)
     if rnd != 0:
+      QUESTIONS = CONF.getNodes("question")
+
       if self.msg.channel == "#nemutest":
         quest = 9
       else:
@@ -419,7 +431,9 @@ class GameUpdater(threading.Thread):
         quest = LASTQUESTION
         LASTQUESTION += 1
 
-      (question, regexp, great) = QUESTIONS[quest]
+      question = QUESTIONS[quest]["question"]
+      regexp = QUESTIONS[quest]["regexp"]
+      great = QUESTIONS[quest]["great"]
       self.msg.send_chn("%s: %s" % (self.msg.sender, question))
 
       DELAYED[self.msg.sender] = DelayedTuple(regexp, great)
@@ -436,4 +450,5 @@ class GameUpdater(threading.Thread):
       else:
         self.msg.send_chn("%s: J'accepte" % self.msg.sender)
       del DELAYED[self.msg.sender]
-    save_module ()
+    SCORES.save(self.msg.sender)
+    save()

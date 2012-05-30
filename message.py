@@ -223,9 +223,14 @@ class Message:
 
       #Try modules
       else:
-        for im in mods.keys():
-          if mods[im].parseask(self):
-            return
+        for im in mods:
+          #try:
+            if im.parseask(self):
+              return
+          #except AttributeError:
+            #print ("Warning: in module `%s', no function parseask defined." % im.name)
+            #im.parseask = lambda x: False
+            #continue
 
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:

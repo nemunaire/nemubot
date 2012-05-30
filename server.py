@@ -34,7 +34,7 @@ class Server(threading.Thread):
       self.partner = "nbr23"
 
       self.channels = list()
-      for channel in server.getElementsByTagName('channel'):
+      for channel in server.getChilds():
         self.channels.append(channel.getAttribute("name"))
 
       threading.Thread.__init__(self)
@@ -101,6 +101,9 @@ class Server(threading.Thread):
             return True
         else:
             return False
+
+    def update_mods(self, mods):
+        self.mods = mods
 
     def launch(self, mods):
         if not self.connected:
