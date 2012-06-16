@@ -108,14 +108,13 @@ class Server(threading.Thread):
     def launch(self, mods):
         if not self.connected:
             self.stop = False
-            #self.datas_dir = datas_dir #DEPRECATED
             self.mods = mods
             self.start()
         else:
             print ("  Already connected.")
 
     def run(self):
-      self.s = socket.socket( ) #Create the socket
+      self.s = socket.socket() #Create the socket
       self.s.connect((self.host, self.port)) #Connect to server
       self.stopping.clear()
       self.connected = True
@@ -124,7 +123,7 @@ class Server(threading.Thread):
         self.s.send(b"PASS " + self.password.encode () + b"\r\n")
       self.s.send(("NICK %s\r\n" % self.nick).encode ())
       self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host, self.realname)).encode ())
-      print ("Connection to %s:%d completed with version 2.0" % (self.host, self.port))
+      print ("Connection to %s:%d completed" % (self.host, self.port))
 
       if len(self.channels) > 0:
           self.s.send(("JOIN %s\r\n" % ' '.join (self.channels)).encode ())
@@ -133,10 +132,17 @@ class Server(threading.Thread):
       readbuffer = "" #Here we store all the messages from server
       while not self.stop:
         try:
-            readbuffer = readbuffer + self.s.recv(1024).decode() #recieve server messages
+            raw = self.s.recv(1024) #recieve server messages
+            data = raw.decode()
+            if not data:
+                break
         except UnicodeDecodeError:
-            print ("ERREUR de décodage unicode")
-            continue
+            try:
+                data = raw.decode("utf-8", "replace")
+            except UnicodeDecodeError:
+                print ("\033[1;31mERROR:\033[0m while decoding of: %s"%data)
+                continue
+        readbuffer = readbuffer + data
         temp = readbuffer.split("\n")
         readbuffer = temp.pop( )
 
@@ -145,9 +151,10 @@ class Server(threading.Thread):
               msg = message.Message (self, line)
               msg.treat (self.mods)
           except:
-              print ("Une erreur est survenue lors du traitement du message : %s"%line)
+              print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s"%line)
               exc_type, exc_value, exc_traceback = sys.exc_info()
               traceback.print_exception(exc_type, exc_value, exc_traceback)
+      self.s.close()
       self.connected = False
       print ("Server `%s' successfully stopped." % self.id)
       self.stopping.set()
