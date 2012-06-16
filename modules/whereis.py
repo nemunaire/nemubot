@@ -15,9 +15,6 @@ from module_state import ModuleState
 
 nemubotversion = 3.0
 
-NS_SERVER = 'ns-server.epita.fr'
-NS_PORT = 4242
-
 THREAD = None
 search = list()
 
@@ -27,13 +24,19 @@ class UpdatedStorage:
                          CONF.getNode("server").getInt("port"))
     self.users = dict()
     if sock != None:
-      for l in list_users(sock):
-        u = User(l)
-        if u.login not in self.users:
-          self.users[u.login] = list()
-        self.users[u.login].append(u)
+      users = list_users(sock)
+      if users is not None:
+        for l in users:
+          u = User(l)
+          if u.login not in self.users:
+            self.users[u.login] = list()
+          self.users[u.login].append(u)
+        self.lastUpdate = datetime.now ()
+      else:
+        self.users = None
       sock.close()
-      self.lastUpdate = datetime.now ()
+    else:
+      self.users = None
 
   def update(self):
     if datetime.now () - self.lastUpdate < timedelta(minutes=10):
@@ -87,6 +90,7 @@ def connect_to_ns(server, port):
   return s
 
 def list_users(sock):
+  try:
     sock.send('list_users\n'.encode())
     buf = ''
     while True:
@@ -95,6 +99,8 @@ def list_users(sock):
         if '\nrep 002' in tmp or tmp == '':
             break
     return buf.split('\n')[:-2]
+  except socket.error:
+    return None
 
 
 def help_tiny ():
@@ -112,7 +118,7 @@ def startWhereis(msg):
     datas = datas.update ()
   if datas is None:
     datas = UpdatedStorage()
-  if datas is None:
+  if datas is None or datas.users is None:
     msg.send_chn("Hmm c'est embarassant, serait-ce la fin du monde ou juste netsoul qui est mort ?")
     return
 
@@ -268,14 +274,14 @@ def parseask (msg):
       if part is None:
         continue
       for d in DELAYED.keys():
+        nKeys = list()
         for n in DELAYED[d].names.keys():
+          nKeys.append(n)
+        for n in nKeys:
           if DELAYED[d].names[n] is None and part.find(n) >= 0:
             result = re.match(".* est (.*[^.])\.?", part)
             if result is not None:
               DELAYED[d].names[n] = result.group(1)
               delayEvnt.set()
     return treat
-  return False
-
-def parselisten (msg):
   return False
