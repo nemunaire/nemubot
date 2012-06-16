@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="velib">
+  <server ip="www.velib.paris.fr" url="/service/stationdetails/paris/" />
+</nemubotmodule>
