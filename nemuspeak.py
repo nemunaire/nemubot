@@ -168,10 +168,17 @@ class Server:
         readbuffer = "" #Here we store all the messages from server
         while 1:
             try:
-                readbuffer = readbuffer + self.s.recv(1024).decode() #recieve server messages
+                raw = self.s.recv(1024) #recieve server messages
+                data = raw.decode()
+                if not data:
+                    break
             except UnicodeDecodeError:
-                print ("ERREUR de décodage unicode")
-                continue
+                try:
+                    data = raw.decode("utf-8", "replace")
+                except UnicodeDecodeError:
+                    print ("\033[1;31mERROR:\033[0m while decoding of: %s"%data)
+                    continue
+            readbuffer = readbuffer + data
             temp = readbuffer.split("\n")
             readbuffer = temp.pop( )
 
