@@ -8,6 +8,8 @@ imp.reload(server)
 
 xmlparser = __import__("module_states_file")
 imp.reload(xmlparser)
+server.message.xmlparser = xmlparser
+xmlparser.module_state.xmlparser = xmlparser
 
 selectedServer = None
 modules_path = "./modules/"
@@ -44,6 +46,10 @@ def getPS1():
 
 def launch(servers):
   """Launch the prompt"""
+  #Load messages module
+  server.message.load(datas_path + "general.xml")
+
+  #Update launched servers
   for srv in servers:
     servers[srv].update_mods(MODS)
 
@@ -52,11 +58,14 @@ def launch(servers):
   while ret != "quit" and ret != "reset":
    sys.stdout.write("\033[0;33m%s§\033[0m " % getPS1())
    sys.stdout.flush()
-   for k in sys.stdin.readline().strip().split(";"):
+   #TODO: Don't split here, a ; in a quoted string will be splited :s
+   try:
+     d = sys.stdin.readline().strip()
+   except KeyboardInterrupt:
+     d = "quit"
+   for k in d.split(";"):
     try:
       cmds = parsecmd(k)
-    except KeyboardInterrupt:
-      cmds = parsecmd("quit")
     except:
       exc_type, exc_value, exc_traceback = sys.exc_info()
       sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
@@ -68,6 +77,25 @@ def launch(servers):
         sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
   return ret == "reset"
 
+
+##########################
+#                        #
+#    Module functions    #
+#                        #
+##########################
+
+def mod_save(mod, datas_path, config):
+  mod.DATAS.save(datas_path + "/" + config["name"] + ".xml")
+  mod.print ("Saving!")
+
+def mod_has_access(mod, config, msg):
+  if config.hasNode("channel"):
+    for chan in config.getChilds("channel"):
+      if (chan["server"] is None or chan["server"] == msg.srv.id) and (chan["channel"] is None or chan["channel"] == msg.channel):
+        return True
+    return False
+  else:
+    return True
 
 ##########################
 #                        #
@@ -91,13 +119,45 @@ def load_module(config, servers):
         mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
         mod.DATAS = xmlparser.parse_file(datas_path + "/" + config["name"] + ".xml")
         mod.CONF = config
-        mod.save = lambda: mod.DATAS.save(datas_path + "/" + config["name"] + ".xml")
+        mod.has_access = lambda msg: mod_has_access(mod, config, msg)
+        mod.save = lambda: mod_save(mod, datas_path, config)
+
+        #Load dependancies
+        if mod.CONF.hasNode("dependson"):
+          mod.MODS = dict()
+          for depend in mod.CONF.getNodes("dependson"):
+            for md in MODS:
+              if md.name == depend["name"]:
+                mod.MODS[md.name] = md
+                break
+            if depend["name"] not in mod.MODS:
+              print ("\033[1;35mERROR:\033[0m in module `%s', module `%s' require by this module but is not loaded." % (mod.name,depend["name"]))
+              return
+
+        try:
+          test = mod.parseask
+        except AttributeError:
+          print ("\033[1;35mWarning:\033[0m in module `%s', no function parseask defined." % mod.name)
+          mod.parseask = lambda x: False
+
+        try:
+          test = mod.parseanswer
+        except AttributeError:
+          print ("\033[1;35mWarning:\033[0m in module `%s', no function parseanswer defined." % mod.name)
+          mod.parseanswer = lambda x: False
+
+        try:
+          test = mod.parselisten
+        except AttributeError:
+          print ("\033[1;35mWarning:\033[0m in module `%s', no function parselisten defined." % mod.name)
+          mod.parselisten = lambda x: False
 
         try:
           mod.load()
           print ("  Module `%s' successfully loaded." % config["name"])
         except AttributeError:
           print ("  Module `%s' successfully added." % config["name"])
+        #TODO: don't append already running modules
         MODS.append(mod)
       except AttributeError:
         print ("  Module `%s' is not a nemubot module." % config["name"])
@@ -183,6 +243,12 @@ def liste(cmds, servers):
       elif l == "mod" or l == "mods" or l == "module" or l == "modules":
         for mod in MODS:
           print ("  - %s ;" % mod.name)
+      elif l == "ban" or l == "banni":
+        for ban in server.message.BANLIST:
+          print ("  - %s ;" % ban)
+      elif l == "credit" or l == "credits":
+        for name in server.message.CREDITS.keys:
+          print ("  - %s: %s ;" % (name, server.message.CREDITS[name]))
       elif l == "chan" or l == "channel" or l == "channels":
         if selectedServer is not None:
           for chn in selectedServer.channels:
