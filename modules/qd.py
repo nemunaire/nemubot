@@ -10,6 +10,7 @@ from datetime import datetime
 from datetime import date
 
 from module_state import ModuleState
+from wrapper import Wrapper
 
 nemubotversion = 3.0
 
@@ -17,52 +18,40 @@ channels = "#nemutest #42sh #ykar #epitagueule"
 LASTSEEN = dict ()
 temps = dict ()
 
-class Wrapper:
+SCORES = None
+
+def load():
+  global DATAS, SCORES
+  DATAS.setIndex("name", "player")
+  SCORES = QDWrapper()
+
+def help_tiny ():
+  """Line inserted in the response to the command !help"""
+  return "42 game!"
+
+def help_full ():
+  return "!42: display scores\n!42 help: display the performed calculate\n!42 manche: display information about current round\n!42 /who/: show the /who/'s scores"
+
+
+class QDWrapper(Wrapper):
   def __init__(self):
-    self.cache = dict()
-
-  def items(self):
     global DATAS
-    ret = list()
-    for k in DATAS.index.keys():
-      ret.append((k, self[k]))
-    return ret
-
-  def __contains__(self, i):
-    global DATAS
-    return i in DATAS.index
+    Wrapper.__init__(self)
+    self.DATAS = DATAS
+    self.stateName = "player"
+    self.attName = "name"
 
   def __getitem__(self, i):
-    global DATAS
     if i in self.cache:
       return self.cache[i]
     else:
       sc = Score()
-      sc.parse(DATAS.index[i])
+      sc.parse(Wrapper.__getitem__(self, i))
       self.cache[i] = sc
       return sc
 
-  def __setitem__(self, i, j):
-    global DATAS
-    ms = ModuleState("player")
-    ms.setAttribute("name", i)
-    j.save(ms)
-    DATAS.addChild(ms)
-    DATAS.setIndex("name", "player")
-
-  def __delitem__(self, i):
-    global DATAS
-    del DATAS.index[i]
-
-  def save(self, i):
-    if i in self.cache:
-      self.cache[i].save(DATAS.index[i])
-      del self.cache[i]
-      
-
-SCORES = Wrapper()
-
 class Score:
+  """Manage the user's scores"""
   def __init__(self):
     #FourtyTwo
     self.ftt = 0
@@ -184,19 +173,6 @@ class Score:
     return "42: %d, 23: %d, leet: %d, pi: %d, 404: %d, 10: %d, great: %d, bad: %d, triche: %d = %d."%(self.ftt, self.twt, self.leet, self.pi, self.notfound, self.tententen, self.great, self.bad, self.triche, self.score())
 
 
-def load():
-  global DATAS
-  DATAS.setIndex("name", "player")
-
-
-def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "42 game!"
-
-def help_full ():
-  return "!42: display scores\n!42 help: display the performed calculate\n!42 manche: display information about current round\n!42 /who/: show the /who/'s scores"
-
-
 def rev (tupl):
   (k, v) = tupl
   return (v.score(), k)
@@ -261,12 +237,13 @@ def win(msg):
       maxi_scor = scr
       maxi_name = player
 
-  #Reset !
-  SCORES = dict()
-#  SCORES[maxi_name] = (-10, 0, -4, 0, 0, -2, 0)
-#  SCORES[maxi_name] = (0, 0, 0, 0, 0, 0, 0)
-  SCORES[who] = Score()
-  SCORES[who].newWinner()
+  for player in DATAS.index.keys():
+    scr = SCORES[player].score()
+    if scr > maxi_scor / 3:
+      del SCORES[player]
+    else:
+      DATAS.index[player]["great"] = 0
+  SCORES.flush()
 
   if who != maxi_name:
     msg.send_chn ("Félicitations %s, tu remportes cette manche terminée par %s, avec un score de %d !"%(maxi_name, who, maxi_scor))
@@ -286,7 +263,7 @@ def win(msg):
 def parseask (msg):
   if len(DELAYED) > 0:
     if msg.sender in DELAYED:
-      DELAYED[msg.sender].msg = msg.content[9:]
+      DELAYED[msg.sender].msg = msg.content
       DELAYED[msg.sender].delayEvnt.set()
       return True
   return False
@@ -308,8 +285,8 @@ def parselisten (msg):
     bfrseen = LASTSEEN[msg.realname]
   LASTSEEN[msg.realname] = datetime.now()
 
-  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
-#  if msg.channel != "#nemutest" and msg.sender not in DELAYED:
+#  if msg.channel == "#nemutest" and msg.sender not in DELAYED:
+  if msg.channel != "#nemutest" and msg.sender not in DELAYED:
 
     if re.match("^(42|quarante[- ]?deux).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
@@ -421,6 +398,7 @@ class GameUpdater(threading.Thread):
 
     if rnd != 0:
       QUESTIONS = CONF.getNodes("question")
+      print (QUESTIONS)
 
       if self.msg.channel == "#nemutest":
         quest = 9
