@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="qcm">
+  <file url="/var/www/nemunai.re/bot/htdocs/questions.xml"/>
+</nemubotmodule>
