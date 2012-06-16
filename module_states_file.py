@@ -2,10 +2,11 @@
 # coding=utf-8
 
 import os
+import imp
 import xml.sax
 
-from module_exception import ModuleException
-from module_state import ModuleState
+module_state = __import__("module_state")
+imp.reload(module_state)
 
 class ModuleStatesFile(xml.sax.ContentHandler):
   def startDocument(self):
@@ -13,7 +14,7 @@ class ModuleStatesFile(xml.sax.ContentHandler):
     self.stack = list()
 
   def startElement(self, name, attrs):
-    cur = ModuleState(name)
+    cur = module_state.ModuleState(name)
 
     for name in attrs.keys():
       cur.setAttribute(name, attrs.getValue(name))
@@ -36,4 +37,4 @@ def parse_file(filename):
     parser.parse(open(filename, "r"))
     return mod.root
   except:
-    return ModuleState("nemubotstate")
+    return module_state.ModuleState("nemubotstate")
