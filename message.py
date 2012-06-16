@@ -7,81 +7,22 @@ import sys
 import string
 import time
 import imp
-import random
-from xml.dom.minidom import parse
-from xml.dom.minidom import parseString
-from xml.dom.minidom import getDOMImplementation
 
-BANLIST = []
+from credits import Credits
+import credits
+
 CREDITS = {}
 filename = ""
 
-def load(datas_path):
-  global BANLIST, CREDITS, filename
+def load(config_file):
+  global CREDITS, filename
   CREDITS = dict ()
+  filename = config_file
+  credits.BANLIST = xmlparser.parse_file(filename)
 
-  BANLIST = list ()
-  filename = datas_path + "/general.xml"
-
-  sys.stdout.write ("Loading banlist ... ")
-  dom = parse(filename)
-  for item in dom.documentElement.getElementsByTagName("ban"):
-    BANLIST.append(item.getAttribute("name"))
-  print ("done (%d users banned)" % (len(BANLIST)))
-
-
-def save_module():
-  global BANLIST, ALIAS, filename
-  sys.stdout.write ("Saving banlist ... ")
-
-  impl = getDOMImplementation()
-  newdoc = impl.createDocument(None, 'global', None)
-  top = newdoc.documentElement
-
-  for name in BANLIST:
-    item = parseString ('<ban name="%s" />' % (name)).documentElement
-    top.appendChild(item);
-
-  with open(filename, "w") as f:
-    newdoc.writexml (f)
-  print ("done")
-
-
-class Credits:
-  def __init__ (self, name):
-    self.name = name
-    self.credits = 5
-    self.randsec = timedelta(seconds=random.randint(0, 55))
-    self.lastmessage = datetime.now() + self.randsec
-    self.iask = True
-
-  def ask(self):
-    if self.name in BANLIST:
-      return False
-
-    now = datetime.now() + self.randsec
-    if self.lastmessage.minute == now.minute and (self.lastmessage.second == now.second or self.lastmessage.second == now.second - 1):
-      print("AUTOBAN %s: too low time between messages" % self.name)
-      #BANLIST.append(self.name)
-      self.credits -= self.credits / 2 #Une alternative
-      return False
-
-    self.iask = True
-    return self.credits > 0 or self.lastmessage.minute != now.minute
-
-  def speak(self):
-    if self.iask:
-      self.iask = False
-      now = datetime.now() + self.randsec
-      if self.lastmessage.minute != now.minute:
-        self.credits = min (15, self.credits + 5)
-      self.lastmessage = now
-
-    self.credits -= 1
-    return self.credits > -3
-
-  def to_string(self):
-    print ("%s: %d ; reset: %d" % (self.name, self.credits, self.randsec.seconds))
+def save():
+  global filename
+  credits.BANLIST.save(filename)
 
 
 class Message:
@@ -193,6 +134,7 @@ class Message:
   def parsemsg (self, mods):
     #Treat all messages starting with 'nemubot:' as distinct commands
     if self.content.find("%s:"%self.srv.nick) == 0:
+      self.content = self.content[len(self.srv.nick)+1:].strip()
       messagel = self.content.lower()
 
       #Is it a simple response?
@@ -224,13 +166,8 @@ class Message:
       #Try modules
       else:
         for im in mods:
-          #try:
-            if im.parseask(self):
-              return
-          #except AttributeError:
-            #print ("Warning: in module `%s', no function parseask defined." % im.name)
-            #im.parseask = lambda x: False
-            #continue
+          if im.has_access(self) im.parseask(self):
+            return
 
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
@@ -251,14 +188,14 @@ class Message:
 
       elif self.cmd[0] == "ban":
         if len(self.cmd) > 1:
-          BANLIST.append(self.cmd[1])
+          credits.BANLIST.append(self.cmd[1])
         else:
-          print (BANLIST)
+          print (credits.BANLIST)
       elif self.cmd[0] == "banlist":
-          print (BANLIST)
+          print (credits.BANLIST)
       elif self.cmd[0] == "unban":
         if len(self.cmd) > 1:
-          BANLIST.remove(self.cmd[1])
+          credits.BANLIST.remove(self.cmd[1])
 
       elif self.cmd[0] == "credits":
         if len(self.cmd) > 1 and self.cmd[1] in CREDITS:
