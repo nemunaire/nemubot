@@ -1,4 +1,7 @@
 <?xml version="1.0" ?>
 <nemubotmodule name="qcm">
-  <file url="/var/www/nemunai.re/bot/htdocs/questions.xml"/>
+  <file name="main" url="/var/www/nemunai.re/bot/htdocs/questions.xml"/>
+  <file name="courses" url="/var/www/nemunai.re/bot/htdocs/courses.xml"/>
+  <file name="users" url="/var/www/nemunai.re/bot/htdocs/users.xml"/>
+  <server url="bot.nemunai.re" />
 </nemubotmodule>

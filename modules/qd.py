@@ -398,7 +398,6 @@ class GameUpdater(threading.Thread):
 
     if rnd != 0:
       QUESTIONS = CONF.getNodes("question")
-      print (QUESTIONS)
 
       if self.msg.channel == "#nemutest":
         quest = 9
