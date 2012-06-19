@@ -82,7 +82,7 @@ class User(object):
 def connect_to_ns(server, port):
   try:
     s = socket.socket()
-    s.settimeout(1)
+    s.settimeout(3)
     s.connect((server, port))
   except socket.error:
     return None
