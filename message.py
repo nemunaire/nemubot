@@ -166,7 +166,7 @@ class Message:
       #Try modules
       else:
         for im in mods:
-          if im.has_access(self) im.parseask(self):
+          if im.has_access(self) and im.parseask(self):
             return
 
     #Owner commands
@@ -221,12 +221,12 @@ class Message:
 
       else:
         for im in mods:
-          if im.parseanswer(self):
+          if im.has_access(self) and im.parseanswer(self):
             return
 
     else:
       for im in mods:
-        if im.parselisten(self):
+        if im.has_access(self) and im.parselisten(self):
           return
 
 #  def parseOwnerCmd(self, cmd):

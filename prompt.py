@@ -119,6 +119,7 @@ def load_module(config, servers):
         mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
         mod.DATAS = xmlparser.parse_file(datas_path + "/" + config["name"] + ".xml")
         mod.CONF = config
+        mod.SRVS = servers
         mod.has_access = lambda msg: mod_has_access(mod, config, msg)
         mod.save = lambda: mod_save(mod, datas_path, config)
 
