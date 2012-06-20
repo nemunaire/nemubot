@@ -41,7 +41,10 @@ class ModuleState:
       if isinstance(self.attributes[name], datetime):
         return self.attributes[name]
       else:
-        return date.fromtimestamp(float(self.attributes[name]))
+        try:
+          return datetime.fromtimestamp(float(self.attributes[name]))
+        except ValueError:
+          return datetime.fromtimestamp(time.mktime(time.strptime(self.attributes[name][:19], "%Y-%m-%d %H:%M:%S")))
     else:
       return None
 
