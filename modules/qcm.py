@@ -205,7 +205,9 @@ class Session:
     self.timer = None
     nextQ = self.next_question()
     if nextQ is not None:
-      if self.sender != self.channel:
+      if self.channel == "nemubot":
+        self.server.send_msg_final(self.sender, "%s%s" % (bfr, nextQ.question))
+      elif self.sender != self.channel:
         self.server.send_msg_final(self.channel, "%s: %s%s" % (self.sender, bfr, nextQ.question))
       else:
         self.server.send_msg_final(self.channel, "%s%s" % (bfr, nextQ.question))
@@ -214,7 +216,9 @@ class Session:
         goodS = "s"
       else:
         goodS = ""
-      if self.sender != self.channel:
+      if self.channel == "nemubot":
+        self.server.send_msg_final(self.sender, "%sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
+      elif self.sender != self.channel:
         self.server.send_msg_final(self.channel, "%s: %sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
       else:
         self.server.send_msg_final(self.channel, "%sFini, vous avez donné %d bonne%s réponse%s sur %d questions." % (bfr, self.good, goodS, goodS, len(self.questions)))
@@ -233,7 +237,7 @@ SESSIONS = dict()
 def load():
   CONF.setIndex("name", "file")
 
-def buildSession(msg, categ = None, nbQuest = 5, channel = False):
+def buildSession(msg, categ = None, nbQuest = 10, channel = False):
   global QUESTIONS, COURSES, USERS
   if QUESTIONS is None:
     QUESTIONS = xmlparser.parse_file(CONF.index["main"]["url"])
@@ -289,7 +293,7 @@ def askQuestion(msg, bfr = ""):
   SESSIONS[msg.sender].askNext(bfr)
 
 def parseanswer(msg):
-  global DATAS, SESSIONS
+  global DATAS, SESSIONS, COURSES, QUESTIONS, USERS
   if msg.cmd[0] == "qcm" or msg.cmd[0] == "qcmchan" or msg.cmd[0] == "simulateqcm":
     if msg.sender in SESSIONS:
       if len(msg.cmd) > 1:
@@ -317,7 +321,7 @@ def parseanswer(msg):
           SESSIONS[msg.channel].prepareNext(1)
           return True
     else:
-      nbQuest = 5
+      nbQuest = 10
       filtre = list()
       if len(msg.cmd) > 1:
         for cmd in msg.cmd[1:]:
@@ -347,7 +351,7 @@ def parseanswer(msg):
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
       if SESSIONS[msg.sender].question.report():
         msg.send_chn("Cette question vient vient d'etre signalée.")
-        askQuestion(msg)
+        SESSIONS[msg.channel].askNext()
       else:
         msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
       return True
@@ -356,12 +360,27 @@ def parseanswer(msg):
       msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % SESSIONS[msg.channel].question.tupleInfo)
       return True
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
-      if SESSIONS[msg.channel].question.report():
+      if len(msg.cmd) == 1:
+        msg.send_chn("Veuillez indiquer une raison de report")
+      if SESSIONS[msg.channel].question.report(msg.cmd[1]):
         msg.send_chn("Cette question vient vient d'etre signalée.")
-        askQuestion(msg)
+        SESSIONS[msg.channel].prepareNext()
       else:
         msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
       return True
+  else:
+    if msg.cmd[0] == "listecours":
+      if COURSES is None:
+        msg.send_chn("La liste de cours n'est pas encore construite, lancez un QCM pour la construire.")
+      else:
+        lst = ""
+        for cours in COURSES.getNodes("course"):
+          lst += cours["code"] + " (" + cours["name"] + "), "
+        msg.send_chn("Liste des cours existants : " + lst[:len(lst)-2])
+    elif msg.cmd[0] == "refreshqcm":
+      QUESTIONS = None
+      COURSES = None
+      USERS = None
   return False
 
 def parseask(msg):
