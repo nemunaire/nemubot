@@ -206,18 +206,18 @@ class Session:
     nextQ = self.next_question()
     if nextQ is not None:
       if self.sender != self.channel:
-        self.server.send_msg(self.channel, "%s: %s%s" % (self.sender, bfr, nextQ.question))
+        self.server.send_msg_final(self.channel, "%s: %s%s" % (self.sender, bfr, nextQ.question))
       else:
-        self.server.send_msg(self.channel, "%s%s" % (bfr, nextQ.question))
+        self.server.send_msg_final(self.channel, "%s%s" % (bfr, nextQ.question))
     else:
       if self.good > 1:
         goodS = "s"
       else:
         goodS = ""
       if self.sender != self.channel:
-        self.server.send_msg(self.channel, "%s: %sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
+        self.server.send_msg_final(self.channel, "%s: %sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
       else:
-        self.server.send_msg(self.channel, "%sFini, vous avez donné %d bonne%s réponse%s sur %d questions." % (bfr, self.good, goodS, goodS, len(self.questions)))
+        self.server.send_msg_final(self.channel, "%sFini, vous avez donné %d bonne%s réponse%s sur %d questions." % (bfr, self.good, goodS, goodS, len(self.questions)))
       del SESSIONS[self.sender]
 
   def prepareNext(self, lag = 3):
