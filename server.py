@@ -7,6 +7,8 @@ import imp
 
 message = __import__("message")
 imp.reload(message)
+channel = __import__("channel")
+imp.reload(channel)
 
 class Server(threading.Thread):
     def __init__(self, node, nick, owner, realname, socket = None):
@@ -21,9 +23,10 @@ class Server(threading.Thread):
 
       self.listen_nick = True
 
-      self.channels = list()
-      for channel in node.getNodes("channel"):
-        self.channels.append(channel.getAttribute("name"))
+      self.channels = dict()
+      for chn in node.getNodes("channel"):
+        chan = channel.Channel(chn)
+        self.channels[chan.name] = chan
 
       threading.Thread.__init__(self)
 
@@ -85,15 +88,15 @@ class Server(threading.Thread):
             self.send_msg_final(channel, msg, cmd, endl)
 
     def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
-        for channel in self.channels:
+        for channel in self.channels.keys():
             self.send_msg (channel, msg, cmd, endl)
 
 
-    def accepted_channel(self, channel):
+    def accepted_channel(self, chan):
         if self.listen_nick:
-            return self.channels.count(channel) or channel == self.nick
+            return chan in self.channels or chan == self.nick
         else:
-            return self.channels.count(channel)
+            return chan in self.channels
 
     def disconnect(self):
         if self.connected:
@@ -115,18 +118,25 @@ class Server(threading.Thread):
         else:
             return False
 
-    def join(self, channel):
-        if channel is not None and self.connected:
-            self.channels.append(channel)
-            self.s.send(("JOIN %s\r\n" % channel).encode ())
+    def join(self, chan, password = None):
+        if chan is not None and self.connected and chan not in self.channels:
+            chn = xmlparser.module_state.Module_State("channel")
+            chn["name"] = chan
+            chn["password"] = password
+            self.node.addChild(chn)
+            self.channels[chan] = channel.Channel(chn)
+            if password is not None:
+                self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode ())
+            else:
+                self.s.send(("JOIN %s\r\n" % chan).encode ())
             return True
         else:
             return False
 
-    def leave(self, channel):
-        if channel is not None and self.connected and channel in self.channels:
-            self.channels.remove(channel)
-            self.s.send(("PART %s\r\n" % channel.split()[0]).encode ())
+    def leave(self, chan):
+        if chan is not None and self.connected and chan in self.channels:
+            self.s.send(("PART %s\r\n" % self.channels[chan].name).encode ())
+            del self.channels[chan]
             return True
         else:
             return False
@@ -156,8 +166,12 @@ class Server(threading.Thread):
           print ("Connection to %s:%d completed" % (self.host, self.port))
 
           if len(self.channels) > 0:
-              self.s.send(("JOIN %s\r\n" % ' '.join (self.channels)).encode ())
-          print ("Listen to channels: %s" % ' '.join (self.channels))
+              for chn in self.channels.keys():
+                  if self.channels[chn].password is not None:
+                      self.s.send(("JOIN %s %s\r\n" % (self.channels[chn].name, self.channels[chn].password)).encode ())
+                  else:
+                      self.s.send(("JOIN %s\r\n" % self.channels[chn].name).encode ())
+          print ("Listen to channels: %s" % ' '.join (self.channels.keys()))
 
       readbuffer = "" #Here we store all the messages from server
       while not self.stop:

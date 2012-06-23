@@ -319,7 +319,10 @@ def join(cmds, servers):
     return
 
   if cmds[0] == "join":
-    srv.join(cmds[rd])
+    if len(cmds) > rd + 1:
+      srv.join(cmds[rd], cmds[rd + 1])
+    else:
+      srv.join(cmds[rd])
   elif cmds[0] == "leave" or cmds[0] == "part":
     srv.leave(cmds[rd])
 
