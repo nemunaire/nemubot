@@ -168,25 +168,32 @@ def load_module(config, servers):
       print ("  Module `%s' not loaded: unable to find module implementation." % config["name"])
   
 
+def load_file(filename, servers):
+  """Realy load a file"""
+  config = xmlparser.parse_file(filename)
+  if config.getName() == "nemubotconfig" or config.getName() == "config":
+    #Preset each server in this file
+    for serveur in config.getNodes("server"):
+      srv = server.Server(serveur, config["nick"], config["owner"], config["realname"])
+      if srv.id not in servers:
+        servers[srv.id] = srv
+        print ("  Server `%s' successfully added." % srv.id)
+      else:
+        print ("  Server `%s' already added, skiped." % srv.id)
+    #Load files asked by the configuration file
+    for load in config.getNodes("load"):
+      load_file(load["path"], servers)
+  elif config.getName() == "nemubotmodule":
+    load_module(config, servers)
+  else:
+    print ("  Can't load `%s'; this is not a valid nemubot configuration file." % f)
+
+
 def load(cmds, servers):
   """Load an XML configuration file"""
   if len(cmds) > 1:
     for f in cmds[1:]:
-      config = xmlparser.parse_file(f)
-      if config.getName() == "nemubotconfig" or config.getName() == "config":
-        #Preset each server in this file
-        for serveur in config.getChilds():
-          srv = server.Server(serveur, config.getAttribute('nick'), config.getAttribute('owner'), config.getAttribute('realname'))
-          if srv.id not in servers:
-            servers[srv.id] = srv
-            print ("  Server `%s' successfully added." % srv.id)
-          else:
-            print ("  Server `%s' already added, skiped." % srv.id)
-
-      elif config.getName() == "nemubotmodule":
-        load_module(config, servers)
-      else:
-        print ("  Can't load `%s'; this is not a valid nemubot configuration file." % f)
+      load_file(f, servers)
   else:
     print ("Not enough arguments. `load' takes an filename.")
   return
