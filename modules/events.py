@@ -133,8 +133,9 @@ def parseanswer(msg):
       msg.send_snd ("%s existe déjà."% (msg.cmd[1]))
     return True
   elif (msg.cmd[0] == "end" or msg.cmd[0] == "forceend") and len(msg.cmd) > 1:
-    if msg.cmd[1] in DATAS.index and DATAS.index[msg.cmd[1]].hasAttribute("end"):
-      msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
+    if msg.cmd[1] in DATAS.index:
+      if DATAS.index[msg.cmd[1]].hasAttribute("end"):
+        msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
       if DATAS.index[msg.cmd[1]]["proprio"] == msg.sender or (msg.cmd[0] == "forceend" and msg.sender == msg.srv.owner):
         DATAS.delChild(DATAS.index[msg.cmd[1]])
         newStrendEvt.set()
