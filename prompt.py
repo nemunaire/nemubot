@@ -275,6 +275,22 @@ def connect(cmds, servers):
   else:
     print ("  Please SELECT a server or give its name in argument.")
 
+def hotswap(cmds, servers):
+  """Reload a server class"""
+  global MODS, selectedServer
+  if len(cmds) > 1:
+    print ("hotswap: apply only on selected server")
+  elif selectedServer is not None:
+    del servers[selectedServer.id]
+    srv = server.Server(selectedServer.node, selectedServer.nick, selectedServer.owner, selectedServer.realname, selectedServer.s)
+    srv.update_mods(MODS)
+    servers[srv.id] = srv
+    selectedServer.kill()
+    selectedServer = srv
+    selectedServer.start()
+  else:
+    print ("  Please SELECT a server or give its name in argument.")
+
 def join(cmds, servers):
   """Join or leave a channel"""
   rd = 1
@@ -382,6 +398,7 @@ CAPS = {
   'exit': end, #Alias for quit
   'reset': end, #Reload the prompt
   'load': load, #Load a servers or module configuration file
+  'hotswap': hotswap, #Reload the server class without closing the socket
   'close': close, #Disconnect and remove a server from the list
   'unload': unload, #Unload a module and remove it from the list
   'select': select, #Select a server
