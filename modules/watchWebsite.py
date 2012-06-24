@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from datetime import timedelta
+from datetime import datetime
+from datetime import date
 import http.client
 import hashlib
 import sys
@@ -7,50 +10,120 @@ import traceback
 import socket
 import time
 import base64
-import _thread
+import threading
 from urllib.parse import unquote
-from xml.dom.minidom import parse
-from xml.dom.minidom import parseString
-from xml.dom.minidom import getDOMImplementation
+
+from module_state import ModuleState
+
+nemubotversion = 3.0
 
 import atom
-import youtube
 
-filename = ""
-SITES = []
-SRVS = None
+def help_tiny ():
+  """Line inserted in the response to the command !help"""
+  return "Alert on changes on websites"
+
+def help_full ():
+  return "This module is autonomous you can't interract with it."
+
+WATCHER = None
+
+def load():
+  global WATCHER, DATAS
+  #Load the watcher
+  WATCHER = Watcher()
+  for site in DATAS.getNodes("watch"):
+    s = Site(site)
+    WATCHER.addServer(s)
+  WATCHER.start()
+
+def close():
+  global WATCHER
+  if WATCHER is not None:
+    WATCHER.stop = True
+    WATCHER.newSrv.set()
+
+
+class Watcher(threading.Thread):
+  def __init__(self):
+    self.servers = list()
+    self.stop = False
+    self.newSrv = threading.Event()
+    threading.Thread.__init__(self)
+
+  def addServer(self, server):
+    self.servers.append(server)
+    self.newSrv.set()
+
+  def check(self, closer):
+    closer.check()
+    self.newSrv.set()
+
+  def run(self):
+    while not self.stop:
+      self.newSrv.clear()
+      closer = None
+      #Gets the closer server update
+      for server in self.servers:
+        if server.update < datetime.now():
+          #print ("Closer now: %s à %s"%(server.url, server.update))
+          self.check(server)
+        elif closer is None or server.update < closer.update:
+          closer = server
+      if closer is not None:
+        #print ("Closer: %s à %s"%(closer.url, closer.update))
+        timeleft = (closer.update - datetime.now()).seconds
+        timer = threading.Timer(timeleft, self.check, (closer,))
+        timer.start()
+        #print ("Start timer (%ds)"%timeleft)
+
+      self.newSrv.wait()
+
+      if closer is not None and closer.update is not None and closer.update > datetime.now():
+        timer.cancel()
+
+  def stop(self):
+    self.stop = True
+    self.newSrv.set()
+
 
 class Site:
   def __init__(self, item):
     self.server = item.getAttribute("server")
     self.page = item.getAttribute("page")
-    if item.getAttribute("type"):
+    if len(self.page) <= 0 or self.page[0] != "/":
+      self.page = "/" + self.page
+    if item.hasAttribute("type"):
       self.type = item.getAttribute("type")
     else:
       self.type = "hash"
     self.message = item.getAttribute("message")
 
-    self.thread = None
-    if item.getAttribute("time"):
-      self.updateTime = int(item.getAttribute("time"))
+    if item.hasAttribute("time"):
+      self.updateTime = item.getInt("time")
     else:
       self.updateTime = 60
-    self.lastChange = 0
+    self.lastChange = datetime.now()
     self.lastpage = None
 
-    self.run = True
-
     self.channels = list()
-    for channel in item.getElementsByTagName('channel'):
+    for channel in item.getNodes('channel'):
       self.channels.append(channel.getAttribute("name"))
 
     self.categories = dict()
-    for category in item.getElementsByTagName('category'):
+    for category in item.getNodes('category'):
       self.categories[category.getAttribute("term")] = category.getAttribute("part")
 
+  @property
+  def update(self):
+    if self.lastpage is None:
+      return self.lastChange
+    else:
+      return self.lastChange + timedelta(seconds=self.updateTime)
 
-  def start (self):
-    self.thread = _thread.start_new_thread (startThread, (self,))
+  @property
+  def url(self):
+    return self.server + self.page
 
   def send_message (self, msg):
     global SRVS
@@ -90,130 +163,44 @@ class Site:
     return (f, change)
 
   def check (self):
-    while self.run:
-      try:
-        #print ("Check %s/%s"%(self.server, self.page))
-        content = getPage(self.server, self.page)
-        if content is None:
-          return
+    try:
+      #print ("Check %s"%(self.url))
+      (status, content) = getPage(self.server, self.page)
+      if content is None:
+        return
 
-        if self.type == "atom":
-          (self.lastpage, change) = self.treat_atom (content)
-          if change:
-            if self.lastChange <= 0:
-              self.lastChange -= 1
-            else:
-              self.lastChange = 0
-          else:
-            self.lastChange += 1
-        else:
-          hash = hashlib.sha224(content).hexdigest()
-          if hash != self.lastpage:
-            if self.lastpage is not None:
-              self.send_message (self.message)
-            self.lastpage = hash
-            if self.lastChange <= 0:
-              self.lastChange -= 1
-            else:
-              self.lastChange = 0
-          else:
-            self.lastChange += 1
+      if self.type == "atom":
+        (self.lastpage, change) = self.treat_atom (content)
+      else:
+        hash = hashlib.sha224(content).hexdigest()
+        if hash != self.lastpage:
+          if self.lastpage is not None:
+            self.send_message (self.message)
+          self.lastpage = hash
 
-        #Update check time intervalle
-          #TODO
+      self.lastChange = datetime.now()
 
-        if self.updateTime < 10:
-          self.updateTime = 10
-        if self.updateTime > 400:
-          self.updateTime = 400
-
-        time.sleep(self.updateTime)
-      except:
-          print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
-          exc_type, exc_value, exc_traceback = sys.exc_info()
-          traceback.print_exception(exc_type, exc_value, exc_traceback)
-          time.sleep(self.updateTime * 3)
+#      if self.updateTime < 10:
+#        self.updateTime = 10
+#      if self.updateTime > 400:
+#        self.updateTime = 400
+    except:
+      print ("Une erreur est survenue lors de la récupération de la page " + self.server + "/" + self.page)
+      exc_type, exc_value, exc_traceback = sys.exc_info()
+      traceback.print_exception(exc_type, exc_value, exc_traceback)
+      self.updateTime *= 2
 
 
-
-def load_module(datas_path):
-  """Load this module"""
-  global SITES, filename
-  SITES = []
-  filename = datas_path + "/watch.xml"
-
-  sys.stdout.write ("Loading watchsites ... ")
-  dom = parse(filename)
-  for item in dom.documentElement.getElementsByTagName("watch"):
-      SITES.append (Site (item))
-  print ("done (%d loaded)" % len(SITES))
-
-
-def launch (servers):
-    global SRVS
-    SRVS = servers
-    for site in SITES:
-        site.start ()
-def stop():
-  return
-
-def save_module():
-  """Save the module state"""
-  global filename
-  sys.stdout.write ("Saving watched sites ... ")
-  impl = getDOMImplementation()
-  newdoc = impl.createDocument(None, 'service', None)
-  top = newdoc.documentElement
-
-  for site in SITES:
-    item = parseString ('<watch server="%s" page="%s" message="%s" type="%s" time="%d" />' % (site.server, site.page, site.message, site.type, site.updateTime)).documentElement
-    if len(site.channels) > 0:
-      for chan in site.channels:
-        item.appendChild(parseString ('<channel name="%s" />' % (chan)).documentElement);
-    if len(site.categories) > 0:
-      for categ in site.categories.keys():
-        item.appendChild(parseString ('<category term="%s" part="%s"/>' % (categ, site.categories[categ])).documentElement);
-    #print (site.server)
-    top.appendChild(item);
-
-  with open(filename, "w") as f:
-    newdoc.writexml (f)
-  print ("done")
-
-
-def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "Alert on changes on websites"
-
-def help_full ():
-  return "This module is autonomous you can't interract with it."
-
-def parseanswer (msg):
-  if msg.cmd[0] == "watch":
-    print ("print states here")
-    return True
-  return False
-
-def parseask (msg):
-  return False
-
-def parselisten (msg):
-  return False
-
-
-def getPage (s, p):
+def getPage(s, p): 
   conn = http.client.HTTPConnection(s)
   try:
-    conn.request("GET", "/%s"%(p))
+    conn.request("GET", p)
+
+    res = conn.getresponse()
+    data = res.read()
   except socket.gaierror:
     print ("[%s] impossible de récupérer la page %s."%(s, p))
-    return None
-
-  res = conn.getresponse()
-  data = res.read()
+    return (None, None)
 
   conn.close()
-  return data
-
-def startThread(site):
-  site.check ()
+  return (res.status, data)

@@ -64,7 +64,7 @@ threadManager = None
 newStrendEvt = threading.Event()
 
 def load():
-  global DATAS
+  global DATAS, threadManager
   #Define the index
   DATAS.setIndex("name")
   #Load the manager
@@ -72,9 +72,10 @@ def load():
   threadManager.start()
 
 def close():
-  if self.threadManager is not None:
-    self.threadManager.stop = True
-    self.newStrendEvt.set()
+  global threadManager
+  if threadManager is not None:
+    threadManager.stop = True
+    newStrendEvt.set()
 
 
 def parseanswer(msg):

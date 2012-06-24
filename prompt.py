@@ -186,7 +186,7 @@ def load_file(filename, servers):
   elif config.getName() == "nemubotmodule":
     load_module(config, servers)
   else:
-    print ("  Can't load `%s'; this is not a valid nemubot configuration file." % f)
+    print ("  Can't load `%s'; this is not a valid nemubot configuration file." % filename)
 
 
 def load(cmds, servers):

@@ -9,7 +9,10 @@ from xml.dom.minidom import getDOMImplementation
 class AtomEntry:
   def __init__ (self, node):
     self.id = node.getElementsByTagName("id")[0].firstChild.nodeValue
-    self.title = node.getElementsByTagName("title")[0].firstChild.nodeValue
+    if node.getElementsByTagName("title")[0].firstChild is not None:
+      self.title = node.getElementsByTagName("title")[0].firstChild.nodeValue
+    else:
+      self.title = ""
     try:
       self.updated = time.strptime(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:19], "%Y-%m-%dT%H:%M:%S")
     except:
