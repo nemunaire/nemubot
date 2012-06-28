@@ -8,8 +8,13 @@ import traceback
 
 servers = dict()
 
-print ("Nemubot ready, my PID is %i!" % (os.getpid()))
 prompt = __import__ ("prompt")
+
+if len(sys.argv) >= 2:
+    for arg in sys.argv[1:]:
+        prompt.load_file(arg, servers)
+
+print ("Nemubot ready, my PID is %i!" % (os.getpid()))
 while prompt.launch(servers):
     try:
         imp.reload(prompt)
