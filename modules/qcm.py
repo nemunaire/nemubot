@@ -9,6 +9,7 @@ import socket
 import sys
 import threading
 import time
+from urllib.parse import quote
 
 from module_state import ModuleState
 import module_states_file as xmlparser
@@ -131,10 +132,10 @@ class Question:
   def author(self):
     return User(self.node["writer"])
 
-  def report(self):
+  def report(self, raison="Sans raison"):
     conn = http.client.HTTPConnection(CONF.getNode("server")["url"])
     try:
-      conn.request("GET", "report.php?id=" + hashlib.md5(self.id.encode()).hexdigest())
+      conn.request("GET", "report.php?id=" + hashlib.md5(self.id.encode()).hexdigest() + "&raison=" + quote(raison))
     except socket.gaierror:
       print ("[%s] impossible de récupérer la page %s."%(s, p))
       return False
@@ -349,9 +350,11 @@ def parseanswer(msg):
       msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % SESSIONS[msg.sender].question.tupleInfo)
       return True
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
-      if SESSIONS[msg.sender].question.report():
-        msg.send_chn("Cette question vient vient d'etre signalée.")
-        SESSIONS[msg.channel].askNext()
+      if len(msg.cmd) == 1:
+        msg.send_chn("Veuillez indiquer une raison de report")
+      elif SESSIONS[msg.sender].question.report(' '.join(msg.cmd[1:])):
+        msg.send_chn("Cette question vient d'être signalée.")
+        SESSIONS[msg.sender].askNext()
       else:
         msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
       return True
@@ -362,8 +365,8 @@ def parseanswer(msg):
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
       if len(msg.cmd) == 1:
         msg.send_chn("Veuillez indiquer une raison de report")
-      if SESSIONS[msg.channel].question.report(msg.cmd[1]):
-        msg.send_chn("Cette question vient vient d'etre signalée.")
+      elif SESSIONS[msg.channel].question.report(' '.join(msg.cmd[1:])):
+        msg.send_chn("Cette question vient d'être signalée.")
         SESSIONS[msg.channel].prepareNext()
       else:
         msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
