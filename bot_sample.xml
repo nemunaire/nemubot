@@ -1,0 +1,13 @@
+<nemubotconfig nick="nemubot" realname="nemubot speaker" owner="someone">
+  <server server="irc.freenode.org" port="6667" password="secret" autojoin="true">
+    <channel name="#nemutest" />
+  </server>
+  <load path="modules/birthday.xml" />
+  <load path="modules/ycc.xml" />
+  <load path="modules/qcm.xml" />
+  <load path="modules/soutenance.xml" />
+  <load path="modules/velib.xml" />
+  <load path="modules/whereis.xml" />
+  <load path="modules/watchWebsite.xml" />
+  <load path="modules/events.xml" />
+</nemubotconfig>
