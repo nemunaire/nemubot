@@ -1,7 +1,7 @@
-import sys
-import shlex
-import traceback
 import imp
+import shlex
+import sys
+import traceback
 
 server = __import__("server")
 imp.reload(server)

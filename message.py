@@ -2,11 +2,12 @@
 
 from datetime import datetime
 from datetime import timedelta
-import re
-import sys
-import string
-import time
 import imp
+import re
+import shlex
+import string
+import sys
+import time
 
 from credits import Credits
 import credits
@@ -145,10 +146,6 @@ class Message:
         now = datetime.now()
         self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
 
-      elif re.match(".*qui est ([a-zA-Z0-9_-]+)", messagel) is not None:
-        result = re.match(".*qui est ([a-zA-Z0-9_-]+).*", self.content)
-        self.send_chn ("!whois %s"%(result.group(1)))
-
       elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
         result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
         self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
@@ -207,7 +204,7 @@ class Message:
     #Messages stating with !
     elif self.content[0] == '!':
       self.mods = mods
-      self.cmd = self.content[1:].split(' ')
+      self.cmd = shlex.split(self.content[1:])
       if self.cmd[0] == "help":
         if len (self.cmd) > 1:
           if self.cmd[1] in mods:
