@@ -59,6 +59,14 @@ class Server(threading.Thread):
         return None
 
     @property
+    def autoconnect(self):
+      if self.node.hasAttribute("autoconnect"):
+        value = self.node["autoconnect"].lower()
+        return value != "no" and value != "off" and value != "false"
+      else:
+        return False
+
+    @property
     def id(self):
         return self.host + ":" + str(self.port)
 

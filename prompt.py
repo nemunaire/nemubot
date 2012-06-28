@@ -170,6 +170,7 @@ def load_module(config, servers):
 
 def load_file(filename, servers):
   """Realy load a file"""
+  global MODS
   config = xmlparser.parse_file(filename)
   if config.getName() == "nemubotconfig" or config.getName() == "config":
     #Preset each server in this file
@@ -180,6 +181,8 @@ def load_file(filename, servers):
         print ("  Server `%s' successfully added." % srv.id)
       else:
         print ("  Server `%s' already added, skiped." % srv.id)
+      if srv.autoconnect:
+        srv.launch(MODS)
     #Load files asked by the configuration file
     for load in config.getNodes("load"):
       load_file(load["path"], servers)
