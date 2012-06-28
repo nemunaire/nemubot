@@ -44,7 +44,11 @@ class ModuleState:
         try:
           return datetime.fromtimestamp(float(self.attributes[name]))
         except ValueError:
-          return datetime.fromtimestamp(time.mktime(time.strptime(self.attributes[name][:19], "%Y-%m-%d %H:%M:%S")))
+         while True:
+          try:
+            return datetime.fromtimestamp(time.mktime(time.strptime(self.attributes[name][:19], "%Y-%m-%d %H:%M:%S")))
+          except ImportError:
+            pass
     else:
       return None
 
