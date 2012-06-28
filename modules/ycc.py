@@ -23,14 +23,15 @@ class Tinyfier(threading.Thread):
 
   def run(self):
     (status, page) = getPage("ycc.fr", "/redirection/create/" + self.url)
-    if status == http.client.OK:
-      srv = re.match(".*((ht|f)tps?://|www.)([^/]+).*", self.url)
+    if status == http.client.OK and len(page) < 100:
+      srv = re.match(".*((ht|f)tps?://|www.)([^/ ]+).*", self.url)
       if srv is None:
         self.msg.send_chn("Mauvaise URL : %s" % (self.url))
       else:
         self.msg.send_chn("URL pour %s : %s" % (srv.group(3), page.decode()))
     else:
       print ("ERROR: ycc.fr seem down?")
+      self.msg.send_chn("La situation est embarassante, il semblerait que YCC soit down :(")
 
 def parseanswer(msg):
   global LAST_URLS
@@ -48,7 +49,7 @@ def parseanswer(msg):
           t = Tinyfier(url, msg)
           t.start()
       else:
-        msg.send_chn("%s: je ne peux pas reduire autant d'URL d'un seul coup." % msg.sender)
+        msg.send_chn("%s: je ne peux pas réduire autant d'URL d'un seul coup." % msg.sender)
     return True
   else:
     return False
