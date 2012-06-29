@@ -62,6 +62,7 @@ def launch(servers):
    try:
      d = sys.stdin.readline().strip()
    except KeyboardInterrupt:
+     print("")
      d = "quit"
    for k in d.split(";"):
     try:
@@ -75,6 +76,13 @@ def launch(servers):
       except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
+  #Save and shutdown modules
+  for m in MODS:
+    m.save()
+    try:
+      m.close()
+    except AttributeError:
+      pass
   return ret == "reset"
 
 
