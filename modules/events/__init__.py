@@ -3,7 +3,6 @@
 import re
 import sys
 from datetime import timedelta
-from datetime import datetime
 from datetime import date
 import time
 import threading
@@ -12,6 +11,8 @@ from module_state import ModuleState
 
 nemubotversion = 3.0
 
+from . import Manager
+
 def help_tiny ():
   """Line inserted in the response to the command !help"""
   return "events manager"
@@ -19,63 +20,23 @@ def help_tiny ():
 def help_full ():
   return "This module store a lot of events: ny, we, vacs, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
 
-class Manager(threading.Thread):
-  def __init__(self):
-    self.stop = False
-    threading.Thread.__init__(self)
-
-  def alertEnd(self, evt):
-    global newStrendEvt, SRVS, DATAS
-    #Send the message on each matched servers
-    for server in SRVS.keys():
-      if not evt.hasAttribute("server") or server == evt["server"]:
-        if evt["channel"] == SRVS[server].nick:
-          SRVS[server].send_msg_usr(evt["proprio"], "%s: %s arrivé à échéance." % (evt["proprio"], evt["name"]))
-        else:
-          SRVS[server].send_msg(evt["channel"], "%s: %s arrivé à échéance." % (evt["proprio"], evt["name"]))
-    DATAS.delChild(DATAS.index[evt["name"]])
-    save()
-    newStrendEvt.set()
-
-  def run(self):
-    global DATAS
-    while not self.stop:
-      newStrendEvt.clear()
-      closer = None
-      #Gets the closer event
-      for evt in DATAS.index.keys():
-        if DATAS.index[evt].hasAttribute("end") and (closer is None or DATAS.index[evt].getDate("end") < closer.getDate("end")) and DATAS.index[evt].getDate("end") > datetime.now():
-          closer = DATAS.index[evt]
-      if closer is not None and closer.hasAttribute("end"):
-        #print ("Closer: %s à %s"%(closer.name, closer["end"]))
-        timeleft = (closer.getDate("end") - datetime.now()).seconds
-        timer = threading.Timer(timeleft, self.alertEnd, (closer,))
-        timer.start()
-        #print ("Start timer (%ds)"%timeleft)
-
-      newStrendEvt.wait()
-
-      if closer is not None and closer.hasAttribute("end") and closer.getDate("end") > datetime.now():
-        timer.cancel()
-    self.threadManager = None
-
 
 threadManager = None
-newStrendEvt = threading.Event()
 
 def load():
-  global DATAS, threadManager
+  global DATAS, SRVS, threadManager
   #Define the index
   DATAS.setIndex("name")
   #Load the manager
-  threadManager = Manager()
+  Manager.save = save
+  threadManager = Manager(DATAS, SRVS)
   threadManager.start()
 
 def close():
   global threadManager
   if threadManager is not None:
     threadManager.stop = True
-    newStrendEvt.set()
+    Manager.newStrendEvt.set()
 
 
 def parseanswer(msg):
@@ -122,7 +83,7 @@ def parseanswer(msg):
               strnd["end"] = datetime.now() + timedelta(days=int(result.group(1)))
             else:
               strnd["end"] = datetime.now() + timedelta(seconds=int(result.group(1)))
-            newStrendEvt.set()
+            Manager.newStrendEvt.set()
             msg.send_snd ("%s commencé le %s et se terminera le %s."% (msg.cmd[1], datetime.now(), strnd.getDate("end")))
           except:
             msg.send_snd ("Impossible de définir la fin de %s."% (msg.cmd[1]))
@@ -139,7 +100,7 @@ def parseanswer(msg):
         msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
       if DATAS.index[msg.cmd[1]]["proprio"] == msg.sender or (msg.cmd[0] == "forceend" and msg.sender == msg.srv.owner):
         DATAS.delChild(DATAS.index[msg.cmd[1]])
-        newStrendEvt.set()
+        Manager.newStrendEvt.set()
         save()
       else:
         msg.send_snd ("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmd[1], DATAS.index[msg.cmd[1]]["proprio"]))

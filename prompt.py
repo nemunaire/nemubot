@@ -1,4 +1,5 @@
 import imp
+import os
 import shlex
 import sys
 import traceback
@@ -92,12 +93,12 @@ def launch(servers):
 #                        #
 ##########################
 
-def mod_save(mod, datas_path, config):
-  mod.DATAS.save(datas_path + "/" + config["name"] + ".xml")
+def mod_save(mod, datas_path):
+  mod.DATAS.save(datas_path + "/" + mod.name + ".xml")
   mod.print ("Saving!")
 
 def mod_has_access(mod, config, msg):
-  if config.hasNode("channel"):
+  if config is not None and config.hasNode("channel"):
     for chan in config.getChilds("channel"):
       if (chan["server"] is None or chan["server"] == msg.srv.id) and (chan["channel"] is None or chan["channel"] == msg.channel):
         return True
@@ -111,93 +112,106 @@ def mod_has_access(mod, config, msg):
 #                        #
 ##########################
 
+def load_module_from_name(name, servers, config=None):
+  try:
+    #Import the module code
+    mod = __import__(name)
+    try:
+      if mod.nemubotversion < 3.0:
+        print ("  Module `%s' is not compatible with this version." % name)
+        return
+
+      #Set module common functions and datas
+      mod.name = name
+      mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
+      mod.DATAS = xmlparser.parse_file(datas_path + "/" + name + ".xml")
+      mod.CONF = config
+      mod.SRVS = servers
+      mod.has_access = lambda msg: mod_has_access(mod, config, msg)
+      mod.save = lambda: mod_save(mod, datas_path)
+
+      #Load dependancies
+      if mod.CONF is not None and mod.CONF.hasNode("dependson"):
+        mod.MODS = dict()
+        for depend in mod.CONF.getNodes("dependson"):
+          for md in MODS:
+            if md.name == depend["name"]:
+              mod.MODS[md.name] = md
+              break
+          if depend["name"] not in mod.MODS:
+            print ("\033[1;31mERROR:\033[0m in module `%s', module `%s' require by this module but is not loaded." % (mod.name,depend["name"]))
+            return
+
+      try:
+        test = mod.parseask
+      except AttributeError:
+        print ("\033[1;35mWarning:\033[0m in module `%s', no function parseask defined." % mod.name)
+        mod.parseask = lambda x: False
+
+      try:
+        test = mod.parseanswer
+      except AttributeError:
+        print ("\033[1;35mWarning:\033[0m in module `%s', no function parseanswer defined." % mod.name)
+        mod.parseanswer = lambda x: False
+
+      try:
+        test = mod.parselisten
+      except AttributeError:
+        print ("\033[1;35mWarning:\033[0m in module `%s', no function parselisten defined." % mod.name)
+        mod.parselisten = lambda x: False
+
+      try:
+        mod.load()
+        print ("  Module `%s' successfully loaded." % name)
+      except AttributeError:
+        print ("  Module `%s' successfully added." % name)
+      #TODO: don't append already running modules
+      MODS.append(mod)
+    except AttributeError:
+      print ("  Module `%s' is not a nemubot module." % name)
+    for srv in servers:
+      servers[srv].update_mods(MODS)
+  except IOError:
+    print ("  Module `%s' not loaded: unable to find module implementation." % name)
+  except ImportError:
+    print ("\033[1;31mERROR:\033[0m Module attached to the file `%s' not loaded. Is this file existing?" % name)
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    traceback.print_exception(exc_type, exc_value, exc_traceback)
+
 def load_module(config, servers):
   global MODS
   if config.hasAttribute("name"):
-    try:
-      #Import the module code
-      mod = imp.load_source(config["name"], modules_path + "/" + config["name"] + ".py")
-      try:
-        if mod.nemubotversion < 3.0:
-          print ("  Module `%s' is not compatible with this version." % config["name"])
-          return
-
-        #Set module common functions and datas
-        mod.name = config["name"]
-        mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
-        mod.DATAS = xmlparser.parse_file(datas_path + "/" + config["name"] + ".xml")
-        mod.CONF = config
-        mod.SRVS = servers
-        mod.has_access = lambda msg: mod_has_access(mod, config, msg)
-        mod.save = lambda: mod_save(mod, datas_path, config)
-
-        #Load dependancies
-        if mod.CONF.hasNode("dependson"):
-          mod.MODS = dict()
-          for depend in mod.CONF.getNodes("dependson"):
-            for md in MODS:
-              if md.name == depend["name"]:
-                mod.MODS[md.name] = md
-                break
-            if depend["name"] not in mod.MODS:
-              print ("\033[1;35mERROR:\033[0m in module `%s', module `%s' require by this module but is not loaded." % (mod.name,depend["name"]))
-              return
-
-        try:
-          test = mod.parseask
-        except AttributeError:
-          print ("\033[1;35mWarning:\033[0m in module `%s', no function parseask defined." % mod.name)
-          mod.parseask = lambda x: False
-
-        try:
-          test = mod.parseanswer
-        except AttributeError:
-          print ("\033[1;35mWarning:\033[0m in module `%s', no function parseanswer defined." % mod.name)
-          mod.parseanswer = lambda x: False
-
-        try:
-          test = mod.parselisten
-        except AttributeError:
-          print ("\033[1;35mWarning:\033[0m in module `%s', no function parselisten defined." % mod.name)
-          mod.parselisten = lambda x: False
-
-        try:
-          mod.load()
-          print ("  Module `%s' successfully loaded." % config["name"])
-        except AttributeError:
-          print ("  Module `%s' successfully added." % config["name"])
-        #TODO: don't append already running modules
-        MODS.append(mod)
-      except AttributeError:
-        print ("  Module `%s' is not a nemubot module." % config["name"])
-      for srv in servers:
-        servers[srv].update_mods(MODS)
-    except IOError:
-      print ("  Module `%s' not loaded: unable to find module implementation." % config["name"])
-  
+    load_module_from_name(config["name"], servers, config)
 
 def load_file(filename, servers):
   """Realy load a file"""
   global MODS
-  config = xmlparser.parse_file(filename)
-  if config.getName() == "nemubotconfig" or config.getName() == "config":
-    #Preset each server in this file
-    for serveur in config.getNodes("server"):
-      srv = server.Server(serveur, config["nick"], config["owner"], config["realname"])
-      if srv.id not in servers:
-        servers[srv.id] = srv
-        print ("  Server `%s' successfully added." % srv.id)
-      else:
-        print ("  Server `%s' already added, skiped." % srv.id)
-      if srv.autoconnect:
-        srv.launch(MODS)
-    #Load files asked by the configuration file
-    for load in config.getNodes("load"):
-      load_file(load["path"], servers)
-  elif config.getName() == "nemubotmodule":
-    load_module(config, servers)
+  if os.path.isfile(filename):
+    config = xmlparser.parse_file(filename)
+    if config.getName() == "nemubotconfig" or config.getName() == "config":
+      #Preset each server in this file
+      for serveur in config.getNodes("server"):
+        srv = server.Server(serveur, config["nick"], config["owner"], config["realname"])
+        if srv.id not in servers:
+          servers[srv.id] = srv
+          print ("  Server `%s' successfully added." % srv.id)
+        else:
+          print ("  Server `%s' already added, skiped." % srv.id)
+        if srv.autoconnect:
+          srv.launch(MODS)
+      #Load files asked by the configuration file
+      for load in config.getNodes("load"):
+        load_file(load["path"], servers)
+    elif config.getName() == "nemubotmodule":
+      load_module(config, servers)
+    else:
+      print ("  Can't load `%s'; this is not a valid nemubot configuration file." % filename)
+  elif os.path.isfile(filename + ".xml"):
+    load_file(filename + ".xml", servers)
+  elif os.path.isfile("./modules/" + filename + ".xml"):
+    load_file("./modules/" + filename + ".xml", servers)
   else:
-    print ("  Can't load `%s'; this is not a valid nemubot configuration file." % filename)
+    load_module_from_name(filename, servers)
 
 
 def load(cmds, servers):

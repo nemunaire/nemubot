@@ -3,7 +3,8 @@
 import http.client
 import re
 import sys
-import threading
+
+from .Tinyfier import Tinyfier
 
 nemubotversion = 3.0
 
@@ -15,24 +16,6 @@ def help_full ():
   return "TODO"
 
 
-class Tinyfier(threading.Thread):
-  def __init__(self, url, msg):
-    self.url = url
-    self.msg = msg
-    threading.Thread.__init__(self)
-
-  def run(self):
-    (status, page) = getPage("ycc.fr", "/redirection/create/" + self.url)
-    if status == http.client.OK and len(page) < 100:
-      srv = re.match(".*((ht|f)tps?://|www.)([^/ ]+).*", self.url)
-      if srv is None:
-        self.msg.send_chn("Mauvaise URL : %s" % (self.url))
-      else:
-        self.msg.send_chn("URL pour %s : %s" % (srv.group(3), page.decode()))
-    else:
-      print ("ERROR: ycc.fr seem down?")
-      self.msg.send_chn("La situation est embarassante, il semblerait que YCC soit down :(")
-
 def parseanswer(msg):
   global LAST_URLS
   if msg.cmd[0] == "ycc":
@@ -42,7 +25,7 @@ def parseanswer(msg):
         t = Tinyfier(url, msg)
         t.start()
       else:
-        msg.send_chn("%s: je n'ai pas d'autre URL a reduire" % msg.sender)
+        msg.send_chn("%s: je n'ai pas d'autre URL  reduire" % msg.sender)
     else:
       if len(msg.cmd) < 6:
         for url in msg.cmd[1:]:
@@ -66,17 +49,3 @@ def parselisten (msg):
       LAST_URLS[msg.channel] = list(res.group(1))
     return True
   return False
-
-def getPage(s, p): 
-  conn = http.client.HTTPConnection(s)
-  try:
-    conn.request("GET", p)
-  except socket.gaierror:
-    print ("[%s] impossible de récupérer la page %s."%(s, p))
-    return None
-
-  res = conn.getresponse()
-  data = res.read()
-
-  conn.close()
-  return (res.status, data)

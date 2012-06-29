@@ -10,9 +10,19 @@ servers = dict()
 
 prompt = __import__ ("prompt")
 
+#Add modules dir path
+if os.path.isdir("./modules/"):
+  modules_path = os.path.realpath(os.path.abspath("./modules/"))
+  if modules_path not in sys.path:
+        sys.path.insert(0, modules_path)
+
+#Load given files
 if len(sys.argv) >= 2:
     for arg in sys.argv[1:]:
-        prompt.load_file(arg, servers)
+        if os.path.isfile(arg):
+            prompt.load_file(arg, servers)
+        elif os.path.isdir(arg):
+            sys.path.insert(1, arg)
 
 print ("Nemubot ready, my PID is %i!" % (os.getpid()))
 while prompt.launch(servers):

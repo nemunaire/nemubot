@@ -13,102 +13,25 @@ from urllib.parse import unquote
 
 from module_state import ModuleState
 
+from . import User
+from .UpdatedStorage import UpdatedStorage
+from .Delayed import Delayed
+
 nemubotversion = 3.0
 
 THREAD = None
 search = list()
-
-class UpdatedStorage:
-  def __init__(self):
-    sock = connect_to_ns(CONF.getNode("server")["url"],
-                         CONF.getNode("server").getInt("port"))
-    self.users = dict()
-    if sock != None:
-      users = list_users(sock)
-      if users is not None:
-        for l in users:
-          u = User(l)
-          if u.login not in self.users:
-            self.users[u.login] = list()
-          self.users[u.login].append(u)
-        self.lastUpdate = datetime.now ()
-      else:
-        self.users = None
-      sock.close()
-    else:
-      self.users = None
-
-  def update(self):
-    if datetime.now () - self.lastUpdate < timedelta(minutes=10):
-      return self
-    else:
-      return None
-
-
-class User(object):
-    def __init__(self, line):
-        fields = line.split()
-        self.login = fields[1]
-        self.ip = fields[2]
-        self.location = fields[8]
-        self.promo = fields[9]
-
-    @property
-    def sm(self):
-      for sm in CONF.getNodes("sm"):
-        if self.ip.startswith(sm["ip"]):
-            return sm["name"]
-      return None
-
-    @property
-    def poste(self):
-      if self.sm is None:
-        if self.ip.startswith('10.'):
-            return 'quelque part sur le PIE (%s)'%self.ip
-        else:
-            return "chez lui"
-      else:
-        if self.ip.startswith('10.247') or self.ip.startswith('10.248') or self.ip.startswith('10.249') or self.ip.startswith('10.250'):
-          return "en " + self.sm + " rangée " + self.ip.split('.')[2] + " poste " + self.ip.split('.')[3]
-        else:
-          return "en " + self.sm
-
-    def __cmp__(self, other):
-        return cmp(self.login, other.login)
-    
-    def __hash__(self):
-        return hash(self.login)
-
-def connect_to_ns(server, port):
-  try:
-    s = socket.socket()
-    s.settimeout(3)
-    s.connect((server, port))
-  except socket.error:
-    return None
-  s.recv(8192)
-  return s
-
-def list_users(sock):
-  try:
-    sock.send('list_users\n'.encode())
-    buf = ''
-    while True:
-        tmp = sock.recv(8192).decode()
-        buf += tmp
-        if '\nrep 002' in tmp or tmp == '':
-            break
-    return buf.split('\n')[:-2]
-  except socket.error:
-    return None
-
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
   return "Find a user on the PIE"
 
 def help_full ():
-  return "!whereis /who/: gives the position of /who/.\n!whereare /who/ [/other who/ ...]: gives the position of /who/."
+  return "!whereis <who>: gives the position of /who/.\n!whereare <who> [<other who> ...]: gives the position of these <who>.\n!peoplein <sm>: gives the number of people in this /sm/.\n!ip <who>: gets the IP adress of /who/.\n!whoison <location>: gives the name or the number (if > 15) of people at this /location/.\n!whoisin <sm>: gives the name or the number of people in this /sm/"
+
+def load():
+  global CONF
+  User.CONF = CONF
 
 datas = None
 
@@ -117,7 +40,7 @@ def startWhereis(msg):
   if datas is not None:
     datas = datas.update ()
   if datas is None:
-    datas = UpdatedStorage()
+    datas = UpdatedStorage(CONF.getNode("server")["url"], CONF.getNode("server").getInt("port"))
   if datas is None or datas.users is None:
     msg.send_chn("Hmm c'est embarassant, serait-ce la fin du monde ou juste netsoul qui est mort ?")
     return
@@ -177,10 +100,6 @@ def whoison(msg):
 
 DELAYED = dict()
 delayEvnt = threading.Event()
-
-class Delayed:
-  def __init__(self):
-    self.names = dict()
 
 def whereis_msg(msg):
   names = list()
