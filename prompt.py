@@ -115,7 +115,15 @@ def mod_has_access(mod, config, msg):
 def load_module_from_name(name, servers, config=None):
   try:
     #Import the module code
-    mod = __import__(name)
+    loaded = False
+    for md in MODS:
+      if md.name == name:
+        mod = imp.reload(md)
+        loaded = True
+        break
+    if not loaded:
+      mod = __import__(name)
+      imp.reload(mod)
     try:
       if mod.nemubotversion < 3.0:
         print ("  Module `%s' is not compatible with this version." % name)
@@ -166,7 +174,13 @@ def load_module_from_name(name, servers, config=None):
       except AttributeError:
         print ("  Module `%s' successfully added." % name)
       #TODO: don't append already running modules
-      MODS.append(mod)
+      exitsts = False
+      for md in MODS:
+        if md.name == name:
+          exitsts = True
+          break
+      if not exitsts:
+        MODS.append(mod)
     except AttributeError:
       print ("  Module `%s' is not a nemubot module." % name)
     for srv in servers:

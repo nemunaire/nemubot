@@ -110,7 +110,10 @@ def parseanswer(msg):
     msg.send_snd ("Compteurs connus : %s." % ", ".join(DATAS.index.keys()))
   elif msg.cmd[0] in DATAS.index:
     if DATAS.index[msg.cmd[0]].name == "strend":
-      msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))))
+      if DATAS.index[msg.cmd[0]].hasAttribute("end"):
+        msg.send_chn ("%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())))
+      else:
+        msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))))
     else:
       msg.send_chn (msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]))
     save()
