@@ -3,7 +3,7 @@
 import re
 import sys
 from datetime import timedelta
-from datetime import date
+from datetime import datetime
 import time
 import threading
 
@@ -29,7 +29,7 @@ def load():
   DATAS.setIndex("name")
   #Load the manager
   Manager.save = save
-  threadManager = Manager(DATAS, SRVS)
+  threadManager = Manager.Manager(DATAS, SRVS)
   threadManager.start()
 
 def close():
@@ -96,8 +96,7 @@ def parseanswer(msg):
     return True
   elif (msg.cmd[0] == "end" or msg.cmd[0] == "forceend") and len(msg.cmd) > 1:
     if msg.cmd[1] in DATAS.index:
-      if DATAS.index[msg.cmd[1]].hasAttribute("end"):
-        msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
+      msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
       if DATAS.index[msg.cmd[1]]["proprio"] == msg.sender or (msg.cmd[0] == "forceend" and msg.sender == msg.srv.owner):
         DATAS.delChild(DATAS.index[msg.cmd[1]])
         Manager.newStrendEvt.set()

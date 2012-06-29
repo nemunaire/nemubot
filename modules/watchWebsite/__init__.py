@@ -3,7 +3,7 @@
 nemubotversion = 3.0
 
 from .Watcher import Watcher
-from .Site import Site
+from . import Site
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -17,11 +17,12 @@ WATCHER = None
 
 
 def load():
-  global WATCHER, DATAS
+  global WATCHER, DATAS, SRVS
   #Load the watcher
+  Site.SRVS = SRVS
   WATCHER = Watcher()
   for site in DATAS.getNodes("watch"):
-    s = Site(site)
+    s = Site.Site(site)
     WATCHER.addServer(s)
   WATCHER.start()
 
