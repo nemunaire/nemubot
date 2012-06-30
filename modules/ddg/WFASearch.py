@@ -59,7 +59,7 @@ def getPage(terms):
     print ("impossible de récupérer la page Wolfram|Alpha.")
     return (http.client.INTERNAL_SERVER_ERROR, None)
   except (TypeError, KeyError):
-    print ("You need an Wolfram|Alpha API key in order to use this module. Add it to the configuration file:\n<wfaapi key=\"XXXXXX-XXXXXXXXXX\" />\nRegister at http://products.wolframalpha.com/api/")
+    print ("You need a Wolfram|Alpha API key in order to use this module. Add it to the module configuration file:\n<wfaapi key=\"XXXXXX-XXXXXXXXXX\" />\nRegister at http://products.wolframalpha.com/api/")
     return (http.client.INTERNAL_SERVER_ERROR, None)
 
   res = conn.getresponse()
