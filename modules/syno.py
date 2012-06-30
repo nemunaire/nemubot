@@ -30,7 +30,7 @@ def parseanswer(msg):
           if len(synos) > 0:
             msg.send_chn("Synonymes de %s : %s" % (syno, ', '.join(synos)))
           else:
-            msg.send_chn("Aucun synonymes de %s n'a ete trouve")
+            msg.send_chn("Aucun synonymes de %s n'a été trouvé"%syno)
         else:
           msg.send_chn("Une erreur s'est produite durant la recherche d'un synonyme de %s" % syno)
     return True
