@@ -82,7 +82,10 @@ class Server(threading.Thread):
         if msg is not None and channel is not None:
             for line in msg.split("\n"):
                 if line != "":
-                    self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+                    if len(line) < 442:
+                        self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+                    else:
+                        self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
 
     def send_msg_prtn (self, msg):
         self.send_msg_final(self.partner, msg)
