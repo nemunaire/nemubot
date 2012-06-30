@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import http.client
 import threading
 
 class Tinyfier(threading.Thread):

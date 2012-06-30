@@ -7,6 +7,8 @@ import random
 import sys
 import time
 
+import module_states_file as xmlparser
+
 nemubotversion = 3.0
 
 def help_tiny ():
