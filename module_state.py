@@ -10,6 +10,7 @@ class ModuleState:
 
   def __init__(self, name):
     self.name = name
+    self.content = ""
     self.attributes = dict()
     self.childs = list()
     self.index = dict()
@@ -80,6 +81,9 @@ class ModuleState:
     """DOM like method"""
     self.attributes[name] = value
 
+  def getContent(self):
+    return self.content
+
   def getChilds(self):
     """Return a full list of direct child of this node"""
     return self.childs
@@ -91,6 +95,13 @@ class ModuleState:
       if tagname is None or tagname == child.name:
         ret = child
     return ret
+
+  def getFirstNode(self, tagname):
+    """Get a unique node (or the last one) with the given tagname"""
+    for child in self.childs:
+      if tagname is None or tagname == child.name:
+        return child
+    return None
 
   def getNodes(self, tagname):
     """Get all direct childs that have the given tagname"""
