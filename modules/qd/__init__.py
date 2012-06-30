@@ -6,6 +6,7 @@ from datetime import datetime
 nemubotversion = 3.0
 
 from . import GameUpdater
+from .QDWrapper import QDWrapper
 
 channels = "#nemutest #42sh #ykar #epitagueule"
 LASTSEEN = dict ()
@@ -210,7 +211,7 @@ def parselisten (msg):
       win(msg)
       return True
     elif getUser(msg.sender).hasChanged():
-      gu = GameUpdater(msg, bfrseen)
+      gu = GameUpdater.GameUpdater(msg, bfrseen)
       gu.start()
       return True
   return False

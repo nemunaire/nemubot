@@ -99,7 +99,7 @@ def mod_save(mod, datas_path):
 
 def mod_has_access(mod, config, msg):
   if config is not None and config.hasNode("channel"):
-    for chan in config.getChilds("channel"):
+    for chan in config.getNodes("channel"):
       if (chan["server"] is None or chan["server"] == msg.srv.id) and (chan["channel"] is None or chan["channel"] == msg.channel):
         return True
     return False
