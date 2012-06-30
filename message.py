@@ -169,21 +169,7 @@ class Message:
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
       self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "reload" or self.cmd[0] == "reload_nosave":
-        if len(self.cmd) > 1:
-          if self.cmd[1] in mods:
-            if self.cmd[0] == "reload":
-              mods[self.cmd[1]].save_module ()
-            imp.reload(mods[self.cmd[1]])
-            mods[self.cmd[1]].load_module (self.srv.datas_dir)
-            self.send_snd ("Module %s rechargé avec succès."%self.cmd[1])
-          else:
-            self.send_snd ("Module inconnu %s."%self.cmd[1])
-        else:
-          self.send_snd ("Usage: `reload /module/.")
-          self.send_snd ("Loaded modules: " + ', '.join(mods.keys()) + ".")
-
-      elif self.cmd[0] == "ban":
+      if self.cmd[0] == "ban":
         if len(self.cmd) > 1:
           credits.BANLIST.append(self.cmd[1])
         else:
@@ -204,7 +190,10 @@ class Message:
     #Messages stating with !
     elif self.content[0] == '!':
       self.mods = mods
-      self.cmd = shlex.split(self.content[1:])
+      try:
+        self.cmd = shlex.split(self.content[1:])
+      except ValueError:
+        self.cmd = self.content[1:].split(' ')
       if self.cmd[0] == "help":
         if len (self.cmd) > 1:
           if self.cmd[1] in mods:
