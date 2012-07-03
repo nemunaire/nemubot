@@ -21,6 +21,19 @@ class ModuleState:
     """Get the name of the current node"""
     return self.name
 
+  def display(self, level = 0):
+    ret = ""
+    out = list()
+    for k in self.attributes:
+      out.append("%s : %s" % (k, self.attributes[k]))
+    ret += "%s%s { %s } = '%s'\n" % (' ' * level, self.name, ' ; '.join(out), self.content)
+    for c in self.childs:
+      ret += c.display(level + 2)
+    return ret
+
+  def __str__(self):
+    return self.display()
+
   def __getitem__(self, i):
     """Return the attribute asked"""
     return self.getAttribute(i)
