@@ -9,6 +9,8 @@ message = __import__("message")
 imp.reload(message)
 channel = __import__("channel")
 imp.reload(channel)
+dcc = __import__("DCC")
+imp.reload(dcc)
 
 class Server(threading.Thread):
     def __init__(self, node, nick, owner, realname, socket = None):
@@ -23,12 +25,18 @@ class Server(threading.Thread):
 
       self.listen_nick = True
 
+      self.dcc_clients = dict()
+
       self.channels = dict()
       for chn in node.getNodes("channel"):
         chan = channel.Channel(chn)
         self.channels[chan.name] = chan
 
       threading.Thread.__init__(self)
+
+    @property
+    def isDCC(self):
+        return False
 
     @property
     def host(self):
@@ -70,11 +78,20 @@ class Server(threading.Thread):
     def id(self):
         return self.host + ":" + str(self.port)
 
-    def send_ctcp_response(self, me, to, msg, cmd = "NOTICE", endl = "\r\n"):
-      if msg is not None and channel is not None:
+    def send_ctcp(self, to, msg, cmd = "NOTICE", endl = "\r\n"):
+      if msg is not None and to is not None:
         for line in msg.split("\n"):
           if line != "":
-            self.s.send ((":%s %s %s :%s%s" % (me, cmd, to, line, endl)).encode ())
+            self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to, line, endl)).encode ())
+
+    def send_dcc(self, msg, to):
+      if msg is not None and to is not None:
+        if to not in self.dcc_clients.keys():
+          d = dcc.DCC(self, to)
+          self.dcc_clients[to] = d
+          self.dcc_clients[d.dest] = d
+        self.dcc_clients[to].send_dcc(msg)
+            
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if channel == self.nick:
@@ -87,12 +104,15 @@ class Server(threading.Thread):
                     else:
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
 
-    def send_msg_prtn (self, msg):
+    def send_msg_prtn(self, msg):
         self.send_msg_final(self.partner, msg)
 
-    def send_msg_usr (self, user, msg):
+    def send_msg_usr(self, user, msg):
         if user is not None and user[0] != "#":
-            self.send_msg_final(user, msg)
+            if user in self.dcc_clients.keys():
+                self.send_dcc(msg, user)
+            else:
+                self.send_msg_final(user, msg)
 
     def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if self.accepted_channel(channel):
@@ -163,6 +183,17 @@ class Server(threading.Thread):
         else:
             print ("  Already connected.")
 
+    def treat_msg(self, line, srv = None):
+        if srv is None:
+            srv = self
+        try:
+            msg = message.Message (srv, line)
+            msg.treat (self.mods)
+        except:
+            print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s"%line)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
+
     def run(self):
       if not self.connected:
           self.s = socket.socket() #Create the socket
@@ -184,31 +215,18 @@ class Server(threading.Thread):
                       self.s.send(("JOIN %s\r\n" % self.channels[chn].name).encode ())
           print ("Listen to channels: %s" % ' '.join (self.channels.keys()))
 
-      readbuffer = "" #Here we store all the messages from server
+      readbuffer = b'' #Here we store all the messages from server
       while not self.stop:
-        try:
-            raw = self.s.recv(1024) #recieve server messages
-            data = raw.decode()
-            if not data:
-                break
-        except UnicodeDecodeError:
-            try:
-                data = raw.decode("utf-8", "replace")
-            except UnicodeDecodeError:
-                print ("\033[1;31mERROR:\033[0m while decoding of: %s"%data)
-                continue
-        readbuffer = readbuffer + data
-        temp = readbuffer.split("\n")
-        readbuffer = temp.pop( )
+        raw = self.s.recv(1024) #recieve server messages
+        if not raw:
+          break
+        readbuffer = readbuffer + raw
+        temp = readbuffer.split(b'\n')
+        readbuffer = temp.pop()
 
         for line in temp:
-          try:
-              msg = message.Message (self, line)
-              msg.treat (self.mods)
-          except:
-              print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s"%line)
-              exc_type, exc_value, exc_traceback = sys.exc_info()
-              traceback.print_exception(exc_type, exc_value, exc_traceback)
+          self.treat_msg(line)
+
       if self.connected:
           self.s.close()
           self.connected = False

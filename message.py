@@ -32,16 +32,16 @@ class Message:
     self.time = datetime.now ()
     line = line.rstrip() #remove trailing 'rn'
 
-    words = line.split(' ')
-    if words[0][0] == ':':
-      self.name = words[0][1:]
+    words = line.split(b' ')
+    if words[0][0] == 58: #58 is : in ASCII table
+      self.name = words[0][1:].decode()
       self.cmd = words[1]
     else:
       self.cmd = words[0]
       self.name = None
 
-    if self.cmd == 'PING':
-      self.content = words[1]
+    if self.cmd == b'PING':
+      self.content = words[1].decode()
     elif self.name is not None:
       self.sender = (self.name.split('!'))[0]
       if self.sender != self.name:
@@ -50,21 +50,18 @@ class Message:
         self.realname = self.sender
 
       if len(words) > 2:
-        self.channel = words[2]
+        self.channel = words[2].decode()
 
-      if self.cmd == 'PRIVMSG':
-        self.content = words[3]
+      if self.cmd == b'PRIVMSG':
+        #Check for CTCP request
+        self.ctcp = (words[3][0] == 0x01 or words[3][1] == 0x01)
+        self.content = words[3].decode()
         if self.content[0] == ':':
-          self.content = line.split(':', 2)[2]
+          self.content = line.decode().split(':', 2)[2]
       else:
         print (line)
     else:
       print (line)
-      if self.cmd == 'PRIVMSG':
-        self.channel = words[2]
-        self.content = words[3]
-        if self.content[0] == ':':
-          self.content = line.split(':', 2)[2]
 
   @property
   def is_owner(self):
@@ -81,7 +78,7 @@ class Message:
 
   def send_chn (self, msg):
     """Send msg on the same channel as receive message"""
-    if CREDITS[self.realname].speak():
+    if (self.srv.isDCC and self.channel == self.srv.nick) or CREDITS[self.realname].speak():
       if self.channel == self.srv.nick:
         self.send_snd (msg)
       else:
@@ -89,13 +86,15 @@ class Message:
 
   def send_snd (self, msg):
     """Send msg to the sender who send the original message"""
-    if CREDITS[self.realname].speak():
+    if self.srv.isDCC or CREDITS[self.realname].speak():
       self.srv.send_msg_usr (self.sender, msg)
 
 
 
   def authorize (self):
-    if self.realname not in CREDITS:
+    if self.srv.isDCC:
+      return True
+    elif self.realname not in CREDITS:
       CREDITS[self.realname] = Credits(self.realname)
     elif self.content[0] == '`':
       return True
@@ -104,11 +103,11 @@ class Message:
     return self.srv.accepted_channel(self.channel)
 
   def treat (self, mods):
-    if self.cmd == "PING":
+    if self.cmd == b"PING":
       self.pong ()
-    elif self.cmd == "PRIVMSG" and self.name is None:
+    elif self.cmd == b"PRIVMSG" and self.ctcp:
       self.parsectcp ()
-    elif self.cmd == "PRIVMSG" and self.authorize():
+    elif self.cmd == b"PRIVMSG" and self.authorize():
       self.parsemsg (mods)
 #    elif self.cmd == "NICK":
 #      print ("%s change de nom pour %s" % (self.sender, self.content))
@@ -123,8 +122,17 @@ class Message:
 
 
   def parsectcp(self):
-    if self.content == 'VERSION':
-      self.srv.send_ctcp_response(self.channel, self.sender, "VERSION nemubot v3")
+    if self.content == '\x01CLIENTINFO\x01':
+      self.srv.send_ctcp(self.sender, "CLIENTINFO TIME USERINFO VERSION CLIENTINFO")
+    elif self.content == '\x01TIME\x01':
+      self.srv.send_ctcp(self.sender, "TIME %s" % (datetime.now()))
+    elif self.content == '\x01USERINFO\x01':
+      self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
+    elif self.content == '\x01VERSION\x01':
+      self.srv.send_ctcp(self.sender, "VERSION nemubot v3")
+    else:
+      print (self.content)
+      self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
     if self.mods is not None:
@@ -205,6 +213,12 @@ class Message:
           for im in mods:
             self.send_snd("  - !help %s: %s" % (im.name, im.help_tiny ()))
 
+      elif self.cmd[0] == "dcctest":
+        print("dcctest")
+        self.srv.send_dcc("Test DCC", self.name)
+      elif self.cmd[0] == "pvdcctest":
+        print("dcctest")
+        self.send_snd("Test DCC")
       else:
         for im in mods:
           if im.has_access(self) and im.parseanswer(self):
