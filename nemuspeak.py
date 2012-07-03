@@ -69,7 +69,7 @@ def speak(endstate):
     stopSpk = 0
 
     if lastmsg is None:
-        lastmsg = message.Message(None, ":Quelqun!someone@p0m.fr PRIVMSG channel nothing")
+        lastmsg = message.Message(None, b":Quelqun!someone@p0m.fr PRIVMSG channel nothing")
 
     while not stopSpk and len(g_queue) > 0:
         msg = g_queue.pop(0)
@@ -165,21 +165,13 @@ class Server:
 
     def read(self):
         global stopSpk, talkEC, g_queue
-        readbuffer = "" #Here we store all the messages from server
+        readbuffer = b"" #Here we store all the messages from server
         while 1:
-            try:
-                raw = self.s.recv(1024) #recieve server messages
-                data = raw.decode()
-                if not data:
-                    break
-            except UnicodeDecodeError:
-                try:
-                    data = raw.decode("utf-8", "replace")
-                except UnicodeDecodeError:
-                    print ("\033[1;31mERROR:\033[0m while decoding of: %s"%data)
-                    continue
-            readbuffer = readbuffer + data
-            temp = readbuffer.split("\n")
+            raw = self.s.recv(1024) #recieve server messages
+            if not raw:
+                break
+            readbuffer = readbuffer + raw
+            temp = readbuffer.split(b"\n")
             readbuffer = temp.pop( )
 
             for line in temp:
@@ -191,9 +183,9 @@ class Server:
                     traceback.print_exception(exc_type, exc_value, exc_traceback)
                     continue
 
-                if msg.cmd == "PING":
+                if msg.cmd == b"PING":
                     self.s.send(("PONG %s\r\n" % msg.content).encode ())
-                elif msg.cmd == "PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
+                elif msg.cmd == b"PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
                     if msg.content[0] == '`' and msg.sender == OWNER:
                         cmd = msg.content[1:].split(' ')
                         if cmd[0] == "speak":
@@ -206,7 +198,7 @@ class Server:
                                 talkEC = 1
                             stopSpk = 1
                         elif cmd[0] == 'test':
-                            g_queue.append(message.Message(self, ":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(self.channels)))
+                            g_queue.append(message.Message(self, b":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(self.channels)))
                         elif cmd[0] == 'list':
                             print ("Currently listened channels:")
                             for chan in self.channels:
