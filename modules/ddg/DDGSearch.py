@@ -18,7 +18,10 @@ class DDGSearch:
 
   @property
   def type(self):
-    return self.ddgres.getFirstNode("Type").getContent()
+    if self.ddgres.hasNode("Type"):
+      return self.ddgres.getFirstNode("Type").getContent()
+    else:
+      return ""
 
   @property
   def definition(self):
