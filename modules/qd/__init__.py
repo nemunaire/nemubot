@@ -7,6 +7,7 @@ nemubotversion = 3.0
 
 from . import GameUpdater
 from .QDWrapper import QDWrapper
+from .Score import Score
 
 channels = "#nemutest #42sh #ykar #epitagueule"
 LASTSEEN = dict ()
