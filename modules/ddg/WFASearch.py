@@ -27,14 +27,20 @@ class WFASearch:
 
   @property
   def error(self):
-    return self.wfares["error"] == "true"
+    if self.wfares["error"] == "true":
+      return "An error occurs during computation: " + self.wfares.getNode("error").getNode("msg").getContent()
+    else:
+      proposal = list()
+      for dym in self.wfares.getNode("didyoumeans").getNodes("didyoumean"):
+        proposal.append(dym.getContent())
+      return "Did you mean: " + ', '.join(proposal) + "?"
 
   @property
   def nextRes(self):
     try:
       if len(self.wfares.getNodes("pod")) > self.curPod:
         txt = ""
-        while txt == "" or subnode.getFirstNode("plaintext").getContent().strip() == "":
+        while txt == "" or subnode.getFirstNode("plaintext").getContent() == "":
           node = self.wfares.getNodes("pod")[self.curPod]
           subnode = node.getNodes("subpod")[self.curSubPod]
 
@@ -43,7 +49,7 @@ class WFASearch:
             self.curPod += 1
             self.curSubPod = 0
 
-          txt = node["title"] + ": " + subnode.getFirstNode("plaintext").getContent().strip()
+          txt = node["title"] + " " + subnode["title"] + ": " + subnode.getFirstNode("plaintext").getContent()
         return txt
     except IndexError:
       pass
