@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import imp
 import re
 import sys
 from datetime import timedelta
@@ -7,9 +8,9 @@ from datetime import datetime
 import time
 import threading
 
-from module_state import ModuleState
-
 nemubotversion = 3.0
+
+from module_state import ModuleState
 
 from . import Manager
 
@@ -31,6 +32,9 @@ def load():
   Manager.save = save
   threadManager = Manager.Manager(DATAS, SRVS)
   threadManager.start()
+
+def reload():
+  imp.reload(Manager)
 
 def close():
   global threadManager

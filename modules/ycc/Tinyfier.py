@@ -2,6 +2,7 @@
 
 import http.client
 import threading
+import re
 
 class Tinyfier(threading.Thread):
   def __init__(self, url, msg):

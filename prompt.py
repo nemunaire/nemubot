@@ -120,6 +120,10 @@ def load_module_from_name(name, servers, config=None):
       if md.name == name:
         mod = imp.reload(md)
         loaded = True
+        try:
+          mod.reload()
+        except AttributeError:
+          pass
         break
     if not loaded:
       mod = __import__(name)

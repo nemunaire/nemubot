@@ -68,7 +68,7 @@ def parseanswer (msg):
 def parseask (msg):
   global ALIAS
   if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:
-    result = re.match(".*alias !?([a-zA-Z0-9_-]+) (pour|=|:) (.+)$", msg.content)
+    result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.content)
     if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
       msg.send_snd("Cet alias est déjà défini.")
     else:

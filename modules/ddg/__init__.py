@@ -1,8 +1,10 @@
 # coding=utf-8
 
+import imp
+
 nemubotversion = 3.0
 
-from .DDGSearch import DDGSearch
+from . import DDGSearch
 from . import WFASearch
 
 lastSearch = dict()
@@ -10,6 +12,10 @@ lastSearch = dict()
 def load():
   global CONF
   WFASearch.CONF = CONF
+
+def reload():
+  imp.reload(DDGSearch)
+  imp.reload(WFASearch)
 
 def parseanswer(msg):
   global lastSearch
@@ -30,11 +36,12 @@ def parseanswer(msg):
     if len(msg.cmd) > 1:
       if req == "wfa":
         s = WFASearch.WFASearch(' '.join(msg.cmd[1:]))
+        #print (s.wfares)
         if not s.success:
-          msg.send_chn("An error occurs during computation")
+          msg.send_chn(s.error)
           return True
       else:
-        s = DDGSearch(' '.join(msg.cmd[1:]))
+        s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
 
       if req == "def":
         msg.send_chn(s.definition)

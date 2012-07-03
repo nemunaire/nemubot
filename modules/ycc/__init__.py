@@ -1,10 +1,11 @@
 # coding=utf-8
 
 import http.client
+import imp
 import re
 import sys
 
-from .Tinyfier import Tinyfier
+from . import Tinyfier
 
 nemubotversion = 3.0
 
@@ -13,8 +14,10 @@ def help_tiny ():
   return "Gets YCC urls"
 
 def help_full ():
-  return "TODO"
+  return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."
 
+def reload():
+  imp.reload(Tinyfier)
 
 def parseanswer(msg):
   global LAST_URLS
@@ -22,14 +25,14 @@ def parseanswer(msg):
     if len(msg.cmd) == 1:
       if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
         url = LAST_URLS[msg.channel].pop()
-        t = Tinyfier(url, msg)
+        t = Tinyfier.Tinyfier(url, msg)
         t.start()
       else:
         msg.send_chn("%s: je n'ai pas d'autre URL  reduire" % msg.sender)
     else:
       if len(msg.cmd) < 6:
         for url in msg.cmd[1:]:
-          t = Tinyfier(url, msg)
+          t = Tinyfier.Tinyfier(url, msg)
           t.start()
       else:
         msg.send_chn("%s: je ne peux pas réduire autant d'URL d'un seul coup." % msg.sender)
