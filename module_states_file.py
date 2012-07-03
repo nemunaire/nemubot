@@ -28,6 +28,7 @@ class ModuleStatesFile(xml.sax.ContentHandler):
     child = self.stack.pop()
     size = len(self.stack)
     if size > 0:
+      self.stack[size - 1].content = self.stack[size - 1].content.strip()
       self.stack[size - 1].addChild(child)
     else:
       self.root = child
@@ -40,7 +41,10 @@ def parse_file(filename):
     parser.parse(open(filename, "r"))
     return mod.root
   except:
-    return module_state.ModuleState("nemubotstate")
+    if mod.root is None:
+      return module_state.ModuleState("nemubotstate")
+    else:
+      return mod.root
 
 def parse_string(string):
   mod = ModuleStatesFile()
@@ -48,4 +52,7 @@ def parse_string(string):
     xml.sax.parseString(string, mod)
     return mod.root
   except:
-    return module_state.ModuleState("nemubotstate")
+    if mod.root is None:
+      return module_state.ModuleState("nemubotstate")
+    else:
+      return mod.root
