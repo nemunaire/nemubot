@@ -40,6 +40,8 @@ def parse_file(filename):
   try:
     parser.parse(open(filename, "r"))
     return mod.root
+  except IOError:
+    return module_state.ModuleState("nemubotstate")
   except:
     if mod.root is None:
       return module_state.ModuleState("nemubotstate")
