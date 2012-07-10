@@ -55,7 +55,7 @@ class Message:
       if self.cmd == 'PRIVMSG':
         self.content = words[3]
         if self.content[0] == ':':
-          self.content = line.split(':', 2)[2]
+          self.content = ' '.join(words[3:])[1:]
       else:
         print (line)
     else:
@@ -64,7 +64,7 @@ class Message:
         self.channel = words[2]
         self.content = words[3]
         if self.content[0] == ':':
-          self.content = line.split(':', 2)[2]
+          self.content = ' '.join(words[3:])[1:]
 
   @property
   def is_owner(self):
