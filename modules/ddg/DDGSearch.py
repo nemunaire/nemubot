@@ -11,14 +11,14 @@ class DDGSearch:
     self.terms = terms
     self.curRT = -1
     (res, page) = getPage(terms)
-    if res == http.client.OK:
+    if res == http.client.OK or res == http.client.SEE_OTHER:
       self.ddgres = xmlparser.parse_string(page)
     else:
       self.ddgres = None
 
   @property
   def type(self):
-    if self.ddgres.hasNode("Type"):
+    if self.ddgres and self.ddgres.hasNode("Type"):
       return self.ddgres.getFirstNode("Type").getContent()
     else:
       return ""
@@ -32,15 +32,19 @@ class DDGSearch:
 
   @property
   def nextRes(self):
-    if self.type == "D":
-      if len(self.ddgres.getFirstNode("RelatedTopics").getNodes("RelatedTopic")) > self.curRT + 1:
-        self.curRT += 1
-        node = self.ddgres.getFirstNode("RelatedTopics").getNodes("RelatedTopic")[self.curRT]
-        return node.getFirstNode("Text").getContent()
-    elif self.ddgres.hasNode("Answer"):
-      if self.curRT < 0:
-        self.curRT = 0
-        return striphtml(self.ddgres.getFirstNode("Answer").getContent())
+    if (self.type == "D" or self.type == "C") and len(self.ddgres.getFirstNode("RelatedTopics").getNodes("RelatedTopic")) > self.curRT + 1:
+      self.curRT += 1
+      node = self.ddgres.getFirstNode("RelatedTopics").getNodes("RelatedTopic")[self.curRT]
+      return node.getFirstNode("Text").getContent()
+    elif self.ddgres.hasNode("Redirect") and self.ddgres.getFirstNode("Redirect").getContent() != "":
+      return self.ddgres.getFirstNode("Redirect").getContent()
+    elif self.ddgres.hasNode("Results") and self.ddgres.getFirstNode("Results").hasNode("Result") and self.curRT < 0:
+      self.curRT = 0
+      node = self.ddgres.getFirstNode("Results").getFirstNode("Result")
+      return node.getFirstNode("Text").getContent() + ": " + node.getFirstNode("FirstURL").getContent() 
+    elif self.ddgres.hasNode("Answer") and self.curRT < 0:
+      self.curRT = 0
+      return striphtml(self.ddgres.getFirstNode("Answer").getContent())
     elif self.ddgres.hasNode("Abstract") and len (self.ddgres.getNode("Abstract").getContent()) > 0:
       if self.curRT < 0:
         self.curRT = 0
@@ -53,8 +57,8 @@ class DDGSearch:
 
 
 def striphtml(data):
-    p = re.compile(r'<.*?>')
-    return p.sub('', data)
+  p = re.compile(r'<.*?>')
+  return p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\"")
 
 def getPage(terms):
   conn = http.client.HTTPConnection("api.duckduckgo.com")

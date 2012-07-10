@@ -29,11 +29,31 @@ class WFASearch:
   def error(self):
     if self.wfares["error"] == "true":
       return "An error occurs during computation: " + self.wfares.getNode("error").getNode("msg").getContent()
+    elif self.wfares.hasNode("didyoumeans"):
+      start = "Did you mean: "
+      tag = "didyoumean"
+      end = "?"
+    elif self.wfares.hasNode("tips"):
+      start = "Tips: "
+      tag = "tip"
+      end = ""
+    elif self.wfares.hasNode("relatedexamples"):
+      start = "Related examples: "
+      tag = "relatedexample"
+      end = ""
+    elif self.wfares.hasNode("futuretopic"):
+      return self.wfares.getNode("futuretopic")["msg"]
     else:
-      proposal = list()
-      for dym in self.wfares.getNode("didyoumeans").getNodes("didyoumean"):
+      return "An error occurs during computation"
+    proposal = list()
+    for dym in self.wfares.getNode(tag + "s").getNodes(tag):
+      if tag == "tip":
+        proposal.append(dym["text"])
+      elif tag == "relatedexample":
+        proposal.append(dym["desc"])
+      else:
         proposal.append(dym.getContent())
-      return "Did you mean: " + ', '.join(proposal) + "?"
+    return start + ', '.join(proposal) + end
 
   @property
   def nextRes(self):

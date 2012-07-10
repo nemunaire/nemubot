@@ -1,13 +1,14 @@
 # coding=utf-8
 
 import re
+import imp
 from datetime import datetime
 
 nemubotversion = 3.0
 
 from . import GameUpdater
-from .QDWrapper import QDWrapper
-from .Score import Score
+from . import QDWrapper
+from . import Score
 
 channels = "#nemutest #42sh #ykar #epitagueule"
 LASTSEEN = dict ()
@@ -18,11 +19,16 @@ SCORES = None
 def load():
   global DATAS, SCORES, CONF
   DATAS.setIndex("name", "player")
-  SCORES = QDWrapper(DATAS)
+  SCORES = QDWrapper.QDWrapper(DATAS)
   GameUpdater.SCORES = SCORES
   GameUpdater.CONF = CONF
   GameUpdater.save = save
   GameUpdater.getUser = getUser
+
+def reload():
+  imp.reload(GameUpdater)
+  imp.reload(QDWrapper)
+  imp.reload(Score)
 
 
 def help_tiny ():
@@ -134,7 +140,7 @@ def rev (tupl):
 def getUser(name):
   global SCORES
   if name not in SCORES:
-    SCORES[name] = Score()
+    SCORES[name] = Score.Score()
   return SCORES[name]
     
 

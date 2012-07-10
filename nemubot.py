@@ -27,7 +27,12 @@ if len(sys.argv) >= 2:
 print ("Nemubot ready, my PID is %i!" % (os.getpid()))
 while prompt.launch(servers):
     try:
+      if prompt.MODS is None:
         imp.reload(prompt)
+      else:
+        mods = prompt.MODS
+        imp.reload(prompt)
+        prompt.MODS = mods
     except:
         print ("Unable to reload the prompt due to errors. Fix them before trying to reload the prompt.")
         exc_type, exc_value, exc_traceback = sys.exc_info()

@@ -57,7 +57,7 @@ class Message:
         self.ctcp = (words[3][0] == 0x01 or words[3][1] == 0x01)
         self.content = words[3].decode()
         if self.content[0] == ':':
-          self.content = line.decode().split(':', 2)[2]
+          self.content = ' '.join(words[3:])[1:]
       else:
         print (line)
     else:

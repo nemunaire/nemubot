@@ -47,6 +47,10 @@ def getPS1():
 
 def launch(servers):
   """Launch the prompt"""
+  global MODS
+  if MODS is None:
+    MODS = list()
+
   #Load messages module
   server.message.load(datas_path + "general.xml")
 
@@ -77,6 +81,9 @@ def launch(servers):
       except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
+  #Don't shutdown at refresh
+  if ret == "refresh":
+    return True
   #Save and shutdown modules
   for m in MODS:
     m.save()
@@ -84,6 +91,7 @@ def launch(servers):
       m.close()
     except AttributeError:
       pass
+  MODS = None
   return ret == "reset"
 
 
@@ -185,7 +193,7 @@ def load_module_from_name(name, servers, config=None):
           break
       if not exitsts:
         MODS.append(mod)
-    except AttributeError:
+    except AttributeError :
       print ("  Module `%s' is not a nemubot module." % name)
     for srv in servers:
       servers[srv].update_mods(MODS)
@@ -438,7 +446,9 @@ def zap(cmds, servers):
 
 def end(cmds, servers):
   """Quit the prompt for reload or exit"""
-  if cmds[0] == "reset":
+  if cmds[0] == "refresh":
+    return "refresh"
+  elif cmds[0] == "reset":
     return "reset"
   else:
     for srv in servers.keys():
@@ -450,6 +460,7 @@ CAPS = {
   'quit': end, #Disconnect all server and quit
   'exit': end, #Alias for quit
   'reset': end, #Reload the prompt
+  'refresh': end, #Reload the prompt but save modules
   'load': load, #Load a servers or module configuration file
   'hotswap': hotswap, #Reload the server class without closing the socket
   'close': close, #Disconnect and remove a server from the list
