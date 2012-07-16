@@ -204,7 +204,7 @@ class Message:
             print (CREDITS[c].to_string())
 
     #Messages stating with !
-    elif self.content[0] == '!' and len(self.content[0]) > 1:
+    elif self.content[0] == '!' and len(self.content) > 1:
       self.mods = mods
       try:
         self.cmd = shlex.split(self.content[1:])

@@ -151,7 +151,7 @@ class Server(threading.Thread):
 
     def join(self, chan, password = None):
         if chan is not None and self.connected and chan not in self.channels:
-            chn = xmlparser.module_state.Module_State("channel")
+            chn = xmlparser.module_state.ModuleState("channel")
             chn["name"] = chan
             chn["password"] = password
             self.node.addChild(chn)

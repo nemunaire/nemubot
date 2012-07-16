@@ -73,12 +73,12 @@ class Site:
               messageI = self.message % (self.categories[""], "%s")
             else:
               messageI = self.message % (self.categories[d.category], "%s")
-            self.send_message (messageI % unquote (d.link))
+            self.send_message (messageI % d.link)
           elif self.message.count("%s") == 2:
             if f.id == youtube.idAtom:
-              youtube.send_global (d.link2, self.message % (d.title, unquote (d.link)))
+              youtube.send_global (d.link2, self.message % (unquote(d.title), d.link))
             else:
-              self.send_message (self.message % (d.title, unquote (d.link)))
+              self.send_message (self.message % (unquote(d.title), d.link))
           elif self.message.count("%s") == 1:
             self.send_message(self.message % unquote (d.title))
           else:
