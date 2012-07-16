@@ -54,10 +54,12 @@ class Message:
 
       if self.cmd == b'PRIVMSG':
         #Check for CTCP request
-        self.ctcp = (words[3][0] == 0x01 or words[3][1] == 0x01)
-        self.content = words[3].decode()
+        self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
+        self.content = words[3]
+        self.decode()
         if self.content[0] == ':':
-          self.content = ' '.join(words[3:])[1:]
+          self.content = (b' '.join(words[3:])[1:])
+          self.decode()
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
           if words[i][0] == ":":
@@ -85,6 +87,12 @@ class Message:
         self.content = words[3]
         if self.content[0] == ':':
           self.content = ' '.join(words[3:])[1:]
+
+  def decode(self):
+    try:
+      self.content = self.content.decode()
+    except UnicodeDecodeError:
+      self.content = self.content.decode('utf-8', 'replace')
 
   @property
   def is_owner(self):
@@ -166,8 +174,8 @@ class Message:
       self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
     elif self.content == '\x01VERSION\x01':
       self.srv.send_ctcp(self.sender, "VERSION nemubot v3")
-    else:
-      print (self.content)
+    elif self.content[:7] != '\x01ACTION':
+      print (self.content[:7])
       self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
@@ -232,7 +240,7 @@ class Message:
             print (CREDITS[c].to_string())
 
     #Messages stating with !
-    elif self.content[0] == '!':
+    elif self.content[0] == '!' and len(self.content[0]) > 1:
       self.mods = mods
       try:
         self.cmd = shlex.split(self.content[1:])
