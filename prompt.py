@@ -9,6 +9,7 @@ imp.reload(server)
 
 xmlparser = __import__("module_states_file")
 imp.reload(xmlparser)
+server.xmlparser = xmlparser
 server.message.xmlparser = xmlparser
 xmlparser.module_state.xmlparser = xmlparser
 
@@ -60,7 +61,7 @@ def launch(servers):
 
   ret = ""
   cmds = list()
-  while ret != "quit" and ret != "reset":
+  while ret != "quit" and ret != "reset" and ret != "refresh":
    sys.stdout.write("\033[0;33m%s§\033[0m " % getPS1())
    sys.stdout.flush()
    #TODO: Don't split here, a ; in a quoted string will be splited :s
