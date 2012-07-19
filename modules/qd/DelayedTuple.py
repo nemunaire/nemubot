@@ -22,5 +22,11 @@ class DelayedTuple:
     else:
       return False
 
+  def good(self, res):
+    if res is not None:
+      return re.match(".*" + self.regexp + ".*", res.lower() + " ") is not None
+    else:
+      return False
+
   def wait(self, timeout):
     self.delayEvnt.wait(timeout)
