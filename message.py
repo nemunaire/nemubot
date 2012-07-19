@@ -56,8 +56,21 @@ class Message:
         self.content = words[3]
         if self.content[0] == ':':
           self.content = ' '.join(words[3:])[1:]
-      else:
-        print (line)
+      elif self.cmd == '353' and len(words) > 3:
+        for i in range(2, len(words)):
+          if words[i][0] == ":":
+            self.content = words[i:]
+            #Remove the first :
+            self.content[0] = self.content[0][1:]
+            self.channel = words[i-1]
+            break
+      elif self.cmd == 'MODE':
+        self.content = words[3:]
+      elif self.cmd == '332':
+        self.channel = words[3]
+        self.content = ' '.join(words[4:])[1:]
+#      else:
+#        print (line)
     else:
       print (line)
       if self.cmd == 'PRIVMSG':
@@ -110,12 +123,22 @@ class Message:
       self.parsectcp ()
     elif self.cmd == "PRIVMSG" and self.authorize():
       self.parsemsg (mods)
-#    elif self.cmd == "NICK":
-#      print ("%s change de nom pour %s" % (self.sender, self.content))
-#    elif self.cmd == "PART":
-#      print ("%s vient de quitter %s" % (self.sender, self.channel))
-#    elif self.cmd == "JOIN":
-#      print ("%s arrive sur %s" % (self.sender, self.channel))
+    elif self.channel in self.srv.channels:
+      if self.cmd == "353":
+        self.srv.channels[self.channel].parse353(self)
+      elif self.cmd == "332":
+        self.srv.channels[self.channel].parse332(self)
+      elif self.cmd == "MODE":
+        self.srv.channels[self.channel].mode(self)
+      elif self.cmd == "NICK":
+        self.srv.channels[self.channel].nick(self)
+      elif self.cmd == "JOIN":
+        self.srv.channels[self.channel].join(self)
+      elif self.cmd == "PART":
+        self.srv.channels[self.channel].part(self)
+      elif self.cmd == "QUIT":
+        for chn in self.srv.channels.keys():
+          self.srv.channels[chn].part(self)
 
 
   def pong (self):
