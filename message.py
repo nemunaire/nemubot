@@ -197,13 +197,19 @@ class Message:
       if self.cmd[0] == "help":
         if len (self.cmd) > 1:
           if self.cmd[1] in mods:
-            self.send_snd(mods[self.cmd[1]].help_full ())
+            try:
+              self.send_snd(mods[self.cmd[1]].help_full ())
+            except AttributeError:
+              self.send_snd("No help for command %s" % self.cmd[1])
           else:
             self.send_snd("No help for command %s" % self.cmd[1])
         else:
           self.send_snd("Pour me demander quelque chose, commencez votre message par mon nom ; je réagis à certain messages commençant par !, consulter l'aide de chaque module :")
           for im in mods:
-            self.send_snd("  - !help %s: %s" % (im.name, im.help_tiny ()))
+            try:
+              self.send_snd("  - !help %s: %s" % (im.name, im.help_tiny ()))
+            except AttributeError:
+              continue
 
       else:
         for im in mods:
