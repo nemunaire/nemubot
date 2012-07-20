@@ -68,11 +68,14 @@ class Message:
         self.content = words[3:]
       elif self.cmd == 'JOIN' and self.channel[0] == ":":
         self.channel = self.channel[1:]
+      elif self.cmd == 'TOPIC' and self.channel[0] == ":":
+        self.content = ' '.join(words[3:])[1:]
       elif self.cmd == '332':
         self.channel = words[3]
         self.content = ' '.join(words[4:])[1:]
-#      else:
+      else:
 #        print (line)
+        self.content = ' '.join(words[3:])
     else:
       print (line)
       if self.cmd == 'PRIVMSG':
@@ -136,6 +139,8 @@ class Message:
         self.srv.channels[self.channel].join(self.sender)
       elif self.cmd == "PART":
         self.srv.channels[self.channel].part(self.sender)
+      elif self.cmd == "TOPIC":
+        self.srv.channels[self.channel].chtopic(self.content)
     elif self.cmd == "NICK":
       for chn in self.srv.channels.keys():
         self.srv.channels[chn].nick(self.sender, self.content)

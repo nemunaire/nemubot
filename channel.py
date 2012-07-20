@@ -12,6 +12,9 @@ class Channel:
     #print ("%s arrive sur %s" % (nick, self.name))
     self.people[nick] = level
 
+  def chtopic(self, newtopic):
+    self.topic = newtopic
+
   def nick(self, oldnick, newnick):
     print ("%s change de nom pour %s" % (oldnick, newnick))
     if oldnick in self.people:
