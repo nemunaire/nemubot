@@ -86,7 +86,7 @@ class Message:
 
   def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
     if CREDITS[self.realname].speak():
-      self.srv.send_msg (channel, msg, cmd, endl)
+      self.srv.send_msg_verified (self.sender, channel, msg, cmd, endl)
 
   def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
     if CREDITS[self.realname].speak():

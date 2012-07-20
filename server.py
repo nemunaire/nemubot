@@ -98,16 +98,20 @@ class Server(threading.Thread):
         if self.accepted_channel(channel):
             self.send_msg_final(channel, msg, cmd, endl)
 
+    def send_msg_verified (self, sender, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        if self.accepted_channel(channel, sender):
+            self.send_msg_final(channel, msg, cmd, endl)
+
     def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
         for channel in self.channels.keys():
             self.send_msg (channel, msg, cmd, endl)
 
 
-    def accepted_channel(self, chan):
+    def accepted_channel(self, chan, sender = None):
         if self.listen_nick:
-            return chan in self.channels or chan == self.nick
+            return (chan in self.channels and (sender is None or sender in self.channels[chan].people)) or chan == self.nick
         else:
-            return chan in self.channels
+            return chan in self.channels and (sender is None or sender in self.channels[chan].people)
 
     def disconnect(self):
         if self.connected:
