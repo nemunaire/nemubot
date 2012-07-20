@@ -66,6 +66,8 @@ class Message:
             break
       elif self.cmd == 'MODE':
         self.content = words[3:]
+      elif self.cmd == 'JOIN' and self.channel[0] == ":":
+        self.channel = self.channel[1:]
       elif self.cmd == '332':
         self.channel = words[3]
         self.content = ' '.join(words[4:])[1:]
@@ -130,15 +132,16 @@ class Message:
         self.srv.channels[self.channel].parse332(self)
       elif self.cmd == "MODE":
         self.srv.channels[self.channel].mode(self)
-      elif self.cmd == "NICK":
-        self.srv.channels[self.channel].nick(self)
       elif self.cmd == "JOIN":
-        self.srv.channels[self.channel].join(self)
+        self.srv.channels[self.channel].join(self.sender)
       elif self.cmd == "PART":
-        self.srv.channels[self.channel].part(self)
-      elif self.cmd == "QUIT":
-        for chn in self.srv.channels.keys():
-          self.srv.channels[chn].part(self)
+        self.srv.channels[self.channel].part(self.sender)
+    elif self.cmd == "NICK":
+      for chn in self.srv.channels.keys():
+        self.srv.channels[chn].nick(self.sender, self.content)
+    elif self.cmd == "QUIT":
+      for chn in self.srv.channels.keys():
+        self.srv.channels[chn].part(self.sender)
 
 
   def pong (self):

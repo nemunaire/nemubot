@@ -8,23 +8,23 @@ class Channel:
     self.people = dict()
     self.topic = ""
 
-  def join(self, msg):
-    #print ("%s arrive sur %s" % (self.sender, self.channel))
-    self.people[msg.sender] = 0
+  def join(self, nick, level = 0):
+    #print ("%s arrive sur %s" % (nick, self.name))
+    self.people[nick] = level
 
-  def nick(self, msg):
-    #print ("%s change de nom pour %s" % (self.sender, self.content))
-    if msg.sender in self.people:
-      lvl = self.people[msg.sender]
-      del self.people[msg.sender]
+  def nick(self, oldnick, newnick):
+    print ("%s change de nom pour %s" % (oldnick, newnick))
+    if oldnick in self.people:
+      lvl = self.people[oldnick]
+      del self.people[oldnick]
     else:
       lvl = 0
-    self.people[msg.content] = lvl
+    self.people[newnick] = lvl
 
-  def part(self, msg):
+  def part(self, nick):
     #print ("%s vient de quitter %s" % (self.sender, self.channel))
-    if msg.sender in self.people:
-      del self.people[msg.sender]
+    if nick in self.people:
+      del self.people[nick]
 
   def mode(self, msg):
     if msg.content[0] == "-k":

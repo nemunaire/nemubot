@@ -312,7 +312,7 @@ def liste(cmds, servers):
       elif l == "chan" or l == "channel" or l == "channels":
         if selectedServer is not None:
           for chn in selectedServer.channels:
-            print ("  - %s ;" % chn)
+            print ("  - %s: %s ;" % (chn, selectedServer.channels[chn].people.keys()))
         else:
           print ("  Please SELECT a server before ask for channels list.")
       else:
