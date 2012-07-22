@@ -1,9 +1,9 @@
-import sys
-import traceback
-import socket
-import threading
-import time
 import imp
+import socket
+import sys
+import threading
+import traceback
+import time
 
 message = __import__("message")
 imp.reload(message)
@@ -35,8 +35,8 @@ class Server(threading.Thread):
       threading.Thread.__init__(self)
 
     @property
-    def isDCC(self):
-        return False
+    def isDCC(self, to=None):
+        return to is not None and to in self.dcc_clients
 
     @property
     def host(self):
@@ -67,6 +67,26 @@ class Server(threading.Thread):
         return None
 
     @property
+    def ip(self):
+        sum = 0
+        if self.node.hasAttribute("ip"):
+            for b in self.node["ip"].split("."):
+                sum = 256 * sum + int(b)
+        else:
+            #TODO: find the external IP
+            pass
+        return sum
+
+    def toIP(self, input):
+        """Convert little-endian int to IPv4 adress"""
+        ip = ""
+        for i in range(0,4):
+            mod = input % 256
+            ip = "%d.%s" % (mod, ip)
+            input = (input - mod) / 256
+        return ip[:len(ip) - 1]
+
+    @property
     def autoconnect(self):
       if self.node.hasAttribute("autoconnect"):
         value = self.node["autoconnect"].lower()
@@ -85,16 +105,19 @@ class Server(threading.Thread):
             self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to, line, endl)).encode ())
 
     def send_dcc(self, msg, to):
+      """Send a message through DCC connection"""
       if msg is not None and to is not None:
         if to not in self.dcc_clients.keys():
           d = dcc.DCC(self, to)
           self.dcc_clients[to] = d
           self.dcc_clients[d.dest] = d
         self.dcc_clients[to].send_dcc(msg)
-            
+
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if channel == self.nick:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
             print ("\033[1;35mWarning:\033[0m Nemubot talks to himself: %s" % msg)
         if msg is not None and channel is not None:
             for line in msg.split("\n"):
@@ -105,6 +128,7 @@ class Server(threading.Thread):
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
 
     def send_msg_prtn(self, msg):
+        """Send a message to partner bot"""
         self.send_msg_final(self.partner, msg)
 
     def send_msg_usr(self, user, msg):
@@ -133,6 +157,11 @@ class Server(threading.Thread):
         if self.connected:
             self.stop = True
             self.s.shutdown(socket.SHUT_RDWR)
+
+            #Close all DCC connection
+            for clt in self.dcc_clients:
+                self.dcc_clients[clt].disconnect()
+
             self.stopping.wait()
             return True
         else:
@@ -190,7 +219,7 @@ class Server(threading.Thread):
             msg = message.Message (srv, line)
             msg.treat (self.mods)
         except:
-            print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s"%line)
+            print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s" % line)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback)
 

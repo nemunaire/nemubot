@@ -11,6 +11,8 @@ import time
 
 from credits import Credits
 import credits
+dcc = __import__("DCC")
+imp.reload(dcc)
 
 CREDITS = {}
 filename = ""
@@ -138,8 +140,19 @@ class Message:
       self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
     elif self.content == '\x01VERSION\x01':
       self.srv.send_ctcp(self.sender, "VERSION nemubot v3")
+    elif self.content[:9] == '\x01DCC CHAT':
+      words = self.content[1:len(self.content) - 1].split(' ')
+      ip = self.srv.toIP(int(words[3]))
+      fullname = "guest"+ words[4] + words[3] +"!"+ip
+      conn = dcc.DCC(self.srv, fullname)
+      if conn.accept_user(ip, int(words[4])):
+        self.srv.dcc_clients[fullname] = conn
+        self.srv.dcc_clients[conn.dest] = conn
+        conn.send_dcc("Hi %s. Changes your name saying \"%s: my name is yournickname\"." % (conn.dest, self.srv.nick))
+      else:
+        print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
     elif self.content[:7] != '\x01ACTION':
-      print (self.content[:7])
+      print (self.content)
       self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
