@@ -280,8 +280,8 @@ class Message:
               continue
 
       elif self.cmd[0] == "dcctest":
-        print("dcctest")
-        self.srv.send_dcc("Test DCC", self.name)
+        print("dcctest for", self.sender)
+        self.srv.send_dcc("Test DCC", self.sender)
       elif self.cmd[0] == "pvdcctest":
         print("dcctest")
         self.send_snd("Test DCC")

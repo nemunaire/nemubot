@@ -54,7 +54,7 @@ class DCC(threading.Thread):
 
   def setError(self, msg):
     self.error = True
-    self.srv.send_msg_usr(dest, msg)
+    self.srv.send_msg_usr(self.sender, msg)
 
   def disconnect(self):
     if self.connected:
@@ -109,7 +109,7 @@ class DCC(threading.Thread):
     print ('Listen on', self.port, "for", self.sender)
 
     #Send CTCP request for DCC
-    self.srv.send_ctcp(self.nick, "DCC %s %s %d %d %s" % (type, filename, self.srv.ip, self.port, size), "PRIVMSG")
+    self.srv.send_ctcp(self.sender, "DCC %s %s %d %d %s" % (type, filename, self.srv.ip, self.port, size), "PRIVMSG")
 
     s.listen(1)
     #Waiting for the client

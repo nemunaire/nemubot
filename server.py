@@ -107,8 +107,8 @@ class Server(threading.Thread):
       """Send a message through DCC connection"""
       if msg is not None and to is not None:
         realname = to.split("!")[1]
-        if to not in self.dcc_clients.keys():
-          d = dcc.DCC(self, realname)
+        if realname not in self.dcc_clients.keys():
+          d = dcc.DCC(self, to)
           self.dcc_clients[realname] = d
         self.dcc_clients[realname].send_dcc(msg)
 
@@ -132,7 +132,7 @@ class Server(threading.Thread):
 
     def send_msg_usr(self, user, msg):
         if user is not None and user[0] != "#":
-            realname = to.split("!")[1]
+            realname = user.split("!")[1]
             if realname in self.dcc_clients:
                 self.send_dcc(msg, user)
             else:
