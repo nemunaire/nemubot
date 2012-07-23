@@ -16,7 +16,7 @@ class Channel:
     self.topic = newtopic
 
   def nick(self, oldnick, newnick):
-    print ("%s change de nom pour %s" % (oldnick, newnick))
+    #print ("%s change de nom pour %s" % (oldnick, newnick))
     if oldnick in self.people:
       lvl = self.people[oldnick]
       del self.people[oldnick]
@@ -38,23 +38,24 @@ class Channel:
       else:
         self.password = msg.content[1]
     elif msg.content[0] == "+o":
-      self.people[msg.sender] |= 4
+      self.people[msg.nick] |= 4
     elif msg.content[0] == "-o":
-      self.people[msg.sender] &= ~4
+      self.people[msg.nick] &= ~4
     elif msg.content[0] == "+h":
-      self.people[msg.sender] |= 2
+      self.people[msg.nick] |= 2
     elif msg.content[0] == "-h":
-      self.people[msg.sender] &= ~2
+      self.people[msg.nick] &= ~2
     elif msg.content[0] == "+v":
-      self.people[msg.sender] |= 1
+      self.people[msg.nick] |= 1
     elif msg.content[0] == "-v":
-      self.people[msg.sender] &= ~1
+      self.people[msg.nick] &= ~1
 
   def parse332(self, msg):
     self.topic = msg.content
 
   def parse353(self, msg):
     for p in msg.content:
+      p = p.decode()
       if p[0] == "@":
         level = 4
       elif p[0] == "%":

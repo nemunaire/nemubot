@@ -33,18 +33,20 @@ class Message:
     self.srv = srv
     self.time = datetime.now ()
     self.channel = None
+    self.content = b''
+    self.ctcp = False
     line = line.rstrip() #remove trailing 'rn'
 
     words = line.split(b' ')
     if words[0][0] == 58: #58 is : in ASCII table
       self.sender = words[0][1:].decode()
-      self.cmd = words[1]
+      self.cmd = words[1].decode()
     else:
-      self.cmd = words[0]
+      self.cmd = words[0].decode()
       self.sender = None
 
-    if self.cmd == b'PING':
-      self.content = words[1].decode()
+    if self.cmd == 'PING':
+      self.content = words[1]
     elif self.sender is not None:
       self.nick = (self.sender.split('!'))[0]
       if self.nick != self.sender:
@@ -54,51 +56,56 @@ class Message:
         self.sender = self.nick + "!" + self.realname
 
       if len(words) > 2:
-        self.channel = words[2].decode()
+        self.channel = self.pickWords(words[2:]).decode()
 
-      if self.cmd == b'PRIVMSG':
+      if self.cmd == 'PRIVMSG':
         #Check for CTCP request
         self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
-        self.content = words[3]
-        self.decode()
-        if self.content[0] == ':':
-          self.content = (b' '.join(words[3:])[1:])
-          self.decode()
+        self.content = b' '.join(words[3:])
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
-          if words[i][0] == ":":
+          if words[i][0] == 58:
             self.content = words[i:]
             #Remove the first :
             self.content[0] = self.content[0][1:]
-            self.channel = words[i-1]
+            self.channel = words[i-1].decode()
             break
+      elif self.cmd == 'NICK':
+        self.content = self.pickWords(words[2:])
       elif self.cmd == 'MODE':
         self.content = words[3:]
-      elif self.cmd == 'JOIN' and self.channel[0] == ":":
-        self.channel = self.channel[1:]
-      elif self.cmd == 'TOPIC' and self.channel[0] == ":":
-        self.content = ' '.join(words[3:])[1:]
       elif self.cmd == '332':
         self.channel = words[3]
-        self.content = ' '.join(words[4:])[1:]
+        self.content = self.pickWords(words[4:])
       else:
-#        print (line)
-        self.content = ' '.join(words[3:])
+        print (line)
+        self.content = self.pickWords(words[3:])
     else:
       print (line)
       if self.cmd == 'PRIVMSG':
-        self.channel = words[2]
-        self.content = words[3]
-        if self.content[0] == ':':
-          self.content = ' '.join(words[3:])[1:]
+        self.channel = words[2].decode()
+        self.content = b' '.join(words[3:])
+    self.decode()
     self.private = private or (self.channel is not None and self.channel == self.srv.nick)
 
+  def pickWords(self, words):
+    """Parse last argument of a line: can be a single word or a sentence starting with :"""
+    if len(words) > 0:
+      if words[0][0] == 58:
+        return b' '.join(words[0:])[1:]
+      else:
+        return words[0]
+    else:
+      return ""
+
   def decode(self):
-    try:
-      self.content = self.content.decode()
-    except UnicodeDecodeError:
-      #TODO: use encoding from config file
-      self.content = self.content.decode('utf-8', 'replace')
+    """Decode the content string usign a specific encoding"""
+    if isinstance(self.content, bytes):
+      try:
+        self.content = self.content.decode()
+      except UnicodeDecodeError:
+        #TODO: use encoding from config file
+        self.content = self.content.decode('utf-8', 'replace')
 
   @property
   def is_owner(self):
@@ -139,11 +146,11 @@ class Message:
     return self.srv.accepted_channel(self.channel)
 
   def treat(self, mods):
-    if self.cmd == b"PING":
+    if self.cmd == "PING":
       self.pong ()
-    elif self.cmd == b"PRIVMSG" and self.ctcp:
+    elif self.cmd == "PRIVMSG" and self.ctcp:
       self.parsectcp ()
-    elif self.cmd == b"PRIVMSG" and self.authorize():
+    elif self.cmd == "PRIVMSG" and self.authorize():
       self.parsemsg (mods)
     elif self.channel in self.srv.channels:
       if self.cmd == "353":
@@ -153,17 +160,17 @@ class Message:
       elif self.cmd == "MODE":
         self.srv.channels[self.channel].mode(self)
       elif self.cmd == "JOIN":
-        self.srv.channels[self.channel].join(self.sender)
+        self.srv.channels[self.channel].join(self.nick)
       elif self.cmd == "PART":
-        self.srv.channels[self.channel].part(self.sender)
+        self.srv.channels[self.channel].part(self.nick)
       elif self.cmd == "TOPIC":
         self.srv.channels[self.channel].chtopic(self.content)
     elif self.cmd == "NICK":
       for chn in self.srv.channels.keys():
-        self.srv.channels[chn].nick(self.sender, self.content)
+        self.srv.channels[chn].nick(self.nick, self.content)
     elif self.cmd == "QUIT":
       for chn in self.srv.channels.keys():
-        self.srv.channels[chn].part(self.sender)
+        self.srv.channels[chn].part(self.nick)
 
 
   def pong (self):
@@ -256,7 +263,7 @@ class Message:
             print (CREDITS[c].to_string())
 
     #Messages stating with !
-    elif self.content[0] == '!' and len(self.content[0]) > 1:
+    elif self.content[0] == '!' and len(self.content) > 1:
       self.mods = mods
       try:
         self.cmd = shlex.split(self.content[1:])
