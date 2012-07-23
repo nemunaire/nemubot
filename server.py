@@ -102,7 +102,7 @@ class Server(threading.Thread):
       if msg is not None and to is not None:
         for line in msg.split("\n"):
           if line != "":
-            self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to, line, endl)).encode ())
+            self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to.split("!")[0], line, endl)).encode ())
 
     def send_dcc(self, msg, to):
       """Send a message through DCC connection"""
@@ -110,7 +110,6 @@ class Server(threading.Thread):
         if to not in self.dcc_clients.keys():
           d = dcc.DCC(self, to)
           self.dcc_clients[to] = d
-          self.dcc_clients[d.dest] = d
         self.dcc_clients[to].send_dcc(msg)
 
 
@@ -133,22 +132,22 @@ class Server(threading.Thread):
 
     def send_msg_usr(self, user, msg):
         if user is not None and user[0] != "#":
-            if user in self.dcc_clients.keys():
+            if user in self.dcc_clients:
                 self.send_dcc(msg, user)
             else:
-                self.send_msg_final(user, msg)
+                self.send_msg_final(user.split('!')[0], msg)
 
-    def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+    def send_msg(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if self.accepted_channel(channel):
             self.send_msg_final(channel, msg, cmd, endl)
 
-    def send_msg_verified (self, sender, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+    def send_msg_verified(self, sender, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         if self.accepted_channel(channel, sender):
             self.send_msg_final(channel, msg, cmd, endl)
 
-    def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
+    def send_global(self, msg, cmd = "PRIVMSG", endl = "\r\n"):
         for channel in self.channels.keys():
-            self.send_msg (channel, msg, cmd, endl)
+            self.send_msg(channel, msg, cmd, endl)
 
 
     def accepted_channel(self, chan, sender = None):
