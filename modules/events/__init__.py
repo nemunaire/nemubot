@@ -70,11 +70,11 @@ def parseanswer(msg):
       strnd = ModuleState("strend")
       strnd["server"] = msg.srv.id
       strnd["channel"] = msg.channel
-      strnd["proprio"] = msg.sender
+      strnd["proprio"] = msg.nick
       strnd["start"] = datetime.now()
       strnd["name"] = msg.cmd[1]
       DATAS.addChild(strnd)
-      
+
       if len(msg.cmd) > 2:
         result = re.match("([0-9]+)([smhdjSMHDJ])?", msg.cmd[2])
         if result is not None:
@@ -101,7 +101,7 @@ def parseanswer(msg):
   elif (msg.cmd[0] == "end" or msg.cmd[0] == "forceend") and len(msg.cmd) > 1:
     if msg.cmd[1] in DATAS.index:
       msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
-      if DATAS.index[msg.cmd[1]]["proprio"] == msg.sender or (msg.cmd[0] == "forceend" and msg.sender == msg.srv.owner):
+      if DATAS.index[msg.cmd[1]]["proprio"] == msg.nick or (msg.cmd[0] == "forceend" and msg.nick == msg.srv.owner):
         DATAS.delChild(DATAS.index[msg.cmd[1]])
         Manager.newStrendEvt.set()
         save()
@@ -148,7 +148,7 @@ def parseask(msg):
             evt = ModuleState("event")
             evt["server"] = msg.srv.id
             evt["channel"] = msg.channel
-            evt["proprio"] = msg.sender
+            evt["proprio"] = msg.nick
             evt["name"] = name.group(1)
             evt["start"] = extDate
             evt["msg_after"] = msg_after
@@ -162,7 +162,7 @@ def parseask(msg):
         evt = ModuleState("event")
         evt["server"] = msg.srv.id
         evt["channel"] = msg.channel
-        evt["proprio"] = msg.sender
+        evt["proprio"] = msg.nick
         evt["name"] = name.group(1)
         evt["msg_before"] = texts.group (2)
         DATAS.addChild(evt)

@@ -28,14 +28,14 @@ def parseanswer(msg):
         t = Tinyfier.Tinyfier(url, msg)
         t.start()
       else:
-        msg.send_chn("%s: je n'ai pas d'autre URL  reduire" % msg.sender)
+        msg.send_chn("%s: je n'ai pas d'autre URL  reduire" % msg.nick)
     else:
       if len(msg.cmd) < 6:
         for url in msg.cmd[1:]:
           t = Tinyfier.Tinyfier(url, msg)
           t.start()
       else:
-        msg.send_chn("%s: je ne peux pas réduire autant d'URL d'un seul coup." % msg.sender)
+        msg.send_chn("%s: je ne peux pas réduire autant d'URL d'un seul coup." % msg.nick)
     return True
   else:
     return False

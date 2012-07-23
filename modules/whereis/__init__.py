@@ -96,7 +96,7 @@ def whoison(msg):
           else:
             msg.send_chn ("%s: %d personnes" % (pb, len(found)))
         else:
-          msg.send_chn ("%s: personne ne match ta demande :(" % (msg.sender))
+          msg.send_chn ("%s: personne ne match ta demande :(" % (msg.nick))
 
 DELAYED = dict()
 delayEvnt = threading.Event()
@@ -108,7 +108,7 @@ def whereis_msg(msg):
       if len(msg.cmd) >= 2:
         continue
       else:
-        name = msg.sender
+        name = msg.nick
     else:
       names.append(name)
   pasla = whereis(msg, names)
@@ -143,7 +143,7 @@ def whereis_msg(msg):
     else:
       for name in names:
         msg.send_chn ("%s n'est pas connecté sur le PIE." % name)
-      
+
 
 def whereis(msg, names):
   pasla = list()
@@ -187,7 +187,7 @@ def parseanswer (msg):
   return False
 
 def parseask (msg):
-  if len(DELAYED) > 0 and msg.sender == msg.srv.partner:
+  if len(DELAYED) > 0 and msg.nick == msg.srv.partner:
     treat = False
     for part in msg.content.split(';'):
       if part is None:

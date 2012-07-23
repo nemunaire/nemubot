@@ -50,15 +50,15 @@ def station_status(msg, station):
       free = int(free[0].childNodes[0].nodeValue)
     else:
       free = 0
-    msg.send_chn("%s: à la station %s : %d vélib et %d points d'attache disponibles." % (msg.sender, station, available, free))
+    msg.send_chn("%s: à la station %s : %d vélib et %d points d'attache disponibles." % (msg.nick, station, available, free))
   else:
-    msg.send_chn("%s: station %s inconnue." % (msg.sender, station))
+    msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
 
 def parseanswer(msg):
   global DATAS
   if msg.cmd[0] == "velib":
     if len(msg.cmd) > 5:
-      msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.sender)
+      msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
     elif len(msg.cmd) > 1:
       for station in msg.cmd[1:]:
         if re.match("^[0-9]{4,5}$", station):
@@ -66,9 +66,9 @@ def parseanswer(msg):
         elif station in DATAS.index:
           station_status(msg, DATAS.index[station]["number"])
         else:
-          msg.send_chn("%s: numéro de station invalide." % (msg.sender))
+          msg.send_chn("%s: numéro de station invalide." % (msg.nick))
     else:
-      msg.send_chn("%s: Pour quelle station ?" % msg.sender)
+      msg.send_chn("%s: Pour quelle station ?" % msg.nick)
     return True
   else:
     return False

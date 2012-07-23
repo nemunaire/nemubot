@@ -48,6 +48,8 @@ def parseanswer (msg):
       if res is not None:
         if res.group(2) == "sender":
           cnt[i] = msg.sender
+        elif res.group(2) == "nick":
+          cnt[i] = msg.nick
         elif res.group(2) == "chan" or res.group(2) == "channel":
           cnt[i] = msg.channel
         elif res.group(2) == "date":
@@ -75,7 +77,7 @@ def parseask (msg):
       alias = ModuleState("alias")
       alias["alias"] = result.group(1)
       alias["origin"] = result.group(3)
-      alias["creator"] = msg.sender
+      alias["creator"] = msg.nick
       DATAS.getNode("aliases").addChild(alias)
       msg.send_snd("Nouvel alias %s défini avec succès." % result.group(1))
       save()

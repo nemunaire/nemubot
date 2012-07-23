@@ -73,28 +73,28 @@ def buildSession(msg, categ = None, nbQuest = 10, channel = False):
   if channel:
     Session.SESSIONS[msg.channel] = sess
   else:
-    Session.SESSIONS[msg.sender] = sess
+    Session.SESSIONS[msg.realname] = sess
 
 
 def askQuestion(msg, bfr = ""):
-  Session.SESSIONS[msg.sender].askNext(bfr)
+  Session.SESSIONS[msg.realname].askNext(bfr)
 
 def parseanswer(msg):
   global DATAS
   if msg.cmd[0] == "qcm" or msg.cmd[0] == "qcmchan" or msg.cmd[0] == "simulateqcm":
-    if msg.sender in Session.SESSIONS:
+    if msg.realname in Session.SESSIONS:
       if len(msg.cmd) > 1:
         if msg.cmd[1] == "stop" or msg.cmd[1] == "end":
-          sess = Session.SESSIONS[msg.sender]
+          sess = Session.SESSIONS[msg.realname]
           if sess.good > 1: goodS = "s"
           else: goodS = ""
-          msg.send_chn("%s: Fini, tu as donné %d bonne%s réponse%s sur %d questions." % (msg.sender, sess.good, goodS, goodS, sess.current))
-          del Session.SESSIONS[msg.sender]
+          msg.send_chn("%s: Fini, tu as donné %d bonne%s réponse%s sur %d questions." % (msg.nick, sess.good, goodS, goodS, sess.current))
+          del Session.SESSIONS[msg.realname]
           return True
         elif msg.cmd[1] == "next" or msg.cmd[1] == "suivant" or msg.cmd[1] == "suivante":
           askQuestion(msg)
           return True
-      msg.send_chn("%s: tu as déjà une session de QCM en cours, finis-la avant d'en commencer une nouvelle." % msg.sender)
+      msg.send_chn("%s: tu as déjà une session de QCM en cours, finis-la avant d'en commencer une nouvelle." % msg.nick)
     elif msg.channel in Session.SESSIONS:
       if len(msg.cmd) > 1:
         if msg.cmd[1] == "stop" or msg.cmd[1] == "end":
@@ -128,19 +128,19 @@ def parseanswer(msg):
         elif msg.cmd[0] == "qcmchan":
           Session.SESSIONS[msg.channel].askNext()
         else:
-          msg.send_chn("QCM de %d questions" % len(Session.SESSIONS[msg.sender].questions))
-          del Session.SESSIONS[msg.sender]
+          msg.send_chn("QCM de %d questions" % len(Session.SESSIONS[msg.realname].questions))
+          del Session.SESSIONS[msg.realname]
     return True
-  elif msg.sender in Session.SESSIONS:
+  elif msg.realname in Session.SESSIONS:
     if msg.cmd[0] == "info" or msg.cmd[0] == "infoquestion":
-      msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.sender].question.tupleInfo)
+      msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.realname].question.tupleInfo)
       return True
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
       if len(msg.cmd) == 1:
         msg.send_chn("Veuillez indiquer une raison de report")
-      elif Session.SESSIONS[msg.sender].question.report(' '.join(msg.cmd[1:])):
+      elif Session.SESSIONS[msg.realname].question.report(' '.join(msg.cmd[1:])):
         msg.send_chn("Cette question vient d'être signalée.")
-        Session.SESSIONS[msg.sender].askNext()
+        Session.SESSIONS[msg.realname].askNext()
       else:
         msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
       return True
@@ -173,8 +173,8 @@ def parseanswer(msg):
   return False
 
 def parseask(msg):
-  if msg.sender in Session.SESSIONS:
-    dest = msg.sender
+  if msg.realname in Session.SESSIONS:
+    dest = msg.realname
 
     if Session.SESSIONS[dest].question.isCorrect(msg.content):
       Session.SESSIONS[dest].good += 1
@@ -184,7 +184,7 @@ def parseask(msg):
       Session.SESSIONS[dest].bad += 1
       if Session.SESSIONS[dest].trys == 0:
         Session.SESSIONS[dest].trys = 1
-        msg.send_chn("%s: non, essaie encore :p" % msg.sender)
+        msg.send_chn("%s: non, essaie encore :p" % msg.nick)
       else:
         askQuestion(msg, "non, la bonne reponse était : %s ; " % Session.SESSIONS[dest].question.bestAnswer)
     return True
@@ -195,10 +195,10 @@ def parseask(msg):
     if Session.SESSIONS[dest].question.isCorrect(msg.content):
       Session.SESSIONS[dest].good += 1
       Session.SESSIONS[dest].score += Session.SESSIONS[dest].question.getScore(msg.content)
-      msg.send_chn("%s: correct :)" % msg.sender)
+      msg.send_chn("%s: correct :)" % msg.nick)
       Session.SESSIONS[dest].prepareNext()
     else:
       Session.SESSIONS[dest].bad += 1
-      msg.send_chn("%s: non, essaie encore :p" % msg.sender)
+      msg.send_chn("%s: non, essaie encore :p" % msg.nick)
     return True
   return False

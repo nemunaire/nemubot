@@ -44,8 +44,8 @@ class Session:
     if nextQ is not None:
       if self.channel == self.server.nick:
         self.server.send_msg_final(self.sender, "%s%s" % (bfr, nextQ.question))
-      elif self.sender != self.channel:
-        self.server.send_msg_final(self.channel, "%s: %s%s" % (self.sender, bfr, nextQ.question))
+      elif self.sender.split("!")[0] != self.channel:
+        self.server.send_msg_final(self.channel, "%s: %s%s" % (self.sender.split("!")[0], bfr, nextQ.question))
       else:
         self.server.send_msg_final(self.channel, "%s%s" % (bfr, nextQ.question))
     else:

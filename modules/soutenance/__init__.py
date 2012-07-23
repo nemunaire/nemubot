@@ -40,7 +40,7 @@ def parseanswer(msg):
 
 
 def parseask(msg):
-  if len(DELAYED) > 0 and msg.sender == msg.srv.partner:
+  if len(DELAYED) > 0 and msg.nick == msg.srv.partner:
     treat = False
     for part in msg.content.split(';'):
       if part is None:
@@ -74,7 +74,7 @@ def startSoutenance (msg):
       else:
         avre = "%s *d'avance*"%msg.just_countdown(soutenance.hour - soutenance.start, 4)
       msg.send_chn ("Actuellement à la soutenance numéro %d, commencée il y a %s avec %s."%(soutenance.rank, msg.just_countdown(datetime.now () - soutenance.start, 4), avre))
-      
+
   elif msg.cmd[1] == "assistants" or msg.cmd[1] == "assistant" or msg.cmd[1] == "yaka" or msg.cmd[1] == "yakas" or msg.cmd[1] == "acu" or msg.cmd[1] == "acus":
     assistants = datas.findAssistants()
     if len(assistants) > 0:

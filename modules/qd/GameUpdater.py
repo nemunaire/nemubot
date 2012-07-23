@@ -39,21 +39,21 @@ class GameUpdater(threading.Thread):
       question = QUESTIONS[quest]["question"]
       regexp = QUESTIONS[quest]["regexp"]
       great = QUESTIONS[quest]["great"]
-      self.msg.send_chn("%s: %s" % (self.msg.sender, question))
+      self.msg.send_chn("%s: %s" % (self.msg.nick, question))
 
-      DELAYED[self.msg.sender] = DelayedTuple(regexp, great)
+      DELAYED[self.msg.nick] = DelayedTuple(regexp, great)
 
-      DELAYED[self.msg.sender].wait(20)
+      DELAYED[self.msg.nick].wait(20)
 
-      if DELAYED[self.msg.sender].triche(DELAYED[self.msg.sender].msg):
-        getUser(self.msg.sender).playTriche()
-        self.msg.send_chn("%s: Tricheur !" % self.msg.sender)
-      elif DELAYED[self.msg.sender].perfect(DELAYED[self.msg.sender].msg):
+      if DELAYED[self.msg.nick].triche(DELAYED[self.msg.nick].msg):
+        getUser(self.msg.nick).playTriche()
+        self.msg.send_chn("%s: Tricheur !" % self.msg.nick)
+      elif DELAYED[self.msg.nick].perfect(DELAYED[self.msg.nick].msg):
         if random.randint(0, 10) == 1:
-          getUser(self.msg.sender).bonusQuestion()
-        self.msg.send_chn("%s: Correct !" % self.msg.sender)
+          getUser(self.msg.nick).bonusQuestion()
+        self.msg.send_chn("%s: Correct !" % self.msg.nick)
       else:
-        self.msg.send_chn("%s: J'accepte" % self.msg.sender)
-      del DELAYED[self.msg.sender]
-    SCORES.save(self.msg.sender)
+        self.msg.send_chn("%s: J'accepte" % self.msg.nick)
+      del DELAYED[self.msg.nick]
+    SCORES.save(self.msg.nick)
     save()

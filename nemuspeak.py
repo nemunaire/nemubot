@@ -94,12 +94,12 @@ def speak(endstate):
 
         action = 0
         if msg.content.find("ACTION ") == 1:
-            sentence += msg.sender + " "
+            sentence += msg.nick + " "
             msg.content = msg.content.replace("ACTION ", "")
             action = 1
         for (txt, mood) in SMILEY:
             if msg.content.find(txt) >= 0:
-                sentence += msg.sender + (" %s : "%mood)
+                sentence += msg.nick + (" %s : "%mood)
                 msg.content = msg.content.replace(txt, "")
                 action = 1
                 break
@@ -109,7 +109,7 @@ def speak(endstate):
                 msg.content = (" " + msg.content + " ").replace(bad, good)
 
         if action == 0 and (force or msg.sender != lastmsg.sender):
-            sentence += msg.sender + " dit : "
+            sentence += msg.nick + " dit : "
 
         if re.match(".*(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+.*", msg.content) is not None:
             msg.content = re.sub("(https?://)?(www\\.)?ycc.fr/[a-z0-9A-Z]+", " U.R.L Y.C.C ", msg.content)
@@ -161,7 +161,7 @@ class Server:
         _thread.start_new_thread(self.connect, ())
 
     def authorize(self, msg):
-        return msg.sender != OWNER and (msg.channel == OWNER or msg.channel in self.channels)
+        return msg.nick != OWNER and (msg.channel == OWNER or msg.channel in self.channels)
 
     def read(self):
         global stopSpk, talkEC, g_queue
@@ -186,7 +186,7 @@ class Server:
                 if msg.cmd == b"PING":
                     self.s.send(("PONG %s\r\n" % msg.content).encode ())
                 elif msg.cmd == b"PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
-                    if msg.content[0] == '`' and msg.sender == OWNER:
+                    if msg.content[0] == '`' and msg.nick == OWNER:
                         cmd = msg.content[1:].split(' ')
                         if cmd[0] == "speak":
                             _thread.start_new_thread(speak, (0,))

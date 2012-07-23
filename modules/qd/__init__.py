@@ -86,7 +86,7 @@ def parseanswer (msg):
 
 def win(msg):
   global SCORES
-  who = msg.sender
+  who = msg.nick
 
   manche = DATAS.getNode("manche")
 
@@ -124,9 +124,9 @@ def win(msg):
 
 def parseask (msg):
   if len(GameUpdater.DELAYED) > 0:
-    if msg.sender in GameUpdater.DELAYED:
-      GameUpdater.DELAYED[msg.sender].msg = msg.content
-      GameUpdater.DELAYED[msg.sender].delayEvnt.set()
+    if msg.nick in GameUpdater.DELAYED:
+      GameUpdater.DELAYED[msg.nick].msg = msg.content
+      GameUpdater.DELAYED[msg.nick].delayEvnt.set()
       return True
   return False
 
@@ -142,82 +142,82 @@ def getUser(name):
   if name not in SCORES:
     SCORES[name] = Score.Score()
   return SCORES[name]
-    
+
 
 def parselisten (msg):
-  if len(GameUpdater.DELAYED) > 0 and msg.sender in GameUpdater.DELAYED and GameUpdater.DELAYED[msg.sender].good(msg.content):
-    msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.sender)
+  if len(GameUpdater.DELAYED) > 0 and msg.nick in GameUpdater.DELAYED and GameUpdater.DELAYED[msg.nick].good(msg.content):
+    msg.send_chn("%s: n'oublie pas le nemubot: devant ta réponse pour qu'elle soit prise en compte !" % msg.nick)
 
   bfrseen = None
   if msg.realname in LASTSEEN:
     bfrseen = LASTSEEN[msg.realname]
   LASTSEEN[msg.realname] = datetime.now()
 
-#  if msg.channel == "#nemutest" and msg.sender not in GameUpdater.DELAYED:
-  if msg.channel != "#nemutest" and msg.sender not in GameUpdater.DELAYED:
+#  if msg.channel == "#nemutest" and msg.nick not in GameUpdater.DELAYED:
+  if msg.channel != "#nemutest" and msg.nick not in GameUpdater.DELAYED:
 
     if re.match("^(42|quarante[- ]?deux).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.second == 10 and msg.time.hour == 10:
-        getUser(msg.sender).playTen()
-        getUser(msg.sender).playGreat()
+        getUser(msg.nick).playTen()
+        getUser(msg.nick).playGreat()
       elif msg.time.minute == 42:
         if msg.time.second == 0:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playFtt()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playFtt()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^(23|vingt[ -]?trois).{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 23:
         if msg.time.second == 0:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playTwt()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playTwt()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^(10){3}.{,2}$", msg.content.strip().lower()):
       if msg.time.minute == 10 and msg.time.hour == 10:
         if msg.time.second == 10:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playTen()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playTen()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^0?12345.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 1 and msg.time.minute == 23 and (msg.time.second == 45 or (msg.time.second == 46 and msg.time.microsecond < 330000)):
-        getUser(msg.sender).playSuite()
+        getUser(msg.nick).playSuite()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^[1l][e3]{2}[t7] ?t?ime.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 13 and msg.time.minute == 37:
         if msg.time.second == 0:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playLeet()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playLeet()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^(pi|3.14) ?time.{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 3 and msg.time.minute == 14:
         if msg.time.second == 15 or msg.time.second == 16:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playPi()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playPi()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
     if re.match("^(404( ?time)?|time ?not ?found).{,2}$", msg.content.strip().lower()):
       if msg.time.hour == 4 and msg.time.minute == 4:
         if msg.time.second == 0 or msg.time.second == 4:
-          getUser(msg.sender).playGreat()
-        getUser(msg.sender).playNotfound()
+          getUser(msg.nick).playGreat()
+        getUser(msg.nick).playNotfound()
       else:
-        getUser(msg.sender).playBad()
+        getUser(msg.nick).playBad()
 
-    if getUser(msg.sender).isWinner():
+    if getUser(msg.nick).isWinner():
       print ("Nous avons un vainqueur ! Nouvelle manche :p")
       win(msg)
       return True
-    elif getUser(msg.sender).hasChanged():
+    elif getUser(msg.nick).hasChanged():
       gu = GameUpdater.GameUpdater(msg, bfrseen)
       gu.start()
       return True
