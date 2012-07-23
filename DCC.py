@@ -1,4 +1,5 @@
 import imp
+import os
 import re
 import socket
 import sys
@@ -49,7 +50,7 @@ class DCC(threading.Thread):
 
   @property
   def id(self):
-    return self.srv.id + "/" + self.named
+    return self.srv.id + "/" + self.sender
 
   def setError(self, msg):
     self.error = True
@@ -93,7 +94,7 @@ class DCC(threading.Thread):
     return True
 
 
-  def request_user(self, type="CHAT", filename="CHAT"):
+  def request_user(self, type="CHAT", filename="CHAT", size=""):
     #Open the port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -105,10 +106,10 @@ class DCC(threading.Thread):
       except:
         self.setError("Une erreur s'est produite durant la tentative d'ouverture d'une session DCC.")
         return
-    print ('Listen on', self.port, "for", self.named)
+    print ('Listen on', self.port, "for", self.sender)
 
     #Send CTCP request for DCC
-    self.srv.send_ctcp(self.nick, "DCC %s %s %d %d" % (type, filename, self.srv.ip, self.port), "PRIVMSG")
+    self.srv.send_ctcp(self.nick, "DCC %s %s %d %d %s" % (type, filename, self.srv.ip, self.port, size), "PRIVMSG")
 
     s.listen(1)
     #Waiting for the client
@@ -132,58 +133,64 @@ class DCC(threading.Thread):
       self.srv.send_dcc(msg, to)
 
   def send_file(self, filename):
-    self.request_user("FILE", os.path.basename(filename))
-    if self.connected:
-      with open(filename, 'r') as f:
-        #TODO: don't send the entire file in one packet
-        self.conn.sendall(f.read())
-
-      #TODO: Waiting for response
-
-      self.conn.close()
-      self.connected = False
+    if os.path.isfile(filename):
+      self.messages = filename
+      if not self.DCC:
+        self.start()
+        self.DCC = True
+    else:
+      print("File not found `%s'" % filename)
 
   def run(self):
     self.stopping.clear()
-    if not self.connected:
+    if not isinstance(self.messages, list):
+      self.request_user("SEND", os.path.basename(self.messages), os.path.getsize(self.messages))
+      if self.connected:
+        with open(self.messages, 'rb') as f:
+          d = f.read(268435456) #Packets size: 256Mo
+          while d:
+            self.conn.sendall(d)
+            self.conn.recv(4) #The client send a confirmation after each packet
+            d = f.read(268435456) #Packets size: 256Mo
+    else:
       self.request_user()
 
-    #Start by sending all queued messages
-    for mess in self.messages:
-      self.send_dcc(mess)
+      #Start by sending all queued messages
+      for mess in self.messages:
+        self.send_dcc(mess)
 
-    time.sleep(1)
+      time.sleep(1)
 
-    readbuffer = b''
-    nicksize = len(self.srv.nick)
-    Bnick = self.srv.nick.encode()
-    while not self.stop:
-      raw = self.conn.recv(1024) #recieve server messages
-      if not raw:
-        break
-      readbuffer = readbuffer + raw
-      temp = readbuffer.split(b'\n')
-      readbuffer = temp.pop()
+      readbuffer = b''
+      nicksize = len(self.srv.nick)
+      Bnick = self.srv.nick.encode()
+      while not self.stop:
+        raw = self.conn.recv(1024) #recieve server messages
+        if not raw:
+          break
+        readbuffer = readbuffer + raw
+        temp = readbuffer.split(b'\n')
+        readbuffer = temp.pop()
 
-      for line in temp:
-        if line[:nicksize] == Bnick and line[nicksize+1:].strip()[:10] == b'my name is':
-          name = line[nicksize+1:].strip()[11:].decode('utf-8', 'replace')
-          if re.match("^[a-zA-Z0-9_-]+$", name):
-            if name not in self.srv.dcc_clients:
-              del self.srv.dcc_clients[self.sender]
-              self.nick = name
-              if len(self.sender.split("!")) > 1:
-                self.sender = self.nick + "!" + self.sender.split("!")[1]
+        for line in temp:
+          if line[:nicksize] == Bnick and line[nicksize+1:].strip()[:10] == b'my name is':
+            name = line[nicksize+1:].strip()[11:].decode('utf-8', 'replace')
+            if re.match("^[a-zA-Z0-9_-]+$", name):
+              if name not in self.srv.dcc_clients:
+                del self.srv.dcc_clients[self.sender]
+                self.nick = name
+                if len(self.sender.split("!")) > 1:
+                  self.sender = self.nick + "!" + self.sender.split("!")[1]
+                else:
+                  self.sender = self.nick
+                self.srv.dcc_clients[self.sender] = self
+                self.send_dcc("Hi "+self.nick)
               else:
-                self.sender = self.nick
-              self.srv.dcc_clients[self.sender] = self
-              self.send_dcc("Hi "+self.nick)
+                self.send_dcc("This nickname is already in use, please choose another one.")
             else:
-              self.send_dcc("This nickname is already in use, please choose another one.")
+              self.send_dcc("The name you entered contain invalid char.")
           else:
-            self.send_dcc("The name you entered contain invalid char.")
-        else:
-          self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, self.srv, True)
+            self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, self.srv, True)
 
     if self.connected:
       self.conn.close()
