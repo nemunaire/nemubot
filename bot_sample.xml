@@ -1,5 +1,5 @@
 <nemubotconfig nick="nemubot" realname="nemubot speaker" owner="someone">
-  <server server="irc.freenode.org" port="6667" password="secret" autojoin="true">
+  <server server="irc.freenode.org" port="6667" password="secret" autoconnect="true">
     <channel name="#nemutest" />
   </server>
   <load path="modules/birthday.xml" />
