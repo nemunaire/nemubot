@@ -284,6 +284,10 @@ class Message:
       elif self.cmd[0] == "pvdcctest":
         print("dcctest")
         self.send_snd("Test DCC")
+      elif self.cmd[0] == "dccsendtest":
+        print("dccsendtest")
+        conn = dcc.DCC(self.srv, self.sender)
+        conn.send_file("bot_sample.xml")
       else:
         for im in mods:
           if im.has_access(self) and im.parseanswer(self):
@@ -295,7 +299,6 @@ class Message:
           return
       #Assume the message starts with nemubot:
       if self.private:
-        print ("private")
         for im in mods:
           if im.has_access(self) and im.parseask(self):
             return
