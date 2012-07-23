@@ -1,8 +1,10 @@
 import imp
 import re
 import socket
+import sys
 import threading
 import time
+import traceback
 
 message = __import__("message")
 imp.reload(message)
@@ -80,7 +82,7 @@ class DCC(threading.Thread):
     self.conn = socket.socket()
     try:
       self.conn.connect((host, port))
-      print ('Accepted user from', host, port, "for", self.named)
+      print ('Accepted user from', host, port, "for", self.sender)
       self.connected = True
       self.stop = False
     except:
@@ -181,7 +183,7 @@ class DCC(threading.Thread):
           else:
             self.send_dcc("The name you entered contain invalid char.")
         else:
-          self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, self.srv)
+          self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, self.srv, True)
 
     if self.connected:
       self.conn.close()
