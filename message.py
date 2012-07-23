@@ -51,6 +51,7 @@ class Message:
         self.realname = (self.sender.split('!'))[1]
       else:
         self.realname = self.nick
+        self.sender = self.nick + "!" + self.realname
 
       if len(words) > 2:
         self.channel = words[2].decode()
