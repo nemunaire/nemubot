@@ -106,10 +106,11 @@ class Server(threading.Thread):
     def send_dcc(self, msg, to):
       """Send a message through DCC connection"""
       if msg is not None and to is not None:
+        realname = to.split("!")[1]
         if to not in self.dcc_clients.keys():
-          d = dcc.DCC(self, to)
-          self.dcc_clients[to] = d
-        self.dcc_clients[to].send_dcc(msg)
+          d = dcc.DCC(self, realname)
+          self.dcc_clients[realname] = d
+        self.dcc_clients[realname].send_dcc(msg)
 
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
@@ -131,7 +132,8 @@ class Server(threading.Thread):
 
     def send_msg_usr(self, user, msg):
         if user is not None and user[0] != "#":
-            if user in self.dcc_clients:
+            realname = to.split("!")[1]
+            if realname in self.dcc_clients:
                 self.send_dcc(msg, user)
             else:
                 self.send_msg_final(user.split('!')[0], msg)

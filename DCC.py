@@ -153,7 +153,8 @@ class DCC(threading.Thread):
             self.conn.recv(4) #The client send a confirmation after each packet
             d = f.read(268435456) #Packets size: 256Mo
     else:
-      self.request_user()
+      if not self.connected:
+        self.request_user()
 
       #Start by sending all queued messages
       for mess in self.messages:
@@ -179,12 +180,9 @@ class DCC(threading.Thread):
               if name not in self.srv.dcc_clients:
                 del self.srv.dcc_clients[self.sender]
                 self.nick = name
-                if len(self.sender.split("!")) > 1:
-                  self.sender = self.nick + "!" + self.sender.split("!")[1]
-                else:
-                  self.sender = self.nick
-                self.srv.dcc_clients[self.sender] = self
-                self.send_dcc("Hi "+self.nick)
+                self.sender = self.nick + "!" + self.realname
+                self.srv.dcc_clients[self.realname] = self
+                self.send_dcc("Hi " + self.nick)
               else:
                 self.send_dcc("This nickname is already in use, please choose another one.")
             else:
