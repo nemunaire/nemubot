@@ -29,9 +29,10 @@ def save():
 
 
 class Message:
-  def __init__ (self, srv, line):
+  def __init__ (self, srv, line, private = False):
     self.srv = srv
     self.time = datetime.now ()
+    self.channel = None
     line = line.rstrip() #remove trailing 'rn'
 
     words = line.split(b' ')
@@ -66,11 +67,13 @@ class Message:
         print (line)
     else:
       print (line)
+    self.private = private or (self.channel is not None and self.channel == self.srv.nick)
 
   def decode(self):
     try:
       self.content = self.content.decode()
     except UnicodeDecodeError:
+      #TODO: use encoding from config file
       self.content = self.content.decode('utf-8', 'replace')
 
   @property
@@ -88,7 +91,7 @@ class Message:
 
   def send_chn(self, msg):
     """Send msg on the same channel as receive message"""
-    if (self.srv.isDCC and self.channel == self.srv.nick) or CREDITS[self.realname].speak():
+    if (self.srv.isDCC() and self.channel == self.srv.nick) or CREDITS[self.realname].speak():
       if self.channel == self.srv.nick:
         self.send_snd (msg)
       else:
@@ -101,7 +104,7 @@ class Message:
 
 
   def authorize(self):
-    if self.srv.isDCC:
+    if self.srv.isDCC():
       return True
     elif self.realname not in CREDITS:
       CREDITS[self.realname] = Credits(self.realname)
@@ -162,6 +165,7 @@ class Message:
   def parsemsg (self, mods):
     #Treat all messages starting with 'nemubot:' as distinct commands
     if self.content.find("%s:"%self.srv.nick) == 0:
+      #Remove the bot name
       self.content = self.content[len(self.srv.nick)+1:].strip()
       messagel = self.content.lower()
 
@@ -247,6 +251,12 @@ class Message:
       for im in mods:
         if im.has_access(self) and im.parselisten(self):
           return
+      #Assume the message starts with nemubot:
+      if self.private:
+        print ("private")
+        for im in mods:
+          if im.has_access(self) and im.parseask(self):
+            return
 
 #  def parseOwnerCmd(self, cmd):
 

@@ -34,7 +34,6 @@ class Server(threading.Thread):
 
       threading.Thread.__init__(self)
 
-    @property
     def isDCC(self, to=None):
         return to is not None and to in self.dcc_clients
 
@@ -211,11 +210,11 @@ class Server(threading.Thread):
         else:
             print ("  Already connected.")
 
-    def treat_msg(self, line, srv = None):
+    def treat_msg(self, line, srv = None, private = False):
         if srv is None:
             srv = self
         try:
-            msg = message.Message (srv, line)
+            msg = message.Message (srv, line, private)
             msg.treat (self.mods)
         except:
             print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s" % line)
