@@ -36,20 +36,20 @@ class Message:
 
     words = line.split(b' ')
     if words[0][0] == 58: #58 is : in ASCII table
-      self.name = words[0][1:].decode()
+      self.sender = words[0][1:].decode()
       self.cmd = words[1]
     else:
       self.cmd = words[0]
-      self.name = None
+      self.sender = None
 
     if self.cmd == b'PING':
       self.content = words[1].decode()
-    elif self.name is not None:
-      self.sender = (self.name.split('!'))[0]
-      if self.sender != self.name:
-        self.realname = (self.name.split('!'))[1]
+    elif self.sender is not None:
+      self.nick = (self.sender.split('!'))[0]
+      if self.nick != self.sender:
+        self.realname = (self.sender.split('!'))[1]
       else:
-        self.realname = self.sender
+        self.realname = self.nick
 
       if len(words) > 2:
         self.channel = words[2].decode()
@@ -75,18 +75,18 @@ class Message:
 
   @property
   def is_owner(self):
-    return self.sender == self.srv.owner
+    return self.nick == self.srv.owner
 
 
-  def send_msg (self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+  def send_msg(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
     if CREDITS[self.realname].speak():
       self.srv.send_msg (channel, msg, cmd, endl)
 
-  def send_global (self, msg, cmd = "PRIVMSG", endl = "\r\n"):
+  def send_global(self, msg, cmd = "PRIVMSG", endl = "\r\n"):
     if CREDITS[self.realname].speak():
       self.srv.send_global (msg, cmd, endl)
 
-  def send_chn (self, msg):
+  def send_chn(self, msg):
     """Send msg on the same channel as receive message"""
     if (self.srv.isDCC and self.channel == self.srv.nick) or CREDITS[self.realname].speak():
       if self.channel == self.srv.nick:
@@ -94,14 +94,13 @@ class Message:
       else:
         self.srv.send_msg (self.channel, msg)
 
-  def send_snd (self, msg):
-    """Send msg to the sender who send the original message"""
-    if self.srv.isDCC or CREDITS[self.realname].speak():
+  def send_snd(self, msg):
+    """Send msg to the person who send the original message"""
+    if self.srv.isDCC(self.sender) or CREDITS[self.realname].speak():
       self.srv.send_msg_usr (self.sender, msg)
 
 
-
-  def authorize (self):
+  def authorize(self):
     if self.srv.isDCC:
       return True
     elif self.realname not in CREDITS:
@@ -112,7 +111,7 @@ class Message:
       return False
     return self.srv.accepted_channel(self.channel)
 
-  def treat (self, mods):
+  def treat(self, mods):
     if self.cmd == b"PING":
       self.pong ()
     elif self.cmd == b"PRIVMSG" and self.ctcp:
@@ -143,12 +142,11 @@ class Message:
     elif self.content[:9] == '\x01DCC CHAT':
       words = self.content[1:len(self.content) - 1].split(' ')
       ip = self.srv.toIP(int(words[3]))
-      fullname = "guest"+ words[4] + words[3] +"!"+ip
+      fullname = "guest" + words[4] + words[3] +"!guest" + words[4] + words[3] + "@" + ip
       conn = dcc.DCC(self.srv, fullname)
       if conn.accept_user(ip, int(words[4])):
-        self.srv.dcc_clients[fullname] = conn
-        self.srv.dcc_clients[conn.dest] = conn
-        conn.send_dcc("Hi %s. Changes your name saying \"%s: my name is yournickname\"." % (conn.dest, self.srv.nick))
+        self.srv.dcc_clients[conn.sender] = conn
+        conn.send_dcc("Hi %s. To changes your name, say \"%s: my name is yournickname\"." % (conn.nick, self.srv.nick))
       else:
         print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
     elif self.content[:7] != '\x01ACTION':
@@ -169,11 +167,11 @@ class Message:
 
       #Is it a simple response?
       if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
-        self.send_chn ("%s: pong"%(self.sender))
+        self.send_chn ("%s: pong"%(self.nick))
 
       elif re.match(".*(quel(le)? heure est[ -]il|what time is it)", messagel) is not None:
         now = datetime.now()
-        self.send_chn ("%s: j'envoie ce message à %s:%d:%d."%(self.sender, now.hour, now.minute, now.second))
+        self.send_chn ("%s: j'envoie ce message à %02d:%02d:%02d."%(self.nick, now.hour, now.minute, now.second))
 
       elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
         result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
