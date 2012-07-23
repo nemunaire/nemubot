@@ -29,7 +29,7 @@ class Server(threading.Thread):
 
       self.channels = dict()
       for chn in node.getNodes("channel"):
-        chan = channel.Channel(chn)
+        chan = channel.Channel(chn, self)
         self.channels[chan.name] = chan
 
       threading.Thread.__init__(self)
@@ -67,6 +67,7 @@ class Server(threading.Thread):
 
     @property
     def ip(self):
+        """Convert common IP representation to little-endian integer representation"""
         sum = 0
         if self.node.hasAttribute("ip"):
             for b in self.node["ip"].split("."):
@@ -98,6 +99,7 @@ class Server(threading.Thread):
         return self.host + ":" + str(self.port)
 
     def send_ctcp(self, to, msg, cmd = "NOTICE", endl = "\r\n"):
+      """Send a message as CTCP response"""
       if msg is not None and to is not None:
         for line in msg.split("\n"):
           if line != "":
@@ -114,6 +116,7 @@ class Server(threading.Thread):
 
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        """Send a message without checks"""
         if channel == self.nick:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback)
@@ -131,6 +134,7 @@ class Server(threading.Thread):
         self.send_msg_final(self.partner, msg)
 
     def send_msg_usr(self, user, msg):
+        """Send a message to a user instead of a channel"""
         if user is not None and user[0] != "#":
             realname = user.split("!")[1]
             if realname in self.dcc_clients:
@@ -139,25 +143,30 @@ class Server(threading.Thread):
                 self.send_msg_final(user.split('!')[0], msg)
 
     def send_msg(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        """Send a message to a channel"""
         if self.accepted_channel(channel):
             self.send_msg_final(channel, msg, cmd, endl)
 
     def send_msg_verified(self, sender, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        """Send a message to a channel, only if the source user is on this channel too"""
         if self.accepted_channel(channel, sender):
             self.send_msg_final(channel, msg, cmd, endl)
 
     def send_global(self, msg, cmd = "PRIVMSG", endl = "\r\n"):
+        """Send a message to all channels on this server"""
         for channel in self.channels.keys():
             self.send_msg(channel, msg, cmd, endl)
 
 
     def accepted_channel(self, chan, sender = None):
+        """Return True if the channel (or the user) is authorized"""
         if self.listen_nick:
             return (chan in self.channels and (sender is None or sender in self.channels[chan].people)) or chan == self.nick
         else:
             return chan in self.channels and (sender is None or sender in self.channels[chan].people)
 
     def disconnect(self):
+        """Close the socket with the server and all DCC client connections"""
         if self.connected:
             self.stop = True
             self.s.shutdown(socket.SHUT_RDWR)
@@ -183,12 +192,13 @@ class Server(threading.Thread):
             return False
 
     def join(self, chan, password = None):
+        """Join a channel"""
         if chan is not None and self.connected and chan not in self.channels:
             chn = xmlparser.module_state.ModuleState("channel")
             chn["name"] = chan
             chn["password"] = password
             self.node.addChild(chn)
-            self.channels[chan] = channel.Channel(chn)
+            self.channels[chan] = channel.Channel(chn, self)
             if password is not None:
                 self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode ())
             else:
@@ -198,6 +208,7 @@ class Server(threading.Thread):
             return False
 
     def leave(self, chan):
+        """Leave a channel"""
         if chan is not None and self.connected and chan in self.channels:
             self.s.send(("PART %s\r\n" % self.channels[chan].name).encode ())
             del self.channels[chan]
@@ -209,6 +220,7 @@ class Server(threading.Thread):
         self.mods = mods
 
     def launch(self, mods):
+        """Connect to the server if it is no yet connected"""
         if not self.connected:
             self.stop = False
             self.mods = mods
@@ -216,7 +228,7 @@ class Server(threading.Thread):
         else:
             print ("  Already connected.")
 
-    def treat_msg(self, line, srv = None, private = False):
+    def treat_msg(self, line, private = False):
         if srv is None:
             srv = self
         try:

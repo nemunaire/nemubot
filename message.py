@@ -135,7 +135,7 @@ class Message:
 
 
   def authorize(self):
-    if self.srv.isDCC():
+    if self.srv.isDCC(self.sender):
       return True
     elif self.realname not in CREDITS:
       CREDITS[self.realname] = Credits(self.realname)
@@ -164,7 +164,7 @@ class Message:
       elif self.cmd == "PART":
         self.srv.channels[self.channel].part(self.nick)
       elif self.cmd == "TOPIC":
-        self.srv.channels[self.channel].chtopic(self.content)
+        self.srv.channels[self.channel].topic = self.content
     elif self.cmd == "NICK":
       for chn in self.srv.channels.keys():
         self.srv.channels[chn].nick(self.nick, self.content)

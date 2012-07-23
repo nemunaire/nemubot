@@ -188,7 +188,7 @@ class DCC(threading.Thread):
             else:
               self.send_dcc("The name you entered contain invalid char.")
           else:
-            self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, self.srv, True)
+            self.srv.treat_msg((":%s PRIVMSG %s :" % (self.sender, self.srv.nick)).encode() + line, True)
 
     if self.connected:
       self.conn.close()

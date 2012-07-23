@@ -1,11 +1,12 @@
 # coding=utf-8
 
 class Channel:
-  def __init__(self, node):
+  def __init__(self, node, srv):
     self.node = node
     self.name = node["name"]
     self.password = node["password"]
     self.people = dict()
+    self.srv = srv
     self.topic = ""
 
   def join(self, nick, level = 0):
@@ -13,6 +14,8 @@ class Channel:
     self.people[nick] = level
 
   def chtopic(self, newtopic):
+    """Send command to change the topic"""
+    self.srv.send_msg(self.name, newtopic, "TOPIC")
     self.topic = newtopic
 
   def nick(self, oldnick, newnick):
