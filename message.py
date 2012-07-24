@@ -61,7 +61,7 @@ class Message:
       if self.cmd == 'PRIVMSG':
         #Check for CTCP request
         self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
-        self.content = b' '.join(words[3:])
+        self.content = self.pickWords(words[3:])
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
           if words[i][0] == 58:
@@ -78,7 +78,7 @@ class Message:
         self.channel = words[3]
         self.content = self.pickWords(words[4:])
       else:
-        print (line)
+        #print (line)
         self.content = self.pickWords(words[3:])
     else:
       print (line)
@@ -86,7 +86,7 @@ class Message:
         self.channel = words[2].decode()
         self.content = b' '.join(words[3:])
     self.decode()
-    self.private = private or (self.channel is not None and self.channel == self.srv.nick)
+    self.private = private or (self.channel is not None and self.srv is not None and self.channel == self.srv.nick)
 
   def pickWords(self, words):
     """Parse last argument of a line: can be a single word or a sentence starting with :"""

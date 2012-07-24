@@ -7,9 +7,9 @@ import signal
 import os
 import re
 import subprocess
+import shlex
 from datetime import datetime
 from datetime import timedelta
-from xml.dom.minidom import parse
 import _thread
 
 if len(sys.argv) <= 1:
@@ -26,7 +26,9 @@ if len(sys.argv) == 3:
 else:
     basedir = "./"
 
+import module_states_file as msf
 import message
+import server
 
 SMILEY = list()
 CORRECTIONS = list()
@@ -34,34 +36,6 @@ g_queue = list()
 talkEC = 0
 stopSpk = 0
 lastmsg = None
-
-dom = parse(sys.argv[1])
-
-config = dom.getElementsByTagName('config')[0]
-
-if config.hasAttribute("nick"):
-    NICK = config.getAttribute("nick")
-else:
-    NICK = "bot"
-if config.hasAttribute("owner"):
-    OWNER = config.getAttribute("owner")
-else:
-    OWNER = " "
-if config.hasAttribute("realname"):
-    REALNAME = config.getAttribute("realname")
-else:
-    REALNAME = OWNER + "'s bot"
-
-for smiley in config.getElementsByTagName('smiley'):
-    if smiley.hasAttribute("txt") and smiley.hasAttribute("mood"):
-        SMILEY.append((smiley.getAttribute("txt"), smiley.getAttribute("mood")))
-print ("%d smileys loaded"%len(SMILEY))
-
-for correct in config.getElementsByTagName('correction'):
-    if correct.hasAttribute("bad") and correct.hasAttribute("good"):
-        CORRECTIONS.append((" " + (correct.getAttribute("bad") + " "), (" " + correct.getAttribute("good") + " ")))
-print ("%d corrections loaded"%len(CORRECTIONS))
-
 
 def speak(endstate):
     global lastmsg, g_queue, talkEC, stopSpk
@@ -86,7 +60,7 @@ def speak(endstate):
             force = 1
 
         if force or msg.channel != lastmsg.channel:
-            if msg.channel == OWNER:
+            if msg.channel == msg.srv.owner:
                 sentence += "En message priver. " #Just to avoid é :p
             else:
                 sentence += "Sur " + msg.channel + ". "
@@ -119,7 +93,7 @@ def speak(endstate):
 
         if re.match("^ *[^a-zA-Z0-9 ][a-zA-Z]{2}[^a-zA-Z0-9 ]", msg.content) is not None:
             if sentence != "":
-                intro = subprocess.call(["espeak", "-v", "fr", sentence])
+                intro = subprocess.call(["espeak", "-v", "fr", "--", sentence])
                 #intro.wait()
 
             lang = msg.content[1:3].lower()
@@ -127,7 +101,7 @@ def speak(endstate):
         else:
             sentence += msg.content
 
-        spk = subprocess.call(["espeak", "-v", lang, sentence])
+        spk = subprocess.call(["espeak", "-v", lang, "--", sentence])
         #spk.wait()
 
         lastmsg = msg
@@ -138,99 +112,59 @@ def speak(endstate):
         talkEC = 1
 
 
-class Server:
-    def __init__(self, server):
-        if server.hasAttribute("server"):
-            self.host = server.getAttribute("server")
-        else:
-            self.host = "localhost"
-        if server.hasAttribute("port"):
-            self.port = int(server.getAttribute("port"))
-        else:
-            self.port = 6667
-        if server.hasAttribute("password"):
-            self.password = server.getAttribute("password")
-        else:
-            self.password = None
-
-        self.channels = list()
-        for channel in server.getElementsByTagName('channel'):
-            self.channels.append(channel.getAttribute("name"))
-
-    def launch(self):
-        _thread.start_new_thread(self.connect, ())
-
-    def authorize(self, msg):
-        return msg.nick != OWNER and (msg.channel == OWNER or msg.channel in self.channels)
-
-    def read(self):
+class Server(server.Server):
+    def treat_msg(self, line, private = False):
         global stopSpk, talkEC, g_queue
-        readbuffer = b"" #Here we store all the messages from server
-        while 1:
-            raw = self.s.recv(1024) #recieve server messages
-            if not raw:
-                break
-            readbuffer = readbuffer + raw
-            temp = readbuffer.split(b"\n")
-            readbuffer = temp.pop( )
-
-            for line in temp:
-                try:
-                    msg = message.Message(self, line)
-                except:
-                    print ("Une erreur est survenue lors du traitement du message : %s"%line)
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    traceback.print_exception(exc_type, exc_value, exc_traceback)
-                    continue
-
-                if msg.cmd == b"PING":
-                    self.s.send(("PONG %s\r\n" % msg.content).encode ())
-                elif msg.cmd == b"PRIVMSG" and (self.authorize(msg) or msg.content[0] == '`'):
-                    if msg.content[0] == '`' and msg.nick == OWNER:
-                        cmd = msg.content[1:].split(' ')
-                        if cmd[0] == "speak":
-                            _thread.start_new_thread(speak, (0,))
-                        elif cmd[0] == 'reset':
-                            while len(g_queue) > 0:
-                                g_queue.pop()
-                        elif cmd[0] == 'save':
-                            if talkEC == 0:
-                                talkEC = 1
-                            stopSpk = 1
-                        elif cmd[0] == 'test':
-                            g_queue.append(message.Message(self, b":Quelqun!someone@p0m.fr PRIVMSG %s :Ceci est un message de test ;)"%(self.channels)))
-                        elif cmd[0] == 'list':
-                            print ("Currently listened channels:")
-                            for chan in self.channels:
-                                print (chan)
-                            print ("-- ")
-                        elif cmd[0] == 'add' and len(cmd) > 1:
-                            self.channels.append(cmd[1])
-                            print (cmd[1] + " added to listened channels")
-                        elif cmd[0] == 'del' and len(cmd) > 1:
-                            if self.channels.count(cmd[1]) > 0:
-                                self.channels.remove(cmd[1])
-                                print (cmd[1] + " removed from listened channels")
-                            else:
-                                print (cmd[1] + " not in listened channels")
-
-                    else:
-                        g_queue.append(msg)
+        try:
+            msg = message.Message (self, line, private)
+            if msg.cmd == 'PING':
+                msg.treat (self.mods)
+            elif msg.cmd == 'PRIVMSG' and msg.authorize():
+                if msg.nick != msg.srv.owner:
+                    g_queue.append(msg)
+                    if talkEC == 0:
+                        _thread.start_new_thread(speak, (0,))
+                elif msg.content[0] == "`":
+                    cmd = shlex.split(msg.content[1:])
+                    if cmd[0] == "speak":
+                        _thread.start_new_thread(speak, (0,))
+                    elif cmd[0] == "reset":
+                        while len(g_queue) > 0:
+                            g_queue.pop()
+                    elif cmd[0] == "save":
                         if talkEC == 0:
-                            _thread.start_new_thread(speak, (0,))
+                            talkEC = 1
+                        stopSpk = 1
+                    elif cmd[0] == "add":
+                        self.channels.append(cmd[1])
+                        print (cmd[1] + " added to listened channels")
+                    elif cmd[0] == "del":
+                        if self.channels.count(cmd[1]) > 0:
+                            self.channels.remove(cmd[1])
+                            print (cmd[1] + " removed from listened channels")
+                        else:
+                            print (cmd[1] + " not in listened channels")
+        except:
+            print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s" % line)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
 
-    def connect(self):
-        self.s = socket.socket( ) #Create the socket
-        self.s.connect((self.host, self.port)) #Connect to server
-        if self.password != None:
-            self.s.send(("PASS %s\r\n" % self.password).encode())
-        self.s.send(("NICK %s\r\n" % NICK).encode())
-        self.s.send(("USER %s %s bla :%s\r\n" % (NICK, self.host, REALNAME)).encode())
-        self.read()
 
-for server in config.getElementsByTagName('server'):
-    srv = Server(server)
-    srv.launch()
+config = msf.parse_file(sys.argv[1])
+
+for smiley in config.getNodes("smiley"):
+    if smiley.hasAttribute("txt") and smiley.hasAttribute("mood"):
+        SMILEY.append((smiley.getAttribute("txt"), smiley.getAttribute("mood")))
+print ("%d smileys loaded"%len(SMILEY))
+
+for correct in config.getNodes("correction"):
+    if correct.hasAttribute("bad") and correct.hasAttribute("good"):
+        CORRECTIONS.append((" " + (correct.getAttribute("bad") + " "), (" " + correct.getAttribute("good") + " ")))
+print ("%d corrections loaded"%len(CORRECTIONS))
+
+for serveur in config.getNodes("server"):
+    srv = Server(serveur, config["nick"], config["owner"], config["realname"])
+    srv.launch(None)
 
 def sighup_h(signum, frame):
     global talkEC, stopSpk
@@ -248,6 +182,6 @@ signal.signal(signal.SIGHUP, sighup_h)
 print ("Nemuspeak ready, waiting for new messages...")
 prompt=""
 while prompt != "quit":
-    prompt=sys.stdin.readlines ()
+  prompt=sys.stdin.readlines ()
 
 sys.exit(0)
