@@ -6,6 +6,7 @@ nemubotversion = 3.0
 
 from . import DDGSearch
 from . import WFASearch
+from . import Wikipedia
 
 lastSearch = dict()
 
@@ -16,6 +17,7 @@ def load():
 def reload():
   imp.reload(DDGSearch)
   imp.reload(WFASearch)
+  imp.reload(Wikipedia)
 
 def parseanswer(msg):
   global lastSearch
@@ -24,6 +26,10 @@ def parseanswer(msg):
     req = "def"
   elif msg.cmd[0] == "g" or msg.cmd[0] == "ddg" or msg.cmd[0] == "d":
     req = "link"
+  elif msg.cmd[0] == "w" or msg.cmd[0] == "wf" or msg.cmd[0] == "wfr":
+    req = "fr"
+  elif msg.cmd[0] == "we" or msg.cmd[0] == "wen":
+    req = "en"
   elif msg.cmd[0] == "wfa" or msg.cmd[0] == "calc" or msg.cmd[0] == "wa":
     req = "wfa"
 
@@ -40,8 +46,10 @@ def parseanswer(msg):
         if not s.success:
           msg.send_chn(s.error)
           return True
-      else:
+      elif req == "link" or req == "def":
         s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
+      else:
+        s = Wikipedia.Wikipedia(' '.join(msg.cmd[1:]), req)
 
       if req == "def":
         msg.send_chn(s.definition)
