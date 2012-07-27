@@ -116,7 +116,7 @@ class Site:
 
 
 def getPage(s, p): 
-  conn = http.client.HTTPConnection(s)
+  conn = http.client.HTTPConnection(s, timeout=10)
   try:
     conn.request("GET", p)
 

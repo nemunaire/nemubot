@@ -23,7 +23,7 @@ class Tinyfier(threading.Thread):
       self.msg.send_chn("La situation est embarassante, il semblerait que YCC soit down :(")
 
 def getPage(s, p): 
-  conn = http.client.HTTPConnection(s)
+  conn = http.client.HTTPConnection(s, timeout=10)
   try:
     conn.request("GET", p)
   except socket.gaierror:

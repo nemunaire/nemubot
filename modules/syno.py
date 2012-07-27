@@ -38,7 +38,7 @@ def parseanswer(msg):
 
 
 def getPage(terms):
-  conn = http.client.HTTPConnection("www.crisco.unicaen.fr")
+  conn = http.client.HTTPConnection("www.crisco.unicaen.fr", timeout=5)
   try:
     conn.request("GET", "/des/synonymes/%s" % quote(terms))
   except socket.gaierror:

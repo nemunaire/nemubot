@@ -55,7 +55,7 @@ def parseanswer(msg):
 
 
 def getPage(terms, langfrom="fr", langto="en"):
-  conn = http.client.HTTPConnection("api.wordreference.com")
+  conn = http.client.HTTPConnection("api.wordreference.com", timeout=5)
   try:
     conn.request("GET", "/0.8/%s/json/%s%s/%s" % (CONF.getNode("wrapi")["key"], langfrom, langto, quote(terms)))
   except socket.gaierror:

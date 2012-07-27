@@ -45,7 +45,7 @@ def striplink(data):
   return s.replace("'''", "*")
 
 def getPage(terms, lang):
-  conn = http.client.HTTPConnection(lang + ".wikipedia.org")
+  conn = http.client.HTTPConnection(lang + ".wikipedia.org", timeout=5)
   try:
     conn.request("GET", "/w/api.php?format=xml&redirects&action=query&prop=revisions&rvprop=content&rvsection=0&titles=%s" % quote(terms), None, {"User-agent": "Nemubot v3"})
   except socket.gaierror:

@@ -38,7 +38,7 @@ def parselisten (msg):
     if res is not None:
       #print ("seen : %s"%res.group(1))
       URLS[res.group(1)] = msg
-      conn = http.client.HTTPConnection("musik.p0m.fr")
+      conn = http.client.HTTPConnection("musik.p0m.fr", timeout=10)
       conn.request("GET", "/?nemubot&a=add&url=%s"%(res.group (1)))
       conn.getresponse()
       conn.close()

@@ -61,7 +61,7 @@ def striphtml(data):
   return p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\"")
 
 def getPage(terms):
-  conn = http.client.HTTPConnection("api.duckduckgo.com")
+  conn = http.client.HTTPConnection("api.duckduckgo.com", timeout=5)
   try:
     conn.request("GET", "/?q=%s&format=xml" % quote(terms))
   except socket.gaierror:

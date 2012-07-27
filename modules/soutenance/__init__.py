@@ -132,7 +132,7 @@ def startSoutenance (msg):
 
 
 def getPage():
-  conn = http.client.HTTPConnection(CONF.getNode("server")["ip"])
+  conn = http.client.HTTPConnection(CONF.getNode("server")["ip"], timeout=10)
   try:
     conn.request("GET", CONF.getNode("server")["url"])
 

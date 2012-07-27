@@ -56,7 +56,7 @@ class Question:
     return User(self.node["writer"])
 
   def report(self, raison="Sans raison"):
-    conn = http.client.HTTPConnection(CONF.getNode("server")["url"])
+    conn = http.client.HTTPConnection(CONF.getNode("server")["url"], timeout=10)
     try:
       conn.request("GET", "report.php?id=" + hashlib.md5(self.id.encode()).hexdigest() + "&raison=" + quote(raison))
     except socket.gaierror:

@@ -222,4 +222,3 @@ def parselisten (msg):
       gu.start()
       return True
   return False
-

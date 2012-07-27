@@ -31,6 +31,7 @@ class GameUpdater(threading.Thread):
         quest = 9
       else:
         if LASTQUESTION >= len(QUESTIONS):
+          print (QUESTIONS)
           random.shuffle(QUESTIONS)
           LASTQUESTION = 0
         quest = LASTQUESTION
