@@ -1,17 +1,29 @@
+# -*- coding: utf-8 -*-
+
+# Nemubot is a modulable IRC bot, built around XML configuration files.
+# Copyright (C) 2012  Mercier Pierre-Olivier
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import imp
 import os
 import shlex
 import sys
 import traceback
 
-server = __import__("server")
-imp.reload(server)
-
-xmlparser = __import__("module_states_file")
-imp.reload(xmlparser)
-server.xmlparser = xmlparser
-server.message.xmlparser = xmlparser
-xmlparser.module_state.xmlparser = xmlparser
+import server
+import module_states_file as xmlparser
 
 selectedServer = None
 modules_path = "./modules/"
@@ -47,7 +59,7 @@ def getPS1():
     return selectedServer.id
 
 def launch(servers):
-  """Launch the prompt"""
+  """Launch the prompt and readline"""
   global MODS
   if MODS is None:
     MODS = list()
@@ -129,10 +141,8 @@ def load_module_from_name(name, servers, config=None):
       if md.name == name:
         mod = imp.reload(md)
         loaded = True
-        try:
+        if hasattr(mod, 'reload'):
           mod.reload()
-        except AttributeError:
-          pass
         break
     if not loaded:
       mod = __import__(name)
@@ -140,7 +150,7 @@ def load_module_from_name(name, servers, config=None):
     try:
       if mod.nemubotversion < 3.0:
         print ("  Module `%s' is not compatible with this version." % name)
-        return
+        return false
 
       #Set module common functions and datas
       mod.name = name
@@ -328,7 +338,7 @@ def connect(cmds, servers):
         servers[s].launch(MODS)
       else:
         print ("connect: server `%s' not found." % s)
-      
+
   elif selectedServer is not None:
     selectedServer.launch(MODS)
   else:

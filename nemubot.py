@@ -1,14 +1,31 @@
 #!/usr/bin/python3
-# coding=utf-8
+# -*- coding: utf-8 -*-
+
+# Nemubot is a modulable IRC bot, built around XML configuration files.
+# Copyright (C) 2012  Mercier Pierre-Olivier
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import os
 import imp
 import traceback
 
-servers = dict()
+import reloader
+import prompt
 
-prompt = __import__ ("prompt")
+servers = dict()
 
 #Add modules dir path
 if os.path.isdir("./modules/"):
@@ -26,17 +43,18 @@ if len(sys.argv) >= 2:
 
 print ("Nemubot ready, my PID is %i!" % (os.getpid()))
 while prompt.launch(servers):
-    try:
-      if prompt.MODS is None:
-        imp.reload(prompt)
-      else:
-        mods = prompt.MODS
-        imp.reload(prompt)
-        prompt.MODS = mods
-    except:
-        print ("Unable to reload the prompt due to errors. Fix them before trying to reload the prompt.")
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
+  try:
+    imp.reload(reloader)
+    if prompt.MODS is None:
+      reloader.reload()
+    else:
+      mods = prompt.MODS
+      reloader.reload()
+      prompt.MODS = mods
+  except:
+    print ("Unable to reload the prompt due to errors. Fix them before trying to reload the prompt.")
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
 
 print ("Bye")
 sys.exit(0)
