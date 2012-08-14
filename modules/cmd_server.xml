@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="cmd_server">
+  <command name="close" call="close" />
+  <command name="connect" call="connect" />
+  <command name="disconnect" call="disconnect" />
+  <command name="hotswap" call="hotswap" />
+  <command name="join" call="join" />
+  <command name="leave" call="join" />
+  <command name="part" call="join" />
+  <command name="send" call="send" />
+  <command name="zap" call="zap" />
+</nemubotmodule>
