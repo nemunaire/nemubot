@@ -1,16 +1,30 @@
-import imp
+# -*- coding: utf-8 -*-
+
+# Nemubot is a modulable IRC bot, built around XML configuration files.
+# Copyright (C) 2012  Mercier Pierre-Olivier
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import socket
 import sys
 import threading
 import traceback
-import time
 
-message = __import__("message")
-imp.reload(message)
-channel = __import__("channel")
-imp.reload(channel)
-dcc = __import__("DCC")
-imp.reload(dcc)
+import channel
+import DCC
+import message
+import xmlparser
 
 class Server(threading.Thread):
     def __init__(self, node, nick, owner, realname, socket = None):
@@ -216,22 +230,19 @@ class Server(threading.Thread):
         else:
             return False
 
-    def update_mods(self, mods):
-        self.mods = mods
-
-    def launch(self, mods):
+    def launch(self, context, verb=True):
         """Connect to the server if it is no yet connected"""
+        self.context = context
         if not self.connected:
             self.stop = False
-            self.mods = mods
             self.start()
-        else:
+        elif verb:
             print ("  Already connected.")
 
     def treat_msg(self, line, private = False):
         try:
             msg = message.Message (self, line, private)
-            msg.treat (self.mods)
+            msg.treat(self.context.hooks)
         except:
             print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s" % line)
             exc_type, exc_value, exc_traceback = sys.exc_info()

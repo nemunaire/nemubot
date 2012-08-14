@@ -1,42 +1,76 @@
 #!/usr/bin/python3
-# coding=utf-8
+# -*- coding: utf-8 -*-
+
+# Nemubot is a modulable IRC bot, built around XML configuration files.
+# Copyright (C) 2012  Mercier Pierre-Olivier
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import os
 import imp
 import traceback
 
-servers = dict()
+import bot
+import prompt
+from prompt.builtins import load_file
+import importer
 
-prompt = __import__ ("prompt")
+if __name__ == "__main__":
+    # Create bot context
+    context = bot.Bot()
 
-#Add modules dir path
-if os.path.isdir("./modules/"):
-  modules_path = os.path.realpath(os.path.abspath("./modules/"))
-  if modules_path not in sys.path:
-        sys.path.insert(0, modules_path)
+    # Load the prompt
+    prmpt = prompt.Prompt()
 
-#Load given files
-if len(sys.argv) >= 2:
-    for arg in sys.argv[1:]:
-        if os.path.isfile(arg):
-            prompt.load_file(arg, servers)
-        elif os.path.isdir(arg):
-            sys.path.insert(1, arg)
+    # Register the hook for futur import
+    import sys
+    sys.meta_path.append(importer.ModuleFinder(context, prmpt))
 
-print ("Nemubot ready, my PID is %i!" % (os.getpid()))
-while prompt.launch(servers):
-    try:
-      if prompt.MODS is None:
-        imp.reload(prompt)
-      else:
-        mods = prompt.MODS
-        imp.reload(prompt)
-        prompt.MODS = mods
-    except:
-        print ("Unable to reload the prompt due to errors. Fix them before trying to reload the prompt.")
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        sys.stdout.write (traceback.format_exception_only(exc_type, exc_value)[0])
+    #Add modules dir path
+    if os.path.isdir("./modules/"):
+        context.add_modules_path(
+            os.path.realpath(os.path.abspath("./modules/")))
 
-print ("Bye")
-sys.exit(0)
+    # Parse command line arguments
+    if len(sys.argv) >= 2:
+        for arg in sys.argv[1:]:
+            if os.path.isdir(arg):
+                context.add_modules_path(arg)
+            else:
+                load_file(arg, context)
+
+    print ("Nemubot v%s ready, my PID is %i!" % (context.version_txt,
+                                                 os.getpid()))
+    while prmpt.run(context):
+        try:
+            # Reload context
+            imp.reload(bot)
+            context = bot.hotswap(context)
+            # Reload prompt
+            imp.reload(prompt)
+            prmpt = prompt.hotswap(prmpt)
+            # Reload all other modules
+            bot.reload()
+            print ("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
+                   context.version_txt)
+        except:
+            print ("\033[1;31mUnable to reload the prompt due to errors.\033[0"
+                   "m Fix them before trying to reload the prompt.")
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sys.stderr.write (traceback.format_exception_only(exc_type,
+                                                              exc_value)[0])
+
+    print ("Bye")
+    sys.exit(0)

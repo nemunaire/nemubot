@@ -1,18 +1,30 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
+
+# Nemubot is a modulable IRC bot, built around XML configuration files.
+# Copyright (C) 2012  Mercier Pierre-Olivier
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from datetime import timedelta
-import imp
 import re
 import shlex
-import string
-import sys
 import time
 
-from credits import Credits
 import credits
-dcc = __import__("DCC")
-imp.reload(dcc)
+from credits import Credits
+import DCC
+import xmlparser
 
 CREDITS = {}
 filename = ""
@@ -145,13 +157,13 @@ class Message:
       return False
     return self.srv.accepted_channel(self.channel)
 
-  def treat(self, mods):
+  def treat(self, hooks):
     if self.cmd == "PING":
       self.pong ()
     elif self.cmd == "PRIVMSG" and self.ctcp:
       self.parsectcp ()
     elif self.cmd == "PRIVMSG" and self.authorize():
-      self.parsemsg (mods)
+      self.parsemsg (hooks)
     elif self.channel in self.srv.channels:
       if self.cmd == "353":
         self.srv.channels[self.channel].parse353(self)
@@ -185,7 +197,7 @@ class Message:
     elif self.content == '\x01USERINFO\x01':
       self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
     elif self.content == '\x01VERSION\x01':
-      self.srv.send_ctcp(self.sender, "VERSION nemubot v3")
+      self.srv.send_ctcp(self.sender, "VERSION nemubot v%d"%VERSION)
     elif self.content[:9] == '\x01DCC CHAT':
       words = self.content[1:len(self.content) - 1].split(' ')
       ip = self.srv.toIP(int(words[3]))
@@ -201,45 +213,26 @@ class Message:
       self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
-    if self.mods is not None:
-      self.parsemsg(self.mods)
+    if self.hooks is not None:
+      self.parsemsg(self.hooks)
     else:
       print ("Can't reparse message")
 
-  def parsemsg (self, mods):
+  def parsemsg (self, hooks):
     #Treat all messages starting with 'nemubot:' as distinct commands
     if self.content.find("%s:"%self.srv.nick) == 0:
       #Remove the bot name
       self.content = self.content[len(self.srv.nick)+1:].strip()
       messagel = self.content.lower()
 
-      #Is it a simple response?
-      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", messagel) is not None:
-        self.send_chn ("%s: pong"%(self.nick))
+      # Treat ping
+      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
+                  messagel) is not None:
+          self.send_chn ("%s: pong"%(self.nick))
 
-      elif re.match(".*(quel(le)? heure est[ -]il|what time is it)", messagel) is not None:
-        now = datetime.now()
-        self.send_chn ("%s: j'envoie ce message à %02d:%02d:%02d."%(self.nick, now.hour, now.minute, now.second))
-
-      elif re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (.+)$", messagel) is not None:
-        result = re.match(".*di[st] (a|à) ([a-zA-Z0-9_]+) (qu(e |'))?(.+)$", self.content)
-        self.send_chn ("%s: %s"%(result.group(2), result.group(5)))
-      elif re.match(".*di[st] (.+) (a|à) ([a-zA-Z0-9_]+)$", messagel) is not None:
-        result = re.match(".*di[st] (.+) (à|a) ([a-zA-Z0-9_]+)$", self.content)
-        self.send_chn ("%s: %s"%(result.group(3), result.group(1)))
-
-      elif re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content) is not None:
-        result = re.match(".*di[st] sur (#[a-zA-Z0-9]+) (.+)$", self.content)
-        self.send_msg(result.group(1), result.group(2))
-      elif re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content) is not None:
-        result = re.match(".*di[st] (.+) sur (#[a-zA-Z0-9]+)$", self.content)
-        self.send_msg(result.group(2), result.group(1))
-
-      #Try modules
+      # Ask hooks
       else:
-        for im in mods:
-          if im.has_access(self) and im.parseask(self):
-            return
+          hooks.treat_ask(self)
 
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
@@ -264,7 +257,7 @@ class Message:
 
     #Messages stating with !
     elif self.content[0] == '!' and len(self.content) > 1:
-      self.mods = mods
+      self.hooks = hooks
       try:
         self.cmd = shlex.split(self.content[1:])
       except ValueError:
@@ -297,19 +290,13 @@ class Message:
         conn = dcc.DCC(self.srv, self.sender)
         conn.send_file("bot_sample.xml")
       else:
-        for im in mods:
-          if im.has_access(self) and im.parseanswer(self):
-            return
+          hooks.treat_cmd(self)
 
     else:
-      for im in mods:
-        if im.has_access(self) and im.parselisten(self):
-          return
-      #Assume the message starts with nemubot:
-      if self.private:
-        for im in mods:
-          if im.has_access(self) and im.parseask(self):
-            return
+        hooks.treat_answer(self)
+        # Assume the message starts with nemubot:
+        if self.private:
+            hooks.treat_ask(self)
 
 #  def parseOwnerCmd(self, cmd):
 
