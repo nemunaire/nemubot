@@ -4,14 +4,20 @@ import http.client
 import re
 from xml.dom.minidom import parseString
 
-from module_state import ModuleState
+from event import ModuleEvent
+from xmlparser.node import ModuleState
 
-nemubotversion = 3.0
+nemubotversion = 3.2
 
-def load():
+def load(context):
   global DATAS
   DATAS.setIndex("name", "station")
 
+  evt = ModuleEvent(station_available, "42706",
+                    (lambda a, b: a != b), None, 60,
+                    station_status)
+  context.events.append(evt)
+  evt.run()
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -35,8 +41,8 @@ def getPage (s, p):
   conn.close()
   return (res.status, data)
 
-
-def station_status(msg, station):
+def station_status(station):
+  """Gets available and free status of a given station"""
   (st, page) = getPage(CONF.getNode("server")["ip"], CONF.getNode("server")["url"] + station)
   if st == http.client.OK:
     response = parseString(page)
@@ -50,25 +56,43 @@ def station_status(msg, station):
       free = int(free[0].childNodes[0].nodeValue)
     else:
       free = 0
-    msg.send_chn("%s: à la station %s : %d vélib et %d points d'attache disponibles." % (msg.nick, station, available, free))
+    return (available, free)
   else:
-    msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
+    return (None, None)
 
-def parseanswer(msg):
-  global DATAS
-  if msg.cmd[0] == "velib":
-    if len(msg.cmd) > 5:
-      msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
-    elif len(msg.cmd) > 1:
-      for station in msg.cmd[1:]:
-        if re.match("^[0-9]{4,5}$", station):
-          station_status(msg, station)
-        elif station in DATAS.index:
-          station_status(msg, DATAS.index[station]["number"])
-        else:
-          msg.send_chn("%s: numéro de station invalide." % (msg.nick))
+def station_available(station):
+    """Gets available velib at a given velib station"""
+    (a, f) = station_status(station)
+    return a
+
+def station_free(station):
+    """Gets free slots at a given velib station"""
+    (a, f) = station_status(station)
+    return f
+
+
+def print_station_status(msg, station):
+    """Send message with information about the given station"""
+    (available, free) = station_status(station)
+    if available is not None and free is not None:
+        msg.send_chn("%s: à la station %s : %d vélib et %d points d'attache disponibles." % (msg.nick, station, available, free))
     else:
-      msg.send_chn("%s: Pour quelle station ?" % msg.nick)
-    return True
-  else:
+        msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
+
+def ask_stations(data, msg):
+    """Hook entry from !velib"""
+    global DATAS
+    if len(msg.cmd) > 5:
+        msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
+    elif len(msg.cmd) > 1:
+        for station in msg.cmd[1:]:
+            if re.match("^[0-9]{4,5}$", station):
+                print_station_status(msg, station)
+            elif station in DATAS.index:
+                print_station_status(msg, DATAS.index[station]["number"])
+            else:
+                msg.send_chn("%s: numéro de station invalide." % (msg.nick))
+        return True
+    else:
+        msg.send_chn("%s: Pour quelle station ?" % msg.nick)
     return False
