@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import event
 import hooks
 from server import Server
 
@@ -31,6 +32,8 @@ class Bot:
         self.datas_path = './datas/'
 
         self.hooks = hooks.MessagesHook()
+        self.events = list()
+
 
     def addServer(self, node, nick, owner, realname):
         """Add a new server to the context"""
@@ -87,7 +90,6 @@ class Bot:
         if verb: print ("Save and unload all modules...")
         k = list(self.modules.keys())
         for mod in k:
-            print (mod)
             self.unload_module(mod, verb)
 
         if verb: print ("Close all servers connection...")
@@ -104,6 +106,9 @@ def reload():
 
     import prompt.builtins
     imp.reload(prompt.builtins)
+
+    import event
+    imp.reload(event)
 
     import hooks
     imp.reload(hooks)
