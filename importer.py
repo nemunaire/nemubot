@@ -171,7 +171,7 @@ class ModuleLoader(SourceLoader):
 
             # Launch the module
             if hasattr(module, "load"):
-                module.load()
+                module.load(self.context)
 
             # Register hooks
             register_hooks(module, self.context, self.prompt)
