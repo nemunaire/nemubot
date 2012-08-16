@@ -127,6 +127,22 @@ def unload(toks, context, prompt):
         print ("Not enough arguments. `unload' takes a module name.")
 
 
+def debug(toks, context, prompt):
+    """Enable/Disable debug mode on a module"""
+    if len(toks) > 1:
+        for name in toks[1:]:
+            if name in context.modules:
+                context.modules[name].DEBUG = not context.modules[name].DEBUG
+                if context.modules[name].DEBUG:
+                    print ("  Module `%s' now in DEBUG mode." % name)
+                else:
+                    print ("  Debug for module module `%s' disabled." % name)
+            else:
+                print ("  No module `%s' loaded, can't debug!" % name)
+    else:
+        print ("Not enough arguments. `debug' takes a module name.")
+
+
 #Register build-ins
 CAPS = {
   'quit': end, #Disconnect all server and quit
@@ -137,4 +153,5 @@ CAPS = {
   'unload': unload, #Unload a module and remove it from the list
   'select': select, #Select a server
   'list': liste, #Show lists
+  'debug': debug, #Pass a module in debug mode
 }
