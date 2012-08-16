@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading
+from datetime import datetime
+from datetime import timedelta
 
 class ModuleEvent:
-    def __init__(self, func, func_data, check, cmp_data, intervalle=60,
-                 call=None, call_data=None, times=1):
+    def __init__(self, func=None, func_data=None, check=None, cmp_data=None,
+                 intervalle=60, call=None, call_data=None, times=1):
         # What have we to check?
         self.func = func
         self.func_data = func_data
@@ -29,10 +30,16 @@ class ModuleEvent:
         self.check = check
         if cmp_data is not None:
             self.cmp_data = cmp_data
-        else:
-            self.cmp_data = self.func(self.func_data)
+        elif self.func is not None:
+            if self.func_data is None:
+                self.cmp_data = self.func()
+            elif isinstance(self.func_data, dict):
+                self.cmp_data = self.func(**self.func_data)
+            else:
+                self.cmp_data = self.func(self.func_data)
 
-        self.intervalle = intervalle
+        self.intervalle = timedelta(seconds=intervalle)
+        self.end = None
 
         # What should we call when
         self.call = call
@@ -45,21 +52,58 @@ class ModuleEvent:
         self.times = times
 
 
-    def launch_check(self):
-        d = self.func(self.func_data)
-        #print ("do test with", d, self.cmp_data)
-        if self.check(d, self.cmp_data):
-            self.call(self.call_data)
-            self.times -= 1
-        self.run()
-
-    def run(self):
+    @property
+    def next(self):
+        """Return the date of the next check"""
         if self.times != 0:
-            #print ("run timer")
-            self.timer = threading.Timer(self.intervalle, self.launch_check)
-            self.timer.start()
-        #else:
-            #print ("no more times")
+            if self.end is None:
+                self.end = datetime.now() + self.intervalle
+            elif self.end < datetime.now():
+                self.end += self.intervalle
+            return self.end
+        return None
 
-    def stop(self):
-        self.timer.cancel()
+    @property
+    def current(self):
+        """Return the date of the near check"""
+        if self.times != 0:
+            if self.end is None:
+                self.end = datetime.now() + self.intervalle
+            return self.end
+        return None
+
+    @property
+    def time_left(self):
+        """Return the time left before/after the near check"""
+        if self.current is not None:
+            return self.current - datetime.now()
+        return 99999
+
+    def launch_check(self):
+        if self.func is None:
+            d = self.func_data
+        elif self.func_data is None:
+            d = self.func()
+        elif isinstance(self.func_data, dict):
+            d = self.func(**self.func_data)
+        else:
+            d = self.func(self.func_data)
+        #print ("do test with", d, self.cmp_data)
+
+        if self.check is None:
+            r = True
+        elif self.cmp_data is None:
+            r = self.check(d)
+        elif isinstance(self.cmp_data, dict):
+            r = self.check(d, **self.cmp_data)
+        else:
+            r = self.check(d, self.cmp_data)
+
+        if r:
+            self.times -= 1
+            if self.call_data is None:
+                self.call()
+            elif isinstance(self.call_data, dict):
+                self.call(**self.call_data)
+            else:
+                self.call(self.call_data)

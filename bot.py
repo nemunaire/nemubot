@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
+import threading
+
 import event
 import hooks
 from server import Server
@@ -33,6 +36,46 @@ class Bot:
 
         self.hooks = hooks.MessagesHook()
         self.events = list()
+        self.event_timer = None
+
+
+    def add_event(self, evt):
+        # Add the event in place
+        t = evt.current
+        i = 0
+        for i in range(0, len(self.events)):
+            if self.events[i].current > t:
+                break
+        self.events.insert(i, evt)
+        if i == 0:
+            self.update_timer()
+
+    def update_timer(self):
+        # Reset the timer if this is the first item
+        if self.event_timer is not None:
+            self.event_timer.cancel()
+        if len(self.events) > 0:
+            #print ("Update timer, next in", self.events[0].time_left.seconds,
+            #       "seconds")
+            if datetime.now() >= self.events[0].current:
+                self.end_timer()
+            else:
+                self.event_timer = threading.Timer(
+                    self.events[0].time_left.seconds + 1, self.end_timer)
+                self.event_timer.start()
+        #else:
+        #    print ("Update timer: no timer left")
+
+
+    def end_timer(self):
+        #print ("end timer")
+        while len(self.events)>0 and datetime.now() >= self.events[0].current:
+            #print ("end timer: while")
+            evt = self.events.pop(0)
+            evt.launch_check()
+            if evt.next is not None:
+                self.add_event(evt)
+        self.update_timer()
 
 
     def addServer(self, node, nick, owner, realname):

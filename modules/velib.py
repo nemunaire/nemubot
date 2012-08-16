@@ -16,8 +16,7 @@ def load(context):
   evt = ModuleEvent(station_available, "42706",
                     (lambda a, b: a != b), None, 60,
                     station_status)
-  context.events.append(evt)
-  evt.run()
+  context.add_event(evt)
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
