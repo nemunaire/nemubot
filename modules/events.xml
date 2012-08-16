@@ -1,2 +1,17 @@
 <?xml version="1.0" ?>
-<nemubotmodule name="events" />
+<nemubotmodule name="events">
+  <message type="cmd" name="start" call="start_countdown" />
+  <message type="cmd" name="end" call="end_countdown" />
+  <message type="cmd" name="forceend" call="end_countdown" />
+  <message type="cmd" name="eventlist" call="liste" />
+  <message type="cmd" name="eventslist" call="liste" />
+  <message type="cmd" name="eventliste" call="liste" />
+  <message type="cmd" name="eventsliste" call="liste" />
+  <message type="cmd" name="we" call="cmd_we" />
+  <message type="cmd" name="week-end" call="cmd_we" />
+  <message type="cmd" name="weekend" call="cmd_we" />
+  <message type="cmd" name="new-year" call="cmd_newyear" />
+  <message type="cmd" name="newyear" call="cmd_newyear" />
+  <message type="cmd" name="ny" call="cmd_newyear" />
+  <message type="cmd" name="start" call="start_countdown" />
+</nemubotmodule>
