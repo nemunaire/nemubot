@@ -40,6 +40,7 @@ class Bot:
 
 
     def add_event(self, evt):
+        """Register an event"""
         # Add the event in place
         t = evt.current
         i = 0
@@ -51,6 +52,7 @@ class Bot:
             self.update_timer()
 
     def update_timer(self):
+        """Relaunch the timer to end with the closest event"""
         # Reset the timer if this is the first item
         if self.event_timer is not None:
             self.event_timer.cancel()
@@ -68,6 +70,7 @@ class Bot:
 
 
     def end_timer(self):
+        """Function called at the end of the timer"""
         #print ("end timer")
         while len(self.events)>0 and datetime.now() >= self.events[0].current:
             #print ("end timer: while")
@@ -130,6 +133,10 @@ class Bot:
 
     def quit(self, verb=False):
         """Save and unload modules and disconnect servers"""
+        if self.event_timer is not None:
+            if verb: print ("Stop the event timer...")
+            self.event_timer.cancel()
+
         if verb: print ("Save and unload all modules...")
         k = list(self.modules.keys())
         for mod in k:
