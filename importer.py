@@ -56,6 +56,8 @@ class ModuleLoader(SourceLoader):
             self.config = xmlparser.parse_file(config_path)
             if self.config.hasAttribute("name"):
                 self.name = self.config["name"]
+        else:
+            self.config = None
 
         if os.path.isfile(path + fullname + ".py"):
             self.source_path = path + self.name + ".py"
