@@ -26,7 +26,7 @@ if len(sys.argv) == 3:
 else:
     basedir = "./"
 
-import module_states_file as msf
+import xmlparser as msf
 import message
 import server
 
