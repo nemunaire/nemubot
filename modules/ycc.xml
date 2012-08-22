@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="ycc">
+  <message type="cmd" name="ycc" call="cmd_ycc" />
+</nemubotmodule>
