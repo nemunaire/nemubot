@@ -185,6 +185,3 @@ def parseask(msg):
     else:
       msg.send_snd ("Un événement portant ce nom existe déjà.")
   return False
-
-def parselisten (msg):
-  return False

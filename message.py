@@ -219,6 +219,7 @@ class Message:
       print ("Can't reparse message")
 
   def parsemsg (self, hooks):
+    hooks.treat_pre(self)
     #Treat all messages starting with 'nemubot:' as distinct commands
     if self.content.find("%s:"%self.srv.nick) == 0:
       #Remove the bot name

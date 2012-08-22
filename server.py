@@ -175,9 +175,12 @@ class Server(threading.Thread):
     def accepted_channel(self, chan, sender = None):
         """Return True if the channel (or the user) is authorized"""
         if self.listen_nick:
-            return (chan in self.channels and (sender is None or sender in self.channels[chan].people)) or chan == self.nick
+            return (chan in self.channels and (sender is None or sender in
+                                               self.channels[chan].people)
+                    ) or chan == self.nick
         else:
-            return chan in self.channels and (sender is None or sender in self.channels[chan].people)
+            return chan in self.channels and (sender is None or sender
+                                              in self.channels[chan].people)
 
     def disconnect(self):
         """Close the socket with the server and all DCC client connections"""
@@ -244,7 +247,8 @@ class Server(threading.Thread):
             msg = message.Message (self, line, private)
             msg.treat(self.context.hooks)
         except:
-            print ("\033[1;31mERROR:\033[0m occurred during the processing of the message: %s" % line)
+            print ("\033[1;31mERROR:\033[0m occurred during the processing of"
+                   " the message: %s" % line)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback)
 
@@ -258,15 +262,18 @@ class Server(threading.Thread):
           if self.password != None:
               self.s.send(b"PASS " + self.password.encode () + b"\r\n")
           self.s.send(("NICK %s\r\n" % self.nick).encode ())
-          self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host, self.realname)).encode ())
+          self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host,
+                                                   self.realname)).encode ())
           print ("Connection to %s:%d completed" % (self.host, self.port))
 
           if len(self.channels) > 0:
               for chn in self.channels.keys():
                   if self.channels[chn].password is not None:
-                      self.s.send(("JOIN %s %s\r\n" % (self.channels[chn].name, self.channels[chn].password)).encode ())
+                      self.s.send(("JOIN %s %s\r\n" % (self.channels[chn].name,
+                                       self.channels[chn].password)).encode ())
                   else:
-                      self.s.send(("JOIN %s\r\n" % self.channels[chn].name).encode ())
+                      self.s.send(("JOIN %s\r\n" %
+                                   self.channels[chn].name).encode ())
           print ("Listen to channels: %s" % ' '.join (self.channels.keys()))
 
       readbuffer = b'' #Here we store all the messages from server
