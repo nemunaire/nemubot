@@ -16,19 +16,19 @@ temps = dict ()
 
 SCORES = None
 
-def load():
-  global DATAS, SCORES, CONF
-  DATAS.setIndex("name", "player")
-  SCORES = QDWrapper.QDWrapper(DATAS)
-  GameUpdater.SCORES = SCORES
-  GameUpdater.CONF = CONF
-  GameUpdater.save = save
-  GameUpdater.getUser = getUser
+def load(context):
+    global DATAS, SCORES, CONF
+    DATAS.setIndex("name", "player")
+    SCORES = QDWrapper.QDWrapper(DATAS)
+    GameUpdater.SCORES = SCORES
+    GameUpdater.CONF = CONF
+    GameUpdater.save = save
+    GameUpdater.getUser = getUser
 
 def reload():
-  imp.reload(GameUpdater)
-  imp.reload(QDWrapper)
-  imp.reload(Score)
+    imp.reload(GameUpdater)
+    imp.reload(QDWrapper)
+    imp.reload(Score)
 
 
 def help_tiny ():

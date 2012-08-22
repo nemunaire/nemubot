@@ -20,7 +20,7 @@ def load(context):
     context.hooks.add_hook(context.hooks.cmd_hook, Hook(cmd_sleep, "sleepytime"))
 
 
-def cmd_sleep(data, msg):
+def cmd_sleep(msg):
     if len (msg.cmd) > 1 and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
                                       msg.cmd[1]) is not None:
         # First, parse the hour

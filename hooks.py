@@ -18,6 +18,10 @@
 
 class MessagesHook:
     def __init__(self):
+        # Store specials hook
+        self.all_pre  = list() # Treated before any parse
+        #self.all_post = list() # Treated before send message to user
+
         # Store direct hook
         self.cmd_hook = dict()
         self.ask_hook = dict()
@@ -27,6 +31,11 @@ class MessagesHook:
         self.cmd_rgxp = list()
         self.ask_rgxp = list()
         self.msg_rgxp = list()
+
+        # Store default hooks (after other hooks if no match)
+        self.cmd_default = list()
+        self.ask_default = list()
+        self.msg_default = list()
 
 
     def add_hook(self, store, hook):
@@ -40,42 +49,29 @@ class MessagesHook:
         else:
             print ("Warning: unrecognized hook store type")
 
+    def register_hook_attributes(self, store, module, node):
+        if node.hasAttribute("name"):
+            self.add_hook(getattr(self, store + "_hook"), Hook(getattr(module,
+                                              node["call"]),
+                                      node["name"]))
+        elif node.hasAttribute("regexp"):
+            self.add_hook(getattr(self, store + "_rgxp"), Hook(getattr(module,
+                                              node["call"]),
+                                      None, None,
+                                      node["regexp"]))
+
     def register_hook(self, module, node):
         """Create a hook from configuration node"""
         if node.name == "message" and node.hasAttribute("type"):
             if node["type"] == "cmd" or node["type"] == "all":
-                if node.hasAttribute("name"):
-                    self.add_hook(self.cmd_hook, Hook(getattr(module,
-                                                              node["call"]),
-                                                      node["name"]))
-                elif node.hasAttribute("regexp"):
-                    self.add_hook(self.cmd_rgxp, Hook(getattr(module,
-                                                              node["call"]),
-                                                      None, None,
-                                                      node["regexp"]))
+                self.register_hook_attributes("cmd", module, node)
 
             if node["type"] == "ask" or node["type"] == "all":
-                if node.hasAttribute("name"):
-                    self.add_hook(self.ask_hook, Hook(getattr(module,
-                                                              node["call"]),
-                                                      node["name"]))
-                elif node.hasAttribute("regexp"):
-                    self.add_hook(self.ask_rgxp, Hook(getattr(module,
-                                                              node["call"]),
-                                                      None, None,
-                                                      node["regexp"]))
+                self.register_hook_attributes("ask", module, node)
 
-            if node["type"] == "answer" or node["type"] == "all":
-                if node.hasAttribute("name"):
-                    self.add_hook(self.msg_hook, Hook(getattr(module,
-                                                              node["call"]),
-                                                      node["name"]))
-                elif node.hasAttribute("regexp"):
-                    self.add_hook(self.msg_rgxp, Hook(getattr(module,
-                                                              node["call"]),
-                                                      None, None,
-                                                      node["regexp"]))
-
+            if (node["type"] == "msg" or node["type"] == "answer" or
+                node["type"] == "all"):
+                self.register_hook_attributes("answer", module, node)
 
     def check_rest_times(self, store, hook):
         """Remove from store the hook if it has been executed given time"""
@@ -87,65 +83,105 @@ class MessagesHook:
             elif isinstance(store, list):
                 store.remove(hook)
 
+    def treat_pre(self, msg):
+        """Treat a message before all other treatment"""
+        for h in self.all_pre:
+            h.run(msg)
+            self.check_rest_times(self.all_pre, h)
+
+
     def treat_cmd(self, msg):
         """Treat a command message"""
+        treated = False
         # First, treat simple hook
         if msg.cmd[0] in self.cmd_hook:
             for h in self.cmd_hook[msg.cmd[0]]:
-                h.run(msg)
+                treated |= h.run(msg)
                 self.check_rest_times(self.cmd_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.cmd_rgxp:
-            if hook.is_matching(msg):
-                hook.run(msg)
+            if hook.is_matching(msg.cmd[0], msg.channel):
+                treated |= hook.run(msg)
                 self.check_rest_times(self.cmd_rgxp, hook)
+
+        # Finally, treat default hooks if not catched before
+        for hook in self.cmd_default:
+            if treated:
+                break
+            treated |= hook.run(msg)
+            self.check_rest_times(self.cmd_default, hook)
+
 
     def treat_ask(self, msg):
         """Treat an ask message"""
+        treated = False
         # First, treat simple hook
         if msg.content in self.ask_hook:
             for h in self.ask_hook[msg.content]:
-                h.run(msg)
+                treated |= h.run(msg)
                 self.check_rest_times(self.ask_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.ask_rgxp:
-            if hook.is_matching(msg):
-                hook.run(msg)
+            if hook.is_matching(msg.content, msg.channel):
+                treated |= hook.run(msg)
                 self.check_rest_times(self.ask_rgxp, hook)
+
+        # Finally, treat default hooks if not catched before
+        for hook in self.ask_default:
+            if treated:
+                break
+            treated |= hook.run(msg)
+            self.check_rest_times(self.ask_default, hook)
+
 
     def treat_answer(self, msg):
         """Treat a normal message"""
         # First, treat simple hook
         if msg.content in self.msg_hook:
-            for h in self.msg_hook[msg.cmd[0]]:
+            for h in self.msg_hook[msg.content]:
                 h.run(msg)
                 self.check_rest_times(self.msg_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.msg_rgxp:
-            if hook.is_matching(msg):
+            if hook.is_matching(msg.content, msg.channel):
                 hook.run(msg)
                 self.check_rest_times(self.msg_rgxp, hook)
+
+        # Finally, treat default hooks if not catched before
+        for hook in self.msg_default:
+            if treated:
+                break
+            treated |= hook.run(msg)
+            self.check_rest_times(self.msg_default, hook)
 
 
 class Hook:
     """Class storing hook informations"""
-    def __init__(self, call, name=None, data=None, regexp=None):
+    def __init__(self, call, name=None, data=None, regexp=None, channels=list()):
         self.name = name
         self.call = call
         self.regexp = regexp
         self.data = data
         self.times = -1
+        self.channels = channels
 
-    def is_matching(self, strcmp):
+    def is_matching(self, strcmp, channel):
         """Test if the current hook correspond to the message"""
-        return (self.name is not None and strcmp == self.name) or (
-            self.regexp is not None and re.match(self.regexp, strcmp))
+        return (len(self.channel) <= 0 or channel in self.channels) and (
+            (self.name is not None and strcmp == self.name) or (
+            self.regexp is not None and re.match(self.regexp, strcmp)))
 
     def run(self, msg):
         """Run the hook"""
-        if self.times > 0:
+        if self.times != 0:
             self.times -= 1
-        return self.call(self.data, msg)
+
+        if self.data is None:
+            return self.call(msg)
+        elif isinstance(self.data, dict):
+            return self.call(msg, **self.data)
+        else:
+            return self.call(msg, self.data)

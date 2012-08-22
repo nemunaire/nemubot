@@ -78,7 +78,7 @@ def print_station_status(msg, station):
     else:
         msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
 
-def ask_stations(data, msg):
+def ask_stations(msg):
     """Hook entry from !velib"""
     global DATAS
     if len(msg.cmd) > 5:

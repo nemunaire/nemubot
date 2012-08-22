@@ -21,6 +21,8 @@ from importlib.abc import SourceLoader
 import imp
 import os
 import sys
+
+from hooks import Hook
 import xmlparser
 
 class ModuleFinder(Finder):
@@ -205,6 +207,14 @@ def register_hooks(module, context, prompt):
         if module.CONF.hasNode("message"):
             for msg in module.CONF.getNodes("message"):
                 context.hooks.register_hook(module, msg)
+
+    # Register legacy hooks
+    if hasattr(module, "parseanswer"):
+        context.hooks.add_hook(context.hooks.cmd_default, Hook(module.parseanswer))
+    if hasattr(module, "parseask"):
+        context.hooks.add_hook(context.hooks.ask_default, Hook(module.parseask))
+    if hasattr(module, "parselisten"):
+        context.hooks.add_hook(context.hooks.ask_default, Hook(module.parselisten))
 
 ##########################
 #                        #

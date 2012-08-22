@@ -19,7 +19,7 @@ def load(context):
     context.hooks.add_hook(context.hooks.cmd_hook, Hook(cmd_syno, "synonyme"))
 
 
-def cmd_syno(data, msg):
+def cmd_syno(msg):
     if 1 < len(msg.cmd) < 6:
         for word in msg.cmd[1:]:
             synos = get_synos(word)

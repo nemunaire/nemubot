@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 nemubotversion = 3.2
 
-import module_states_file as xmlparser
+import xmlparser
 
 LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
         "ja", "ko", "pl", "pt", "ro", "es", "tr"]
@@ -25,7 +25,7 @@ def load(context):
                            Hook(cmd_translate, "traduire"))
 
 
-def cmd_translate(data, msg):
+def cmd_translate(msg):
     global LANG
     startWord = 1
     if msg.cmd[startWord] in LANG:

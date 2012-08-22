@@ -47,7 +47,7 @@ def fini(strend):
     DATAS.delChild(DATAS.index[strend["name"]])
     save()
 
-def cmd_we(data, msg):
+def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
     msg.send_chn (
@@ -55,19 +55,19 @@ def cmd_we(data, msg):
                               "Il reste %s avant le week-end, courage ;)",
                               "Youhou, on est en week-end depuis %s."))
 
-def cmd_newyear(data, msg):
+def cmd_newyear(msg):
     msg.send_chn (
         msg.countdown_format (datetime(datetime.today().year + 1, 1, 1, 0, 0, 1),
                               "Il reste %s avant la nouvelle année.",
                               "Nous faisons déjà la fête depuis %s !"))
 
-def cmd_vacances(data, msg):
+def cmd_vacances(msg):
     msg.send_chn (
         msg.countdown_format (datetime(2012, 7, 30, 18, 0, 1),
                               "Il reste %s avant les vacances :)",
                               "Profitons, c'est les vacances depuis %s."))
 
-def start_countdown(data, msg):
+def start_countdown(msg):
     if msg.cmd[1] not in DATAS:
 
         strnd = ModuleState("strend")
