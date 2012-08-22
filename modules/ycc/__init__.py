@@ -19,7 +19,7 @@ def help_full ():
 def reload():
   imp.reload(Tinyfier)
 
-def cmd_ycc(data, msg):
+def cmd_ycc(msg):
     global LAST_URLS
     if len(msg.cmd) == 1:
         if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
@@ -27,7 +27,7 @@ def cmd_ycc(data, msg):
             t = Tinyfier.Tinyfier(url, msg)
             t.start()
         else:
-            msg.send_chn("%s: je n'ai pas d'autre URL  reduire" % msg.nick)
+            msg.send_chn("%s: je n'ai pas d'autre URL à réduire" % msg.nick)
     else:
         if len(msg.cmd) < 6:
             for url in msg.cmd[1:]:
@@ -41,7 +41,7 @@ def cmd_ycc(data, msg):
 
 LAST_URLS = dict()
 
-def parselisten(data, msg):
+def parselisten(msg):
     global LAST_URLS
     if re.match(".*(https?://|www\.)[^ ]+.*", msg.content) is not None:
         res = re.match(".*(((ht|f)tps?://|www\.)[^ ]+).*", msg.content)

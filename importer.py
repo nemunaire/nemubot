@@ -214,7 +214,7 @@ def register_hooks(module, context, prompt):
     if hasattr(module, "parseask"):
         context.hooks.add_hook(context.hooks.ask_default, Hook(module.parseask))
     if hasattr(module, "parselisten"):
-        context.hooks.add_hook(context.hooks.ask_default, Hook(module.parselisten))
+        context.hooks.add_hook(context.hooks.msg_default, Hook(module.parselisten))
 
 ##########################
 #                        #

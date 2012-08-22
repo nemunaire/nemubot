@@ -138,16 +138,18 @@ class MessagesHook:
 
     def treat_answer(self, msg):
         """Treat a normal message"""
+        treated = False
+
         # First, treat simple hook
         if msg.content in self.msg_hook:
             for h in self.msg_hook[msg.content]:
-                h.run(msg)
+                treated |= h.run(msg)
                 self.check_rest_times(self.msg_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.msg_rgxp:
             if hook.is_matching(msg.content, msg.channel):
-                hook.run(msg)
+                treated |= hook.run(msg)
                 self.check_rest_times(self.msg_rgxp, hook)
 
         # Finally, treat default hooks if not catched before
