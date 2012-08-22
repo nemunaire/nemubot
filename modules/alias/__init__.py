@@ -4,70 +4,91 @@ import re
 import sys
 from datetime import datetime
 
-nemubotversion = 3.0
+nemubotversion = 3.2
 
-from module_state import ModuleState
+from xmlparser.node import ModuleState
 
-def load():
-  """Load this module"""
-  global DATAS
-  if not DATAS.hasNode("aliases"):
-    DATAS.addChild(ModuleState("aliases"))
-  DATAS.getNode("aliases").setIndex("alias")
-  if not DATAS.hasNode("variables"):
-    DATAS.addChild(ModuleState("variables"))
-  DATAS.getNode("variables").setIndex("name")
+CONTEXT = None
+
+def load(context):
+    """Load this module"""
+    global CONTEXT
+    CONTEXT = context
+
+    from hooks import Hook
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(cmd_set, "set"))
+    context.hooks.add_hook(context.hooks.all_pre, Hook(treat_variables))
+
+    global DATAS
+    if not DATAS.hasNode("aliases"):
+        DATAS.addChild(ModuleState("aliases"))
+    DATAS.getNode("aliases").setIndex("alias")
+    if not DATAS.hasNode("variables"):
+        DATAS.addChild(ModuleState("variables"))
+    DATAS.getNode("variables").setIndex("name")
+
 
 def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "alias module"
+    """Line inserted in the response to the command !help"""
+    return "alias module"
 
 def help_full ():
-  return "TODO"
+    return "TODO"
 
+def set_variable(name, value):
+    var = ModuleState("variable")
+    var["name"] = name
+    var["value"] = value
+    DATAS.getNode("variables").addChild(var)
 
-def parseanswer (msg):
-  global DATAS
-  if msg.cmd[0] == "set":
-    if len (msg.cmd) > 2:
-      var = ModuleState("variable")
-      var["name"] = msg.cmd[1]
-      var["value"] = " ".join(msg.cmd[2:])
-      DATAS.getNode("variables").addChild(var)
-      msg.send_snd("Variable $%s définie." % msg.cmd[1])
-      save()
+def get_variable(name, msg=None):
+    if name == "sender":
+        return msg.sender
+    elif name == "nick":
+        return msg.nick
+    elif name == "chan" or name == "channel":
+        return msg.channel
+    elif name == "date":
+        now = datetime.now()
+        return ("%d/%d/%d %d:%d:%d"%(now.day, now.month, now.year, now.hour,
+                                     now.minute, now.second))
+    elif name in DATAS.getNode("variables").index:
+        return DATAS.getNode("variables").index[name]["value"]
     else:
-      msg.send_snd("!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
-    return True
-  elif msg.cmd[0] in DATAS.getNode("aliases").index:
-    msg.content = msg.content.replace("!" + msg.cmd[0], DATAS.getNode("aliases").index[msg.cmd[0]]["origin"], 1)
+        return ""
 
-    cnt = msg.content.split(' ')
-    for i in range(0,len(cnt)):
-      res = re.match("^([^a-zA-Z0-9]*)\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
-      if res is not None:
-        if res.group(2) == "sender":
-          cnt[i] = msg.sender
-        elif res.group(2) == "nick":
-          cnt[i] = msg.nick
-        elif res.group(2) == "chan" or res.group(2) == "channel":
-          cnt[i] = msg.channel
-        elif res.group(2) == "date":
-          now = datetime.now()
-          cnt[i] = ("%d/%d/%d %d:%d:%d"%(now.day, now.month, now.year, now.hour, now.minute, now.second))
-        elif res.group(2) in DATAS.getNode("variables").index:
-          cnt[i] = DATAS.getNode("variables").index[res.group(2)]["value"]
-        else:
-          cnt[i] = ""
-        cnt[i] = res.group(1) + cnt[i] + res.group(3)
-    msg.content = " ".join(cnt)
-    msg.reparsemsg()
-    return True
-  else:
+def cmd_set(msg):
+    if len (msg.cmd) > 2:
+        set_variable(msg.cmd[1], " ".join(msg.cmd[2:]))
+        msg.send_snd("Variable $%s définie." % msg.cmd[1])
+        save()
+        return True
+    else:
+        msg.send_snd("!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
     return False
 
 
-def parseask (msg):
+def treat_variables(msg):
+    if msg.cmd[0] != "set" and re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is None:
+        cnt = msg.content.split(' ')
+        for i in range(0, len(cnt)):
+            res = re.match("^([^a-zA-Z0-9]*)\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
+            if res is not None:
+                cnt[i] = res.group(1) + get_variable(res.group(2), msg) + res.group(3)
+        msg.content = " ".join(cnt)
+        return True
+    return False
+
+
+def parseanswer(msg):
+    if msg.cmd[0] in DATAS.getNode("aliases").index:
+        msg.content = msg.content.replace("!" + msg.cmd[0], DATAS.getNode("aliases").index[msg.cmd[0]]["origin"], 1)
+        msg.reparsemsg()
+        return True
+    return False
+
+
+def parseask(msg):
   global ALIAS
   if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:
     result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.content)
