@@ -5,11 +5,11 @@ import sys
 from datetime import datetime
 from datetime import date
 
-from module_state import ModuleState
+from xmlparser.node import ModuleState
 
-nemubotversion = 3.0
+nemubotversion = 3.2
 
-def load():
+def load(context):
   global DATAS
   DATAS.setIndex("name", "birthday")
 
@@ -40,47 +40,46 @@ def findName(msg):
   return (matches, name)
 
 
-def parseanswer(msg):
-  if msg.cmd[0] == "anniv":
+def cmd_anniv(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
-      name = matches[0]
-      tyd = DATAS.index[name].getDate("born")
-      tyd = datetime(date.today().year, tyd.month, tyd.day)
+        name = matches[0]
+        tyd = DATAS.index[name].getDate("born")
+        tyd = datetime(date.today().year, tyd.month, tyd.day)
 
-      if tyd.day == datetime.today().day and tyd.month == datetime.today().month:
-        msg.send_chn (msg.countdown_format (DATAS.index[name].getDate("born"), "", "C'est aujourd'hui l'anniversaire de %s ! Il a%s. Joyeux anniversaire :)" % (name, "%s")))
-      else:
-        if tyd < datetime.today():
-          tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
+        if tyd.day == datetime.today().day and tyd.month == datetime.today().month:
+            msg.send_chn (msg.countdown_format (DATAS.index[name].getDate("born"), "", "C'est aujourd'hui l'anniversaire de %s ! Il a%s. Joyeux anniversaire :)" % (name, "%s")))
+        else:
+            if tyd < datetime.today():
+                tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
 
-        msg.send_chn (msg.countdown_format (tyd, "Il reste %s avant l'anniversaire de %s !" % ("%s", name), ""))
+            msg.send_chn (msg.countdown_format (tyd, "Il reste %s avant l'anniversaire de %s !" % ("%s", name), ""))
     else:
-      msg.send_chn ("%s: désolé, je ne connais pas la date d'anniversaire de %s. Quand est-il né ?"%(msg.nick, name))
+        msg.send_chn ("%s: désolé, je ne connais pas la date d'anniversaire de %s. Quand est-il né ?"%(msg.nick, name))
     return True
-  elif msg.cmd[0] == "age":
+
+def cmd_age(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
-      name = matches[0]
-      d = DATAS.index[name].getDate("born")
+        name = matches[0]
+        d = DATAS.index[name].getDate("born")
 
-      msg.send_chn (msg.countdown_format (d, "", "%s a %s." % (n, "%s")))
+        msg.send_chn (msg.countdown_format (d, "%s va naître dans %s." % (name, "%s"),
+                                               "%s a %s." % (name, "%s")))
     else:
-      msg.send_chn ("%s: désolé, je ne connais pas l'âge de %s. Quand est-il né ?"%(msg.nick, name))
+        msg.send_chn ("%s: désolé, je ne connais pas l'âge de %s. Quand est-il né ?"%(msg.nick, name))
     return True
-  else:
-    return False
 
 def parseask(msg):
   msgl = msg.content.lower ()
   if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl) is not None:
     try:
       extDate = msg.extractDate ()
-      if extDate is None:
+      if extDate is None or extDate.year() > datetime.now().year():
         msg.send_chn ("%s: ta date de naissance ne paraît pas valide..." % (msg.nick))
       else:
         if msg.nick.lower() in DATAS.index:
-          DATAS.index[msg.nick.lower()] = extDate
+          DATAS.index[msg.nick.lower()]["born"] = extDate
         else:
           ms = ModuleState("birthday")
           ms.setAttribute("name", msg.nick.lower())
