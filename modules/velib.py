@@ -13,10 +13,10 @@ def load(context):
   global DATAS
   DATAS.setIndex("name", "station")
 
-  evt = ModuleEvent(station_available, "42706",
-                    (lambda a, b: a != b), None, 60,
-                    station_status)
-  context.add_event(evt)
+#  evt = ModuleEvent(station_available, "42706",
+#                    (lambda a, b: a != b), None, 60,
+#                    station_status)
+#  context.add_event(evt)
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""

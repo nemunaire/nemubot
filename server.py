@@ -243,14 +243,7 @@ class Server(threading.Thread):
             print ("  Already connected.")
 
     def treat_msg(self, line, private = False):
-        try:
-            msg = message.Message (self, line, private)
-            msg.treat(self.context.hooks)
-        except:
-            print ("\033[1;31mERROR:\033[0m occurred during the processing of"
-                   " the message: %s" % line)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback)
+        self.context.receive_message(self, line, private)
 
     def run(self):
       if not self.connected:

@@ -72,5 +72,5 @@ if __name__ == "__main__":
             sys.stderr.write (traceback.format_exception_only(exc_type,
                                                               exc_value)[0])
 
-    print ("Bye")
+    print ("\nWaiting for other threads shuts down...")
     sys.exit(0)

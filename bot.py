@@ -17,26 +17,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
+from queue import Queue
 import threading
 
+from consumer import Consumer
 import event
 import hooks
 from server import Server
 
 class Bot:
     def __init__(self, servers=dict(), modules=dict(), mp=list()):
-        self.version = 3.2
+        self.version     = 3.2
         self.version_txt = "3.2"
 
         self.servers = servers
         self.modules = modules
 
         self.modules_path = mp
-        self.datas_path = './datas/'
+        self.datas_path   = './datas/'
 
-        self.hooks = hooks.MessagesHook()
-        self.events = list()
+        self.hooks       = hooks.MessagesHook()
+        self.events      = list()
         self.event_timer = None
+
+        self.msg_queue     = Queue()
+        self.msg_thrd      = list()
+        self.msg_thrd_size = -1
 
 
     def add_event(self, evt):
@@ -129,6 +135,18 @@ class Bot:
             del self.modules[name]
             return True
         return False
+
+
+    def receive_message(self, srv, raw_msg, private = False):
+        """Queued the message for treatment"""
+        self.msg_queue.put_nowait((srv, raw_msg, private))
+
+        # Launch a new thread if necessary
+        if self.msg_queue.qsize() > self.msg_thrd_size:
+            c = Consumer(self)
+            self.msg_thrd.append(c)
+            c.start()
+            self.msg_thrd_size += 2
 
 
     def quit(self, verb=False):
