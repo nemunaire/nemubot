@@ -34,8 +34,6 @@ def load(context):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
             event.end = DATAS.index[evt].getDate("end")
             context.add_event(event)
-        context.hooks.add_hook(context.hooks.cmd_hook,
-                               Hook(other, DATAS.index[evt]["name"]))
 
 def fini(strend):
     for server in CONTEXT.servers.keys():
@@ -100,15 +98,12 @@ def start_countdown(msg):
                     msg.send_snd ("%s commencé le %s."% (msg.cmd[1], datetime.now()))
             else:
                 msg.send_snd ("%s commencé le %s"% (msg.cmd[1], datetime.now()))
-
-        context.hooks.add_hook(context.hooks.cmd_hook,
-                               Hook(other, DATAS.index[evt]["name"]))
         save()
     else:
         msg.send_snd ("%s existe déjà."% (msg.cmd[1]))
     return True
 
-def end_countdown(data, msg):
+def end_countdown(msg):
     if msg.cmd[1] in DATAS.index:
         msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
         if DATAS.index[msg.cmd[1]]["proprio"] == msg.nick or (msg.cmd[0] == "forceend" and msg.nick == msg.srv.owner):
@@ -121,23 +116,24 @@ def end_countdown(data, msg):
         msg.send_snd ("%s n'est pas un compteur connu."% (msg.cmd[1]))
     return True
 
-def liste(data, msg):
+def liste(msg):
     msg.send_snd ("Compteurs connus : %s." % ", ".join(DATAS.index.keys()))
 
-def other(data, msg):
-    if DATAS.index[msg.cmd[0]].name == "strend":
-        if DATAS.index[msg.cmd[0]].hasAttribute("end"):
-            msg.send_chn ("%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())))
+def parseanswer(msg):
+    if msg.cmd[0] in DATAS.index:
+        if DATAS.index[msg.cmd[0]].name == "strend":
+            if DATAS.index[msg.cmd[0]].hasAttribute("end"):
+                msg.send_chn ("%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())))
+            else:
+                msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))))
         else:
-            msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))))
-    else:
-        msg.send_chn (msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]))
-        save()
-    return True
-
+            msg.send_chn (msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]))
+            save()
+        return True
+    return False
 
 def parseask(msg):
-  msgl = msg.content.lower ()
+  msgl = msg.content.lower()
   if re.match("^.*((create|new) +(a|an|a +new|an *other)? *(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3}) +(un)? *([eé]v[ée]nements?|commande?)).*$", msgl) is not None:
     name = re.match("^.*!([^ \"'@!]+).*$", msg.content)
     if name is not None and name.group (1) not in DATAS.index:
