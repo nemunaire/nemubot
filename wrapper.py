@@ -1,10 +1,10 @@
 # coding=utf-8
 
-from module_state import ModuleState
+from xmlparser.node import ModuleState
 
 class Wrapper:
   """Simulate a hash table
-  
+
   """
 
   def __init__(self):
