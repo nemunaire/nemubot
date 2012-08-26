@@ -96,7 +96,7 @@ class DCC(threading.Thread):
             return True
         return False
 
-    def launch(self, mods = None):
+    def launch(self, mods=None):
         """Connect to the client if not already connected"""
         if not self.connected:
             self.stop = False
@@ -207,33 +207,12 @@ class DCC(threading.Thread):
                 raw = self.conn.recv(1024) #recieve server messages
                 if not raw:
                     break
-            readbuffer = readbuffer + raw
-            temp = readbuffer.split(b'\n')
-            readbuffer = temp.pop()
+                readbuffer = readbuffer + raw
+                temp = readbuffer.split(b'\n')
+                readbuffer = temp.pop()
 
-            for line in temp:
-                if (line[:nicksize] == Bnick and
-                    line[nicksize+1:].strip()[:10] == b'my name is'):
-                    name = line[nicksize+1:].strip()[11:].decode('utf-8',
-                                                                 'replace')
-                    if re.match("^[a-zA-Z0-9_-]+$", name):
-                        if name not in self.srv.dcc_clients:
-                            del self.srv.dcc_clients[self.sender]
-                            self.nick = name
-                            self.sender = self.nick + "!" + self.realname
-                            self.srv.dcc_clients[self.realname] = self
-                            self.send_dcc("Hi " + self.nick)
-                        else:
-                            self.send_dcc("This nickname is already in use,"
-                                          " please choose another one.")
-                    else:
-                        self.send_dcc("The name you entered contain"
-                                      " invalid char.")
-                else:
-                    self.srv.treat_msg(
-                        (":%s PRIVMSG %s :" % (self.sender,
-                                               self.srv.nick)).encode() + line,
-                        True)
+                for line in temp:
+                    self.treat_msg(line)
 
         if self.connected:
             self.conn.close()
@@ -241,3 +220,28 @@ class DCC(threading.Thread):
         self.stopping.set()
         #Rearm Thread
         threading.Thread.__init__(self)
+
+    def treat_msg(self, line):
+        """Treat a receive message, *can be overwritten*"""
+        if (line[:nicksize] == Bnick and
+            line[nicksize+1:].strip()[:10] == b'my name is'):
+            name = line[nicksize+1:].strip()[11:].decode('utf-8',
+                                                         'replace')
+            if re.match("^[a-zA-Z0-9_-]+$", name):
+                if name not in self.srv.dcc_clients:
+                    del self.srv.dcc_clients[self.sender]
+                    self.nick = name
+                    self.sender = self.nick + "!" + self.realname
+                    self.srv.dcc_clients[self.realname] = self
+                    self.send_dcc("Hi " + self.nick)
+                else:
+                    self.send_dcc("This nickname is already in use"
+                                  ", please choose another one.")
+            else:
+                self.send_dcc("The name you entered contain"
+                              " invalid char.")
+        else:
+            self.srv.treat_msg(
+                (":%s PRIVMSG %s :" % (
+                        self.sender,self.srv.nick)).encode() + line,
+                True)
