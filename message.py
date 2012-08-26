@@ -41,9 +41,9 @@ def save():
 
 
 class Message:
-  def __init__ (self, srv, line, private = False):
+  def __init__ (self, srv, line, timestamp, private = False):
     self.srv = srv
-    self.time = datetime.now ()
+    self.time = timestamp
     self.channel = None
     self.content = b''
     self.ctcp = False

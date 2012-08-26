@@ -30,11 +30,11 @@ class Consumer(threading.Thread):
     def run(self):
         try:
             while not self.stop:
-                (srv, raw, prvt) = self.context.msg_queue.get(True, 20)
+                (srv, raw, time, prvt) = self.context.msg_queue.get(True, 20)
 
-                # Create the message
+                # Create, parse and treat the message
                 try:
-                    msg = Message(srv, raw, prvt)
+                    msg = Message(srv, raw, time, prvt)
                     msg.treat(self.context.hooks)
                 except:
                     print ("\033[1;31mERROR:\033[0m occurred during the "
