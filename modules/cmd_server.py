@@ -16,8 +16,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from networkbot import NetworkBot
+
 nemubotversion = 3.2
 NODATA = True
+
+def getserver(toks, context, prompt):
+    """Choose the server in toks or prompt"""
+    if len(toks) > 1 and toks[0] in context.servers:
+        return (context.servers[toks[0]], toks[1:])
+    elif prompt.selectedServer is not None:
+        return (prompt.selectedServer, toks)
+    else:
+        return (None, toks)
 
 def close(data, toks, context, prompt):
     """Disconnect and forget (remove from the servers list) the server"""
@@ -63,6 +74,19 @@ def disconnect(data, toks, context, prompt):
                    % prompt.selectedServer.id)
     else:
         print ("  Please SELECT a server or give its name in argument.")
+
+def discover(data, toks, context, prompt):
+    """Discover a new bot on a server"""
+    (srv, toks) = getserver(toks, context, prompt)
+    if srv is not None:
+        for name in toks[1:]:
+            if "!" in name:
+                bot = context.add_networkbot(srv, name)
+                bot.connect()
+            else:
+                print ("  %s is not a valid fullname, for example: nemubot!nemubotV3@bot.nemunai.re")
+    else:
+        print ("  Please SELECT a server or give its name in first argument.")
 
 def hotswap(data, toks, context, prompt):
     """Reload a server class"""

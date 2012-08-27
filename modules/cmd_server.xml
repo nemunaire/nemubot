@@ -2,6 +2,7 @@
 <nemubotmodule name="cmd_server">
   <command name="close" call="close" />
   <command name="connect" call="connect" />
+  <command name="discover" call="discover" />
   <command name="disconnect" call="disconnect" />
   <command name="hotswap" call="hotswap" />
   <command name="join" call="join" />

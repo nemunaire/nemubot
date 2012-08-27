@@ -20,26 +20,32 @@ from datetime import datetime
 from queue import Queue
 import threading
 
+from botcaps import BotCaps
 from consumer import Consumer
 import event
-import hooks
+from networkbot import NetworkBot
 from server import Server
 
-class Bot:
+class Bot(BotCaps):
     def __init__(self, servers=dict(), modules=dict(), mp=list()):
-        self.version     = 3.2
-        self.version_txt = "3.2"
+        BotCaps.__init__(self, 3.2, "3.2-dev")
 
+        # Keep global context: servers and modules
         self.servers = servers
         self.modules = modules
 
+        # Context paths
         self.modules_path = mp
         self.datas_path   = './datas/'
 
-        self.hooks       = hooks.MessagesHook()
+        # Events
         self.events      = list()
         self.event_timer = None
 
+        # Other known bots, making a bots network
+        self.network = dict()
+
+        # Messages to be treated
         self.msg_queue     = Queue()
         self.msg_thrd      = list()
         self.msg_thrd_size = -1
@@ -73,7 +79,6 @@ class Bot:
                 self.event_timer.start()
         #else:
         #    print ("Update timer: no timer left")
-
 
     def end_timer(self):
         """Function called at the end of the timer"""
@@ -147,6 +152,14 @@ class Bot:
             self.msg_thrd.append(c)
             c.start()
             self.msg_thrd_size += 2
+
+
+    def add_networkbot(self, srv, dest, dcc=None):
+        """Append a new bot into the network"""
+        id = srv.id + "/" + dest
+        if id not in self.network:
+            self.network[id] = NetworkBot(self, srv, dest, dcc)
+        return self.network[id]
 
 
     def quit(self, verb=False):
