@@ -23,7 +23,7 @@ import time
 
 import credits
 from credits import Credits
-import DCC
+from DCC import DCC
 import xmlparser
 
 CREDITS = {}
@@ -102,13 +102,13 @@ class Message:
 
   def pickWords(self, words):
     """Parse last argument of a line: can be a single word or a sentence starting with :"""
-    if len(words) > 0:
+    if len(words) > 0 and len(words[0]) > 0:
       if words[0][0] == 58:
         return b' '.join(words[0:])[1:]
       else:
         return words[0]
     else:
-      return ""
+      return b''
 
   def decode(self):
     """Decode the content string usign a specific encoding"""
@@ -197,17 +197,18 @@ class Message:
     elif self.content == '\x01USERINFO\x01':
       self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
     elif self.content == '\x01VERSION\x01':
-      self.srv.send_ctcp(self.sender, "VERSION nemubot v%d"%VERSION)
+      self.srv.send_ctcp(self.sender, "VERSION nemubot v%s" % self.srv.context.version_txt)
     elif self.content[:9] == '\x01DCC CHAT':
       words = self.content[1:len(self.content) - 1].split(' ')
       ip = self.srv.toIP(int(words[3]))
-      fullname = "guest" + words[4] + words[3] +"!guest" + words[4] + words[3] + "@" + ip
-      conn = dcc.DCC(self.srv, fullname)
+      conn = DCC(self.srv, self.sender)
       if conn.accept_user(ip, int(words[4])):
         self.srv.dcc_clients[conn.sender] = conn
-        conn.send_dcc("Hi %s. To changes your name, say \"%s: my name is yournickname\"." % (conn.nick, self.srv.nick))
+        conn.send_dcc("Hello %s!" % conn.nick)
       else:
         print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
+    elif self.content == '\x01NEMUBOT\x01':
+      self.srv.send_ctcp(self.sender, "NEMUBOT %f" % self.srv.context.version)
     elif self.content[:7] != '\x01ACTION':
       print (self.content)
       self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
@@ -288,7 +289,7 @@ class Message:
         self.send_snd("Test DCC")
       elif self.cmd[0] == "dccsendtest":
         print("dccsendtest")
-        conn = dcc.DCC(self.srv, self.sender)
+        conn = DCC(self.srv, self.sender)
         conn.send_file("bot_sample.xml")
       else:
           hooks.treat_cmd(self)

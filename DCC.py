@@ -51,6 +51,7 @@ class DCC(threading.Thread):
 
         # Keep the server
         self.srv = srv
+        self.treatement = self.treat_msg
 
         # Found a port for the connection
         self.port = self.foundPort()
@@ -146,6 +147,9 @@ class DCC(threading.Thread):
         print ('Connected by', addr)
         self.connected = True
 
+    def send_dcc_raw(self, line):
+        self.conn.sendall(line + b'\n')
+
     def send_dcc(self, msg, to = None):
         """If we talk to this user, send a message through this connection
            else, send the message to the server class"""
@@ -159,7 +163,7 @@ class DCC(threading.Thread):
                 self.messages.append(msg)
             else:
                 for line in msg.split("\n"):
-                    self.conn.sendall(line.encode() + b'\n')
+                    self.send_dcc_raw(line.encode())
         else:
             self.srv.send_dcc(msg, to)
 
@@ -201,8 +205,8 @@ class DCC(threading.Thread):
             time.sleep(1)
 
             readbuffer = b''
-            nicksize = len(self.srv.nick)
-            Bnick = self.srv.nick.encode()
+            self.nicksize = len(self.srv.nick)
+            self.Bnick = self.srv.nick.encode()
             while not self.stop:
                 raw = self.conn.recv(1024) #recieve server messages
                 if not raw:
@@ -212,7 +216,7 @@ class DCC(threading.Thread):
                 readbuffer = temp.pop()
 
                 for line in temp:
-                    self.treat_msg(line)
+                    self.treatement(line)
 
         if self.connected:
             self.conn.close()
@@ -223,9 +227,13 @@ class DCC(threading.Thread):
 
     def treat_msg(self, line):
         """Treat a receive message, *can be overwritten*"""
-        if (line[:nicksize] == Bnick and
-            line[nicksize+1:].strip()[:10] == b'my name is'):
-            name = line[nicksize+1:].strip()[11:].decode('utf-8',
+        if line == b'NEMUBOT###':
+            bot = self.srv.context.add_networkbot(self.srv, self.sender, self)
+            self.treatement = bot.treat_msg
+            self.send_dcc("NEMUBOT###")
+        elif (line[:self.nicksize] == self.Bnick and
+            line[self.nicksize+1:].strip()[:10] == b'my name is'):
+            name = line[self.nicksize+1:].strip()[11:].decode('utf-8',
                                                          'replace')
             if re.match("^[a-zA-Z0-9_-]+$", name):
                 if name not in self.srv.dcc_clients:
