@@ -43,7 +43,7 @@ def speak(endstate):
     stopSpk = 0
 
     if lastmsg is None:
-        lastmsg = message.Message(None, b":Quelqun!someone@p0m.fr PRIVMSG channel nothing")
+        lastmsg = message.Message(None, b":Quelqun!someone@p0m.fr PRIVMSG channel nothing", datetime.now())
 
     while not stopSpk and len(g_queue) > 0:
         msg = g_queue.pop(0)
@@ -116,7 +116,7 @@ class Server(server.Server):
     def treat_msg(self, line, private = False):
         global stopSpk, talkEC, g_queue
         try:
-            msg = message.Message (self, line, private)
+            msg = message.Message (self, line, datetime.now(), private)
             if msg.cmd == 'PING':
                 msg.treat (self.mods)
             elif msg.cmd == 'PRIVMSG' and msg.authorize():
