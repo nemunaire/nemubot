@@ -18,6 +18,8 @@
 
 import queue
 import threading
+import traceback
+import sys
 
 from message import Message
 
@@ -38,7 +40,7 @@ class Consumer(threading.Thread):
                     msg.treat(self.context.hooks)
                 except:
                     print ("\033[1;31mERROR:\033[0m occurred during the "
-                           "processing of the message: %s" % line)
+                           "processing of the message: %s" % raw)
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     traceback.print_exception(exc_type, exc_value,
                                               exc_traceback)
