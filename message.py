@@ -207,7 +207,7 @@ class Message:
       # Treat ping
       if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
                   messagel) is not None:
-          return Response(message="pong", channel=self.channel, nick=self.nick)
+          return Response(self.sender, message="pong", channel=self.channel, nick=self.nick)
 
       # Ask hooks
       else:
@@ -261,7 +261,7 @@ class Message:
       elif self.cmd[0] == "more":
           if self.channel == self.srv.nick:
               if self.nick in self.srv.moremessages:
-                  return self.srv.moremessages[self.nick]
+                  return self.srv.moremessages[self.sender]
           else:
               if self.channel in self.srv.moremessages:
                   return self.srv.moremessages[self.channel]
@@ -271,7 +271,7 @@ class Message:
         self.srv.send_dcc("Test DCC", self.sender)
       elif self.cmd[0] == "pvdcctest":
         print("dcctest")
-        return Response(message="Test DCC",  nick=self.nick)
+        return Response(self.sender, message="Test DCC")
       elif self.cmd[0] == "dccsendtest":
         print("dccsendtest")
         conn = DCC(self.srv, self.sender)

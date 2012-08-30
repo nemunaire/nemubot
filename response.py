@@ -16,8 +16,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import traceback
+import sys
+
 class Response:
-    def __init__(self, message=None, channel=None, nick=None, server=None,
+    def __init__(self, sender, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) "):
         self.nomore = nomore
         self.more = more
@@ -29,7 +32,18 @@ class Response:
 
         self.channel = channel
         self.nick = nick
+        self.set_sender(sender)
         self.alone = True
+
+    def set_sender(self, sender):
+        if sender is None or sender.find("!") < 0:
+            if sender is not None:
+                print("\033[1;35mWarning:\033[0m bad sender provided in Response, it will be ignored.")
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_traceback)
+            self.sender = None
+        else:
+            self.sender = sender
 
     def append_message(self, message):
         self.alone = False

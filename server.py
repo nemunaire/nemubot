@@ -111,16 +111,16 @@ class Server(threading.Thread):
         self.s.send(("PONG %s\r\n" % cnt).encode ())
 
     def send_response(self, res):
-        if res.channel is not None:
+        if res.channel is not None and res.channel != self.nick:
             self.send_msg(res.channel, res.get_message())
 
             if not res.alone:
                 self.moremessages[res.channel] = res
-        elif res.nick is not None:
-            self.send_msg_usr(res.nick, res.get_message())
+        elif res.sender is not None:
+            self.send_msg_usr(res.sender, res.get_message())
 
             if not res.alone:
-                self.moremessages[res.nick] = res
+                self.moremessages[res.sender] = res
 
     def send_ctcp(self, to, msg, cmd = "NOTICE", endl = "\r\n"):
       """Send a message as CTCP response"""
