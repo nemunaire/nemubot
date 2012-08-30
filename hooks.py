@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from response import Response
+
 class MessagesHook:
     def __init__(self):
         # Store specials hook
@@ -92,72 +94,96 @@ class MessagesHook:
 
     def treat_cmd(self, msg):
         """Treat a command message"""
-        treated = False
+        treated = list()
+
         # First, treat simple hook
         if msg.cmd[0] in self.cmd_hook:
             for h in self.cmd_hook[msg.cmd[0]]:
-                treated |= h.run(msg)
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.cmd_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.cmd_rgxp:
             if hook.is_matching(msg.cmd[0], msg.channel):
-                treated |= hook.run(msg)
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.cmd_rgxp, hook)
 
         # Finally, treat default hooks if not catched before
         for hook in self.cmd_default:
             if treated:
                 break
-            treated |= hook.run(msg)
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
             self.check_rest_times(self.cmd_default, hook)
 
+        return treated
 
     def treat_ask(self, msg):
         """Treat an ask message"""
-        treated = False
+        treated = list()
+
         # First, treat simple hook
         if msg.content in self.ask_hook:
             for h in self.ask_hook[msg.content]:
-                treated |= h.run(msg)
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.ask_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.ask_rgxp:
             if hook.is_matching(msg.content, msg.channel):
-                treated |= hook.run(msg)
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.ask_rgxp, hook)
 
         # Finally, treat default hooks if not catched before
         for hook in self.ask_default:
             if treated:
                 break
-            treated |= hook.run(msg)
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
             self.check_rest_times(self.ask_default, hook)
 
+        return treated
 
     def treat_answer(self, msg):
         """Treat a normal message"""
-        treated = False
+        treated = list()
 
         # First, treat simple hook
         if msg.content in self.msg_hook:
             for h in self.msg_hook[msg.content]:
-                treated |= h.run(msg)
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.msg_hook, h)
 
         # Then, treat regexp based hook
         for hook in self.msg_rgxp:
             if hook.is_matching(msg.content, msg.channel):
-                treated |= hook.run(msg)
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
                 self.check_rest_times(self.msg_rgxp, hook)
 
         # Finally, treat default hooks if not catched before
         for hook in self.msg_default:
-            if treated:
+            if len(treated) > 0:
                 break
-            treated |= hook.run(msg)
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
             self.check_rest_times(self.msg_default, hook)
+
+        return treated
 
 
 class Hook:

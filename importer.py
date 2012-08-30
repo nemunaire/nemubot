@@ -23,6 +23,7 @@ import os
 import sys
 
 from hooks import Hook
+import response
 import xmlparser
 
 class ModuleFinder(Finder):
@@ -155,6 +156,9 @@ class ModuleLoader(SourceLoader):
         module.CONF = self.config
         module.has_access = lambda msg: mod_has_access(module,
                                                        module.CONF, msg)
+
+        module.ModuleState = xmlparser.module_state.ModuleState
+        module.Response = response.Response
 
         # Load dependancies
         if module.CONF is not None and module.CONF.hasNode("dependson"):
