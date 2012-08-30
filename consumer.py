@@ -22,6 +22,7 @@ import traceback
 import sys
 
 from message import Message
+from response import Response
 
 class Consumer(threading.Thread):
     def __init__(self, context):
@@ -50,8 +51,9 @@ class Consumer(threading.Thread):
                 if res is not None:
                     if isinstance(res, list):
                         for r in res:
-                            srv.send_response(r)
-                    else:
+                            if isinstance(r, Response):
+                                srv.send_response(r)
+                    elif isinstance(res, Response):
                         srv.send_response(res)
 
         except queue.Empty:
