@@ -6,8 +6,6 @@ from datetime import datetime
 
 nemubotversion = 3.2
 
-from xmlparser.node import ModuleState
-
 CONTEXT = None
 
 def load(context):
@@ -60,12 +58,10 @@ def get_variable(name, msg=None):
 def cmd_set(msg):
     if len (msg.cmd) > 2:
         set_variable(msg.cmd[1], " ".join(msg.cmd[2:]))
-        msg.send_snd("Variable $%s définie." % msg.cmd[1])
+        res = Response(msg.sender, "Variable $%s définie." % msg.cmd[1])
         save()
-        return True
-    else:
-        msg.send_snd("!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
-    return False
+        return res
+    return Response(msg.sender, "!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
 
 
 def treat_variables(msg):
@@ -89,18 +85,18 @@ def parseanswer(msg):
 
 
 def parseask(msg):
-  global ALIAS
-  if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:
-    result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.content)
-    if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
-      msg.send_snd("Cet alias est déjà défini.")
-    else:
-      alias = ModuleState("alias")
-      alias["alias"] = result.group(1)
-      alias["origin"] = result.group(3)
-      alias["creator"] = msg.nick
-      DATAS.getNode("aliases").addChild(alias)
-      msg.send_snd("Nouvel alias %s défini avec succès." % result.group(1))
-      save()
-    return True
-  return False
+    global ALIAS
+    if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:
+        result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.content)
+        if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
+            return Response(msg.sender, "Cet alias est déjà défini.")
+        else:
+            alias = ModuleState("alias")
+            alias["alias"] = result.group(1)
+            alias["origin"] = result.group(3)
+            alias["creator"] = msg.nick
+            DATAS.getNode("aliases").addChild(alias)
+            res = Response(msg.sender, "Nouvel alias %s défini avec succès." % result.group(1))
+            save()
+            return res
+    return False

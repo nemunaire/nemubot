@@ -13,5 +13,4 @@
   <message type="cmd" name="new-year" call="cmd_newyear" />
   <message type="cmd" name="newyear" call="cmd_newyear" />
   <message type="cmd" name="ny" call="cmd_newyear" />
-  <message type="cmd" name="start" call="start_countdown" />
 </nemubotmodule>

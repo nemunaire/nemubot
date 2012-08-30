@@ -74,24 +74,33 @@ def print_station_status(msg, station):
     """Send message with information about the given station"""
     (available, free) = station_status(station)
     if available is not None and free is not None:
-        msg.send_chn("%s: à la station %s : %d vélib et %d points d'attache disponibles." % (msg.nick, station, available, free))
+        return Response(msg.sender,
+                        "%s: à la station %s : %d vélib et %d points d'attache"
+                        " disponibles." % (msg.nick, station, available, free),
+                        msg.channel)
     else:
-        msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
+        return Response(msg.sender,
+                        "%s: station %s inconnue." % (msg.nick, station),
+                        msg.channel)
 
 def ask_stations(msg):
     """Hook entry from !velib"""
     global DATAS
     if len(msg.cmd) > 5:
-        msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
+        return Response(msg.sender,
+                        "Demande-moi moins de stations à la fois.",
+                        msg.channel, nick=msg.nick)
     elif len(msg.cmd) > 1:
         for station in msg.cmd[1:]:
             if re.match("^[0-9]{4,5}$", station):
-                print_station_status(msg, station)
+                return print_station_status(msg, station)
             elif station in DATAS.index:
-                print_station_status(msg, DATAS.index[station]["number"])
+                return print_station_status(msg, DATAS.index[station]["number"])
             else:
-                msg.send_chn("%s: numéro de station invalide." % (msg.nick))
-        return True
+                return Response(msg.sender,
+                                "numéro de station invalide.",
+                                msg.channel, nick=msg.nick)
     else:
-        msg.send_chn("%s: Pour quelle station ?" % msg.nick)
-    return False
+        return Response(msg.sender,
+                        "Pour quelle station ?",
+                        msg.channel, nick=msg.nick)

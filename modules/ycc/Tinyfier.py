@@ -15,14 +15,14 @@ class Tinyfier(threading.Thread):
     if status == http.client.OK and len(page) < 100:
       srv = re.match(".*((ht|f)tps?://|www.)([^/ ]+).*", self.url)
       if srv is None:
-        self.msg.send_chn("Mauvaise URL : %s" % (self.url))
+        self.msg.srv.send_response(Response(self.msg.sender, "Mauvaise URL : %s" % (self.url), self.msg.channel))
       else:
-        self.msg.send_chn("URL pour %s : %s" % (srv.group(3), page.decode()))
+        self.msg.srv.send_response(Response(self.msg.sender, "URL pour %s : %s" % (srv.group(3), page.decode()), self.msg.channel))
     else:
       print ("ERROR: ycc.fr seem down?")
-      self.msg.send_chn("La situation est embarassante, il semblerait que YCC soit down :(")
+      self.msg.srv.send_response(Response(self.msg.sender, "La situation est embarassante, il semblerait que YCC soit down :(", self.msg.channel))
 
-def getPage(s, p): 
+def getPage(s, p):
   conn = http.client.HTTPConnection(s, timeout=10)
   try:
     conn.request("GET", p)

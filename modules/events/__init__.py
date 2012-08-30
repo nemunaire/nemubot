@@ -7,12 +7,12 @@ from datetime import timedelta
 from datetime import datetime
 import time
 import threading
+import traceback
 
 nemubotversion = 3.2
 
 from event import ModuleEvent
 from hooks import Hook
-from xmlparser.node import ModuleState
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -33,13 +33,14 @@ def load(context):
         if DATAS.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
             event.end = DATAS.index[evt].getDate("end")
-            context.add_event(event)
+            DATAS.index[evt]["id"] = context.add_event(event)
+
 
 def fini(strend):
     for server in CONTEXT.servers.keys():
         if not strend.hasAttribute("server") or server == strend["server"]:
             if strend["channel"] == CONTEXT.servers[server].nick:
-                CONTEXT.servers[server].send_msg_usr(strend["proprio"], "%s: %s arrivé à échéance." % (strend["proprio"], strend["name"]))
+                CONTEXT.servers[server].send_msg_usr(strend["sender"], "%s: %s arrivé à échéance." % (strend["proprio"], strend["name"]))
             else:
                 CONTEXT.servers[server].send_msg(strend["channel"], "%s: %s arrivé à échéance." % (strend["proprio"], strend["name"]))
     DATAS.delChild(DATAS.index[strend["name"]])
@@ -48,30 +49,34 @@ def fini(strend):
 def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
-    msg.send_chn (
-        msg.countdown_format (ndate,
-                              "Il reste %s avant le week-end, courage ;)",
-                              "Youhou, on est en week-end depuis %s."))
+    return Response(msg.sender,
+        msg.countdown_format(ndate,
+                             "Il reste %s avant le week-end, courage ;)",
+                             "Youhou, on est en week-end depuis %s."),
+                    channel=msg.channel)
 
 def cmd_newyear(msg):
-    msg.send_chn (
-        msg.countdown_format (datetime(datetime.today().year + 1, 1, 1, 0, 0, 1),
-                              "Il reste %s avant la nouvelle année.",
-                              "Nous faisons déjà la fête depuis %s !"))
+    return Response(msg.sender,
+        msg.countdown_format(datetime(datetime.today().year + 1, 1, 1, 0, 0, 1),
+                             "Il reste %s avant la nouvelle année.",
+                             "Nous faisons déjà la fête depuis %s !"),
+                    channel=msg.channel)
 
 def cmd_vacances(msg):
-    msg.send_chn (
-        msg.countdown_format (datetime(2012, 7, 30, 18, 0, 1),
-                              "Il reste %s avant les vacances :)",
-                              "Profitons, c'est les vacances depuis %s."))
+    return Response(msg.sender,
+        msg.countdown_format(datetime(2013, 7, 30, 18, 0, 1),
+                             "Il reste %s avant les vacances :)",
+                             "Profitons, c'est les vacances depuis %s."),
+                    channel=msg.channel)
 
 def start_countdown(msg):
-    if msg.cmd[1] not in DATAS:
+    if msg.cmd[1] not in DATAS.index:
 
         strnd = ModuleState("strend")
         strnd["server"] = msg.srv.id
         strnd["channel"] = msg.channel
         strnd["proprio"] = msg.nick
+        strnd["sender"] = msg.sender
         strnd["start"] = datetime.now()
         strnd["name"] = msg.cmd[1]
         DATAS.addChild(strnd)
@@ -91,30 +96,32 @@ def start_countdown(msg):
                     else:
                         strnd["end"] = datetime.now() + timedelta(seconds=int(result.group(1)))
                     evt.end = strnd.getDate("end")
-                    CONTEXT.add_event(evt)
-                    msg.send_snd ("%s commencé le %s et se terminera le %s."% (msg.cmd[1], datetime.now(), strnd.getDate("end")))
+                    strnd["id"] = CONTEXT.add_event(evt)
+                    save()
+                    return Response(msg.sender, "%s commencé le %s et se terminera le %s."% (msg.cmd[1], datetime.now(), strnd.getDate("end")))
                 except:
-                    msg.send_snd ("Impossible de définir la fin de %s."% (msg.cmd[1]))
-                    msg.send_snd ("%s commencé le %s."% (msg.cmd[1], datetime.now()))
-            else:
-                msg.send_snd ("%s commencé le %s"% (msg.cmd[1], datetime.now()))
+                    save()
+                    return Response(msg.sender, "Impossible de définir la fin de %s.\n%s commencé le %s."% (msg.cmd[1], msg.cmd[1], datetime.now()))
         save()
+        return Response(msg.sender, "%s commencé le %s"% (msg.cmd[1], datetime.now()))
     else:
-        msg.send_snd ("%s existe déjà."% (msg.cmd[1]))
-    return True
+        return Response(msg.sender, "%s existe déjà."% (msg.cmd[1]))
 
 def end_countdown(msg):
     if msg.cmd[1] in DATAS.index:
-        msg.send_chn ("%s a duré %s." % (msg.cmd[1], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))))
+        res = Response(msg.sender,
+                       "%s a duré %s." % (msg.cmd[1],
+                                          msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))),
+                       channel=msg.channel)
         if DATAS.index[msg.cmd[1]]["proprio"] == msg.nick or (msg.cmd[0] == "forceend" and msg.nick == msg.srv.owner):
+            CONTEXT.del_event(DATAS.index[msg.cmd[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmd[1]])
-            Manager.newStrendEvt.set()
             save()
         else:
-            msg.send_snd ("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmd[1], DATAS.index[msg.cmd[1]]["proprio"]))
+            res.append_message("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmd[1], DATAS.index[msg.cmd[1]]["proprio"]))
+        return res
     else:
-        msg.send_snd ("%s n'est pas un compteur connu."% (msg.cmd[1]))
-    return True
+        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmd[1]))
 
 def liste(msg):
     msg.send_snd ("Compteurs connus : %s." % ", ".join(DATAS.index.keys()))
@@ -123,14 +130,12 @@ def parseanswer(msg):
     if msg.cmd[0] in DATAS.index:
         if DATAS.index[msg.cmd[0]].name == "strend":
             if DATAS.index[msg.cmd[0]].hasAttribute("end"):
-                msg.send_chn ("%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())))
+                return Response(msg.sender, "%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())), channel=msg.channel)
             else:
-                msg.send_chn ("%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))))
+                return Response(msg.sender, "%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))), channel=msg.channel)
         else:
-            msg.send_chn (msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]))
             save()
-        return True
-    return False
+            return Response(msg.sender, msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]), channel=msg.channel)
 
 def parseask(msg):
   msgl = msg.content.lower()
@@ -141,7 +146,7 @@ def parseask(msg):
       if texts is not None and texts.group (3) is not None:
         extDate = msg.extractDate ()
         if extDate is None or extDate == "":
-          msg.send_snd ("La date de l'événement est invalide...")
+            return Response(msg.sender, "La date de l'événement est invalide...", channel=msg.channel)
         else:
           if texts.group (1) is not None and (texts.group (1) == "après" or texts.group (1) == "apres" or texts.group (1) == "after"):
             msg_after = texts.group (2)
@@ -155,29 +160,35 @@ def parseask(msg):
             evt["server"] = msg.srv.id
             evt["channel"] = msg.channel
             evt["proprio"] = msg.nick
+            evt["sender"] = msg.sender
             evt["name"] = name.group(1)
             evt["start"] = extDate
             evt["msg_after"] = msg_after
             evt["msg_before"] = msg_before
             DATAS.addChild(evt)
             save()
-            msg.send_snd ("Nouvel événement !%s ajouté avec succès."%name.group (1))
+            return Response(msg.sender,
+                            "Nouvel événement !%s ajouté avec succès." % name.group(1),
+                            msg.channel)
           else:
-            msg.send_snd ("Pour que l'événement soit valide, ajouter %s à l'endroit où vous voulez que soit ajouté le compte à rebours.")
+              return Response(msg.sender,
+                              "Pour que l'événement soit valide, ajouter %s à"
+                              " l'endroit où vous voulez que soit ajouté le"
+                              " compte à rebours.")
       elif texts is not None and texts.group (2) is not None:
         evt = ModuleState("event")
         evt["server"] = msg.srv.id
         evt["channel"] = msg.channel
         evt["proprio"] = msg.nick
+        evt["sender"] = msg.sender
         evt["name"] = name.group(1)
         evt["msg_before"] = texts.group (2)
         DATAS.addChild(evt)
         save()
-        msg.send_snd ("Nouvelle commande !%s ajoutée avec succès."%name.group (1))
+        return Response(msg.sender, "Nouvelle commande !%s ajoutée avec succès." % name.group(1))
       else:
-        msg.send_snd ("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")
+          return Response(msg.sender, "Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")
     elif name is None:
-      msg.send_snd ("Veuillez attribuer une commande à l'événement.")
+        return Response(msg.sender, "Veuillez attribuer une commande à l'événement.")
     else:
-      msg.send_snd ("Un événement portant ce nom existe déjà.")
-  return False
+        return Response(msg.sender, "Un événement portant ce nom existe déjà.")

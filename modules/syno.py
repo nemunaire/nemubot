@@ -24,12 +24,18 @@ def cmd_syno(msg):
         for word in msg.cmd[1:]:
             synos = get_synos(word)
             if synos is None:
-                msg.send_chn("Une erreur s'est produite durant la recherche d'un synonyme de %s" % word)
+                return Response(msg.sender,
+                                "Une erreur s'est produite durant la recherche"
+                                " d'un synonyme de %s" % word, msg.channel)
             elif len(synos) > 0:
-                msg.send_chn("Synonymes de %s : %s" % (word, ', '.join(synos)))
-                return True
+                return Response(msg.sender,
+                                "Synonymes de %s : %s" %
+                                (word, ', '.join(synos)),
+                                msg.channel)
             else:
-                msg.send_chn("Aucun synonymes de %s n'a été trouvé" % word)
+                return Response(msg.sender,
+                                "Aucun synonymes de %s n'a été trouvé" % word,
+                                msg.channel)
     return False
 
 

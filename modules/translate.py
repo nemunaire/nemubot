@@ -47,32 +47,36 @@ def cmd_translate(msg):
     if res == http.client.OK:
         wres = json.loads(page.decode())
         if "Error" in wres:
-            msg.send_chn(wres["Note"])
+            return Response(msg.sender, wres["Note"], msg.channel)
         else:
             start = "Traduction de %s : "%' '.join(msg.cmd[startWord:])
             if "Entries" in wres["term0"]:
                 if "SecondTranslation" in wres["term0"]["Entries"]["0"]:
-                    msg.send_chn(start +
-                                 wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"] +
-                                 " ; " +
-                                 wres["term0"]["Entries"]["0"]["SecondTranslation"]["term"])
+                    return Response(msg.sender, start +
+                                    wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"] +
+                                    " ; " +
+                                    wres["term0"]["Entries"]["0"]["SecondTranslation"]["term"],
+                                    msg.channel)
                 else:
-                    msg.send_chn(start +
-                                 wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"])
+                    return Response(msg.sender, start +
+                                    wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"],
+                                    msg.channel)
             elif "PrincipalTranslations" in wres["term0"]:
                 if "1" in wres["term0"]["PrincipalTranslations"]:
-                    msg.send_chn(start +
-                                 wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"] +
-                                 " ; " +
-                                 wres["term0"]["PrincipalTranslations"]["1"]["FirstTranslation"]["term"])
+                    return Response(msg.sender, start +
+                                    wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"] +
+                                    " ; " +
+                                    wres["term0"]["PrincipalTranslations"]["1"]["FirstTranslation"]["term"],
+                                    msg.channel)
                 else:
-                    msg.send_chn(start +
-                                 wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"])
+                    return Response(msg.sender, start +
+                                    wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"],
+                                    msg.channel)
             else:
-                msg.send_chn("Une erreur s'est produite durant la recherche"
-                             " d'une traduction de %s"
-                             % ' '.join(msg.cmd[startWord:]))
-    return True
+                return Response(msg.sender, "Une erreur s'est produite durant la recherche"
+                                " d'une traduction de %s"
+                                % ' '.join(msg.cmd[startWord:]),
+                                msg.channel)
 
 
 def getPage(terms, langfrom="fr", langto="en"):
