@@ -26,6 +26,8 @@ import event
 from networkbot import NetworkBot
 from server import Server
 
+ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 class Bot(BotCaps):
     def __init__(self, servers=dict(), modules=dict(), mp=list()):
         BotCaps.__init__(self, 3.2, "3.2-dev")
@@ -52,7 +54,11 @@ class Bot(BotCaps):
 
 
     def add_event(self, evt):
-        """Register an event"""
+        """Register an event and return its identifiant for futur update"""
+        # Find ID
+        now = datetime.now()
+        evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52], now.month, now.day, ID_letters[now.microsecond % 42], now.hour, now.minute, ID_letters[now.microsecond % 32], now.second)
+
         # Add the event in place
         t = evt.current
         i = 0
@@ -62,6 +68,16 @@ class Bot(BotCaps):
         self.events.insert(i, evt)
         if i == 0:
             self.update_timer()
+
+        return evt.id
+
+    def del_event(self, id):
+        """Find and remove an event from list"""
+        for evt in self.events:
+            if evt.id == id:
+                self.events.remove(evt)
+                return True
+        return False
 
     def update_timer(self):
         """Relaunch the timer to end with the closest event"""
