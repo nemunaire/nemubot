@@ -24,6 +24,7 @@ import time
 import credits
 from credits import Credits
 from DCC import DCC
+from response import Response
 import xmlparser
 
 CREDITS = {}
@@ -121,97 +122,73 @@ class Message:
 
   @property
   def is_owner(self):
-    return self.nick == self.srv.owner
-
-
-  def send_msg(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
-    if CREDITS[self.realname].speak():
-      self.srv.send_msg_verified (self.sender, channel, msg, cmd, endl)
-
-  def send_global(self, msg, cmd = "PRIVMSG", endl = "\r\n"):
-    if CREDITS[self.realname].speak():
-      self.srv.send_global (msg, cmd, endl)
-
-  def send_chn(self, msg):
-    """Send msg on the same channel as receive message"""
-    if (self.srv.isDCC() and self.channel == self.srv.nick) or CREDITS[self.realname].speak():
-      if self.channel == self.srv.nick:
-        self.send_snd (msg)
-      else:
-        self.srv.send_msg (self.channel, msg)
-
-  def send_snd(self, msg):
-    """Send msg to the person who send the original message"""
-    if self.srv.isDCC(self.sender) or CREDITS[self.realname].speak():
-      self.srv.send_msg_usr (self.sender, msg)
-
+      return self.nick == self.srv.owner
 
   def authorize(self):
-    if self.srv.isDCC(self.sender):
-      return True
-    elif self.realname not in CREDITS:
-      CREDITS[self.realname] = Credits(self.realname)
-    elif self.content[0] == '`':
-      return True
-    elif not CREDITS[self.realname].ask():
-      return False
-    return self.srv.accepted_channel(self.channel)
+      """Is nemubot listening for the sender on this channel?"""
+      if self.srv.isDCC(self.sender):
+          return True
+      elif self.realname not in CREDITS:
+          CREDITS[self.realname] = Credits(self.realname)
+      elif self.content[0] == '`':
+          return True
+      elif not CREDITS[self.realname].ask():
+          return False
+      return self.srv.accepted_channel(self.channel)
 
   def treat(self, hooks):
-    if self.cmd == "PING":
-      self.pong ()
-    elif self.cmd == "PRIVMSG" and self.ctcp:
-      self.parsectcp ()
-    elif self.cmd == "PRIVMSG" and self.authorize():
-      self.parsemsg (hooks)
-    elif self.channel in self.srv.channels:
-      if self.cmd == "353":
-        self.srv.channels[self.channel].parse353(self)
-      elif self.cmd == "332":
-        self.srv.channels[self.channel].parse332(self)
-      elif self.cmd == "MODE":
-        self.srv.channels[self.channel].mode(self)
-      elif self.cmd == "JOIN":
-        self.srv.channels[self.channel].join(self.nick)
-      elif self.cmd == "PART":
-        self.srv.channels[self.channel].part(self.nick)
-      elif self.cmd == "TOPIC":
-        self.srv.channels[self.channel].topic = self.content
-    elif self.cmd == "NICK":
-      for chn in self.srv.channels.keys():
-        self.srv.channels[chn].nick(self.nick, self.content)
-    elif self.cmd == "QUIT":
-      for chn in self.srv.channels.keys():
-        self.srv.channels[chn].part(self.nick)
-
-
-  def pong (self):
-    self.srv.s.send(("PONG %s\r\n" % self.content).encode ())
-
+      """Parse and treat the message"""
+      if self.cmd == "PING":
+          self.srv.send_pong(self.content)
+      elif self.cmd == "PRIVMSG" and self.ctcp:
+          self.parsectcp()
+      elif self.cmd == "PRIVMSG" and self.authorize():
+          return self.parsemsg (hooks)
+      elif self.channel in self.srv.channels:
+          if self.cmd == "353":
+              self.srv.channels[self.channel].parse353(self)
+          elif self.cmd == "332":
+              self.srv.channels[self.channel].parse332(self)
+          elif self.cmd == "MODE":
+              self.srv.channels[self.channel].mode(self)
+          elif self.cmd == "JOIN":
+              self.srv.channels[self.channel].join(self.nick)
+          elif self.cmd == "PART":
+              self.srv.channels[self.channel].part(self.nick)
+          elif self.cmd == "TOPIC":
+              self.srv.channels[self.channel].topic = self.content
+      elif self.cmd == "NICK":
+          for chn in self.srv.channels.keys():
+              self.srv.channels[chn].nick(self.nick, self.content)
+      elif self.cmd == "QUIT":
+          for chn in self.srv.channels.keys():
+              self.srv.channels[chn].part(self.nick)
+      return None
 
   def parsectcp(self):
-    if self.content == '\x01CLIENTINFO\x01':
-      self.srv.send_ctcp(self.sender, "CLIENTINFO TIME USERINFO VERSION CLIENTINFO")
-    elif self.content == '\x01TIME\x01':
-      self.srv.send_ctcp(self.sender, "TIME %s" % (datetime.now()))
-    elif self.content == '\x01USERINFO\x01':
-      self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
-    elif self.content == '\x01VERSION\x01':
-      self.srv.send_ctcp(self.sender, "VERSION nemubot v%s" % self.srv.context.version_txt)
-    elif self.content[:9] == '\x01DCC CHAT':
-      words = self.content[1:len(self.content) - 1].split(' ')
-      ip = self.srv.toIP(int(words[3]))
-      conn = DCC(self.srv, self.sender)
-      if conn.accept_user(ip, int(words[4])):
-        self.srv.dcc_clients[conn.sender] = conn
-        conn.send_dcc("Hello %s!" % conn.nick)
-      else:
-        print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
-    elif self.content == '\x01NEMUBOT\x01':
-      self.srv.send_ctcp(self.sender, "NEMUBOT %f" % self.srv.context.version)
-    elif self.content[:7] != '\x01ACTION':
-      print (self.content)
-      self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
+      """Parse CTCP requests"""
+      if self.content == '\x01CLIENTINFO\x01':
+          self.srv.send_ctcp(self.sender, "CLIENTINFO TIME USERINFO VERSION CLIENTINFO")
+      elif self.content == '\x01TIME\x01':
+          self.srv.send_ctcp(self.sender, "TIME %s" % (datetime.now()))
+      elif self.content == '\x01USERINFO\x01':
+          self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
+      elif self.content == '\x01VERSION\x01':
+          self.srv.send_ctcp(self.sender, "VERSION nemubot v%s" % self.srv.context.version_txt)
+      elif self.content[:9] == '\x01DCC CHAT':
+          words = self.content[1:len(self.content) - 1].split(' ')
+          ip = self.srv.toIP(int(words[3]))
+          conn = DCC(self.srv, self.sender)
+          if conn.accept_user(ip, int(words[4])):
+              self.srv.dcc_clients[conn.sender] = conn
+              conn.send_dcc("Hello %s!" % conn.nick)
+          else:
+              print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
+      elif self.content == '\x01NEMUBOT\x01':
+          self.srv.send_ctcp(self.sender, "NEMUBOT %f" % self.srv.context.version)
+      elif self.content[:7] != '\x01ACTION':
+          print (self.content)
+          self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
     if self.hooks is not None:
@@ -230,11 +207,11 @@ class Message:
       # Treat ping
       if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
                   messagel) is not None:
-          self.send_chn ("%s: pong"%(self.nick))
+          return Response(message="pong", channel=self.channel, nick=self.nick)
 
       # Ask hooks
       else:
-          hooks.treat_ask(self)
+          return hooks.treat_ask(self)
 
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
@@ -281,24 +258,33 @@ class Message:
             except AttributeError:
               continue
 
+      elif self.cmd[0] == "more":
+          if self.channel == self.srv.nick:
+              if self.nick in self.srv.moremessages:
+                  return self.srv.moremessages[self.nick]
+          else:
+              if self.channel in self.srv.moremessages:
+                  return self.srv.moremessages[self.channel]
+
       elif self.cmd[0] == "dcctest":
         print("dcctest for", self.sender)
         self.srv.send_dcc("Test DCC", self.sender)
       elif self.cmd[0] == "pvdcctest":
         print("dcctest")
-        self.send_snd("Test DCC")
+        return Response(message="Test DCC",  nick=self.nick)
       elif self.cmd[0] == "dccsendtest":
         print("dccsendtest")
         conn = DCC(self.srv, self.sender)
         conn.send_file("bot_sample.xml")
       else:
-          hooks.treat_cmd(self)
+          return hooks.treat_cmd(self)
 
     else:
-        hooks.treat_answer(self)
+        res = hooks.treat_answer(self)
         # Assume the message starts with nemubot:
-        if self.private:
-            hooks.treat_ask(self)
+        if res is None and self.private:
+            return hooks.treat_ask(self)
+        return res
 
 #  def parseOwnerCmd(self, cmd):
 

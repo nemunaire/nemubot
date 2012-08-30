@@ -46,6 +46,8 @@ class Server(threading.Thread):
         chan = channel.Channel(chn, self)
         self.channels[chan.name] = chan
 
+      self.moremessages = dict()
+
       threading.Thread.__init__(self)
 
     def isDCC(self, to=None):
@@ -69,13 +71,6 @@ class Server(threading.Thread):
     def password(self):
       if self.node.hasAttribute("password"):
         return self.node["password"]
-      else:
-        return None
-
-    @property
-    def partner(self):
-      if self.node.hasAttribute("partner"):
-        return self.node["partner"]
       else:
         return None
 
@@ -112,6 +107,21 @@ class Server(threading.Thread):
     def id(self):
         return self.host + ":" + str(self.port)
 
+    def send_pong(self, cnt):
+        self.s.send(("PONG %s\r\n" % cnt).encode ())
+
+    def send_response(self, res):
+        if res.channel is not None:
+            self.send_msg(res.channel, res.get_message())
+
+            if not res.alone:
+                self.moremessages[res.channel] = res
+        elif res.nick is not None:
+            self.send_msg_usr(res.nick, res.get_message())
+
+            if not res.alone:
+                self.moremessages[res.nick] = res
+
     def send_ctcp(self, to, msg, cmd = "NOTICE", endl = "\r\n"):
       """Send a message as CTCP response"""
       if msg is not None and to is not None:
@@ -142,10 +152,6 @@ class Server(threading.Thread):
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
                     else:
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
-
-    def send_msg_prtn(self, msg):
-        """Send a message to partner bot"""
-        self.send_msg_final(self.partner, msg)
 
     def send_msg_usr(self, user, msg):
         """Send a message to a user instead of a channel"""

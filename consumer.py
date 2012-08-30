@@ -37,13 +37,22 @@ class Consumer(threading.Thread):
                 # Create, parse and treat the message
                 try:
                     msg = Message(srv, raw, time, prvt)
-                    msg.treat(self.context.hooks)
+                    res = msg.treat(self.context.hooks)
                 except:
                     print ("\033[1;31mERROR:\033[0m occurred during the "
                            "processing of the message: %s" % raw)
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     traceback.print_exception(exc_type, exc_value,
                                               exc_traceback)
+                    return
+
+                # Send message
+                if res is not None:
+                    if isinstance(res, list):
+                        for r in res:
+                            srv.send_response(r)
+                    else:
+                        srv.send_response(res)
 
         except queue.Empty:
             pass
