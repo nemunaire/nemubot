@@ -35,31 +35,30 @@ def extractInformation(msg,
       station = stationname
       stops += time+" direction "+direction+"; "
     if len(stops) > 0:
-      msg.send_chn("%s: Prochains passages du %s ligne %s à l'arrêt %s: %s" %
-          (msg.nick, transport, line, stationname, stops))
+      return Response(msg.sender, "Prochains passages du %s ligne %s à l'arrêt %s: %s" %
+          (transport, line, stationname, stops), msg.channel, msg.nick)
     else:
-      msg.send_chn("%s: La station `%s' ne semble pas exister sur le %s ligne %s."
-          % (msg.nick, station, transport, line))
+      return Response(msg.sender, "La station `%s' ne semble pas exister sur le %s ligne %s."
+          % (station, transport, line), msg.channel, msg.nick)
   else:
     stations = ratp.getAllStations(transport, line)
     if len(stations) > 0:
       s = ""
       for name in stations:
         s += name + "; "
-      msg.send_chn("%s: Stations: %s." % (msg.nick, s))
+      return Response(msg.sender, "Stations: %s." % s, msg.channel, msg.nick)
       return 0
     else:
-      msg.send_chn("%s: Aucune station trouvée." % msg.nick)
+      return Response(msg.sender, "Aucune station trouvée.", msg.channel, msg.nick)
 
 def ask_ratp(msg):
     """Hook entry from !ratp"""
     global DATAS
     if len(msg.cmd) == 4:
-        extractInformation(msg, msg.cmd[1], msg.cmd[2], msg.cmd[3])
-        return True
+        return extractInformation(msg, msg.cmd[1], msg.cmd[2], msg.cmd[3])
     elif len(msg.cmd) == 3:
-        extractInformation(msg, msg.cmd[1], msg.cmd[2], None)
+        return extractInformation(msg, msg.cmd[1], msg.cmd[2], None)
     else:
-        msg.send_chn("%s: Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module." % msg.nick)
+        return Response(msg.sender, "Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module.", msg.channel, msg.nick)
     return False
 
