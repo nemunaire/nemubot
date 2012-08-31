@@ -15,14 +15,10 @@ LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
 
 def load(context):
     from hooks import Hook
-    context.hooks.add_hook(context.hooks.cmd_hook,
-                           Hook(cmd_translate, "translate"))
-    context.hooks.add_hook(context.hooks.cmd_hook,
-                           Hook(cmd_translate, "traduction"))
-    context.hooks.add_hook(context.hooks.cmd_hook,
-                           Hook(cmd_translate, "traduit"))
-    context.hooks.add_hook(context.hooks.cmd_hook,
-                           Hook(cmd_translate, "traduire"))
+    context.hooks.add_hook("cmd_hook", Hook(cmd_translate, "translate"))
+    context.hooks.add_hook("cmd_hook", Hook(cmd_translate, "traduction"))
+    context.hooks.add_hook("cmd_hook", Hook(cmd_translate, "traduit"))
+    context.hooks.add_hook("cmd_hook", Hook(cmd_translate, "traduire"))
 
 
 def cmd_translate(msg):
