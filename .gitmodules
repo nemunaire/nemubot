@@ -1,0 +1,3 @@
+[submodule "modules/nextstop/external"]
+	path = modules/nextstop/external
+	url = git@github.com:nbr23/NextStop.git
