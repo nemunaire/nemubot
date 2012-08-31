@@ -158,9 +158,9 @@ class Bot(BotCaps):
         return False
 
 
-    def receive_message(self, srv, raw_msg, private = False):
+    def receive_message(self, srv, raw_msg, private=False, data=None):
         """Queued the message for treatment"""
-        self.msg_queue.put_nowait((srv, raw_msg, datetime.now(), private))
+        self.msg_queue.put_nowait((srv, raw_msg, datetime.now(), private, data))
 
         # Launch a new thread if necessary
         if self.msg_queue.qsize() > self.msg_thrd_size:

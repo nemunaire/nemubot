@@ -110,7 +110,7 @@ class Server(threading.Thread):
     def send_pong(self, cnt):
         self.s.send(("PONG %s\r\n" % cnt).encode ())
 
-    def send_response(self, res):
+    def send_response(self, res, origin):
         if res.channel is not None and res.channel != self.nick:
             self.send_msg(res.channel, res.get_message())
 

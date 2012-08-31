@@ -33,7 +33,7 @@ class Consumer(threading.Thread):
     def run(self):
         try:
             while not self.stop:
-                (srv, raw, time, prvt) = self.context.msg_queue.get(True, 20)
+                (srv, raw, time, prvt, data) = self.context.msg_queue.get(True, 20)
 
                 # Create, parse and treat the message
                 try:
@@ -52,9 +52,9 @@ class Consumer(threading.Thread):
                     if isinstance(res, list):
                         for r in res:
                             if isinstance(r, Response):
-                                srv.send_response(r)
+                                srv.send_response(r, data)
                     elif isinstance(res, Response):
-                        srv.send_response(res)
+                        srv.send_response(res, data)
 
         except queue.Empty:
             pass
