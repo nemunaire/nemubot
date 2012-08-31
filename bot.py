@@ -20,17 +20,19 @@ from datetime import datetime
 from queue import Queue
 import threading
 
-from botcaps import BotCaps
 from consumer import Consumer
 import event
+import hooks
 from networkbot import NetworkBot
 from server import Server
 
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-class Bot(BotCaps):
+class Bot:
     def __init__(self, servers=dict(), modules=dict(), mp=list()):
-        BotCaps.__init__(self, 3.2, "3.2-dev")
+        # Bot general informations
+        self.version     = 3.2
+        self.version_txt = "3.2-dev"
 
         # Keep global context: servers and modules
         self.servers = servers
@@ -44,8 +46,12 @@ class Bot(BotCaps):
         self.events      = list()
         self.event_timer = None
 
+        # Own hooks
+        self.hooks       = hooks.MessagesHook(self)
+
         # Other known bots, making a bots network
         self.network = dict()
+        self.hooks_cache = dict()
 
         # Messages to be treated
         self.msg_queue     = Queue()
@@ -193,6 +199,180 @@ class Bot(BotCaps):
         k = list(self.servers.keys())
         for srv in k:
             self.servers[srv].disconnect()
+
+# Hooks cache
+
+    def create_cache(self, name):
+        if name not in self.hooks_cache:
+            if isinstance(self.hooks.__dict__[name], list):
+                self.hooks_cache[name] = list()
+
+                # Start by adding locals hooks
+                for h in self.hooks.__dict__[name]:
+                    tpl = (h, 0, self.hooks.__dict__[name])
+                    self.hooks_cache[name].append(tpl)
+
+                # Now, add extermal hooks
+                level = 0
+                while level == 0 or lvl_exist:
+                    lvl_exist = False
+                    for ext in self.network:
+                        if len(self.network[ext].hooks) > level:
+                            lvl_exist = True
+                            for h in self.network[ext].hooks[level].__dict__[name]:
+                                if h not in self.hooks_cache[name]:
+                                    self.hooks_cache[name].append((h, level + 1,
+                                                                   self.network[ext].hooks[level].__dict__[name]))
+                    level += 1
+
+            elif isinstance(self.hooks.__dict__[name], dict):
+                self.hooks_cache[name] = dict()
+
+                # Start by adding locals hooks
+                for h in self.hooks.__dict__[name]:
+                    self.hooks_cache[name][h] = (self.hooks.__dict__[name][h], 0,
+                                                 self.hooks.__dict__[name])
+
+                # Now, add extermal hooks
+                level = 0
+                while level == 0 or lvl_exist:
+                    lvl_exist = False
+                    for ext in self.network:
+                        if len(self.network[ext].hooks) > level:
+                            lvl_exist = True
+                            for h in self.network[ext].hooks[level].__dict__[name]:
+                                if h not in self.hooks_cache[name]:
+                                    self.hooks_cache[name][h] = (self.network[ext].hooks[level].__dict__[name][h], level + 1, self.network[ext].hooks[level].__dict__[name])
+                    level += 1
+
+            else:
+                raise Exception(name + " hook type unrecognized")
+
+        return self.hooks_cache[name]
+
+# Treatment
+
+    def check_rest_times(self, store, hook):
+        """Remove from store the hook if it has been executed given time"""
+        if hook.times == 0:
+            if isinstance(store, dict):
+                store[hook.name].remove(hook)
+                if len(store) == 0:
+                    del store[hook.name]
+            elif isinstance(store, list):
+                store.remove(hook)
+
+    def treat_pre(self, msg):
+        """Treat a message before all other treatment"""
+        for h, lvl, store in self.create_cache("all_pre"):
+            h.run(msg)
+            self.check_rest_times(store, h)
+
+
+    def treat_cmd(self, msg):
+        """Treat a command message"""
+        treated = list()
+
+        # First, treat simple hook
+        cmd_hook = self.create_cache("cmd_hook")
+        if msg.cmd[0] in cmd_hook:
+            (hks, lvl, store) = cmd_hook[msg.cmd[0]]
+            for h in hks:
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, h)
+
+        # Then, treat regexp based hook
+        cmd_rgxp = self.create_cache("cmd_rgxp")
+        for hook, lvl, store in cmd_rgxp:
+            if hook.is_matching(msg.cmd[0], msg.channel):
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, hook)
+
+        # Finally, treat default hooks if not catched before
+        cmd_default = self.create_cache("cmd_default")
+        for hook, lvl, store in cmd_default:
+            if treated:
+                break
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
+            self.check_rest_times(store, hook)
+
+        return treated
+
+    def treat_ask(self, msg):
+        """Treat an ask message"""
+        treated = list()
+
+        # First, treat simple hook
+        ask_hook = self.create_cache("ask_hook")
+        if msg.content in ask_hook:
+            hks, lvl, store = ask_hook[msg.content]
+            for h in hks:
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, h)
+
+        # Then, treat regexp based hook
+        ask_rgxp = self.create_cache("ask_rgxp")
+        for hook, lvl, store in ask_rgxp:
+            if hook.is_matching(msg.content, msg.channel):
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, hook)
+
+        # Finally, treat default hooks if not catched before
+        ask_default = self.create_cache("ask_default")
+        for hook, lvl, store in ask_default:
+            if treated:
+                break
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
+            self.check_rest_times(store, hook)
+
+        return treated
+
+    def treat_answer(self, msg):
+        """Treat a normal message"""
+        treated = list()
+
+        # First, treat simple hook
+        msg_hook = self.create_cache("msg_hook")
+        if msg.content in msg_hook:
+            hks, lvl, store = msg_hook[msg.content]
+            for h in hks:
+                res = h.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, h)
+
+        # Then, treat regexp based hook
+        msg_rgxp = self.create_cache("msg_rgxp")
+        for hook, lvl, store in msg_rgxp:
+            if hook.is_matching(msg.content, msg.channel):
+                res = hook.run(msg)
+                if res is not None and res != False:
+                    treated.append(res)
+                self.check_rest_times(store, hook)
+
+        # Finally, treat default hooks if not catched before
+        msg_default = self.create_cache("msg_default")
+        for hook, lvl, store in msg_default:
+            if len(treated) > 0:
+                break
+            res = hook.run(msg)
+            if res is not None and res != False:
+                treated.append(res)
+            self.check_rest_times(store, hook)
+
+        return treated
 
 
 def hotswap(bak):

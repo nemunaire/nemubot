@@ -38,7 +38,7 @@ class Consumer(threading.Thread):
                 # Create, parse and treat the message
                 try:
                     msg = Message(srv, raw, time, prvt)
-                    res = msg.treat(self.context.hooks)
+                    res = msg.treat()
                 except:
                     print ("\033[1;31mERROR:\033[0m occurred during the "
                            "processing of the message: %s" % raw)
@@ -55,6 +55,9 @@ class Consumer(threading.Thread):
                                 srv.send_response(r, data)
                     elif isinstance(res, Response):
                         srv.send_response(res, data)
+
+                # Inform that the message has been treated
+                srv.msg_treated(data)
 
         except queue.Empty:
             pass

@@ -43,6 +43,7 @@ def save():
 
 class Message:
   def __init__ (self, srv, line, timestamp, private = False):
+    self.raw = line
     self.srv = srv
     self.time = timestamp
     self.channel = None
@@ -136,14 +137,14 @@ class Message:
           return False
       return self.srv.accepted_channel(self.channel)
 
-  def treat(self, hooks):
+  def treat(self):
       """Parse and treat the message"""
       if self.cmd == "PING":
           self.srv.send_pong(self.content)
       elif self.cmd == "PRIVMSG" and self.ctcp:
           self.parsectcp()
       elif self.cmd == "PRIVMSG" and self.authorize():
-          return self.parsemsg (hooks)
+          return self.parsemsg()
       elif self.channel in self.srv.channels:
           if self.cmd == "353":
               self.srv.channels[self.channel].parse353(self)
@@ -191,13 +192,10 @@ class Message:
           self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
   def reparsemsg(self):
-    if self.hooks is not None:
-      self.parsemsg(self.hooks)
-    else:
-      print ("Can't reparse message")
+      self.parsemsg()
 
-  def parsemsg (self, hooks):
-    hooks.treat_pre(self)
+  def parsemsg (self):
+    self.srv.context.treat_pre(self)
     #Treat all messages starting with 'nemubot:' as distinct commands
     if self.content.find("%s:"%self.srv.nick) == 0:
       #Remove the bot name
@@ -211,7 +209,7 @@ class Message:
 
       # Ask hooks
       else:
-          return hooks.treat_ask(self)
+          return self.srv.context.treat_ask(self)
 
     #Owner commands
     elif self.content[0] == '`' and self.sender == self.srv.owner:
@@ -236,7 +234,6 @@ class Message:
 
     #Messages stating with !
     elif self.content[0] == '!' and len(self.content) > 1:
-      self.hooks = hooks
       try:
         self.cmd = shlex.split(self.content[1:])
       except ValueError:
@@ -277,13 +274,13 @@ class Message:
         conn = DCC(self.srv, self.sender)
         conn.send_file("bot_sample.xml")
       else:
-          return hooks.treat_cmd(self)
+          return self.srv.context.treat_cmd(self)
 
     else:
-        res = hooks.treat_answer(self)
+        res = self.srv.context.treat_answer(self)
         # Assume the message starts with nemubot:
         if res is None and self.private:
-            return hooks.treat_ask(self)
+            return self.srv.context.treat_ask(self)
         return res
 
 #  def parseOwnerCmd(self, cmd):
