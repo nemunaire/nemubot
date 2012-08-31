@@ -7,9 +7,9 @@ import random
 import sys
 import time
 
-import module_states_file as xmlparser
+import xmlparser
 
-nemubotversion = 3.0
+nemubotversion = 3.2
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -22,7 +22,7 @@ from . import Question
 from . import Course
 from . import Session
 
-def load():
+def load(context):
   CONF.setIndex("name", "file")
 
 def buildSession(msg, categ = None, nbQuest = 10, channel = False):
@@ -77,7 +77,7 @@ def buildSession(msg, categ = None, nbQuest = 10, channel = False):
 
 
 def askQuestion(msg, bfr = ""):
-  Session.SESSIONS[msg.realname].askNext(bfr)
+  return Session.SESSIONS[msg.realname].askNext(bfr)
 
 def parseanswer(msg):
   global DATAS
@@ -88,22 +88,21 @@ def parseanswer(msg):
           sess = Session.SESSIONS[msg.realname]
           if sess.good > 1: goodS = "s"
           else: goodS = ""
-          msg.send_chn("%s: Fini, tu as donné %d bonne%s réponse%s sur %d questions." % (msg.nick, sess.good, goodS, goodS, sess.current))
           del Session.SESSIONS[msg.realname]
-          return True
+          return Response(msg.sender,
+                          "Fini, tu as donné %d bonne%s réponse%s sur %d questions." % (sess.good, goodS, goodS, sess.current),
+                          msg.channel, nick=msg.nick)
         elif msg.cmd[1] == "next" or msg.cmd[1] == "suivant" or msg.cmd[1] == "suivante":
-          askQuestion(msg)
-          return True
-      msg.send_chn("%s: tu as déjà une session de QCM en cours, finis-la avant d'en commencer une nouvelle." % msg.nick)
+          return askQuestion(msg)
+      return Response(msg.sender, "tu as déjà une session de QCM en cours, finis-la avant d'en commencer une nouvelle.", msg.channel, msg.nick)
     elif msg.channel in Session.SESSIONS:
       if len(msg.cmd) > 1:
         if msg.cmd[1] == "stop" or msg.cmd[1] == "end":
           sess = Session.SESSIONS[msg.channel]
           if sess.good > 1: goodS = "s"
           else: goodS = ""
-          msg.send_chn("Fini, vous avez donné %d bonne%s réponse%s sur %d questions." % (sess.good, goodS, goodS, sess.current))
           del Session.SESSIONS[msg.channel]
-          return True
+          return Response(msg.sender, "Fini, vous avez donné %d bonne%s réponse%s sur %d questions." % (sess.good, goodS, goodS, sess.current), msg.channel)
         elif msg.cmd[1] == "next" or msg.cmd[1] == "suivant" or msg.cmd[1] == "suivante":
           Session.SESSIONS[msg.channel].prepareNext(1)
           return True
@@ -120,56 +119,52 @@ def parseanswer(msg):
       if len(filtre) == 0:
         filtre = None
       if msg.channel in Session.SESSIONS:
-        msg.send_snd("Il y a deja une session de QCM sur ce chan.")
+        return Response(msg.sender, "Il y a deja une session de QCM sur ce chan.")
       else:
         buildSession(msg, filtre, nbQuest, msg.cmd[0] == "qcmchan")
         if msg.cmd[0] == "qcm":
-          askQuestion(msg)
+          return askQuestion(msg)
         elif msg.cmd[0] == "qcmchan":
-          Session.SESSIONS[msg.channel].askNext()
+          return Session.SESSIONS[msg.channel].askNext()
         else:
-          msg.send_chn("QCM de %d questions" % len(Session.SESSIONS[msg.realname].questions))
           del Session.SESSIONS[msg.realname]
+          return Response(msg.sender, "QCM de %d questions" % len(Session.SESSIONS[msg.realname].questions), msg.channel)
     return True
   elif msg.realname in Session.SESSIONS:
     if msg.cmd[0] == "info" or msg.cmd[0] == "infoquestion":
-      msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.realname].question.tupleInfo)
-      return True
+      return Response(msg.sender, "Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.realname].question.tupleInfo, msg.channel)
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
       if len(msg.cmd) == 1:
-        msg.send_chn("Veuillez indiquer une raison de report")
+        return Response(msg.sender, "Veuillez indiquer une raison de report", msg.channel)
       elif Session.SESSIONS[msg.realname].question.report(' '.join(msg.cmd[1:])):
-        msg.send_chn("Cette question vient d'être signalée.")
+        return Response(msg.sender, "Cette question vient d'être signalée.", msg.channel)
         Session.SESSIONS[msg.realname].askNext()
       else:
-        msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
-      return True
+        return Response(msg.sender, "Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.", msg.channel)
   elif msg.channel in Session.SESSIONS:
     if msg.cmd[0] == "info" or msg.cmd[0] == "infoquestion":
-      msg.send_chn("Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.channel].question.tupleInfo)
-      return True
+      return Response(msg.sender, "Cette question a été écrite par %s et validée par %s, le %s" % Session.SESSIONS[msg.channel].question.tupleInfo, msg.channel)
     elif msg.cmd[0] == "report" or msg.cmd[0] == "reportquestion":
       if len(msg.cmd) == 1:
-        msg.send_chn("Veuillez indiquer une raison de report")
+        return Response(msg.sender, "Veuillez indiquer une raison de report", msg.channel)
       elif Session.SESSIONS[msg.channel].question.report(' '.join(msg.cmd[1:])):
-        msg.send_chn("Cette question vient d'être signalée.")
         Session.SESSIONS[msg.channel].prepareNext()
+        return Response(msg.sender, "Cette question vient d'être signalée.", msg.channel)
       else:
-        msg.send_chn("Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.")
-      return True
+        return Response(msg.sender, "Une erreur s'est produite lors du signalement de la question, veuillez recommencer plus tard.", msg.channel)
   else:
     if msg.cmd[0] == "listecours":
       if Course.COURSES is None:
-        msg.send_chn("La liste de cours n'est pas encore construite, lancez un QCM pour la construire.")
+        return Response(msg.sender, "La liste de cours n'est pas encore construite, lancez un QCM pour la construire.", msg.channel)
       else:
-        lst = ""
-        for cours in Course.COURSES.getNodes("course"):
-          lst += cours["code"] + " (" + cours["name"] + "), "
-        msg.send_chn("Liste des cours existants : " + lst[:len(lst)-2])
+        res = Response(msg.sender, channel=msg.channel, title="Liste des cours existants : ")
+        res.append_message([cours["code"] + " (" + cours["name"] + ")" for cours in Course.COURSES.getNodes("course")])
+        return res
     elif msg.cmd[0] == "refreshqcm":
       Question.QUESTIONS = None
       Course.COURSES = None
       User.USERS = None
+      return True
   return False
 
 def parseask(msg):
@@ -179,15 +174,14 @@ def parseask(msg):
     if Session.SESSIONS[dest].question.isCorrect(msg.content):
       Session.SESSIONS[dest].good += 1
       Session.SESSIONS[dest].score += Session.SESSIONS[dest].question.getScore(msg.content)
-      askQuestion(msg, "correct ; ")
+      return askQuestion(msg, "correct ; ")
     else:
       Session.SESSIONS[dest].bad += 1
       if Session.SESSIONS[dest].trys == 0:
         Session.SESSIONS[dest].trys = 1
-        msg.send_chn("%s: non, essaie encore :p" % msg.nick)
+        return Response(msg.sender, "non, essaie encore :p", msg.channel, msg.nick)
       else:
-        askQuestion(msg, "non, la bonne reponse était : %s ; " % Session.SESSIONS[dest].question.bestAnswer)
-    return True
+        return askQuestion(msg, "non, la bonne reponse était : %s ; " % Session.SESSIONS[dest].question.bestAnswer)
 
   elif msg.channel in Session.SESSIONS:
     dest = msg.channel
@@ -195,10 +189,9 @@ def parseask(msg):
     if Session.SESSIONS[dest].question.isCorrect(msg.content):
       Session.SESSIONS[dest].good += 1
       Session.SESSIONS[dest].score += Session.SESSIONS[dest].question.getScore(msg.content)
-      msg.send_chn("%s: correct :)" % msg.nick)
       Session.SESSIONS[dest].prepareNext()
+      return Response(msg.sender, "correct :)", msg.channel, nick=msg.nick)
     else:
       Session.SESSIONS[dest].bad += 1
-      msg.send_chn("%s: non, essaie encore :p" % msg.nick)
-    return True
+      return Response(msg.sender, "non, essaie encore :p", msg.channel, nick=msg.nick)
   return False

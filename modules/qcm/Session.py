@@ -6,6 +6,8 @@ SESSIONS = dict()
 
 from . import Question
 
+from response import Response
+
 class Session:
   def __init__(self, srv, chan, sender):
     self.questions = list()
@@ -42,23 +44,20 @@ class Session:
     self.timer = None
     nextQ = self.next_question()
     if nextQ is not None:
-      if self.channel == self.server.nick:
-        self.server.send_msg_final(self.sender, "%s%s" % (bfr, nextQ.question))
-      elif self.sender.split("!")[0] != self.channel:
-        self.server.send_msg_final(self.channel, "%s: %s%s" % (self.sender.split("!")[0], bfr, nextQ.question))
-      else:
-        self.server.send_msg_final(self.channel, "%s%s" % (bfr, nextQ.question))
+        if self.sender.split("!")[0] != self.channel:
+            self.server.send_response(Response(self.sender, "%s%s" % (bfr, nextQ.question), self.channel, nick=self.sender.split("!")[0]))
+        else:
+            self.server.send_response(Response(self.sender, "%s%s" % (bfr, nextQ.question), self.channel))
     else:
       if self.good > 1:
         goodS = "s"
       else:
         goodS = ""
-      if self.channel == self.server.nick:
-        self.server.send_msg_final(self.sender, "%sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
-      elif self.sender != self.channel:
-        self.server.send_msg_final(self.channel, "%s: %sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)))
+
+      if self.sender.split("!")[0] != self.channel:
+          self.server.send_response(Response(self.sender, "%sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)), self.channel, nick=self.sender.split("!")[0]))
       else:
-        self.server.send_msg_final(self.channel, "%sFini, vous avez donné %d bonne%s réponse%s sur %d questions." % (bfr, self.good, goodS, goodS, len(self.questions)))
+          self.server.send_response(Response(self.sender, "%sFini, tu as donné %d bonne%s réponse%s sur %d questions." % (self.sender, bfr, self.good, goodS, goodS, len(self.questions)), self.channel))
       del SESSIONS[self.sender]
 
   def prepareNext(self, lag = 3):
