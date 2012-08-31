@@ -4,31 +4,29 @@ import http.client
 import re
 from urllib.parse import quote
 
-import module_states_file as xmlparser
+import xmlparser
 
 class Wikipedia:
-  def __init__(self, terms, lang="fr"):
-    self.terms = terms
-    self.lang = lang
-    self.curRT = -1
-    (res, page) = getPage(terms, self.lang)
-    if res == http.client.OK or res == http.client.SEE_OTHER:
-      self.wres = xmlparser.parse_string(page)
-    else:
-      self.wres = None
+    def __init__(self, terms, lang="fr"):
+        self.terms = terms
+        self.lang = lang
+        self.curRT = -1
+        (res, page) = getPage(terms, self.lang)
+        if res == http.client.OK or res == http.client.SEE_OTHER:
+            self.wres = xmlparser.parse_string(page)
+        else:
+            self.wres = None
 
-  @property
-  def nextRes(self):
-    if self.wres is not None and self.wres.hasNode("query"):
-      if self.wres.getFirstNode("query").hasNode("pages"):
-        if self.wres.getFirstNode("query").getFirstNode("pages").hasNode("page"):
-          if self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").hasNode("revisions"):
-            self.curRT += 1
-            content = self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent().split("\n")
-            while self.curRT < len(content) and striplink(content[self.curRT]).strip() == "":
-              self.curRT += 1
-            return striplink(content[self.curRT])
-    return "No more results"
+    @property
+    def nextRes(self):
+        if self.wres is not None and self.wres.hasNode("query"):
+            if self.wres.getFirstNode("query").hasNode("pages"):
+                if self.wres.getFirstNode("query").getFirstNode("pages").hasNode("page"):
+                    if self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").hasNode("revisions"):
+                        for cnt in self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent().split("\n"):
+                            c = striplink(cnt).strip()
+                            if c != "":
+                                yield c
 
 
 def striplink(data):

@@ -2,64 +2,115 @@
 
 import imp
 
-nemubotversion = 3.0
+nemubotversion = 3.2
 
 from . import DDGSearch
 from . import WFASearch
 from . import Wikipedia
 
-lastSearch = dict()
+def load(context):
+    global CONF
+    WFASearch.CONF = CONF
 
-def load():
-  global CONF
-  WFASearch.CONF = CONF
+    from hooks import Hook
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "d"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "def"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "defini"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "definit"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "define"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(define, "definition"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(search, "search"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(search, "ddg"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(search, "g"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(calculate, "wa"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(calculate, "wfa"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(calculate, "calc"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(wiki, "w"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(wiki, "wf"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(wiki, "wfr"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(wiki, "we"))
+    context.hooks.add_hook(context.hooks.cmd_hook, Hook(wiki, "wen"))
 
 def reload():
-  imp.reload(DDGSearch)
-  imp.reload(WFASearch)
-  imp.reload(Wikipedia)
+    imp.reload(DDGSearch)
+    imp.reload(WFASearch)
+    imp.reload(Wikipedia)
 
-def parseanswer(msg):
-  global lastSearch
-  req = None
-  if msg.cmd[0] == "def" or msg.cmd[0] == "d" or msg.cmd[0] == "define" or msg.cmd[0] == "defini" or msg.cmd[0] == "definit" or msg.cmd[0] == "definition":
-    req = "def"
-  elif msg.cmd[0] == "g" or msg.cmd[0] == "ddg" or msg.cmd[0] == "d":
-    req = "link"
-  elif msg.cmd[0] == "w" or msg.cmd[0] == "wf" or msg.cmd[0] == "wfr":
-    req = "fr"
-  elif msg.cmd[0] == "we" or msg.cmd[0] == "wen":
-    req = "en"
-  elif msg.cmd[0] == "wfa" or msg.cmd[0] == "calc" or msg.cmd[0] == "wa":
-    req = "wfa"
 
-  if msg.cmd[0] == "more" or msg.cmd[0] == "plus":
-    if msg.channel in lastSearch and lastSearch[msg.channel] is not None:
-      msg.send_chn(lastSearch[msg.channel].nextRes)
+def define(msg):
+    if len(msg.cmd) <= 1:
+        return Response(msg.sender,
+                        "Indicate a term to define",
+                        msg.channel, nick=msg.nick)
+
+    s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
+
+    res = Response(msg.sender, channel=msg.channel)
+
+    res.append_message(s.definition)
+
+    return res
+
+
+def search(msg):
+    if len(msg.cmd) <= 1:
+        return Response(msg.sender,
+                        "Indicate a term to search",
+                        msg.channel, nick=msg.nick)
+
+    s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
+
+    res = Response(msg.sender, channel=msg.channel, nomore="No more results",
+                   count=" (%d more results)")
+
+    res.append_message(s.redirect)
+    res.append_message(s.abstract)
+    res.append_message(s.result)
+    res.append_message(s.answer)
+
+    for rt in s.relatedTopics:
+        res.append_message(rt)
+
+    return res
+
+
+def calculate(msg):
+    if len(msg.cmd) <= 1:
+        return Response(msg.sender,
+                        "Indicate a calcul to compute",
+                        msg.channel, nick=msg.nick)
+
+    s = WFASearch.WFASearch(' '.join(msg.cmd[1:]))
+
+    if s.success:
+        res = Response(msg.sender, channel=msg.channel, nomore="No more results")
+        for result in s.nextRes:
+            res.append_message(result)
+        res.messages.pop(0)
+        return res
     else:
-      msg.send_chn("There is no ongoing research.")
-  elif req is not None:
-    if len(msg.cmd) > 1:
-      if req == "wfa":
-        s = WFASearch.WFASearch(' '.join(msg.cmd[1:]))
-        #print (s.wfares)
-        if not s.success:
-          msg.send_chn(s.error)
-          return True
-      elif req == "link" or req == "def":
-        s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
-      else:
-        s = Wikipedia.Wikipedia(' '.join(msg.cmd[1:]), req)
+        return Response(msg.sender, s.error, msg.channel)
 
-      if req == "def":
-        msg.send_chn(s.definition)
-      else:
-        msg.send_chn(s.nextRes)
-      lastSearch[msg.channel] = s
+
+def wiki(msg):
+    if len(msg.cmd) <= 1:
+        return Response(msg.sender,
+                        "Indicate a term to search",
+                        msg.channel, nick=msg.nick)
+    if msg.cmd[0] == "w" or msg.cmd[0] == "wf" or msg.cmd[0] == "wfr":
+        lang = "fr"
     else:
-      msg.send_chn("What are you looking for?")
-    return True
+        lang = "en"
 
-  return False
+    s = Wikipedia.Wikipedia(msg.cmd[1], lang)
 
+    res = Response(msg.sender, channel=msg.channel, nomore="No more results")
+    for result in s.nextRes:
+        res.append_message(result)
 
+    if len(res.messages) > 0:
+        return res
+    else:
+        return Response(msg.sender,
+                        "No information about " + msg.cmd[1],
+                        msg.channel)
