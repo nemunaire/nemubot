@@ -21,7 +21,7 @@ import sys
 
 class Response:
     def __init__(self, sender, message=None, channel=None, nick=None, server=None,
-                 nomore="No more message", title=None, more="(suite) "):
+                 nomore="No more message", title=None, more="(suite) ", count=None):
         self.nomore = nomore
         self.more = more
         self.title = title
@@ -34,6 +34,7 @@ class Response:
         self.nick = nick
         self.set_sender(sender)
         self.alone = True
+        self.count = count
 
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:
@@ -46,8 +47,9 @@ class Response:
             self.sender = sender
 
     def append_message(self, message):
-        self.alone = False
-        self.messages.append(message)
+        if message is not None and len(message) > 0:
+            self.alone = False
+            self.messages.append(message)
 
     @property
     def empty(self):
@@ -91,7 +93,10 @@ class Response:
             if len(elts) <= 432:
                 self.messages.pop(0)
                 self.elt = 0
-                return msg + elts
+                if self.count is not None:
+                    return msg + elts + (self.count % len(self.messages))
+                else:
+                    return msg + elts
 
             else:
                 words = elts.split(' ')
