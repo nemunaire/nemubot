@@ -148,10 +148,11 @@ class ModuleState:
     """Serialize this node as a XML node"""
     attribs = {}
     for att in self.attributes.keys():
-      if isinstance(self.attributes[att], datetime):
-        attribs[att] = str(time.mktime(self.attributes[att].timetuple()))
-      else:
-        attribs[att] = str(self.attributes[att])
+        if att[0] != "_": # Don't save attribute starting by _
+            if isinstance(self.attributes[att], datetime):
+                attribs[att] = str(time.mktime(self.attributes[att].timetuple()))
+            else:
+                attribs[att] = str(self.attributes[att])
     attrs = xml.sax.xmlreader.AttributesImpl(attribs)
 
     gen.startElement(self.name, attrs)
