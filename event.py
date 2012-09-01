@@ -21,7 +21,7 @@ from datetime import timedelta
 
 class ModuleEvent:
     def __init__(self, func=None, func_data=None, check=None, cmp_data=None,
-                 intervalle=60, call=None, call_data=None, times=1):
+                 intervalle=60, offset=0, call=None, call_data=None, times=1):
         # What have we to check?
         self.func = func
         self.func_data = func_data
@@ -38,6 +38,7 @@ class ModuleEvent:
             else:
                 self.cmp_data = self.func(self.func_data)
 
+        self.offset = timedelta(seconds=offset) # Time to wait before the first check
         self.intervalle = timedelta(seconds=intervalle)
         self.end = None
 
@@ -53,22 +54,22 @@ class ModuleEvent:
 
 
     @property
-    def next(self):
-        """Return the date of the next check"""
-        if self.times != 0:
-            if self.end is None:
-                self.end = datetime.now() + self.intervalle
-            elif self.end < datetime.now():
-                self.end += self.intervalle
-            return self.end
-        return None
-
-    @property
     def current(self):
         """Return the date of the near check"""
         if self.times != 0:
             if self.end is None:
-                self.end = datetime.now() + self.intervalle
+                self.end = datetime.now() + self.offset + self.intervalle
+            return self.end
+        return None
+
+    @property
+    def next(self):
+        """Return the date of the next check"""
+        if self.times != 0:
+            if self.end is None:
+                return self.current
+            elif self.end < datetime.now():
+                self.end += self.intervalle
             return self.end
         return None
 
