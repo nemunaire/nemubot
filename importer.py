@@ -22,6 +22,7 @@ import imp
 import os
 import sys
 
+import event
 from hooks import Hook
 import response
 import xmlparser
@@ -141,10 +142,12 @@ class ModuleLoader(SourceLoader):
         module.__LOADED__ = True
 
         # Set module common functions and datas
+        module.REGISTERED_HOOKS = list()
         module.DEBUG = False
         module.name = fullname
         module.print = lambda msg: print("[%s] %s"%(module.name, msg))
         module.print_debug = lambda msg: mod_print_dbg(module, msg)
+        module.send_response = lambda srv, res: mod_send_response(context, srv, res)
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path
@@ -157,6 +160,7 @@ class ModuleLoader(SourceLoader):
         module.has_access = lambda msg: mod_has_access(module,
                                                        module.CONF, msg)
 
+        module.ModuleEvent = event.ModuleEvent
         module.ModuleState = xmlparser.module_state.ModuleState
         module.Response = response.Response
 
@@ -243,3 +247,6 @@ def mod_has_access(mod, config, msg):
         return False
     else:
         return True
+
+def mod_send_response(context, server, res):
+    context.servers[server].send_response(res)

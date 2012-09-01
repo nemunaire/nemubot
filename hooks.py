@@ -42,15 +42,15 @@ class MessagesHook:
         self.msg_default = list()
 
 
-    def add_hook(self, store, hook):
+    def add_hook(self, store, hook, module_src=None):
         """Insert in the right place a hook into the given store"""
         if store in self.context.hooks_cache:
             del self.context.hooks_cache[store]
 
-        attr = getattr(self, store)
-        if attr is None:
+        if not hasattr(self, store):
             print ("Warning: unrecognized hook store type")
             return
+        attr = getattr(self, store)
 
         if isinstance(attr, dict) and hook.name is not None:
             if hook.name not in attr:
@@ -60,14 +60,19 @@ class MessagesHook:
             attr.append(hook)
         else:
             print ("Warning: unrecognized hook store type")
+            return
+        if module_src is not None:
+            module_src.REGISTERED_HOOKS.append((store, hook))
 
     def register_hook_attributes(self, store, module, node):
         if node.hasAttribute("name"):
             self.add_hook(store + "_hook", Hook(getattr(module, node["call"]),
-                                                node["name"]))
+                                                node["name"]),
+                          module)
         elif node.hasAttribute("regexp"):
             self.add_hook(store + "_rgxp", Hook(getattr(module, node["call"]),
-                                                None, None, node["regexp"]))
+                                                None, None, node["regexp"]),
+                          module)
 
     def register_hook(self, module, node):
         """Create a hook from configuration node"""
@@ -82,6 +87,21 @@ class MessagesHook:
                 node["type"] == "all"):
                 self.register_hook_attributes("answer", module, node)
 
+    def del_hook(self, store, hook):
+        """Remove a registered hook from a given store"""
+        if store in self.context.hooks_cache:
+            del self.context.hooks_cache[store]
+
+        if not hasattr(self, store):
+            print ("Warning: unrecognized hook store type")
+            return
+        attr = getattr(self, store)
+
+        if isinstance(attr, dict) and hook.name is not None:
+            if hook.name in attr:
+                attr[hook.name].remove(hook)
+        else:
+            attr.remove(hook)
 
 class Hook:
     """Class storing hook informations"""

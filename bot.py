@@ -158,6 +158,9 @@ class Bot:
             self.modules[name].save()
             if hasattr(self.modules[name], "unload"):
                 self.modules[name].unload()
+            # Remove registered hooks
+            for (s, h) in self.modules[name].REGISTERED_HOOKS:
+                self.hooks.del_hook(s, h)
             # Remove from the dict
             del self.modules[name]
             return True
