@@ -1,2 +1,5 @@
 <?xml version="1.0" ?>
-<nemubotmodule name="watchWebsite" />
+<nemubotmodule name="watchWebsite">
+  <message type="cmd" name="watch" call="add_site" />
+  <message type="cmd" name="unwatch" call="del_site" />
+</nemubotmodule>
