@@ -50,7 +50,7 @@ class Bot:
         self.hooks       = hooks.MessagesHook(self)
 
         # Other known bots, making a bots network
-        self.network = dict()
+        self.network     = dict()
         self.hooks_cache = dict()
 
         # Messages to be treated
@@ -61,24 +61,33 @@ class Bot:
 
     def add_event(self, evt):
         """Register an event and return its identifiant for futur update"""
-        # Find ID
+        # Find an ID
         now = datetime.now()
-        evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52], now.month, now.day, ID_letters[now.microsecond % 42], now.hour, now.minute, ID_letters[now.microsecond % 32], now.second)
+        evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52],
+                                         now.month, now.day, ID_letters[now.microsecond % 42],
+                                         now.hour, now.minute, ID_letters[now.microsecond % 32],
+                                         now.second)
 
         # Add the event in place
         t = evt.current
-        i = 0
+        i = -1
         for i in range(0, len(self.events)):
             if self.events[i].current > t:
+                i -= 1
                 break
-        self.events.insert(i, evt)
-        if i == 0:
+        self.events.insert(i + 1, evt)
+        if i == -1:
             self.update_timer()
 
         return evt.id
 
     def del_event(self, id):
         """Find and remove an event from list"""
+        if len(self.events) > 0 and id == self.events[0].id:
+            self.events.remove(self.events[0])
+            self.update_timer()
+            return True
+
         for evt in self.events:
             if evt.id == id:
                 self.events.remove(evt)
@@ -157,7 +166,7 @@ class Bot:
         if name in self.modules:
             self.modules[name].save()
             if hasattr(self.modules[name], "unload"):
-                self.modules[name].unload()
+                self.modules[name].unload(self)
             # Remove registered hooks
             for (s, h) in self.modules[name].REGISTERED_HOOKS:
                 self.hooks.del_hook(s, h)
@@ -384,8 +393,14 @@ def hotswap(bak):
 def reload():
     import imp
 
-    import prompt.builtins
-    imp.reload(prompt.builtins)
+    import channel
+    imp.reload(channel)
+
+    import consumer
+    imp.reload(consumer)
+
+    import DCC
+    imp.reload(DCC)
 
     import event
     imp.reload(event)
@@ -393,22 +408,19 @@ def reload():
     import hooks
     imp.reload(hooks)
 
-    import xmlparser
-    imp.reload(xmlparser)
-    import xmlparser.node
-    imp.reload(xmlparser.node)
-
     import importer
     imp.reload(importer)
+
+    import message
+    imp.reload(message)
+
+    import prompt.builtins
+    imp.reload(prompt.builtins)
 
     import server
     imp.reload(server)
 
-    import channel
-    imp.reload(channel)
-
-    import DCC
-    imp.reload(DCC)
-
-    import message
-    imp.reload(message)
+    import xmlparser
+    imp.reload(xmlparser)
+    import xmlparser.node
+    imp.reload(xmlparser.node)

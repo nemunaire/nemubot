@@ -37,6 +37,8 @@ class ModuleEvent:
                 self.cmp_data = self.func(**self.func_data)
             else:
                 self.cmp_data = self.func(self.func_data)
+        else:
+            self.cmp_data = None
 
         self.offset = timedelta(seconds=offset) # Time to wait before the first check
         self.intervalle = timedelta(seconds=intervalle)
@@ -92,7 +94,10 @@ class ModuleEvent:
         #print ("do test with", d, self.cmp_data)
 
         if self.check is None:
-            r = True
+            if self.cmp_data is None:
+                r = True
+            else:
+                r = d != self.cmp_data
         elif self.cmp_data is None:
             r = self.check(d)
         elif isinstance(self.cmp_data, dict):
@@ -103,8 +108,11 @@ class ModuleEvent:
         if r:
             self.times -= 1
             if self.call_data is None:
-                self.call()
+                if d is None:
+                    self.call()
+                else:
+                    self.call(d)
             elif isinstance(self.call_data, dict):
-                self.call(**self.call_data)
+                self.call(d, **self.call_data)
             else:
-                self.call(self.call_data)
+                self.call(d, self.call_data)

@@ -147,7 +147,7 @@ class ModuleLoader(SourceLoader):
         module.name = fullname
         module.print = lambda msg: print("[%s] %s"%(module.name, msg))
         module.print_debug = lambda msg: mod_print_dbg(module, msg)
-        module.send_response = lambda srv, res: mod_send_response(context, srv, res)
+        module.send_response = lambda srv, res: mod_send_response(self.context, srv, res)
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path
@@ -236,7 +236,7 @@ def mod_print_dbg(mod, msg):
 
 def mod_save(mod, datas_path):
     mod.DATAS.save(datas_path + "/" + mod.name + ".xml")
-    mod.print ("Saving!")
+    mod.print_debug("Saving!")
 
 def mod_has_access(mod, config, msg):
     if config is not None and config.hasNode("channel"):
@@ -249,4 +249,4 @@ def mod_has_access(mod, config, msg):
         return True
 
 def mod_send_response(context, server, res):
-    context.servers[server].send_response(res)
+    context.servers[server].send_response(res, None)
