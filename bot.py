@@ -59,14 +59,17 @@ class Bot:
         self.msg_thrd_size = -1
 
 
-    def add_event(self, evt):
+    def add_event(self, evt, eid=None):
         """Register an event and return its identifiant for futur update"""
-        # Find an ID
-        now = datetime.now()
-        evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52],
-                                         now.month, now.day, ID_letters[now.microsecond % 42],
-                                         now.hour, now.minute, ID_letters[now.microsecond % 32],
-                                         now.second)
+        if eid is None:
+            # Find an ID
+            now = datetime.now()
+            evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52],
+                                             now.month, now.day, ID_letters[now.microsecond % 42],
+                                             now.hour, now.minute, ID_letters[now.microsecond % 32],
+                                             now.second)
+        else:
+            evt.id = eid
 
         # Add the event in place
         t = evt.current
@@ -78,6 +81,8 @@ class Bot:
         self.events.insert(i + 1, evt)
         if i == -1:
             self.update_timer()
+            if len(self.events) <= 0 or self.events[i+1] != evt:
+                return None
 
         return evt.id
 
@@ -119,7 +124,7 @@ class Bot:
             evt = self.events.pop(0)
             evt.launch_check()
             if evt.next is not None:
-                self.add_event(evt)
+                self.add_event(evt, evt.id)
         self.update_timer()
 
 

@@ -33,10 +33,12 @@ def load(context):
         if DATAS.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
             event.end = DATAS.index[evt].getDate("end")
-            DATAS.index[evt]["id"] = context.add_event(event)
+            idt = context.add_event(event)
+            if idt is not None:
+                DATAS.index[evt]["id"] = idt
 
 
-def fini(strend):
+def fini(d, strend):
     for server in CONTEXT.servers.keys():
         if not strend.hasAttribute("server") or server == strend["server"]:
             if strend["channel"] == CONTEXT.servers[server].nick:
