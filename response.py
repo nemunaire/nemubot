@@ -21,19 +21,20 @@ import sys
 
 class Response:
     def __init__(self, sender, message=None, channel=None, nick=None, server=None,
-                 nomore="No more message", title=None, more="(suite) ", count=None):
+                 nomore="No more message", title=None, more="(suite) ", count=None,
+                 shown_first_count=-1):
         self.nomore = nomore
         self.more = more
         self.rawtitle = title
         self.messages = list()
+        self.alone = True
         if message is not None:
-            self.messages.append(message)
+            self.append_message(message, shown_first_count=shown_first_count)
         self.elt = 0 # Next element to display
 
         self.channel = channel
         self.nick = nick
         self.set_sender(sender)
-        self.alone = True
         self.count = count
 
     def set_sender(self, sender):
@@ -46,8 +47,11 @@ class Response:
         else:
             self.sender = sender
 
-    def append_message(self, message, title=None):
+    def append_message(self, message, title=None, shown_first_count=-1):
         if message is not None and len(message) > 0:
+            if shown_first_count >= 0:
+                self.messages.append(message[:shown_first_count])
+                message = message[shown_first_count:]
             self.messages.append(message)
             self.alone = self.alone and len(self.messages) <= 1
             if isinstance(self.rawtitle, list):
