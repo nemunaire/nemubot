@@ -24,7 +24,7 @@ class Response:
                  nomore="No more message", title=None, more="(suite) ", count=None):
         self.nomore = nomore
         self.more = more
-        self.title = title
+        self.rawtitle = title
         self.messages = list()
         if message is not None:
             self.messages.append(message)
@@ -46,14 +46,46 @@ class Response:
         else:
             self.sender = sender
 
-    def append_message(self, message):
+    def append_message(self, message, title=None):
         if message is not None and len(message) > 0:
-            self.alone = False
             self.messages.append(message)
+            self.alone = self.alone and len(self.messages) <= 1
+            if isinstance(self.rawtitle, list):
+                self.rawtitle.append(title)
+            elif title is not None:
+                rawtitle = self.rawtitle
+                self.rawtitle = list()
+                for osef in self.messages:
+                    self.rawtitle.append(rawtitle)
+                self.rawtitle.pop()
+                self.rawtitle.append(title)
+
+    def append_content(self, message):
+        if message is not None and len(message) > 0:
+            if self.messages is None or len(self.messages) == 0:
+                self.messages = list(message)
+                self.alone = True
+            else:
+                self.messages[len(self.messages)-1] += message
+                self.alone = self.alone and len(self.messages) <= 1
 
     @property
     def empty(self):
         return len(self.messages) <= 0
+
+    @property
+    def title(self):
+        if isinstance(self.rawtitle, list):
+            return self.rawtitle[0]
+        else:
+            return self.rawtitle
+
+    def pop(self):
+        self.messages.pop(0)
+        if isinstance(self.rawtitle, list):
+            self.rawtitle.pop(0)
+            if len(self.rawtitle) <= 0:
+                self.rawtitle = None
 
     def get_message(self):
         if self.alone and len(self.messages) > 1:
@@ -85,13 +117,13 @@ class Response:
                 else:
                     msg += e + ", "
                     self.elt += 1
-            self.messages.pop(0)
+            self.pop()
             self.elt = 0
             return msg[:len(msg)-2]
 
         else:
             if len(elts) <= 432:
-                self.messages.pop(0)
+                self.pop()
                 self.elt = 0
                 if self.count is not None:
                     return msg + elts + (self.count % len(self.messages))
@@ -113,6 +145,6 @@ class Response:
                     else:
                         msg += w + " "
                         self.elt += len(w) + 1
-                self.messages.pop(0)
+                self.pop()
                 self.elt = 0
                 return msg
