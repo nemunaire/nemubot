@@ -93,7 +93,7 @@ def add_site(msg):
         start_watching(watch)
 
     save()
-    return Response(msg.sender, channel=msg.channel, nick=msg.nick
+    return Response(msg.sender, channel=msg.channel, nick=msg.nick,
                     message="ce site est maintenant sous ma surveillance.")
 
 def alert_change(content, site):
@@ -104,7 +104,10 @@ def alert_change(content, site):
 
     if site["type"] == "atom":
         if site["_lastpage"] is None:
-            site["_lastpage"] = Atom(site["lastcontent"])
+            if site["lastcontent"] is None:
+                site["_lastpage"] = Atom(content)
+            else:
+                site["_lastpage"] = Atom(site["lastcontent"])
         page = Atom(content)
         diff = site["_lastpage"].diff(page)
         if len(diff) > 0:
@@ -112,14 +115,14 @@ def alert_change(content, site):
             print_debug("[%s] Page differ!" % site["server"])
             diff.reverse()
             for d in diff:
-                categories = site.getNodes("categories")
-                categories.setIndex("term")
+                site.setIndex("term", "category")
+                categories = site.index
 
                 if site["message"].count("%s") == 2 and len(categories) > 0:
                     if d.category is None or d.category not in categories:
-                        messageI = site["message"] % (categories[""], "%s")
+                        messageI = site["message"] % (categories[""]["part"], "%s")
                     else:
-                        messageI = site["message"] % (categories[d.category], "%s")
+                        messageI = site["message"] % (categories[d.category]["part"], "%s")
                     send_response(site["irc"], Response(site["sender"],
                                                         messageI % d.link,
                                                         site["channel"]))
