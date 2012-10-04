@@ -20,7 +20,7 @@ from datetime import datetime
 from queue import Queue
 import threading
 
-from consumer import Consumer
+import consumer
 import event
 import hooks
 from networkbot import NetworkBot
@@ -54,9 +54,9 @@ class Bot:
         self.hooks_cache = dict()
 
         # Messages to be treated
-        self.msg_queue     = Queue()
-        self.msg_thrd      = list()
-        self.msg_thrd_size = -1
+        self.cnsr_queue     = Queue()
+        self.cnsr_thrd      = list()
+        self.cnsr_thrd_size = -1
 
 
     def add_event(self, evt, eid=None):
@@ -122,9 +122,9 @@ class Bot:
         while len(self.events)>0 and datetime.now() >= self.events[0].current:
             #print ("end timer: while")
             evt = self.events.pop(0)
-            evt.launch_check()
-            if evt.next is not None:
-                self.add_event(evt, evt.id)
+            self.cnsr_queue.put_nowait(consumer.EventConsumer(self, evt))
+            self.update_consumers()
+
         self.update_timer()
 
 
@@ -169,6 +169,7 @@ class Bot:
     def unload_module(self, name, verb=False):
         """Unload a module"""
         if name in self.modules:
+            print (name)
             self.modules[name].save()
             if hasattr(self.modules[name], "unload"):
                 self.modules[name].unload(self)
@@ -180,17 +181,22 @@ class Bot:
             return True
         return False
 
+    def update_consumers(self):
+        """Launch new consumer thread if necessary"""
+        if self.cnsr_queue.qsize() > self.cnsr_thrd_size:
+            c = consumer.Consumer(self)
+            self.cnsr_thrd.append(c)
+            c.start()
+            self.cnsr_thrd_size += 2
+
 
     def receive_message(self, srv, raw_msg, private=False, data=None):
         """Queued the message for treatment"""
-        self.msg_queue.put_nowait((srv, raw_msg, datetime.now(), private, data))
+        #print (raw_msg)
+        self.cnsr_queue.put_nowait(consumer.MessageConsumer(srv, raw_msg, datetime.now(), private, data))
 
         # Launch a new thread if necessary
-        if self.msg_queue.qsize() > self.msg_thrd_size:
-            c = Consumer(self)
-            self.msg_thrd.append(c)
-            c.start()
-            self.msg_thrd_size += 2
+        self.update_consumers()
 
 
     def add_networkbot(self, srv, dest, dcc=None):
