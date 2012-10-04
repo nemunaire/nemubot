@@ -66,9 +66,11 @@ class ModuleLoader(SourceLoader):
         if os.path.isfile(path + fullname + ".py"):
             self.source_path = path + self.name + ".py"
             self.package = False
+            self.mpath = path
         elif os.path.isfile(path + fullname + "/__init__.py"):
             self.source_path = path + self.name + "/__init__.py"
             self.package = True
+            self.mpath = path + self.name + "/"
         else:
             raise ImportError
 
@@ -144,6 +146,7 @@ class ModuleLoader(SourceLoader):
         # Set module common functions and datas
         module.REGISTERED_HOOKS = list()
         module.DEBUG = False
+        module.DIR = self.mpath
         module.name = fullname
         module.print = lambda msg: print("[%s] %s"%(module.name, msg))
         module.print_debug = lambda msg: mod_print_dbg(module, msg)
