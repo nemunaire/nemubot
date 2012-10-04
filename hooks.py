@@ -44,11 +44,16 @@ class MessagesHook:
 
     def add_hook(self, store, hook, module_src=None):
         """Insert in the right place a hook into the given store"""
+        if module_src is None:
+            print ("\033[1;35mWarning:\033[0m No source module was passed to "
+                   "add_hook function, please fix it in order to be "
+                   "compatible with unload feature")
+
         if store in self.context.hooks_cache:
             del self.context.hooks_cache[store]
 
         if not hasattr(self, store):
-            print ("Warning: unrecognized hook store type")
+            print ("\033[1;35mWarning:\033[0m unrecognized hook store type")
             return
         attr = getattr(self, store)
 
@@ -59,7 +64,7 @@ class MessagesHook:
         elif isinstance(attr, list):
             attr.append(hook)
         else:
-            print ("Warning: unrecognized hook store type")
+            print ("\033[1;32mWarning:\033[0m unrecognized hook store type")
             return
         if module_src is not None:
             module_src.REGISTERED_HOOKS.append((store, hook))
