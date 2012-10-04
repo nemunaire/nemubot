@@ -75,6 +75,10 @@ class Server(threading.Thread):
         return None
 
     @property
+    def allow_all(self):
+      return self.node.hasAttribute("allowall") and self.node["allowall"] == "true"
+
+    @property
     def ip(self):
         """Convert common IP representation to little-endian integer representation"""
         sum = 0
@@ -184,7 +188,9 @@ class Server(threading.Thread):
 
     def accepted_channel(self, chan, sender = None):
         """Return True if the channel (or the user) is authorized"""
-        if self.listen_nick:
+        if self.allow_all:
+            return True
+        elif self.listen_nick:
             return (chan in self.channels and (sender is None or sender in
                                                self.channels[chan].people)
                     ) or chan == self.nick
