@@ -48,9 +48,8 @@ def parselisten(msg):
     global LAST_URLS
     if re.match(".*(https?://|www\.)[^ ]+.*", msg.content) is not None:
         res = re.match(".*(((ht|f)tps?://|www\.)[^ ]+).*", msg.content)
-        if msg.channel in LAST_URLS:
-            LAST_URLS[msg.channel].append(res.group(1))
-        else:
-            LAST_URLS[msg.channel] = list(res.group(1))
+        if msg.channel not in LAST_URLS:
+            LAST_URLS[msg.channel] = list()
+        LAST_URLS[msg.channel].append(res.group(1))
         return True
     return False
