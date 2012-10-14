@@ -52,6 +52,10 @@ class MessageConsumer:
                 for r in res:
                     if isinstance(r, Response):
                         self.srv.send_response(r, self.data)
+                    elif isinstance(r, list):
+                        for s in r:
+                            if isinstance(s, Response):
+                                self.srv.send_response(s, self.data)
             elif isinstance(res, Response):
                 self.srv.send_response(res, self.data)
                 
