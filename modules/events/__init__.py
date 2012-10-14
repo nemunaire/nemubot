@@ -86,26 +86,59 @@ def start_countdown(msg):
         evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
         if len(msg.cmd) > 2:
-            result = re.match("([0-9]+)([smhdjSMHDJ])?", msg.cmd[2])
-            if result is not None:
+            result1 = re.findall("([0-9]+)([smhdjSMHDJ])?", msg.cmd[2])
+            result2 = re.match("([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmd[2])
+            result3 = re.match("([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmd[2])
+            if result2 is not None or result3 is not None:
                 try:
-                    if result.group(2) is not None and (result.group(2) == "m" or result.group(2) == "M"):
-                        strnd["end"] = datetime.now() + timedelta(minutes=int(result.group(1)))
-                    elif result.group(2) is not None and (result.group(2) == "h" or result.group(2) == "H"):
-                        strnd["end"] = datetime.now() + timedelta(hours=int(result.group(1)))
-                    elif result.group(2) is not None and (result.group(2) == "d" or result.group(2) == "D" or result.group(2) == "j" or result.group(2) == "J"):
-                        strnd["end"] = datetime.now() + timedelta(days=int(result.group(1)))
-                    else:
-                        strnd["end"] = datetime.now() + timedelta(seconds=int(result.group(1)))
+                    now = datetime.now()
+                    if result3 is None or result3.group(4) is None: sec = 0
+                    else: sec = int(result3.group(4))
+                    if result3 is None or result3.group(2) is None: minu = 0
+                    else: minu = int(result3.group(2))
+                    if result3 is None or result3.group(1) is None: hou = 0
+                    else: hou = int(result3.group(1))
+
+                    if result2 is None or result2.group(3) is None: yea = now.year
+                    else: yea = int(result2.group(3))
+
+                    if result2 is not None and result3 is not None:
+                        strnd["end"] = datetime(yea, int(result2.group(2)), int(result2.group(1)), hou, minu, sec)
+                    elif result2 is not None:
+                      strnd["end"] = datetime(int(result2.group(3)), int(result2.group(2)), int(result2.group(1)))
+                    elif result3 is not None:
+                      strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
+
                     evt.end = strnd.getDate("end")
                     strnd["id"] = CONTEXT.add_event(evt)
                     save()
-                    return Response(msg.sender, "%s commencé le %s et se terminera le %s."% (msg.cmd[1], datetime.now(), strnd.getDate("end")))
+                    return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
+                                    (msg.cmd[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
+                                     strnd.getDate("end").strftime("%A %d %B %Y a %H:%M:%S")))
                 except:
-                    save()
-                    return Response(msg.sender, "Impossible de définir la fin de %s.\n%s commencé le %s."% (msg.cmd[1], msg.cmd[1], datetime.now()))
+                    DATAS.delChild(strnd)
+                    return Response(msg.sender,
+                                    "Mauvais format de date pour l'evenement %s. Il n'a pas ete cree." % msg.cmd[1])
+            elif result1 is not None and len(result1) > 0:
+                strnd["end"] = datetime.now()
+                for (t, g) in result1:
+                    if g is None or g == "m" or g == "M":
+                        strnd["end"] += timedelta(minutes=int(t))
+                    elif g == "h" or g == "H":
+                        strnd["end"] += timedelta(hours=int(t))
+                    elif g == "d" or g == "D" or g == "j" or g == "J":
+                        strnd["end"] += timedelta(days=int(t))
+                    else:
+                        strnd["end"] += timedelta(seconds=int(t))
+                evt.end = strnd.getDate("end")
+                strnd["id"] = CONTEXT.add_event(evt)
+                save()
+                return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
+                                (msg.cmd[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
+                                 strnd.getDate("end").strftime("%A %d %B %Y a %H:%M:%S")))
         save()
-        return Response(msg.sender, "%s commencé le %s"% (msg.cmd[1], datetime.now()))
+        return Response(msg.sender, "%s commencé le %s"% (msg.cmd[1],
+                            datetime.now().strftime("%A %d %B %Y a %H:%M:%S")))
     else:
         return Response(msg.sender, "%s existe déjà."% (msg.cmd[1]))
 
