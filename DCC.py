@@ -132,7 +132,7 @@ class DCC(threading.Thread):
             except:
                 self.setError("Une erreur s'est produite durant la tentative"
                               " d'ouverture d'une session DCC.")
-                return
+                return False
         print ('Listen on', self.port, "for", self.sender)
 
         #Send CTCP request for DCC
@@ -146,6 +146,7 @@ class DCC(threading.Thread):
         (self.conn, addr) = s.accept()
         print ('Connected by', addr)
         self.connected = True
+        return True
 
     def send_dcc_raw(self, line):
         self.conn.sendall(line + b'\n')
@@ -196,7 +197,9 @@ class DCC(threading.Thread):
         # Messages connection
         else:
             if not self.connected:
-                self.request_user()
+                if not self.request_user():
+                    #TODO: do something here
+                    return False
 
             #Start by sending all queued messages
             for mess in self.messages:
@@ -221,6 +224,12 @@ class DCC(threading.Thread):
         if self.connected:
             self.conn.close()
             self.connected = False
+
+        #Remove from DCC connections server list
+        if self.realname in self.srv.dcc_clients:
+            del self.srv.dcc_clients[self.realname]
+
+        print ("Close connection with", self.nick)
         self.stopping.set()
         #Rearm Thread
         threading.Thread.__init__(self)

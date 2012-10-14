@@ -53,7 +53,7 @@ class MessagesHook:
             del self.context.hooks_cache[store]
 
         if not hasattr(self, store):
-            print ("\033[1;35mWarning:\033[0m unrecognized hook store type")
+            print ("\033[1;35mWarning:\033[0m unrecognized hook store")
             return
         attr = getattr(self, store)
 

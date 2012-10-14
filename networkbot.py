@@ -35,6 +35,7 @@ class NetworkBot:
 
         self.dcc = dcc # DCC connection to the other bot
         self.hooks = list()
+        self.REGISTERED_HOOKS = list()
 
         # Tags monitor
         self.my_tag = random.randint(0,255)
@@ -179,7 +180,7 @@ class NetworkBot:
             if args[4] == "": args[4] = list()
             else: args[4] = args[4].split(',')
 
-            self.hooks[level].add_hook(args[0], hooks.Hook(self.exec_hook, args[2], None, args[3], args[4]))
+            self.hooks[level].add_hook(args[0], hooks.Hook(self.exec_hook, args[2], None, args[3], args[4]), self)
 
         elif cmd == "HOOK" and len(args) >= 8:
             # Rebuild the response
