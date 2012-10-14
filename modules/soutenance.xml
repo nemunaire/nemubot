@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
 <nemubotmodule name="soutenance">
-  <server ip="intra.acu.epita.fr" url="/intra/sout_liste.html" />
+  <server ip="www.acu.epita.fr" url="/intra/sout_liste.html" />
+  <message type="cmd" name="soutenance" call="ask_soutenance" />
 </nemubotmodule>
