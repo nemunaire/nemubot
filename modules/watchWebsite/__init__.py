@@ -45,11 +45,11 @@ def start_watching(site):
 
 
 def explore_url(url):
-    return re.match("^(http://)?([^/]+)(/.*)$", url)
+    return re.match("^(http://)?([^/:]+)(/.*)$", url)
 
 def found_site(s, p):
-    for site in DATAS:
-        if site["server"] == s and site["page"] == p:
+    for site in DATAS.getNodes("watch"):
+        if site is not None and site["server"] == s and site["page"] == p:
             return site
     return None
 
@@ -64,7 +64,14 @@ def del_site(msg):
         if site is not None and (msg.sender == site["sender"] or msg.is_owner):
             CONTEXT.del_event(site["evt_id"])
             DATAS.delChild(site)
+            save()
             return Response(msg.sender, "je ne surveille désormais plus cette URL.",
+                            channel=msg.channel, nick=msg.nick)
+        elif site is None:
+            return Response(msg.sender, "je ne surveillais pas cette URL, impossible de la supprimer.",
+                            channel=msg.channel, nick=msg.nick)
+        else:
+            return Response(msg.sender, "Vous ne pouvez pas supprimer cette URL.",
                             channel=msg.channel, nick=msg.nick)
     return Response(msg.sender, "je ne surveillais pas cette URL pour vous.",
                     channel=msg.channel, nick=msg.nick)
