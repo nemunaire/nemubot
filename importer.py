@@ -151,6 +151,7 @@ class ModuleLoader(SourceLoader):
         module.print = lambda msg: print("[%s] %s"%(module.name, msg))
         module.print_debug = lambda msg: mod_print_dbg(module, msg)
         module.send_response = lambda srv, res: mod_send_response(self.context, srv, res)
+        module.add_hook = lambda store, hook: self.context.hooks.add_hook(store, hook, module)
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path

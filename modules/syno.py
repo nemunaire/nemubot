@@ -15,8 +15,8 @@ def help_full ():
 
 def load(context):
     from hooks import Hook
-    context.hooks.add_hook("cmd_hook", Hook(cmd_syno, "syno"))
-    context.hooks.add_hook("cmd_hook", Hook(cmd_syno, "synonyme"))
+    add_hook("cmd_hook", Hook(cmd_syno, "syno"))
+    add_hook("cmd_hook", Hook(cmd_syno, "synonyme"))
 
 
 def cmd_syno(msg):

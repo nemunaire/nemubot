@@ -14,8 +14,8 @@ def load(context):
     CONTEXT = context
 
     from hooks import Hook
-    context.hooks.add_hook("cmd_hook", Hook(cmd_set, "set"))
-    context.hooks.add_hook("all_pre", Hook(treat_variables))
+    add_hook("cmd_hook", Hook(cmd_set, "set"))
+    add_hook("all_pre", Hook(treat_variables))
 
     global DATAS
     if not DATAS.hasNode("aliases"):

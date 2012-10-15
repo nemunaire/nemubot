@@ -16,8 +16,8 @@ def help_full ():
 
 def load(context):
     from hooks import Hook
-    context.hooks.add_hook("cmd_hook", Hook(cmd_sleep, "sleeptime"))
-    context.hooks.add_hook("cmd_hook", Hook(cmd_sleep, "sleepytime"))
+    add_hook("cmd_hook", Hook(cmd_sleep, "sleeptime"))
+    add_hook("cmd_hook", Hook(cmd_sleep, "sleepytime"))
 
 
 def cmd_sleep(msg):
