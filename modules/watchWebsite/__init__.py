@@ -105,8 +105,8 @@ def add_site(msg):
 
 def alert_change(content, site):
     """Alert when a change is detected"""
-    start_watching(site)
     if content is None:
+        start_watching(site)
         return
 
     if site["type"] == "atom":
@@ -146,11 +146,13 @@ def alert_change(content, site):
                                                         site["message"],
                                                         site["channel"]))
         else:
+            start_watching(site)
             return #Stop here, no changes, so don't save
 
     else: # Just looking for any changes
         send_response(site["irc"], Response(site["sender"], site["message"], site["channel"]))
     site["lastcontent"] = content
+    start_watching(site)
     save()
 
 #TODO: built-in this function
