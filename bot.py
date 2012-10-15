@@ -17,8 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
+from datetime import timedelta
 from queue import Queue
 import threading
+import time
 
 import consumer
 import event
@@ -107,7 +109,9 @@ class Bot:
         if len(self.events) > 0:
             #print ("Update timer, next in", self.events[0].time_left.seconds,
             #       "seconds")
-            if datetime.now() >= self.events[0].current:
+            if datetime.now() + timedelta(seconds=5) >= self.events[0].current:
+                while datetime.now() < self.events[0].current:
+                    time.sleep(0.6)
                 self.end_timer()
             else:
                 self.event_timer = threading.Timer(
