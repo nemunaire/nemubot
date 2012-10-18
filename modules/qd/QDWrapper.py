@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from wrapper import Wrapper
+from tools.wrapper import Wrapper
 from .Score import Score
 
 class QDWrapper(Wrapper):
