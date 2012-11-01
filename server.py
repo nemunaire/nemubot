@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
+import os
 import socket
 import sys
 import threading
@@ -264,7 +266,13 @@ class Server(threading.Thread):
     def run(self):
       if not self.connected:
           self.s = socket.socket() #Create the socket
-          self.s.connect((self.host, self.port)) #Connect to server
+          try:
+              self.s.connect((self.host, self.port)) #Connect to server
+          except socket.error as e:
+              self.s = None
+              print ("Unable to connect to %s:%d: %s" % (self.host, self.port,
+                                                         os.strerror(e.errno)))
+              return
           self.stopping.clear()
           self.connected = True
 
