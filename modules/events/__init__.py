@@ -48,6 +48,15 @@ def fini(d, strend):
     DATAS.delChild(DATAS.index[strend["name"]])
     save()
 
+def cmd_gouter(msg):
+    ndate = datetime.today()
+    ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42)
+    return Response(msg.sender,
+        msg.countdown_format(ndate,
+                             "Le goûter aura lieu dans %s, préparez vos biscuits !",
+                             "Nous avons %s de retard pour le goûter :("),
+                    channel=msg.channel)
+
 def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
@@ -86,7 +95,7 @@ def start_countdown(msg):
         evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
         if len(msg.cmd) > 2:
-            result1 = re.findall("([0-9]+)([smhdjSMHDJ])?", msg.cmd[2])
+            result1 = re.findall("([0-9]+)([smhdjwSMHDJW])?", msg.cmd[2])
             result2 = re.match("([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmd[2])
             result3 = re.match("([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmd[2])
             if result2 is not None or result3 is not None:
@@ -107,7 +116,10 @@ def start_countdown(msg):
                     elif result2 is not None:
                       strnd["end"] = datetime(int(result2.group(3)), int(result2.group(2)), int(result2.group(1)))
                     elif result3 is not None:
-                      strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
+                      if hou * 3600 + minu * 60 + sec > now.hour * 3600 + now.minute * 60 + now.second:
+                        strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
+                      else:
+                        strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec)
 
                     evt.end = strnd.getDate("end")
                     strnd["id"] = CONTEXT.add_event(evt)
@@ -122,12 +134,14 @@ def start_countdown(msg):
             elif result1 is not None and len(result1) > 0:
                 strnd["end"] = datetime.now()
                 for (t, g) in result1:
-                    if g is None or g == "m" or g == "M":
+                    if g is None or g == "" or g == "m" or g == "M":
                         strnd["end"] += timedelta(minutes=int(t))
                     elif g == "h" or g == "H":
                         strnd["end"] += timedelta(hours=int(t))
                     elif g == "d" or g == "D" or g == "j" or g == "J":
                         strnd["end"] += timedelta(days=int(t))
+                    elif g == "w" or g == "W":
+                        strnd["end"] += timedelta(days=int(t)*7)
                     else:
                         strnd["end"] += timedelta(seconds=int(t))
                 evt.end = strnd.getDate("end")

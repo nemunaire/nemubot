@@ -74,10 +74,10 @@ class EventConsumer:
         try:
             self.evt.launch_check()
         except:
-            print ("\033[1;31mError:.\033[0 during event end")
+            print ("\033[1;31mError:\033[0m during event end")
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            sys.stderr.write (traceback.format_exception_only(exc_type,
-                                                              exc_value)[0])
+            traceback.print_exception(exc_type, exc_value,
+                                      exc_traceback)
         if self.evt.next is not None:
             self.context.add_event(self.evt, self.evt.id)
         
