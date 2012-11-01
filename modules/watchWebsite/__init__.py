@@ -115,7 +115,12 @@ def alert_change(content, site):
                 site["_lastpage"] = Atom(content)
             else:
                 site["_lastpage"] = Atom(site["lastcontent"])
-        page = Atom(content)
+        try:
+            page = Atom(content)
+        except:
+            print ("An error occurs during Atom parsing. Restart event...")
+            start_watching(site)
+            return
         diff = site["_lastpage"].diff(page)
         if len(diff) > 0:
             site["_lastpage"] = page
