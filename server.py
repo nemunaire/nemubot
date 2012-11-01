@@ -133,32 +133,37 @@ class Server(threading.Thread):
                 self.moremessages[res.sender] = res
 
     def send_ctcp(self, to, msg, cmd = "NOTICE", endl = "\r\n"):
-      """Send a message as CTCP response"""
-      if msg is not None and to is not None:
-        for line in msg.split("\n"):
-          if line != "":
-            self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to.split("!")[0], line, endl)).encode ())
+        """Send a message as CTCP response"""
+        if msg is not None and to is not None:
+            for line in msg.split("\n"):
+                if self.s is None:
+                    print ("\033[1;35mWarning:\033[0m Attempt to send message on a non connected server: %s: %s" % (self.id, msg))
+                    traceback.print_stack()
+                elif line != "":
+                    self.s.send (("%s %s :\x01%s\x01%s" % (cmd, to.split("!")[0], line, endl)).encode ())
 
     def send_dcc(self, msg, to):
-      """Send a message through DCC connection"""
-      if msg is not None and to is not None:
-        realname = to.split("!")[1]
-        if realname not in self.dcc_clients.keys():
-          d = dcc.DCC(self, to)
-          self.dcc_clients[realname] = d
-        self.dcc_clients[realname].send_dcc(msg)
+        """Send a message through DCC connection"""
+        if msg is not None and to is not None:
+            realname = to.split("!")[1]
+            if realname not in self.dcc_clients.keys():
+                d = dcc.DCC(self, to)
+                self.dcc_clients[realname] = d
+            self.dcc_clients[realname].send_dcc(msg)
 
 
     def send_msg_final(self, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
         """Send a message without checks"""
         if channel == self.nick:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback)
             print ("\033[1;35mWarning:\033[0m Nemubot talks to himself: %s" % msg)
+            traceback.print_stack()
         if msg is not None and channel is not None:
             for line in msg.split("\n"):
                 if line != "":
-                    if len(line) < 442:
+                    if self.s is None:
+                        print ("\033[1;35mWarning:\033[0m Attempt to send message on a non connected server: %s: %s" % (self.id, msg))
+                        traceback.print_stack()
+                    elif len(line) < 442:
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
                     else:
                         self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
@@ -270,8 +275,8 @@ class Server(threading.Thread):
               self.s.connect((self.host, self.port)) #Connect to server
           except socket.error as e:
               self.s = None
-              print ("Unable to connect to %s:%d: %s" % (self.host, self.port,
-                                                         os.strerror(e.errno)))
+              print ("\033[1;31mError:\033[0m Unable to connect to %s:%d: %s"
+                     % (self.host, self.port, os.strerror(e.errno)))
               return
           self.stopping.clear()
           self.connected = True
