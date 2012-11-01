@@ -62,7 +62,10 @@ class DDGSearch:
     @property
     def abstract(self):
         try:
-            return self.ddgres.getNode("Abstract").getContent() + " <" + self.ddgres.getNode("AbstractURL").getContent() + ">"
+            if self.ddgres.getNode("Abstract").getContent() != "":
+                return self.ddgres.getNode("Abstract").getContent() + " <" + self.ddgres.getNode("AbstractURL").getContent() + ">"
+            else:
+                return None
         except:
             return None
 

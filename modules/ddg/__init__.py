@@ -102,7 +102,7 @@ def wiki(msg):
     else:
         lang = "en"
 
-    s = Wikipedia.Wikipedia(msg.cmd[1], lang)
+    s = Wikipedia.Wikipedia(' '.join(msg.cmd[1:]), lang)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results")
     for result in s.nextRes:
