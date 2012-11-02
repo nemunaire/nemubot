@@ -116,18 +116,19 @@ class IRCServer(server.Server):
             return chan in self.channels and (sender is None or sender
                                               in self.channels[chan].people)
 
-    def join(self, chan, password=None):
+    def join(self, chan, password=None, force=False):
         """Join a channel"""
-        if chan is not None and self.connected and chan not in self.channels:
+        if force or (chan is not None and
+                     self.connected and chan not in self.channels):
             chn = xmlparser.module_state.ModuleState("channel")
             chn["name"] = chan
             chn["password"] = password
             self.node.addChild(chn)
             self.channels[chan] = channel.Channel(chn, self)
             if password is not None:
-                self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode ())
+                self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode())
             else:
-                self.s.send(("JOIN %s\r\n" % chan).encode ())
+                self.s.send(("JOIN %s\r\n" % chan).encode())
             return True
         else:
             return False
@@ -139,7 +140,7 @@ class IRCServer(server.Server):
                 for c in chan:
                     self.leave(c)
             else:
-                self.s.send(("PART %s\r\n" % self.channels[chan].name).encode ())
+                self.s.send(("PART %s\r\n" % self.channels[chan].name).encode())
                 del self.channels[chan]
             return True
         else:
@@ -162,13 +163,19 @@ class IRCServer(server.Server):
                 self.s.send(b"PASS " + self.password.encode () + b"\r\n")
             self.s.send(("NICK %s\r\n" % self.nick).encode ())
             self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host,
-                                                     self.realname)).encode ())
+                                                     self.realname)).encode())
             raw = self.s.recv(1024)
             if not raw:
                 print ("Unable to connect to %s:%d" % (self.host, self.port))
                 return
             self.connected = True
             print ("Connection to %s:%d completed" % (self.host, self.port))
+
+            if len(self.channels) > 0:
+                for chn in self.channels.keys():
+                    self.join(self.channels[chn].name,
+                              self.channels[chn].password, force=True)
+
 
         readbuffer = b'' #Here we store all the messages from server
         while not self.stop:
@@ -205,7 +212,7 @@ class IRCServer(server.Server):
 
     def send_pong(self, cnt):
         """Send a PONG command to the server with argument cnt"""
-        self.s.send(("PONG %s\r\n" % cnt).encode ())
+        self.s.send(("PONG %s\r\n" % cnt).encode())
 
     def msg_treated(self, origin):
         """Do nothing; here for implement abstract class"""
