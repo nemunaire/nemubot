@@ -136,7 +136,7 @@ class ModuleLoader(SourceLoader):
         if not hasattr(module, "nemubotversion"):
             raise ImportError("Module `%s' is not a nemubot module."%self.name)
         # Check module version
-        if module.nemubotversion > self.context.version:
+        if module.nemubotversion != self.context.version:
             raise ImportError("Module `%s' is not compatible with this "
                               "version." % self.name)
 
@@ -222,11 +222,11 @@ def register_hooks(module, context, prompt):
 
     # Register legacy hooks
     if hasattr(module, "parseanswer"):
-        context.hooks.add_hook("cmd_default", Hook(module.parseanswer))
+        context.hooks.add_hook("cmd_default", Hook(module.parseanswer), module)
     if hasattr(module, "parseask"):
-        context.hooks.add_hook("ask_default", Hook(module.parseask))
+        context.hooks.add_hook("ask_default", Hook(module.parseask), module)
     if hasattr(module, "parselisten"):
-        context.hooks.add_hook("msg_default", Hook(module.parselisten))
+        context.hooks.add_hook("msg_default", Hook(module.parselisten), module)
 
 ##########################
 #                        #
