@@ -21,7 +21,6 @@ import os
 import re
 import socket
 import sys
-import threading
 import time
 import traceback
 
@@ -33,6 +32,9 @@ PORTS = list()
 
 class DCC(server.Server):
     def __init__(self, srv, dest, socket=None):
+        server.Server.__init__(self)
+
+        self.DCC = False
         self.error = False # An error has occur, closing the connection?
         self.messages = list() # Message queued before connexion
 
@@ -56,8 +58,6 @@ class DCC(server.Server):
             print ("No more available slot for DCC connection")
             self.setError("Il n'y a plus de place disponible sur le serveur"
                           " pour initialiser une session DCC.")
-
-        threading.Thread.__init__(self)
 
     def foundPort(self):
         """Found a free port for the connection"""
@@ -132,8 +132,8 @@ class DCC(server.Server):
                 self.srv.send_msg_final(self.nick, msg)
             elif not self.connected or self.s is None:
                 if not self.DCC:
-                    self.start()
                     self.DCC = True
+                    self.start()
                 self.messages.append(msg)
             else:
                 for line in msg.split("\n"):

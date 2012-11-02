@@ -23,7 +23,7 @@ import threading
 import traceback
 
 import channel
-import DCC
+from DCC import DCC
 import message
 import server
 import xmlparser
@@ -215,7 +215,7 @@ class IRCServer(server.Server):
         if msg is not None and to is not None:
             realname = to.split("!")[1]
             if realname not in self.dcc_clients.keys():
-                d = dcc.DCC(self, to)
+                d = DCC(self, to)
                 self.dcc_clients[realname] = d
             self.dcc_clients[realname].send_dcc(msg)
 

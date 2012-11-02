@@ -23,7 +23,6 @@ import time
 
 import credits
 from credits import Credits
-from DCC import DCC
 from response import Response
 import xmlparser
 
@@ -168,102 +167,6 @@ class Message:
           for chn in self.srv.channels.keys():
               self.srv.channels[chn].part(self.nick)
       return None
-
-  def reparsemsg(self):
-      self.parsemsg()
-
-  def parsemsg (self):
-
-    #Owner commands
-    if self.content[0] == '`' and self.sender == self.srv.owner:
-      self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "ban":
-        if len(self.cmd) > 1:
-          credits.BANLIST.append(self.cmd[1])
-        else:
-          print (credits.BANLIST)
-      elif self.cmd[0] == "banlist":
-          print (credits.BANLIST)
-      elif self.cmd[0] == "unban":
-        if len(self.cmd) > 1:
-          credits.BANLIST.remove(self.cmd[1])
-
-      elif self.cmd[0] == "credits":
-        if len(self.cmd) > 1 and self.cmd[1] in CREDITS:
-          self.send_chn ("%s a %d crédits." % (self.cmd[1], CREDITS[self.cmd[1]]))
-        else:
-          for c in CREDITS.keys():
-            print (CREDITS[c].to_string())
-
-    #Messages stating with !
-    elif self.content[0] == '!' and len(self.content) > 1:
-      try:
-        self.cmd = shlex.split(self.content[1:])
-      except ValueError:
-        self.cmd = self.content[1:].split(' ')
-      if self.cmd[0] == "help":
-          res = Response(self.sender)
-          if len(self.cmd) > 1:
-              if self.cmd[1] in self.srv.context.modules:
-                  if len(self.cmd) > 2:
-                      if hasattr(self.srv.context.modules[self.cmd[1]], "HELP_cmd"):
-                          res.append_message(self.srv.context.modules[self.cmd[1]].HELP_cmd(self, self.cmd[2]))
-                      else:
-                          res.append_message("No help for command %s in module %s" % (self.cmd[2], self.cmd[1]))
-                  elif hasattr(self.srv.context.modules[self.cmd[1]], "help_full"):
-                      res.append_message(self.srv.context.modules[self.cmd[1]].help_full())
-                  else:
-                      res.append_message("No help for module %s" % self.cmd[1])
-              else:
-                  res.append_message("No module named %s" % self.cmd[1])
-          else:
-              res.append_message("Pour me demander quelque chose, commencez "
-                                 "votre message par mon nom ; je réagis "
-                                 "également à certaine commandes commençant par"
-                                 " !.  Pour plus d'informations, envoyez le "
-                                 "message \"!more\".")
-              res.append_message("Mon code source est libre, publié sous "
-                                 "licence AGPL (http://www.gnu.org/licenses/). "
-                                 "Vous pouvez le consulter, le dupliquer, "
-                                 "envoyer des rapports de bogues ou bien "
-                                 "contribuer au projet sur GitHub : "
-                                 "http://github.com/nemunaire/nemubot/")
-              res.append_message(title="Pour plus de détails sur un module, "
-                                 "envoyez \"!help nomdumodule\". Voici la liste"
-                                 " de tous les modules disponibles localement",
-                                 message=["\x03\x02%s\x03\x02 (%s)" % (im, self.srv.context.modules[im].help_tiny ()) for im in self.srv.context.modules if hasattr(self.srv.context.modules[im], "help_tiny")])
-          return res
-
-      elif self.cmd[0] == "more":
-          if self.channel == self.srv.nick:
-              if self.sender in self.srv.moremessages:
-                  return self.srv.moremessages[self.sender]
-          else:
-              if self.channel in self.srv.moremessages:
-                  return self.srv.moremessages[self.channel]
-
-      elif self.cmd[0] == "dcc":
-        print("dcctest for", self.sender)
-        self.srv.send_dcc("Hello %s!" % self.nick, self.sender)
-      elif self.cmd[0] == "pvdcctest":
-        print("dcctest")
-        return Response(self.sender, message="Test DCC")
-      elif self.cmd[0] == "dccsendtest":
-        print("dccsendtest")
-        conn = DCC(self.srv, self.sender)
-        conn.send_file("bot_sample.xml")
-      else:
-          return self.srv.context.treat_cmd(self)
-
-    else:
-        res = self.srv.context.treat_answer(self)
-        # Assume the message starts with nemubot:
-        if res is None and self.private:
-            return self.srv.context.treat_ask(self)
-        return res
-
-#  def parseOwnerCmd(self, cmd):
-
 
 ##############################
 #                            #
