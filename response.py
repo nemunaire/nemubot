@@ -22,12 +22,14 @@ import sys
 class Response:
     def __init__(self, sender, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) ", count=None,
-                 shown_first_count=-1):
+                 ctcp=False, shown_first_count=-1):
         self.nomore = nomore
         self.more = more
         self.rawtitle = title
+        self.server = server
         self.messages = list()
         self.alone = True
+        self.ctcp = ctcp
         if message is not None:
             self.append_message(message, shown_first_count=shown_first_count)
         self.elt = 0 # Next element to display

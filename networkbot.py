@@ -217,6 +217,9 @@ class NetworkBot:
         elif (cmd == b'HOOK' or cmd == b'"HOOK"') and len(args) > 0: # Action requested
             self.context.receive_message(self, args[0].encode(), True, tag)
 
+        elif (cmd == b'NOMORE' or cmd == b'"NOMORE"') and len(args) > 0: # Reset !more feature
+            if args[0] in self.srv.moremessages:
+                del self.srv.moremessages[args[0]]
 
     def exec_hook(self, msg):
         self.send_cmd(["HOOK", msg.raw])

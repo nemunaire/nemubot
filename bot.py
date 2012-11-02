@@ -26,19 +26,26 @@ import consumer
 import event
 import hooks
 from networkbot import NetworkBot
-from server import Server
+from IRCServer import IRCServer
+import response
 
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 class Bot:
-    def __init__(self, servers=dict(), modules=dict(), mp=list()):
+    def __init__(self, ip, realname, mp=list()):
         # Bot general informations
-        self.version     = 3.2
-        self.version_txt = "3.2-dev"
+        self.version     = 3.3
+        self.version_txt = "3.3-dev"
+
+        # Save various informations
+        self.ip = ip
+        self.realname = realname
+        self.ctcp_capabilities = dict()
+        self.init_ctcp_capabilities()
 
         # Keep global context: servers and modules
-        self.servers = servers
-        self.modules = modules
+        self.servers = dict()
+        self.modules = dict()
 
         # Context paths
         self.modules_path = mp
@@ -59,6 +66,36 @@ class Bot:
         self.cnsr_queue     = Queue()
         self.cnsr_thrd      = list()
         self.cnsr_thrd_size = -1
+
+
+    def init_ctcp_capabilities(self):
+        """Reset existing CTCP capabilities to default one"""
+        self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive")
+        self.ctcp_capabilities["CLIENTINFO"] = self._ctcp_clientinfo
+        self.ctcp_capabilities["DCC"] = self._ctcp_dcc
+        self.ctcp_capabilities["NEMUBOT"] = lambda srv, msg: _ctcp_response(
+                                       msg.sender, "NEMUBOT %f" % self.version)
+        self.ctcp_capabilities["TIME"] = lambda srv, msg: _ctcp_response(
+                                      msg.sender, "TIME %s" % (datetime.now()))
+        self.ctcp_capabilities["USERINFO"] = lambda srv, msg: _ctcp_response(
+                                     msg.sender, "USERINFO %s" % self.realname)
+        self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
+                          msg.sender, "VERSION nemubot v%s" % self.version_txt)
+
+    def _ctcp_clientinfo(self, srv, msg):
+        """Response to CLIENTINFO CTCP message"""
+        return _ctcp_response(msg.sndr,
+                              " ".join(self.ctcp_capabilities.keys()))
+            
+    def _ctcp_dcc(self, srv, msg):
+        """Response to DCC CTCP message"""
+        ip = self.srv.toIP(int(msg.cmds[3]))
+        conn = DCC(srv, msg.sender)
+        if conn.accept_user(ip, int(msg.cmds[4])):
+            srv.dcc_clients[conn.sender] = conn
+            conn.send_dcc("Hello %s!" % conn.nick)
+        else:
+            print ("DCC: unable to connect to %s:%s" % (ip, msg.cmds[4]))
 
 
     def add_event(self, evt, eid=None):
@@ -126,7 +163,7 @@ class Bot:
         while len(self.events)>0 and datetime.now() >= self.events[0].current:
             #print ("end timer: while")
             evt = self.events.pop(0)
-            self.cnsr_queue.put_nowait(consumer.EventConsumer(self, evt))
+            self.cnsr_queue.put_nowait(consumer.EventConsumer(evt))
             self.update_consumers()
 
         self.update_timer()
@@ -134,11 +171,11 @@ class Bot:
 
     def addServer(self, node, nick, owner, realname):
         """Add a new server to the context"""
-        srv = Server(node, nick, owner, realname)
+        srv = IRCServer(node, nick, owner, realname)
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
             if srv.autoconnect:
-                srv.launch(self)
+                srv.launch(self.receive_message)
             return True
         else:
             return False
@@ -296,6 +333,16 @@ class Bot:
             self.check_rest_times(store, h)
 
 
+    def treat_post(self, msg):
+        """Treat a message before send"""
+        for h, lvl, store in self.create_cache("all_post"):
+            c = h.run(msg)
+            self.check_rest_times(store, h)
+            if not c:
+                return False
+        return True
+
+
     def treat_cmd(self, msg):
         """Treat a command message"""
         treated = list()
@@ -401,6 +448,8 @@ class Bot:
 
         return treated
 
+def _ctcp_response(sndr, msg):
+    return response.Response(sndr, msg, ctcp=True)
 
 def hotswap(bak):
     return Bot(bak.servers, bak.modules, bak.modules_path)

@@ -24,7 +24,7 @@ class MessagesHook:
 
         # Store specials hook
         self.all_pre  = list() # Treated before any parse
-        #self.all_post = list() # Treated before send message to user
+        self.all_post = list() # Treated before send message to user
 
         # Store direct hook
         self.cmd_hook = dict()

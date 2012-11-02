@@ -136,7 +136,7 @@ class ModuleLoader(SourceLoader):
         if not hasattr(module, "nemubotversion"):
             raise ImportError("Module `%s' is not a nemubot module."%self.name)
         # Check module version
-        if module.nemubotversion != self.context.version:
+        if module.nemubotversion > self.context.version:
             raise ImportError("Module `%s' is not compatible with this "
                               "version." % self.name)
 

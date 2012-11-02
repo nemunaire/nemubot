@@ -26,18 +26,14 @@ import time
 import traceback
 
 import message
+import server
 
 #Store all used ports
 PORTS = list()
 
-class DCC(threading.Thread):
+class DCC(server.Server):
     def __init__(self, srv, dest, socket=None):
-        self.DCC = False # Is this a DCC connection
         self.error = False # An error has occur, closing the connection?
-        self.stop = False # Stop requered
-        self.stopping = threading.Event() # Event to listen for full disconnection
-        self.conn = socket # The socket
-        self.connected = self.conn is not None # Is connected?
         self.messages = list() # Message queued before connexion
 
         # Informations about the sender
@@ -64,7 +60,7 @@ class DCC(threading.Thread):
         threading.Thread.__init__(self)
 
     def foundPort(self):
-        """Found a free port for the connexion"""
+        """Found a free port for the connection"""
         for p in range(65432, 65535):
             if p not in PORTS:
                 PORTS.append(p)
@@ -73,41 +69,18 @@ class DCC(threading.Thread):
 
     @property
     def id(self):
+        """Gives the server identifiant"""
         return self.srv.id + "/" + self.sender
 
     def setError(self, msg):
         self.error = True
         self.srv.send_msg_usr(self.sender, msg)
 
-    def disconnect(self):
-        """Close the connection if connected"""
-        if self.connected:
-            self.stop = True
-            self.conn.shutdown(socket.SHUT_RDWR)
-            self.stopping.wait()
-            return True
-        return False
-
-    def kill(self):
-        """Stop the loop without closing the socket"""
-        if self.connected:
-            self.stop = True
-            self.connected = False
-            #self.stopping.wait()#Compare with server before delete me
-            return True
-        return False
-
-    def launch(self, mods=None):
-        """Connect to the client if not already connected"""
-        if not self.connected:
-            self.stop = False
-            self.start()
-
     def accept_user(self, host, port):
         """Accept a DCC connection"""
-        self.conn = socket.socket()
+        self.s = socket.socket()
         try:
-            self.conn.connect((host, port))
+            self.s.connect((host, port))
             print ('Accepted user from', host, port, "for", self.sender)
             self.connected = True
             self.stop = False
@@ -143,13 +116,13 @@ class DCC(threading.Thread):
 
         s.listen(1)
         #Waiting for the client
-        (self.conn, addr) = s.accept()
+        (self.s, addr) = s.accept()
         print ('Connected by', addr)
         self.connected = True
         return True
 
     def send_dcc_raw(self, line):
-        self.conn.sendall(line + b'\n')
+        self.s.sendall(line + b'\n')
 
     def send_dcc(self, msg, to = None):
         """If we talk to this user, send a message through this connection
@@ -157,7 +130,7 @@ class DCC(threading.Thread):
         if to is None or to == self.sender or to == self.nick:
             if self.error:
                 self.srv.send_msg_final(self.nick, msg)
-            elif not self.connected or self.conn is None:
+            elif not self.connected or self.s is None:
                 if not self.DCC:
                     self.start()
                     self.DCC = True
@@ -190,8 +163,8 @@ class DCC(threading.Thread):
                 with open(self.messages, 'rb') as f:
                     d = f.read(268435456) #Packets size: 256Mo
                     while d:
-                        self.conn.sendall(d)
-                        self.conn.recv(4) #The client send a confirmation after each packet
+                        self.s.sendall(d)
+                        self.s.recv(4) #The client send a confirmation after each packet
                         d = f.read(268435456) #Packets size: 256Mo
 
         # Messages connection
@@ -211,7 +184,7 @@ class DCC(threading.Thread):
             self.nicksize = len(self.srv.nick)
             self.Bnick = self.srv.nick.encode()
             while not self.stop:
-                raw = self.conn.recv(1024) #recieve server messages
+                raw = self.s.recv(1024) #recieve server messages
                 if not raw:
                     break
                 readbuffer = readbuffer + raw
@@ -222,7 +195,7 @@ class DCC(threading.Thread):
                     self.treatement(line)
 
         if self.connected:
-            self.conn.close()
+            self.s.close()
             self.connected = False
 
         #Remove from DCC connections server list

@@ -29,7 +29,7 @@ import importer
 
 if __name__ == "__main__":
     # Create bot context
-    context = bot.Bot()
+    context = bot.Bot(0, "FIXME")
 
     # Load the prompt
     prmpt = prompt.Prompt()

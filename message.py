@@ -73,9 +73,17 @@ class Message:
         self.channel = self.pickWords(words[2:]).decode()
 
       if self.cmd == 'PRIVMSG':
-        #Check for CTCP request
-        self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
-        self.content = self.pickWords(words[3:])
+          # Check for CTCP request
+          self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
+          self.content = self.pickWords(words[3:])
+          # If CTCP, remove 0x01
+          if self.ctcp:
+              self.content = self.content[1:len(self.content)-1]
+          # Split content by words
+          try:
+            self.cmds = shlex.split(self.content.decode())
+          except ValueError:
+            self.cmds = self.content.decode().split(' ')
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
           if words[i][0] == 58:
@@ -125,8 +133,9 @@ class Message:
   def is_owner(self):
       return self.nick == self.srv.owner
 
-  def authorize(self):
+  def authorize_DEPRECATED(self):
       """Is nemubot listening for the sender on this channel?"""
+      # TODO: deprecated
       if self.srv.isDCC(self.sender):
           return True
       elif self.realname not in CREDITS:
@@ -139,13 +148,7 @@ class Message:
 
   def treat(self):
       """Parse and treat the message"""
-      if self.cmd == "PING":
-          self.srv.send_pong(self.content)
-      elif self.cmd == "PRIVMSG" and self.ctcp:
-          self.parsectcp()
-      elif self.cmd == "PRIVMSG" and self.authorize():
-          return self.parsemsg()
-      elif self.channel in self.srv.channels:
+      if self.channel in self.srv.channels:
           if self.cmd == "353":
               self.srv.channels[self.channel].parse353(self)
           elif self.cmd == "332":
@@ -166,53 +169,13 @@ class Message:
               self.srv.channels[chn].part(self.nick)
       return None
 
-  def parsectcp(self):
-      """Parse CTCP requests"""
-      if self.content == '\x01CLIENTINFO\x01':
-          self.srv.send_ctcp(self.sender, "CLIENTINFO TIME USERINFO VERSION CLIENTINFO")
-      elif self.content == '\x01TIME\x01':
-          self.srv.send_ctcp(self.sender, "TIME %s" % (datetime.now()))
-      elif self.content == '\x01USERINFO\x01':
-          self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
-      elif self.content == '\x01VERSION\x01':
-          self.srv.send_ctcp(self.sender, "VERSION nemubot v%s" % self.srv.context.version_txt)
-      elif self.content[:9] == '\x01DCC CHAT':
-          words = self.content[1:len(self.content) - 1].split(' ')
-          ip = self.srv.toIP(int(words[3]))
-          conn = DCC(self.srv, self.sender)
-          if conn.accept_user(ip, int(words[4])):
-              self.srv.dcc_clients[conn.sender] = conn
-              conn.send_dcc("Hello %s!" % conn.nick)
-          else:
-              print ("DCC: unable to connect to %s:%s" % (ip, words[4]))
-      elif self.content == '\x01NEMUBOT\x01':
-          self.srv.send_ctcp(self.sender, "NEMUBOT %f" % self.srv.context.version)
-      elif self.content[:7] != '\x01ACTION':
-          print (self.content)
-          self.srv.send_ctcp(self.sender, "ERRMSG Unknown or unimplemented CTCP request")
-
   def reparsemsg(self):
       self.parsemsg()
 
   def parsemsg (self):
-    self.srv.context.treat_pre(self)
-    #Treat all messages starting with 'nemubot:' as distinct commands
-    if self.content.find("%s:"%self.srv.nick) == 0:
-      #Remove the bot name
-      self.content = self.content[len(self.srv.nick)+1:].strip()
-      messagel = self.content.lower()
-
-      # Treat ping
-      if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
-                  messagel) is not None:
-          return Response(self.sender, message="pong", channel=self.channel, nick=self.nick)
-
-      # Ask hooks
-      else:
-          return self.srv.context.treat_ask(self)
 
     #Owner commands
-    elif self.content[0] == '`' and self.sender == self.srv.owner:
+    if self.content[0] == '`' and self.sender == self.srv.owner:
       self.cmd = self.content[1:].split(' ')
       if self.cmd[0] == "ban":
         if len(self.cmd) > 1:

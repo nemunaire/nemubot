@@ -50,12 +50,12 @@ def connect(data, toks, context, prompt):
     if len(toks) > 1:
         for s in toks[1:]:
             if s in context.servers:
-                context.servers[s].launch(context)
+                context.servers[s].launch(context.receive_message)
             else:
                 print ("connect: server `%s' not found." % s)
 
     elif prompt.selectedServer is not None:
-        prompt.selectedServer.launch(context)
+        prompt.selectedServer.launch(context.receive_message)
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
