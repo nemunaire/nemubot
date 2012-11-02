@@ -86,7 +86,7 @@ class Bot:
         """Response to CLIENTINFO CTCP message"""
         return _ctcp_response(msg.sndr,
                               " ".join(self.ctcp_capabilities.keys()))
-            
+
     def _ctcp_dcc(self, srv, msg):
         """Response to DCC CTCP message"""
         ip = self.srv.toIP(int(msg.cmds[3]))
@@ -329,7 +329,7 @@ class Bot:
     def treat_pre(self, msg):
         """Treat a message before all other treatment"""
         for h, lvl, store in self.create_cache("all_pre"):
-            h.run(msg)
+            h.run(self.create_cache, msg)
             self.check_rest_times(store, h)
 
 
@@ -349,8 +349,8 @@ class Bot:
 
         # First, treat simple hook
         cmd_hook = self.create_cache("cmd_hook")
-        if msg.cmd[0] in cmd_hook:
-            (hks, lvl, store) = cmd_hook[msg.cmd[0]]
+        if msg.cmds[0] in cmd_hook:
+            (hks, lvl, store) = cmd_hook[msg.cmds[0]]
             for h in hks:
                 res = h.run(msg)
                 if res is not None and res != False:
@@ -360,7 +360,7 @@ class Bot:
         # Then, treat regexp based hook
         cmd_rgxp = self.create_cache("cmd_rgxp")
         for hook, lvl, store in cmd_rgxp:
-            if hook.is_matching(msg.cmd[0], msg.channel):
+            if hook.is_matching(msg.cmds[0], msg.channel):
                 res = hook.run(msg)
                 if res is not None and res != False:
                     treated.append(res)

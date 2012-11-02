@@ -4,18 +4,16 @@ import re
 import sys
 from datetime import datetime
 
-nemubotversion = 3.2
-
-CONTEXT = None
+nemubotversion = 3.3
 
 def load(context):
     """Load this module"""
-    global CONTEXT
-    CONTEXT = context
-
     from hooks import Hook
+    add_hook("cmd_hook", Hook(cmd_unalias, "unalias"))
+    add_hook("cmd_hook", Hook(cmd_alias, "alias"))
     add_hook("cmd_hook", Hook(cmd_set, "set"))
-    add_hook("all_pre", Hook(treat_variables))
+    add_hook("all_pre", Hook(treat_alias))
+    add_hook("all_post", Hook(treat_variables))
 
     global DATAS
     if not DATAS.hasNode("aliases"):
@@ -56,30 +54,74 @@ def get_variable(name, msg=None):
         return ""
 
 def cmd_set(msg):
-    if len (msg.cmd) > 2:
-        set_variable(msg.cmd[1], " ".join(msg.cmd[2:]))
-        res = Response(msg.sender, "Variable $%s définie." % msg.cmd[1])
+    if len (msg.cmds) > 2:
+        set_variable(msg.cmds[1], " ".join(msg.cmds[2:]))
+        res = Response(msg.sender, "Variable \$%s définie." % msg.cmds[1])
         save()
         return res
     return Response(msg.sender, "!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
 
+def cmd_alias(msg):
+    if len (msg.cmds) > 1:
+        res = list()
+        for alias in msg.cmds[1:]:
+            if alias[0] == "!":
+                alias = alias[1:]
+            if alias in DATAS.getNode("aliases").index:
+                res.append(Response(msg.sender, "!%s correspond à %s" % (alias,
+                              DATAS.getNode("aliases").index[alias]["origin"]),
+                                    channel=msg.channel))
+            else:
+                res.append(Response(msg.sender, "!%s n'est pas un alias" % alias,
+                                    channel=msg.channel))
+        return res
+    else:
+        return Response(msg.sender, "!alias prend en argument l'alias à étendre.",
+                        channel=msg.channel)
 
-def treat_variables(msg):
-    if msg.cmd[0] != "set" and re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is None:
-        cnt = msg.content.split(' ')
-        for i in range(0, len(cnt)):
-            res = re.match("^([^a-zA-Z0-9]*)\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
-            if res is not None:
-                cnt[i] = res.group(1) + get_variable(res.group(2), msg) + res.group(3)
-        msg.content = " ".join(cnt)
-        return True
-    return False
+def cmd_unalias(msg):
+    if len (msg.cmds) > 1:
+        res = list()
+        for alias in msg.cmds[1:]:
+            if alias in DATAS.getNode("aliases").index:
+                if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.is_owner:
+                    DATAS.getNode("aliases").delChild(DATAS.getNode("aliases").index[alias])
+                    res.append(Response(msg.sender, "%s a bien été supprimé" % alias, channel=msg.channel))
+                else:
+                    res.append(Response(msg.sender, "Vous n'êtes pas le createur de l'alias %s." % alias, channel=msg.channel))
+            else:
+                res.append(Response(msg.sender, "%s n'est pas un alias" % alias, channel=msg.channel))
+        return res
+    else:
+        return Response(msg.sender, "!unalias prend en argument l'alias à supprimer.", channel=msg.channel)
+
+def replace_variables(cnt, msg=None):
+    cnt = cnt.split(' ')
+    for i in range(0, len(cnt)):
+        res = re.match("^([^a-zA-Z0-9]*)(\\\\)\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
+        if res is not None:
+            if res.group(2) != "":
+                cnt[i] = res.group(1) + "$" + res.group(3) + res.group(4)
+            else:
+                cnt[i] = res.group(1) + get_variable(res.group(3), msg) + res.group(4)
+    return " ".join(cnt)
 
 
-def parseanswer(msg):
-    if msg.cmd[0] in DATAS.getNode("aliases").index:
-        msg.content = msg.content.replace("!" + msg.cmd[0], DATAS.getNode("aliases").index[msg.cmd[0]]["origin"], 1)
-        msg.reparsemsg()
+def treat_variables(res):
+    for i in range(0, len(res.messages)):
+        res.messages[i] = replace_variables(res.messages[i], res)
+    return True
+
+def treat_alias(msg, hooks_cache):
+    if (len(msg.cmds[0]) > 0 and
+        msg.cmds[0][1:] in DATAS.getNode("aliases").index and
+        msg.cmds[0][1:] not in hooks_cache("cmd_hook")):
+        msg.content = msg.content.replace(msg.cmds[0],
+                  DATAS.getNode("aliases").index[msg.cmds[0][1:]]["origin"], 1)
+
+        msg.content = replace_variables(msg.content, msg)
+
+        msg.parse_content()
         return True
     return False
 

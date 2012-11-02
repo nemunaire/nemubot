@@ -41,9 +41,8 @@ def save():
 
 
 class Message:
-  def __init__ (self, srv, line, timestamp, private = False):
+  def __init__ (self, line, timestamp, private = False):
     self.raw = line
-    self.srv = srv
     self.time = timestamp
     self.channel = None
     self.content = b''
@@ -75,14 +74,6 @@ class Message:
           # Check for CTCP request
           self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
           self.content = self.pickWords(words[3:])
-          # If CTCP, remove 0x01
-          if self.ctcp:
-              self.content = self.content[1:len(self.content)-1]
-          # Split content by words
-          try:
-            self.cmds = shlex.split(self.content.decode())
-          except ValueError:
-            self.cmds = self.content.decode().split(' ')
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
           if words[i][0] == 58:
@@ -107,7 +98,21 @@ class Message:
         self.channel = words[2].decode()
         self.content = b' '.join(words[3:])
     self.decode()
-    self.private = private or (self.channel is not None and self.srv is not None and self.channel == self.srv.nick)
+    if self.cmd == 'PRIVMSG':
+      self.parse_content()
+    self.private = private
+
+  def parse_content(self):
+      """Parse or reparse the message content"""
+      # If CTCP, remove 0x01
+      #if self.ctcp:
+      #    self.content = self.content[1:len(self.content)-1]
+
+      # Split content by words
+      try:
+          self.cmds = shlex.split(self.content)
+      except ValueError:
+          self.cmds = self.content.split(' ')
 
   def pickWords(self, words):
     """Parse last argument of a line: can be a single word or a sentence starting with :"""
@@ -127,10 +132,6 @@ class Message:
       except UnicodeDecodeError:
         #TODO: use encoding from config file
         self.content = self.content.decode('utf-8', 'replace')
-
-  @property
-  def is_owner(self):
-      return self.nick == self.srv.owner
 
   def authorize_DEPRECATED(self):
       """Is nemubot listening for the sender on this channel?"""
