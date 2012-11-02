@@ -23,6 +23,7 @@ import traceback
 import sys
 
 import bot
+from DCC import DCC
 from message import Message
 from response import Response
 import server
@@ -35,6 +36,7 @@ class MessageConsumer:
         self.time = time
         self.prvt = prvt
         self.data = data
+
 
     def treat_in(self, context, msg):
         """Treat the input message"""
@@ -54,21 +56,65 @@ class MessageConsumer:
             # TODO: continue here
                 pass
 
+    def treat_prvmsg_ask(self, context, msg):
+        # Treat ping
+        if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
+                    msg.content, re.I) is not None:
+            return Response(msg.sender, message="pong",
+                            channel=msg.channel, nick=msg.nick)
+
+        # Ask hooks
+        else:
+            return context.treat_ask(msg)
+
     def treat_prvmsg(self, context, msg):
         # Treat all messages starting with 'nemubot:' as distinct commands
         if msg.content.find("%s:"%self.srv.nick) == 0:
             # Remove the bot name
             msg.content = msg.content[len(self.srv.nick)+1:].strip()
 
-            # Treat ping
-            if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
-                        msg.content, re.I) is not None:
-                return Response(msg.sender, message="pong",
-                                channel=msg.channel, nick=msg.nick)
+            return self.treat_prvmsg_ask(context, msg)
 
-            # Ask hooks
+        # Owner commands
+        elif msg.content[0] == '`' and msg.nick == self.srv.owner:
+            #TODO: owner commands
+            pass
+
+        elif msg.content[0] == '!' and len(msg.content) > 1:
+            # Remove the !
+            msg.cmds[0] = msg.cmds[0][1:]
+
+            if msg.cmds[0] == "help":
+                return _help_msg(msg.sender)
+
+            elif msg.cmds[0] == "more":
+                if msg.channel == self.srv.nick:
+                    if msg.sender in self.srv.moremessages:
+                        return self.srv.moremessages[msg.sender]
+                else:
+                    if msg.channel in self.srv.moremessages:
+                        return self.srv.moremessages[msg.channel]
+
+            elif msg.cmds[0] == "dcc":
+                print("dcctest for", msg.sender)
+                self.srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
+            elif msg.cmds[0] == "pvdcctest":
+                print("dcctest")
+                return Response(msg.sender, message="Test DCC")
+            elif msg.cmds[0] == "dccsendtest":
+                print("dccsendtest")
+                conn = DCC(self.srv, msg.sender)
+                conn.send_file("bot_sample.xml")
+
             else:
-                return context.treat_ask(self)
+                return context.treat_cmd(msg)
+
+        else:
+            res = context.treat_answer(msg)
+            # Assume the message starts with nemubot:
+            if (res is None or len(res) <= 0) and self.prvt:
+                return self.treat_prvmsg_ask(context, msg)
+            return res
 
 
     def treat_out(self, context, res):
@@ -88,6 +134,7 @@ class MessageConsumer:
         # Sent the message only if treat_post authorize it
         if context.treat_post(res):
             res.server.send_response(res, self.data)
+
 
     def run(self, context):
         """Create, parse and treat the message"""
@@ -119,11 +166,13 @@ class MessageConsumer:
         self.srv.msg_treated(self.data)
 
 
+
 class EventConsumer:
     """Store a event before treating"""
     def __init__(self, evt, timeout=20):
         self.evt = evt
         self.timeout = timeout
+
 
     def run(self, context):
         try:
@@ -155,3 +204,39 @@ class Consumer(threading.Thread):
             pass
         finally:
             self.context.cnsr_thrd_size -= 2
+
+
+
+def _help_msg(modules, sndr, cmd):
+    """Parse and response to help messages"""
+    res = Response(sndr)
+    if len(cmd) > 1:
+        if cmd[1] in modules:
+            if len(cmd) > 2:
+                if hasattr(modules[cmd[1]], "HELP_cmd"):
+                    res.append_message(modules[cmd[1]].HELP_cmd(cmd[2]))
+                else:
+                    res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
+            elif hasattr(modules[cmd[1]], "help_full"):
+                res.append_message(modules[cmd[1]].help_full())
+            else:
+                res.append_message("No help for module %s" % cmd[1])
+        else:
+            res.append_message("No module named %s" % cmd[1])
+    else:
+        res.append_message("Pour me demander quelque chose, commencez "
+                           "votre message par mon nom ; je réagis "
+                           "également à certaine commandes commençant par"
+                           " !.  Pour plus d'informations, envoyez le "
+                           "message \"!more\".")
+        res.append_message("Mon code source est libre, publié sous "
+                           "licence AGPL (http://www.gnu.org/licenses/). "
+                           "Vous pouvez le consulter, le dupliquer, "
+                           "envoyer des rapports de bogues ou bien "
+                           "contribuer au projet sur GitHub : "
+                           "http://github.com/nemunaire/nemubot/")
+        res.append_message(title="Pour plus de détails sur un module, "
+                           "envoyez \"!help nomdumodule\". Voici la liste"
+                           " de tous les modules disponibles localement",
+                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].help_tiny ()) for im in modules if hasattr(modules[im], "help_tiny")])
+    return res
