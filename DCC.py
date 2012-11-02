@@ -22,6 +22,7 @@ import re
 import socket
 import sys
 import time
+import threading
 import traceback
 
 import message
@@ -202,7 +203,7 @@ class DCC(server.Server):
         if self.realname in self.srv.dcc_clients:
             del self.srv.dcc_clients[self.realname]
 
-        print ("Close connection with", self.nick)
+        print ("Closing connection with", self.nick)
         self.stopping.set()
         #Rearm Thread
         threading.Thread.__init__(self)

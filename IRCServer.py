@@ -194,7 +194,8 @@ class IRCServer(server.Server):
     def disconnect(self):
         """Close the socket with the server and all DCC client connections"""
         #Close all DCC connection
-        for clt in self.dcc_clients:
+        clts = [c for c in self.dcc_clients]
+        for clt in clts:
             self.dcc_clients[clt].disconnect()
         return server.Server.disconnect(self)
 
