@@ -58,7 +58,7 @@ class MessageConsumer:
 
     def treat_prvmsg_ask(self, context, msg):
         # Treat ping
-        if re.match(".*(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
+        if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
                     msg.content, re.I) is not None:
             return Response(msg.sender, message="pong",
                             channel=msg.channel, nick=msg.nick)
@@ -139,7 +139,8 @@ class MessageConsumer:
     def run(self, context):
         """Create, parse and treat the message"""
         try:
-            msg = Message(self.srv, self.raw, self.time, self.prvt)
+            msg = Message(self.raw, self.time, self.prvt)
+            msg.is_owner = (msg.nick == self.srv.owner)
             res = self.treat_in(context, msg)
         except:
             print ("\033[1;31mERROR:\033[0m occurred during the "
