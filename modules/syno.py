@@ -1,9 +1,9 @@
 # coding=utf-8
 
-import http.client
 import re
-import socket
 from urllib.parse import quote
+
+from tools import web
 
 nemubotversion = 3.3
 
@@ -38,8 +38,8 @@ def cmd_syno(msg):
 
 
 def get_synos(word):
-    (res, page) = getPage(word)
-    if res == http.client.OK:
+    page = web.getURLContent("http://www.crisco.unicaen.fr/des/synonymes/%s" % quote(word))
+    if page is not None:
         synos = list()
         for line in page.decode().split("\n"):
             if re.match("[ \t]*<tr[^>]*>.*</tr>[ \t]*</table>.*", line) is not None:
@@ -48,29 +48,3 @@ def get_synos(word):
         return synos
     else:
         return None
-
-
-def getPage(terms):
-  conn = http.client.HTTPConnection("www.crisco.unicaen.fr", timeout=5)
-  try:
-    conn.request("GET", "/des/synonymes/%s" % quote(terms))
-  except socket.gaierror:
-    print ("impossible de récupérer la page Wolfram|Alpha.")
-    return (http.client.INTERNAL_SERVER_ERROR, None)
-
-  res = conn.getresponse()
-  data = res.read()
-
-  conn.close()
-  return (res.status, data)
-
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) == 0:
-        print ("Usage: ./syno.py word [word ...]")
-    else:
-        for word in sys.argv:
-            synos = get_synos(word)
-            if synos is not None:
-                print ("Synonyme de %s : %s" % (word, ', '.join(synos)))

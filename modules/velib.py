@@ -1,11 +1,8 @@
 # coding=utf-8
 
-import http.client
 import re
-from xml.dom.minidom import parseString
 
-from event import ModuleEvent
-from xmlparser.node import ModuleState
+from tools import web
 
 nemubotversion = 3.3
 
@@ -26,33 +23,18 @@ def help_full ():
     return "!velib /number/ ...: gives available bikes and slots at the station /number/."
 
 
-def getPage (s, p):
-    conn = http.client.HTTPConnection(s, timeout=10)
-    try:
-        conn.request("GET", p)
-    except socket.gaierror:
-        print ("[%s] impossible de récupérer la page %s."%(s, p))
-        return None
-
-    res = conn.getresponse()
-    data = res.read()
-
-    conn.close()
-    return (res.status, data)
-
 def station_status(station):
     """Gets available and free status of a given station"""
-    (st, page) = getPage(CONF.getNode("server")["ip"], CONF.getNode("server")["url"] + station)
-    if st == http.client.OK:
-        response = parseString(page)
-        available = response.documentElement.getElementsByTagName("available")
-        if len(available) > 0:
-            available = int(available[0].childNodes[0].nodeValue)
+    response = web.getXML(CONF.getNode("server")["url"] + station)
+    if response is not None:
+        available = response.getNode("available").getContent()
+        if available is not None and len(available) > 0:
+            available = int(available)
         else:
             available = 0
-        free = response.documentElement.getElementsByTagName("free")
-        if len(free) > 0:
-            free = int(free[0].childNodes[0].nodeValue)
+        free = response.getNode("free").getContent()
+        if free is not None and len(free) > 0:
+            free = int(free)
         else:
             free = 0
         return (available, free)

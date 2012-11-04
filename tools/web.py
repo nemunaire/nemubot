@@ -18,18 +18,30 @@
 
 import http.client
 import re
+import socket
 from urllib.parse import quote
+
+import xmlparser
+
+# Parse URL
 
 def parseURL(url):
     """Separate protocol, domain, port and page request"""
     res = re.match("^(([^:]+)://)?([^:/]+)(:([0-9]{1,5}))?(.*)$", url)
     if res is not None:
-        port = res.group(5)
-        if port is None and res.group(2) is not None:
+        if res.group(5) is not None:
+            port = int(res.group(5))
+        elif res.group(2) is not None:
             if res.group(2) == "http":
                 port = 80
             elif res.group(2) == "https":
                 port = 443
+            else:
+                print ("<tools.web> WARNING: unknown protocol %s"
+                       % res.group(2))
+                port = 0
+        else:
+            port = 0
         return (res.group(2), res.group(3), port, res.group(6))
     else:
         return (None, None, None, None)
@@ -40,38 +52,67 @@ def getDomain(url):
     return domain
 
 def getProtocol(url):
-    """Return the domain of a given URL"""
+    """Return the protocol of a given URL"""
     (protocol, domain, port, page) = parseURL(url)
     return protocol
 
-def getURL(url):
+def getPort(url):
+    """Return the port of a given URL"""
+    (protocol, domain, port, page) = parseURL(url)
+    return port
+
+def getRequest(url):
+    """Return the page request of a given URL"""
+    (protocol, domain, port, page) = parseURL(url)
+    return page
+
+
+# Get real pages
+
+def getURLContent(url, timeout=15):
     """Return page content corresponding to URL or None if any error occurs"""
-    conn = http.client.HTTPConnection("api.duckduckgo.com", timeout=5)
+    (protocol, domain, port, page) = parseURL(url)
+    if port == 0: port = 80
+    conn = http.client.HTTPConnection(domain, port=port, timeout=15)
     try:
-        conn.request("GET", "/?q=%s&format=xml" % quote(terms))
+        conn.request("GET", page, None, {"User-agent": "Nemubot v3"})
     except socket.gaierror:
-        print ("impossible de récupérer la page %s."%(p))
-        return (http.client.INTERNAL_SERVER_ERROR, None)
+        print ("<tools.web> Unable to receive page %s from %s on %d."
+               % (page, domain, port))
+        return None
 
     res = conn.getresponse()
     data = res.read()
 
     conn.close()
-    return (res.status, data)
 
+    if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
+        return data
+    #TODO: follow redirections
+    else:
+        return None
+
+def getXML(url, timeout=15):
+    """Get content page and return XML parsed content"""
+    cnt = getURLContent(url, timeout)
+    if cnt is None:
+        return None
+    else:
+        return xmlparser.parse_string(cnt)
+
+# Other utils
+
+def striphtml(data):
+    """Remove HTML tags from text"""
+    p = re.compile(r'<.*?>')
+    return p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\"")
+
+
+# Tests when called alone
 if __name__ == "__main__":
-  content1 = ""
-  with open("rss.php.1", "r") as f:
-    for line in f:
-      content1 += line
-  content2 = ""
-  with open("rss.php", "r") as f:
-    for line in f:
-      content2 += line
-  a = Atom (content1)
-  print (a.updated)
-  b = Atom (content2)
-  print (b.updated)
-
-  diff = a.diff (b)
-  print (diff)
+    print(parseURL("www.nemunai.re"))
+    print(parseURL("www.nemunai.re/?p0m"))
+    print(parseURL("http://www.nemunai.re/?p0m"))
+    print(parseURL("http://www.nemunai.re:42/?p0m"))
+    print(parseURL("www.nemunai.re:42/?p0m"))
+    print(parseURL("http://www.nemunai.re/?p0m"))
