@@ -1,4 +1,14 @@
 <?xml version="1.0" ?>
 <nemubotmodule name="velib">
+  <help>Gets information about velib stations</help>
+
+  <command name="velib" call="checkStation">
+    <usage>!velib /number/ ...</usage>
+    <help>gives available bikes and slots at the station /number/.</help>
+  </command>
+
+  <event name="velib" call="nothing">
+  </event>
+
   <server ip="www.velib.paris.fr" url="/service/stationdetails/paris/" />
 </nemubotmodule>

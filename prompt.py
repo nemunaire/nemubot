@@ -16,20 +16,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp
 import os
 import shlex
 import sys
 import traceback
 
 import server
+from modules_keeper import loaded as keeper
 import module_states_file as xmlparser
 
 selectedServer = None
-modules_path = "./modules/"
-datas_path = "./datas/"
-
-MODS = list()
 
 def parsecmd(msg):
   """Parse the command line"""
@@ -60,16 +56,8 @@ def getPS1():
 
 def launch(servers):
   """Launch the prompt and readline"""
-  global MODS
-  if MODS is None:
-    MODS = list()
-
   #Load messages module
   server.message.load(datas_path + "general.xml")
-
-  #Update launched servers
-  for srv in servers:
-    servers[srv].update_mods(MODS)
 
   ret = ""
   cmds = list()
@@ -98,34 +86,12 @@ def launch(servers):
   if ret == "refresh":
     return True
   #Save and shutdown modules
-  for m in MODS:
-    m.save()
-    try:
-      m.close()
-    except AttributeError:
-      pass
-  MODS = None
+  global keeper
+  for m in keeper:
+      keeper.unload_from_module(m)
+  keeper = None
   return ret == "reset"
 
-
-##########################
-#                        #
-#    Module functions    #
-#                        #
-##########################
-
-def mod_save(mod, datas_path):
-  mod.DATAS.save(datas_path + "/" + mod.name + ".xml")
-  mod.print ("Saving!")
-
-def mod_has_access(mod, config, msg):
-  if config is not None and config.hasNode("channel"):
-    for chan in config.getNodes("channel"):
-      if (chan["server"] is None or chan["server"] == msg.srv.id) and (chan["channel"] is None or chan["channel"] == msg.channel):
-        return True
-    return False
-  else:
-    return True
 
 ##########################
 #                        #
@@ -133,96 +99,8 @@ def mod_has_access(mod, config, msg):
 #                        #
 ##########################
 
-def load_module_from_name(name, servers, config=None):
-  try:
-    #Import the module code
-    loaded = False
-    for md in MODS:
-      if md.name == name:
-        mod = imp.reload(md)
-        loaded = True
-        if hasattr(mod, 'reload'):
-          mod.reload()
-        break
-    if not loaded:
-      mod = __import__(name)
-      imp.reload(mod)
-    try:
-      if mod.nemubotversion < 3.0:
-        print ("  Module `%s' is not compatible with this version." % name)
-        return false
-
-      #Set module common functions and datas
-      mod.name = name
-      mod.print = lambda msg: print("[%s] %s"%(mod.name, msg))
-      mod.DATAS = xmlparser.parse_file(datas_path + "/" + name + ".xml")
-      mod.CONF = config
-      mod.SRVS = servers
-      mod.has_access = lambda msg: mod_has_access(mod, config, msg)
-      mod.save = lambda: mod_save(mod, datas_path)
-
-      #Load dependancies
-      if mod.CONF is not None and mod.CONF.hasNode("dependson"):
-        mod.MODS = dict()
-        for depend in mod.CONF.getNodes("dependson"):
-          for md in MODS:
-            if md.name == depend["name"]:
-              mod.MODS[md.name] = md
-              break
-          if depend["name"] not in mod.MODS:
-            print ("\033[1;31mERROR:\033[0m in module `%s', module `%s' require by this module but is not loaded." % (mod.name,depend["name"]))
-            return
-
-      try:
-        test = mod.parseask
-      except AttributeError:
-        print ("\033[1;35mWarning:\033[0m in module `%s', no function parseask defined." % mod.name)
-        mod.parseask = lambda x: False
-
-      try:
-        test = mod.parseanswer
-      except AttributeError:
-        print ("\033[1;35mWarning:\033[0m in module `%s', no function parseanswer defined." % mod.name)
-        mod.parseanswer = lambda x: False
-
-      try:
-        test = mod.parselisten
-      except AttributeError:
-        print ("\033[1;35mWarning:\033[0m in module `%s', no function parselisten defined." % mod.name)
-        mod.parselisten = lambda x: False
-
-      try:
-        mod.load()
-        print ("  Module `%s' successfully loaded." % name)
-      except AttributeError:
-        print ("  Module `%s' successfully added." % name)
-      #TODO: don't append already running modules
-      exitsts = False
-      for md in MODS:
-        if md.name == name:
-          exitsts = True
-          break
-      if not exitsts:
-        MODS.append(mod)
-    except AttributeError :
-      print ("  Module `%s' is not a nemubot module." % name)
-    for srv in servers:
-      servers[srv].update_mods(MODS)
-  except IOError:
-    print ("  Module `%s' not loaded: unable to find module implementation." % name)
-  except ImportError:
-    print ("\033[1;31mERROR:\033[0m Module attached to the file `%s' not loaded. Is this file existing?" % name)
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    traceback.print_exception(exc_type, exc_value, exc_traceback)
-
-def load_module(config, servers):
-  global MODS
-  if config.hasAttribute("name"):
-    load_module_from_name(config["name"], servers, config)
-
 def load_file(filename, servers):
   """Realy load a file"""
-  global MODS
   if os.path.isfile(filename):
     config = xmlparser.parse_file(filename)
     if config.getName() == "nemubotconfig" or config.getName() == "config":
@@ -235,20 +113,16 @@ def load_file(filename, servers):
         else:
           print ("  Server `%s' already added, skiped." % srv.id)
         if srv.autoconnect:
-          srv.launch(MODS)
+          srv.launch()
       #Load files asked by the configuration file
       for load in config.getNodes("load"):
         load_file(load["path"], servers)
     elif config.getName() == "nemubotmodule":
-      load_module(config, servers)
+        __import__(config["name"])
     else:
       print ("  Can't load `%s'; this is not a valid nemubot configuration file." % filename)
-  elif os.path.isfile(filename + ".xml"):
-    load_file(filename + ".xml", servers)
-  elif os.path.isfile("./modules/" + filename + ".xml"):
-    load_file("./modules/" + filename + ".xml", servers)
   else:
-    load_module_from_name(filename, servers)
+      __import__(filename)
 
 
 def load(cmds, servers):
@@ -261,18 +135,16 @@ def load(cmds, servers):
   return
 
 def unload(cmds, servers):
-  """Unload a module"""
-  global MODS
-  if len(cmds) == 2 and cmds[1] == "all":
-    for mod in MODS:
-      try:
-        mod.unload()
-      except AttributeError:
-        continue
-    while len(MODS) > 0:
-      MODS.pop()
-  elif len(cmds) > 1:
-    print("Ok")
+    """Unload a module"""
+    if len(cmds) == 2 and cmds[1] == "all":
+        for mod in MODS:
+            keeper.unload_from_module(mod.name)
+    elif len(cmds) > 1:
+        for name in cmds[1:]:
+            if keeper.unload_from_name(name):
+                print("  Module `%s' successfully unloaded." % name)
+            else:
+                print("  No module `%s' loaded, can't unload!" % name)
 
 def close(cmds, servers):
   """Disconnect and forget (remove from the servers list) the server"""
@@ -311,7 +183,7 @@ def liste(cmds, servers):
         for srv in servers.keys():
           print ("  - %s ;" % srv)
       elif l == "mod" or l == "mods" or l == "module" or l == "modules":
-        for mod in MODS:
+        for mod in keeper:
           print ("  - %s ;" % mod.name)
       elif l == "ban" or l == "banni":
         for ban in server.message.BANLIST:
@@ -335,24 +207,23 @@ def connect(cmds, servers):
   if len(cmds) > 1:
     for s in cmds[1:]:
       if s in servers:
-        servers[s].launch(MODS)
+        servers[s].launch()
       else:
         print ("connect: server `%s' not found." % s)
 
   elif selectedServer is not None:
-    selectedServer.launch(MODS)
+    selectedServer.launch()
   else:
     print ("  Please SELECT a server or give its name in argument.")
 
 def hotswap(cmds, servers):
   """Reload a server class"""
-  global MODS, selectedServer
+  global selectedServer
   if len(cmds) > 1:
     print ("hotswap: apply only on selected server")
   elif selectedServer is not None:
     del servers[selectedServer.id]
     srv = server.Server(selectedServer.node, selectedServer.nick, selectedServer.owner, selectedServer.realname, selectedServer.s)
-    srv.update_mods(MODS)
     servers[srv.id] = srv
     selectedServer.kill()
     selectedServer = srv

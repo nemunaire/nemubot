@@ -24,6 +24,7 @@ import time
 import credits
 from credits import Credits
 import DCC
+from modules_keeper import loaded as mods
 import module_states_file as xmlparser
 
 CREDITS = {}
@@ -157,7 +158,7 @@ class Message:
       return False
     return self.srv.accepted_channel(self.channel)
 
-  def treat(self, mods):
+  def treat(self):
     if self.cmd == "PING":
       self.pong ()
     elif self.cmd == "PRIVMSG" and self.ctcp:
@@ -197,7 +198,7 @@ class Message:
     elif self.content == '\x01USERINFO\x01':
       self.srv.send_ctcp(self.sender, "USERINFO %s" % (self.srv.realname))
     elif self.content == '\x01VERSION\x01':
-      self.srv.send_ctcp(self.sender, "VERSION nemubot v3")
+      self.srv.send_ctcp(self.sender, "VERSION nemubot v%d"%VERSION)
     elif self.content[:9] == '\x01DCC CHAT':
       words = self.content[1:len(self.content) - 1].split(' ')
       ip = self.srv.toIP(int(words[3]))

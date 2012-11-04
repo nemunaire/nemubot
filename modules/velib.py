@@ -6,12 +6,11 @@ from xml.dom.minidom import parseString
 
 from module_state import ModuleState
 
-nemubotversion = 3.0
+nemubotversion = 3.1
 
 def load():
   global DATAS
   DATAS.setIndex("name", "station")
-
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -54,21 +53,20 @@ def station_status(msg, station):
   else:
     msg.send_chn("%s: station %s inconnue." % (msg.nick, station))
 
-def parseanswer(msg):
+def checkStation(msg):
   global DATAS
-  if msg.cmd[0] == "velib":
-    if len(msg.cmd) > 5:
-      msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
-    elif len(msg.cmd) > 1:
-      for station in msg.cmd[1:]:
-        if re.match("^[0-9]{4,5}$", station):
-          station_status(msg, station)
-        elif station in DATAS.index:
-          station_status(msg, DATAS.index[station]["number"])
-        else:
-          msg.send_chn("%s: numéro de station invalide." % (msg.nick))
-    else:
-      msg.send_chn("%s: Pour quelle station ?" % msg.nick)
-    return True
-  else:
+  if len(msg.cmd) > 5:
+    msg.send_chn("%s: Demande-moi moins de stations à la fois." % msg.nick)
     return False
+  elif len(msg.cmd) > 1:
+    for station in msg.cmd[1:]:
+      if re.match("^[0-9]{4,5}$", station):
+        station_status(msg, station)
+      elif station in DATAS.index:
+        station_status(msg, DATAS.index[station]["number"])
+      else:
+        msg.send_chn("%s: numéro de station invalide." % (msg.nick))
+  else:
+    msg.send_chn("%s: Pour quelle station ?" % msg.nick)
+    return False
+  return True

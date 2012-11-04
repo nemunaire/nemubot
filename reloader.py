@@ -22,6 +22,7 @@ import credits
 import channel
 import DCC
 import message
+import module_importer
 import module_state
 import module_states_file
 import prompt
@@ -32,6 +33,7 @@ def reload():
   imp.reload(channel)
   imp.reload(DCC)
   imp.reload(message)
+  imp.reload(module_importer)
   imp.reload(module_state)
   imp.reload(module_states_file)
   imp.reload(prompt)
