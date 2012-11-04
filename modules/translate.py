@@ -6,7 +6,7 @@ import socket
 import json
 from urllib.parse import quote
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 import xmlparser
 
@@ -24,28 +24,28 @@ def load(context):
 def cmd_translate(msg):
     global LANG
     startWord = 1
-    if msg.cmd[startWord] in LANG:
-        langTo = msg.cmd[startWord]
+    if msg.cmds[startWord] in LANG:
+        langTo = msg.cmds[startWord]
         startWord += 1
     else:
         langTo = "fr"
-        if msg.cmd[startWord] in LANG:
-            langFrom = langTo
-            langTo = msg.cmd[startWord]
-            startWord += 1
+    if msg.cmds[startWord] in LANG:
+        langFrom = langTo
+        langTo = msg.cmds[startWord]
+        startWord += 1
+    else:
+        if langTo == "en":
+            langFrom = "fr"
         else:
-            if langTo == "en":
-                langFrom = "fr"
-            else:
-                langFrom = "en"
+            langFrom = "en"
 
-    (res, page) = getPage(' '.join(msg.cmd[startWord:]), langFrom, langTo)
+    (res, page) = getPage(' '.join(msg.cmds[startWord:]), langFrom, langTo)
     if res == http.client.OK:
         wres = json.loads(page.decode())
         if "Error" in wres:
             return Response(msg.sender, wres["Note"], msg.channel)
         else:
-            start = "Traduction de %s : "%' '.join(msg.cmd[startWord:])
+            start = "Traduction de %s : "%' '.join(msg.cmds[startWord:])
             if "Entries" in wres["term0"]:
                 if "SecondTranslation" in wres["term0"]["Entries"]["0"]:
                     return Response(msg.sender, start +
@@ -71,7 +71,7 @@ def cmd_translate(msg):
             else:
                 return Response(msg.sender, "Une erreur s'est produite durant la recherche"
                                 " d'une traduction de %s"
-                                % ' '.join(msg.cmd[startWord:]),
+                                % ' '.join(msg.cmds[startWord:]),
                                 msg.channel)
 
 
