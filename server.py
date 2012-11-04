@@ -144,7 +144,10 @@ class Server(threading.Thread):
         self._receive_action = receive_action
         if not self.connected:
             self.stop = False
-            self.start()
+            try:
+                self.start()
+            except RuntimeError:
+                pass
         elif verb:
             print ("  Already connected.")
 

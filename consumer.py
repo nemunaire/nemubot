@@ -25,7 +25,7 @@ import sys
 import bot
 from DCC import DCC
 from message import Message
-from response import Response
+import response
 import server
 
 class MessageConsumer:
@@ -43,104 +43,48 @@ class MessageConsumer:
         if msg.cmd == "PING":
             self.srv.send_pong(msg.content)
         else:
-            # TODO: Manage credits here
-            context.treat_pre(msg)
+            # All messages
+            context.treat_pre(msg, self.srv)
 
-            if msg.cmd == "PRIVMSG" and msg.ctcp:
-                if msg.cmds[0] in context.ctcp_capabilities:
-                    return context.ctcp_capabilities[msg.cmds[0]](self.srv, msg)
-                else:
-                    return bot._ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
-            elif msg.cmd == "PRIVMSG" and self.srv.accepted_channel(msg.channel):
-                return self.treat_prvmsg(context, msg)
-            # TODO: continue here
-                pass
-
-    def treat_prvmsg_ask(self, context, msg):
-        # Treat ping
-        if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
-                    msg.content, re.I) is not None:
-            return Response(msg.sender, message="pong",
-                            channel=msg.channel, nick=msg.nick)
-
-        # Ask hooks
-        else:
-            return context.treat_ask(msg)
-
-    def treat_prvmsg(self, context, msg):
-        # Treat all messages starting with 'nemubot:' as distinct commands
-        if msg.content.find("%s:"%self.srv.nick) == 0:
-            # Remove the bot name
-            msg.content = msg.content[len(self.srv.nick)+1:].strip()
-
-            return self.treat_prvmsg_ask(context, msg)
-
-        # Owner commands
-        elif msg.content[0] == '`' and msg.nick == self.srv.owner:
-            #TODO: owner commands
-            pass
-
-        elif msg.content[0] == '!' and len(msg.content) > 1:
-            # Remove the !
-            msg.cmds[0] = msg.cmds[0][1:]
-
-            if msg.cmds[0] == "help":
-                return _help_msg(msg.sender)
-
-            elif msg.cmds[0] == "more":
-                if msg.channel == self.srv.nick:
-                    if msg.sender in self.srv.moremessages:
-                        return self.srv.moremessages[msg.sender]
-                else:
-                    if msg.channel in self.srv.moremessages:
-                        return self.srv.moremessages[msg.channel]
-
-            elif msg.cmds[0] == "dcc":
-                print("dcctest for", msg.sender)
-                self.srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
-            elif msg.cmds[0] == "pvdcctest":
-                print("dcctest")
-                return Response(msg.sender, message="Test DCC")
-            elif msg.cmds[0] == "dccsendtest":
-                print("dccsendtest")
-                conn = DCC(self.srv, msg.sender)
-                conn.send_file("bot_sample.xml")
-
-            else:
-                return context.treat_cmd(msg)
-
-        else:
-            res = context.treat_answer(msg)
-            # Assume the message starts with nemubot:
-            if (res is None or len(res) <= 0) and self.prvt:
-                return self.treat_prvmsg_ask(context, msg)
-            return res
-
+            # TODO: Manage credits
+            return context.treat_irc(msg, self.srv)
 
     def treat_out(self, context, res):
         """Treat the output message"""
+        if isinstance(res, list):
+            for r in res:
+                if r is not None: self.treat_out(context, r)
+
+        elif isinstance(res, response.Response):
         # Define the destination server
-        if (res.server is not None and
-            res.server.instanceof(string) and res.server in context.servers):
-            res.server = context.servers[res.server]
-        if (res.server is not None and
-            not res.server.instanceof(server.Server)):
-            print ("\033[1;35mWarning:\033[0m the server defined in this "
-                   "response doesn't exist: %s" % (res.server))
-            res.server = None
-        if res.server is None:
-            res.server = self.srv
+            if (res.server is not None and
+                isinstance(res.server, str) and res.server in context.servers):
+                res.server = context.servers[res.server]
+            if (res.server is not None and
+                not isinstance(res.server, server.Server)):
+                print ("\033[1;35mWarning:\033[0m the server defined in this "
+                       "response doesn't exist: %s" % (res.server))
+                res.server = None
+            if res.server is None:
+                res.server = self.srv
 
-        # Sent the message only if treat_post authorize it
-        if context.treat_post(res):
-            res.server.send_response(res, self.data)
+            # Sent the message only if treat_post authorize it
+            if context.treat_post(res):
+                res.server.send_response(res, self.data)
 
+        elif isinstance(res, response.Hook):
+            context.hooks.add_hook(res.type, res.hook, res.src)
+
+        elif res is not None:
+            print ("\033[1;35mWarning:\033[0m unrecognized response type "
+                   ": %s" % res)
 
     def run(self, context):
         """Create, parse and treat the message"""
         try:
             msg = Message(self.raw, self.time, self.prvt)
-            msg.is_owner = (msg.nick == self.srv.owner)
+            if msg.cmd == "PRIVMSG":
+                msg.is_owner = (msg.nick == self.srv.owner)
             res = self.treat_in(context, msg)
         except:
             print ("\033[1;31mERROR:\033[0m occurred during the "
@@ -151,17 +95,7 @@ class MessageConsumer:
             return
 
         # Send message
-        if res is not None:
-            if isinstance(res, list):
-                for r in res:
-                    if isinstance(r, Response):
-                        self.treat_out(context, r)
-                    elif isinstance(r, list):
-                        for s in r:
-                            if isinstance(s, Response):
-                                self.treat_out(context, s)
-            elif isinstance(res, Response):
-                self.treat_out(context, res)
+        self.treat_out(context, res)
 
         # Inform that the message has been treated
         self.srv.msg_treated(self.data)
@@ -210,7 +144,7 @@ class Consumer(threading.Thread):
 
 def _help_msg(modules, sndr, cmd):
     """Parse and response to help messages"""
-    res = Response(sndr)
+    res = response.Response(sndr)
     if len(cmd) > 1:
         if cmd[1] in modules:
             if len(cmd) > 2:

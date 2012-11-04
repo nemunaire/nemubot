@@ -145,6 +145,7 @@ class ModuleLoader(SourceLoader):
 
         # Set module common functions and datas
         module.REGISTERED_HOOKS = list()
+        module.REGISTERED_EVENTS = list()
         module.DEBUG = False
         module.DIR = self.mpath
         module.name = fullname
@@ -152,6 +153,10 @@ class ModuleLoader(SourceLoader):
         module.print_debug = lambda msg: mod_print_dbg(module, msg)
         module.send_response = lambda srv, res: mod_send_response(self.context, srv, res)
         module.add_hook = lambda store, hook: self.context.hooks.add_hook(store, hook, module)
+        module.del_hook = lambda store, hook: self.context.hooks.del_hook(store, hook)
+        module.add_event = lambda evt: self.context.add_event(evt, module_src=module)
+        module.add_event_eid = lambda evt, eid: self.context.add_event(evt, eid, module_src=module)
+        module.del_event = lambda evt: self.context.add_event(evt, module_src=module)
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path

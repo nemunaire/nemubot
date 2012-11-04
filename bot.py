@@ -21,6 +21,7 @@ from datetime import timedelta
 from queue import Queue
 import threading
 import time
+import re
 
 import consumer
 import event
@@ -67,6 +68,10 @@ class Bot:
         self.cnsr_thrd      = list()
         self.cnsr_thrd_size = -1
 
+        self.hooks.add_hook("irc_hook",
+                            hooks.Hook(self.treat_prvmsg, "PRIVMSG"),
+                            self)
+
 
     def init_ctcp_capabilities(self):
         """Reset existing CTCP capabilities to default one"""
@@ -98,7 +103,7 @@ class Bot:
             print ("DCC: unable to connect to %s:%s" % (ip, msg.cmds[4]))
 
 
-    def add_event(self, evt, eid=None):
+    def add_event(self, evt, eid=None, module_src=None):
         """Register an event and return its identifiant for futur update"""
         if eid is None:
             # Find an ID
@@ -123,18 +128,26 @@ class Bot:
             if len(self.events) <= 0 or self.events[i+1] != evt:
                 return None
 
+        if module_src is not None:
+            module_src.REGISTERED_EVENTS.append(evt.id)
+
         return evt.id
 
-    def del_event(self, id):
+    def del_event(self, id, module_src=None):
         """Find and remove an event from list"""
         if len(self.events) > 0 and id == self.events[0].id:
             self.events.remove(self.events[0])
             self.update_timer()
+            if module_src is not None:
+                module_src.REGISTERED_EVENTS.remove(evt.id)
             return True
 
         for evt in self.events:
             if evt.id == id:
                 self.events.remove(evt)
+
+                if module_src is not None:
+                    module_src.REGISTERED_EVENTS.remove(evt.id)
                 return True
         return False
 
@@ -172,6 +185,8 @@ class Bot:
     def addServer(self, node, nick, owner, realname):
         """Add a new server to the context"""
         srv = IRCServer(node, nick, owner, realname)
+        srv.add_hook = lambda h: self.hooks.add_hook("irc_hook", h, self)
+        srv.register_hooks()
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
             if srv.autoconnect:
@@ -326,24 +341,111 @@ class Bot:
             elif isinstance(store, list):
                 store.remove(hook)
 
-    def treat_pre(self, msg):
+    def treat_pre(self, msg, srv):
         """Treat a message before all other treatment"""
         for h, lvl, store in self.create_cache("all_pre"):
-            h.run(self.create_cache, msg)
-            self.check_rest_times(store, h)
+            if h.is_matching(None, server=srv):
+                h.run(msg, self.create_cache)
+                self.check_rest_times(store, h)
 
 
-    def treat_post(self, msg):
+    def treat_post(self, res):
         """Treat a message before send"""
         for h, lvl, store in self.create_cache("all_post"):
-            c = h.run(msg)
-            self.check_rest_times(store, h)
-            if not c:
-                return False
+            if h.is_matching(None, channel=res.channel, server=res.server):
+                c = h.run(msg)
+                self.check_rest_times(store, h)
+                if not c:
+                    return False
         return True
 
 
-    def treat_cmd(self, msg):
+    def treat_irc(self, msg, srv):
+        """Treat all incoming IRC commands"""
+        treated = list()
+
+        irc_hooks = self.create_cache("irc_hook")
+        if msg.cmd in irc_hooks:
+            (hks, lvl, store) = irc_hooks[msg.cmd]
+            for h in hks:
+                if h.is_matching(msg.cmd, server=srv):
+                    res = h.run(msg, srv, msg.cmd)
+                    if res is not None and res != False:
+                        treated.append(res)
+                    self.check_rest_times(store, h)
+
+        return treated
+
+
+    def treat_prvmsg_ask(self, msg, srv):
+        # Treat ping
+        if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
+                    msg.content, re.I) is not None:
+            return response.Response(msg.sender, message="pong",
+                                     channel=msg.channel, nick=msg.nick)
+
+        # Ask hooks
+        else:
+            return self.treat_ask(msg, srv)
+
+    def treat_prvmsg(self, msg, srv):
+        # First, treat CTCP
+        if msg.ctcp:
+            if msg.cmds[0] in self.ctcp_capabilities:
+                return self.ctcp_capabilities[msg.cmds[0]](srv, msg)
+            else:
+                return _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
+
+        # Treat all messages starting with 'nemubot:' as distinct commands
+        elif msg.content.find("%s:"%srv.nick) == 0:
+            # Remove the bot name
+            msg.content = msg.content[len(srv.nick)+1:].strip()
+
+            return self.treat_prvmsg_ask(msg, srv)
+
+        # Owner commands
+        elif msg.content[0] == '`' and msg.nick == srv.owner:
+            #TODO: owner commands
+            pass
+
+        elif msg.content[0] == '!' and len(msg.content) > 1:
+            # Remove the !
+            msg.cmds[0] = msg.cmds[0][1:]
+
+            if msg.cmds[0] == "help":
+                return _help_msg(msg.sender)
+
+            elif msg.cmds[0] == "more":
+                if msg.channel == srv.nick:
+                    if msg.sender in srv.moremessages:
+                        return srv.moremessages[msg.sender]
+                else:
+                    if msg.channel in srv.moremessages:
+                        return srv.moremessages[msg.channel]
+
+            elif msg.cmds[0] == "dcc":
+                print("dcctest for", msg.sender)
+                srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
+            elif msg.cmds[0] == "pvdcctest":
+                print("dcctest")
+                return Response(msg.sender, message="Test DCC")
+            elif msg.cmds[0] == "dccsendtest":
+                print("dccsendtest")
+                conn = DCC(srv, msg.sender)
+                conn.send_file("bot_sample.xml")
+
+            else:
+                return self.treat_cmd(msg, srv)
+
+        else:
+            res = self.treat_answer(msg, srv)
+            # Assume the message starts with nemubot:
+            if (res is None or len(res) <= 0) and msg.private:
+                return self.treat_prvmsg_ask(msg, srv)
+            return res
+
+
+    def treat_cmd(self, msg, srv):
         """Treat a command message"""
         treated = list()
 
@@ -352,15 +454,16 @@ class Bot:
         if msg.cmds[0] in cmd_hook:
             (hks, lvl, store) = cmd_hook[msg.cmds[0]]
             for h in hks:
-                res = h.run(msg)
-                if res is not None and res != False:
-                    treated.append(res)
-                self.check_rest_times(store, h)
+                if h.is_matching(msg.cmds[0], channel=msg.channel, server=srv):
+                    res = h.run(msg, strcmp=msg.cmds[0])
+                    if res is not None and res != False:
+                        treated.append(res)
+                    self.check_rest_times(store, h)
 
         # Then, treat regexp based hook
         cmd_rgxp = self.create_cache("cmd_rgxp")
         for hook, lvl, store in cmd_rgxp:
-            if hook.is_matching(msg.cmds[0], msg.channel):
+            if hook.is_matching(msg.cmds[0], msg.channel, server=srv):
                 res = hook.run(msg)
                 if res is not None and res != False:
                     treated.append(res)
@@ -378,7 +481,7 @@ class Bot:
 
         return treated
 
-    def treat_ask(self, msg):
+    def treat_ask(self, msg, srv):
         """Treat an ask message"""
         treated = list()
 
@@ -387,16 +490,17 @@ class Bot:
         if msg.content in ask_hook:
             hks, lvl, store = ask_hook[msg.content]
             for h in hks:
-                res = h.run(msg)
-                if res is not None and res != False:
-                    treated.append(res)
-                self.check_rest_times(store, h)
+                if h.is_matching(msg.content, channel=msg.channel, server=srv):
+                    res = h.run(msg, strcmp=msg.content)
+                    if res is not None and res != False:
+                        treated.append(res)
+                    self.check_rest_times(store, h)
 
         # Then, treat regexp based hook
         ask_rgxp = self.create_cache("ask_rgxp")
         for hook, lvl, store in ask_rgxp:
-            if hook.is_matching(msg.content, msg.channel):
-                res = hook.run(msg)
+            if hook.is_matching(msg.content, channel=msg.channel, server=srv):
+                res = hook.run(msg, strcmp=msg.content)
                 if res is not None and res != False:
                     treated.append(res)
                 self.check_rest_times(store, hook)
@@ -413,7 +517,7 @@ class Bot:
 
         return treated
 
-    def treat_answer(self, msg):
+    def treat_answer(self, msg, srv):
         """Treat a normal message"""
         treated = list()
 
@@ -422,16 +526,17 @@ class Bot:
         if msg.content in msg_hook:
             hks, lvl, store = msg_hook[msg.content]
             for h in hks:
-                res = h.run(msg)
-                if res is not None and res != False:
-                    treated.append(res)
-                self.check_rest_times(store, h)
+                if h.is_matching(msg.content, channel=msg.channel, server=srv):
+                    res = h.run(msg, strcmp=msg.content)
+                    if res is not None and res != False:
+                        treated.append(res)
+                    self.check_rest_times(store, h)
 
         # Then, treat regexp based hook
         msg_rgxp = self.create_cache("msg_rgxp")
         for hook, lvl, store in msg_rgxp:
-            if hook.is_matching(msg.content, msg.channel):
-                res = hook.run(msg)
+            if hook.is_matching(msg.content, channel=msg.channel, server=srv):
+                res = hook.run(msg, strcmp=msg.content)
                 if res is not None and res != False:
                     treated.append(res)
                 self.check_rest_times(store, hook)

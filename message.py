@@ -105,8 +105,8 @@ class Message:
   def parse_content(self):
       """Parse or reparse the message content"""
       # If CTCP, remove 0x01
-      #if self.ctcp:
-      #    self.content = self.content[1:len(self.content)-1]
+      if self.ctcp:
+          self.content = self.content[1:len(self.content)-1]
 
       # Split content by words
       try:
@@ -145,29 +145,6 @@ class Message:
       elif not CREDITS[self.realname].ask():
           return False
       return self.srv.accepted_channel(self.channel)
-
-  def treat(self):
-      """Parse and treat the message"""
-      if self.channel in self.srv.channels:
-          if self.cmd == "353":
-              self.srv.channels[self.channel].parse353(self)
-          elif self.cmd == "332":
-              self.srv.channels[self.channel].parse332(self)
-          elif self.cmd == "MODE":
-              self.srv.channels[self.channel].mode(self)
-          elif self.cmd == "JOIN":
-              self.srv.channels[self.channel].join(self.nick)
-          elif self.cmd == "PART":
-              self.srv.channels[self.channel].part(self.nick)
-          elif self.cmd == "TOPIC":
-              self.srv.channels[self.channel].topic = self.content
-      elif self.cmd == "NICK":
-          for chn in self.srv.channels.keys():
-              self.srv.channels[chn].nick(self.nick, self.content)
-      elif self.cmd == "QUIT":
-          for chn in self.srv.channels.keys():
-              self.srv.channels[chn].part(self.nick)
-      return None
 
 ##############################
 #                            #

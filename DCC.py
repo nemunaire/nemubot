@@ -35,7 +35,6 @@ class DCC(server.Server):
     def __init__(self, srv, dest, socket=None):
         server.Server.__init__(self)
 
-        self.DCC = False
         self.error = False # An error has occur, closing the connection?
         self.messages = list() # Message queued before connexion
 
@@ -132,9 +131,10 @@ class DCC(server.Server):
             if self.error:
                 self.srv.send_msg_final(self.nick, msg)
             elif not self.connected or self.s is None:
-                if not self.DCC:
-                    self.DCC = True
+                try:
                     self.start()
+                except RuntimeError:
+                    pass
                 self.messages.append(msg)
             else:
                 for line in msg.split("\n"):
@@ -146,9 +146,10 @@ class DCC(server.Server):
         """Send a file over DCC"""
         if os.path.isfile(filename):
             self.messages = filename
-            if not self.DCC:
+            try:
                 self.start()
-                self.DCC = True
+            except RuntimeError:
+                pass
         else:
             print("File not found `%s'" % filename)
 

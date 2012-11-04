@@ -22,8 +22,9 @@ import socket
 import threading
 import traceback
 
-import channel
+from channel import Channel
 from DCC import DCC
+from hooks import Hook
 import message
 import server
 import xmlparser
@@ -56,7 +57,7 @@ class IRCServer(server.Server):
 
         self.channels = dict()
         for chn in self.node.getNodes("channel"):
-            chan = channel.Channel(chn, self)
+            chan = Channel(chn["name"], chn["password"])
             self.channels[chan.name] = chan
 
 
@@ -104,6 +105,23 @@ class IRCServer(server.Server):
         """Gives the server identifiant"""
         return self.host + ":" + str(self.port)
 
+    def register_hooks(self):
+        self.add_hook(Hook(self.evt_channel, "JOIN"))
+        self.add_hook(Hook(self.evt_channel, "PART"))
+        self.add_hook(Hook(self.evt_server, "NICK"))
+        self.add_hook(Hook(self.evt_server, "QUIT"))
+        self.add_hook(Hook(self.evt_channel, "332"))
+        self.add_hook(Hook(self.evt_channel, "353"))
+
+    def evt_server(self, msg, srv):
+        for chan in self.channels:
+            self.channels[chan].treat(msg.cmd, msg)
+
+    def evt_channel(self, msg, srv):
+        if msg.channel is not None:
+            if msg.channel in self.channels:
+                self.channels[msg.channel].treat(msg.cmd, msg)
+
     def accepted_channel(self, chan, sender = None):
         """Return True if the channel (or the user) is authorized"""
         if self.allow_all:
@@ -120,11 +138,7 @@ class IRCServer(server.Server):
         """Join a channel"""
         if force or (chan is not None and
                      self.connected and chan not in self.channels):
-            chn = xmlparser.module_state.ModuleState("channel")
-            chn["name"] = chan
-            chn["password"] = password
-            self.node.addChild(chn)
-            self.channels[chan] = channel.Channel(chn, self)
+            self.channels[chan] = Channel(chan, password)
             if password is not None:
                 self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode())
             else:
@@ -136,7 +150,7 @@ class IRCServer(server.Server):
     def leave(self, chan):
         """Leave a channel"""
         if chan is not None and self.connected and chan in self.channels:
-            if chan.instanceof(list):
+            if isinstance(chan, list):
                 for c in chan:
                     self.leave(c)
             else:

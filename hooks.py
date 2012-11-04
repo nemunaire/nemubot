@@ -22,16 +22,19 @@ class MessagesHook:
     def __init__(self, context):
         self.context = context
 
-        # Store specials hook
+        # Store specials hooks
         self.all_pre  = list() # Treated before any parse
         self.all_post = list() # Treated before send message to user
 
-        # Store direct hook
+        # Store IRC commands hooks
+        self.irc_hook = dict()
+
+        # Store direct hooks
         self.cmd_hook = dict()
         self.ask_hook = dict()
         self.msg_hook = dict()
 
-        # Store regexp hook
+        # Store regexp hooks
         self.cmd_rgxp = list()
         self.ask_rgxp = list()
         self.msg_rgxp = list()
@@ -61,12 +64,16 @@ class MessagesHook:
             if hook.name not in attr:
                 attr[hook.name] = list()
             attr[hook.name].append(hook)
+            if hook.end is not None:
+                if hook.end not in attr:
+                    attr[hook.end] = list()
+                attr[hook.end].append(hook)
         elif isinstance(attr, list):
             attr.append(hook)
         else:
             print ("\033[1;32mWarning:\033[0m unrecognized hook store type")
             return
-        if module_src is not None:
+        if module_src is not None and hasattr(module_src, "REGISTERED_HOOKS"):
             module_src.REGISTERED_HOOKS.append((store, hook))
 
     def register_hook_attributes(self, store, module, node):
@@ -92,7 +99,7 @@ class MessagesHook:
                 node["type"] == "all"):
                 self.register_hook_attributes("answer", module, node)
 
-    def del_hook(self, store, hook):
+    def del_hook(self, store, hook, module_src=None):
         """Remove a registered hook from a given store"""
         if store in self.context.hooks_cache:
             del self.context.hooks_cache[store]
@@ -105,33 +112,68 @@ class MessagesHook:
         if isinstance(attr, dict) and hook.name is not None:
             if hook.name in attr:
                 attr[hook.name].remove(hook)
+            if hook.end is not None and hook.end in attr:
+                attr[hook.end].remove(hook)
         else:
             attr.remove(hook)
 
+        if module_src is not None:
+            module_src.REGISTERED_HOOKS.remove((store, hook))
+
+
 class Hook:
     """Class storing hook informations"""
-    def __init__(self, call, name=None, data=None, regexp=None, channels=list()):
+    def __init__(self, call, name=None, data=None, regexp=None, channels=list(), server=None, end=None, call_end=None):
         self.name = name
+        self.end = end
         self.call = call
+        if call_end is None:
+            self.call_end = self.call
+        else:
+            self.call_end = call_end
         self.regexp = regexp
         self.data = data
         self.times = -1
+        self.server = server
         self.channels = channels
 
-    def is_matching(self, strcmp, channel):
+    def is_matching(self, strcmp, channel=None, server=None):
         """Test if the current hook correspond to the message"""
-        return (len(self.channel) <= 0 or channel in self.channels) and (
+        return (channel is None or len(self.channels) <= 0 or
+                channel in self.channels) and (server is None or
+             self.server is None or self.server == server) and (
             (self.name is not None and strcmp == self.name) or (
+            self.end is not None and strcmp == self.end) or (
             self.regexp is not None and re.match(self.regexp, strcmp)))
 
-    def run(self, msg):
+    def run(self, msg, data2=None, strcmp=None):
         """Run the hook"""
         if self.times != 0:
             self.times -= 1
 
-        if self.data is None:
-            return self.call(msg)
-        elif isinstance(self.data, dict):
-            return self.call(msg, **self.data)
+        if (self.end is not None and strcmp is not None and
+            self.call_end is not None and strcmp == self.end):
+            call = self.call_end
+            self.times = 0
         else:
-            return self.call(msg, self.data)
+            call = self.call
+
+        if self.data is None:
+            if data2 is None:
+                return call(msg)
+            elif isinstance(data2, dict):
+                return call(msg, **data2)
+            else:
+                return call(msg, data2)
+        elif isinstance(self.data, dict):
+            if data2 is None:
+                return call(msg, **self.data)
+            else:
+                return call(msg, data2, **self.data)
+        else:
+            if data2 is None:
+                return call(msg, self.data)
+            elif isinstance(data2, dict):
+                return call(msg, self.data, **data2)
+            else:
+                return call(msg, self.data, data2)

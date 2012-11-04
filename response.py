@@ -154,3 +154,13 @@ class Response:
                 self.pop()
                 self.elt = 0
                 return msg
+
+import hooks
+class Hook:
+    def __init__(self, TYPE, call, name=None, data=None, regexp=None,
+                 channels=list(), server=None, end=None, call_end=None,
+                 SRC=None):
+        self.hook = hooks.Hook(call, name, data, regexp, channels,
+                               server, end, call_end)
+        self.type = TYPE
+        self.src = SRC
