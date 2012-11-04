@@ -9,17 +9,17 @@ import time
 import threading
 import traceback
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 from event import ModuleEvent
 from hooks import Hook
 
 def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "events manager"
+    """Line inserted in the response to the command !help"""
+    return "events manager"
 
 def help_full ():
-  return "This module store a lot of events: ny, we, vacs, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
+    return "This module store a lot of events: ny, we, vacs, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
 
 CONTEXT = None
 
@@ -81,23 +81,23 @@ def cmd_vacances(msg):
                     channel=msg.channel)
 
 def start_countdown(msg):
-    if msg.cmd[1] not in DATAS.index:
+    if msg.cmds[1] not in DATAS.index:
 
         strnd = ModuleState("strend")
-        strnd["server"] = msg.srv.id
+        strnd["server"] = msg.server
         strnd["channel"] = msg.channel
         strnd["proprio"] = msg.nick
         strnd["sender"] = msg.sender
         strnd["start"] = datetime.now()
-        strnd["name"] = msg.cmd[1]
+        strnd["name"] = msg.cmds[1]
         DATAS.addChild(strnd)
 
         evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
-        if len(msg.cmd) > 2:
-            result1 = re.findall("([0-9]+)([smhdjwSMHDJW])?", msg.cmd[2])
-            result2 = re.match("([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmd[2])
-            result3 = re.match("([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmd[2])
+        if len(msg.cmds) > 2:
+            result1 = re.findall("([0-9]+)([smhdjwSMHDJW])?", msg.cmds[2])
+            result2 = re.match("([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmds[2])
+            result3 = re.match("([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmds[2])
             if result2 is not None or result3 is not None:
                 try:
                     now = datetime.now()
@@ -125,12 +125,12 @@ def start_countdown(msg):
                     strnd["id"] = CONTEXT.add_event(evt)
                     save()
                     return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
-                                    (msg.cmd[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
+                                    (msg.cmds[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
                                      strnd.getDate("end").strftime("%A %d %B %Y a %H:%M:%S")))
                 except:
                     DATAS.delChild(strnd)
                     return Response(msg.sender,
-                                    "Mauvais format de date pour l'evenement %s. Il n'a pas ete cree." % msg.cmd[1])
+                                    "Mauvais format de date pour l'evenement %s. Il n'a pas ete cree." % msg.cmds[1])
             elif result1 is not None and len(result1) > 0:
                 strnd["end"] = datetime.now()
                 for (t, g) in result1:
@@ -148,43 +148,43 @@ def start_countdown(msg):
                 strnd["id"] = CONTEXT.add_event(evt)
                 save()
                 return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
-                                (msg.cmd[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
+                                (msg.cmds[1], datetime.now().strftime("%A %d %B %Y a %H:%M:%S"),
                                  strnd.getDate("end").strftime("%A %d %B %Y a %H:%M:%S")))
         save()
-        return Response(msg.sender, "%s commencé le %s"% (msg.cmd[1],
+        return Response(msg.sender, "%s commencé le %s"% (msg.cmds[1],
                             datetime.now().strftime("%A %d %B %Y a %H:%M:%S")))
     else:
-        return Response(msg.sender, "%s existe déjà."% (msg.cmd[1]))
+        return Response(msg.sender, "%s existe déjà."% (msg.cmds[1]))
 
 def end_countdown(msg):
-    if msg.cmd[1] in DATAS.index:
+    if msg.cmds[1] in DATAS.index:
         res = Response(msg.sender,
-                       "%s a duré %s." % (msg.cmd[1],
-                                          msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[1]].getDate("start"))),
+                       "%s a duré %s." % (msg.cmds[1],
+                                          msg.just_countdown(datetime.now () - DATAS.index[msg.cmds[1]].getDate("start"))),
                        channel=msg.channel)
-        if DATAS.index[msg.cmd[1]]["proprio"] == msg.nick or (msg.cmd[0] == "forceend" and msg.nick == msg.srv.owner):
-            CONTEXT.del_event(DATAS.index[msg.cmd[1]]["id"])
-            DATAS.delChild(DATAS.index[msg.cmd[1]])
+        if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.is_owner):
+            CONTEXT.del_event(DATAS.index[msg.cmds[1]]["id"])
+            DATAS.delChild(DATAS.index[msg.cmds[1]])
             save()
         else:
-            res.append_message("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmd[1], DATAS.index[msg.cmd[1]]["proprio"]))
+            res.append_message("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmds[1], DATAS.index[msg.cmds[1]]["proprio"]))
         return res
     else:
-        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmd[1]))
+        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]))
 
 def liste(msg):
     msg.send_snd ("Compteurs connus : %s." % ", ".join(DATAS.index.keys()))
 
 def parseanswer(msg):
-    if msg.cmd[0] in DATAS.index:
-        if DATAS.index[msg.cmd[0]].name == "strend":
-            if DATAS.index[msg.cmd[0]].hasAttribute("end"):
-                return Response(msg.sender, "%s commencé il y a %s et se terminera dans %s." % (msg.cmd[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmd[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmd[0]].getDate("end") - datetime.now())), channel=msg.channel)
+    if msg.cmds[0] in DATAS.index:
+        if DATAS.index[msg.cmds[0]].name == "strend":
+            if DATAS.index[msg.cmds[0]].hasAttribute("end"):
+                return Response(msg.sender, "%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmds[0]].getDate("end") - datetime.now())), channel=msg.channel)
             else:
-                return Response(msg.sender, "%s commencé il y a %s." % (msg.cmd[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmd[0]].getDate("start"))), channel=msg.channel)
+                return Response(msg.sender, "%s commencé il y a %s." % (msg.cmds[0], msg.just_countdown(datetime.now () - DATAS.index[msg.cmds[0]].getDate("start"))), channel=msg.channel)
         else:
             save()
-            return Response(msg.sender, msg.countdown_format (DATAS.index[msg.cmd[0]].getDate("start"), DATAS.index[msg.cmd[0]]["msg_before"], DATAS.index[msg.cmd[0]]["msg_after"]), channel=msg.channel)
+            return Response(msg.sender, msg.countdown_format (DATAS.index[msg.cmds[0]].getDate("start"), DATAS.index[msg.cmds[0]]["msg_before"], DATAS.index[msg.cmds[0]]["msg_after"]), channel=msg.channel)
 
 def parseask(msg):
   msgl = msg.content.lower()
@@ -206,7 +206,7 @@ def parseask(msg):
 
           if msg_before.find ("%s") != -1 and msg_after.find ("%s") != -1:
             evt = ModuleState("event")
-            evt["server"] = msg.srv.id
+            evt["server"] = msg.server
             evt["channel"] = msg.channel
             evt["proprio"] = msg.nick
             evt["sender"] = msg.sender
@@ -226,7 +226,7 @@ def parseask(msg):
                               " compte à rebours.")
       elif texts is not None and texts.group (2) is not None:
         evt = ModuleState("event")
-        evt["server"] = msg.srv.id
+        evt["server"] = msg.server
         evt["channel"] = msg.channel
         evt["proprio"] = msg.nick
         evt["sender"] = msg.sender

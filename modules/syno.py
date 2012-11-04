@@ -5,13 +5,13 @@ import re
 import socket
 from urllib.parse import quote
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 def help_tiny ():
   return "Find french synonyms"
 
 def help_full ():
-  return "!syno <word> [<word> ...]: give a list of synonyms for each <word> (maximum 5 each time)."
+  return "!syno <word>: give a list of synonyms for <word>."
 
 def load(context):
     from hooks import Hook
@@ -20,18 +20,16 @@ def load(context):
 
 
 def cmd_syno(msg):
-    if 1 < len(msg.cmd) < 6:
-        for word in msg.cmd[1:]:
+    if 1 < len(msg.cmds) < 6:
+        for word in msg.cmds[1:]:
             synos = get_synos(word)
             if synos is None:
                 return Response(msg.sender,
                                 "Une erreur s'est produite durant la recherche"
                                 " d'un synonyme de %s" % word, msg.channel)
             elif len(synos) > 0:
-                return Response(msg.sender,
-                                "Synonymes de %s : %s" %
-                                (word, ', '.join(synos)),
-                                msg.channel)
+                return Response(msg.sender, synos, msg.channel,
+                                title="Synonymes de %s" % word)
             else:
                 return Response(msg.sender,
                                 "Aucun synonymes de %s n'a été trouvé" % word,

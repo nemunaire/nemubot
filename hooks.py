@@ -142,9 +142,9 @@ class Hook:
         return (channel is None or len(self.channels) <= 0 or
                 channel in self.channels) and (server is None or
              self.server is None or self.server == server) and (
-            (self.name is not None and strcmp == self.name) or (
-            self.end is not None and strcmp == self.end) or (
-            self.regexp is not None and re.match(self.regexp, strcmp)))
+            (self.name is None or strcmp == self.name) or (
+            self.end is None or strcmp == self.end) or (
+            self.regexp is None or re.match(self.regexp, strcmp)))
 
     def run(self, msg, data2=None, strcmp=None):
         """Run the hook"""

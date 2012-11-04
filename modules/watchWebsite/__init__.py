@@ -12,7 +12,7 @@ from urllib.parse import unquote
 
 from .atom import Atom
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
@@ -21,12 +21,8 @@ def help_tiny ():
 def help_full ():
   return "This module is autonomous you can't interract with it."
 
-CONTEXT = None
-
 def load(context):
     """Register watched website"""
-    global CONTEXT
-    CONTEXT = context
     for site in DATAS.getNodes("watch"):
         start_watching(site)
 
@@ -41,7 +37,7 @@ def start_watching(site):
                       func_data=dict(s=site["server"], p=site["page"]),
                       intervalle=site.getInt("time"),
                       call=alert_change, call_data=site)
-    site["evt_id"] = CONTEXT.add_event(evt)
+    site["evt_id"] = add_event(evt)
 
 
 def explore_url(url):
@@ -54,15 +50,15 @@ def found_site(s, p):
     return None
 
 def del_site(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender, "quel site dois-je arrêter de surveiller ?",
                         msg.channel, msg.nick)
 
-    rx = explore_url(msg.cmd[1])
+    rx = explore_url(msg.cmds[1])
     if rx is not None:
         site = found_site(rx.group(2), rx.group(3))
         if site is not None and (msg.sender == site["sender"] or msg.is_owner):
-            CONTEXT.del_event(site["evt_id"])
+            del_event(site["evt_id"])
             DATAS.delChild(site)
             save()
             return Response(msg.sender, "je ne surveille désormais plus cette URL.",
@@ -77,11 +73,11 @@ def del_site(msg):
                     channel=msg.channel, nick=msg.nick)
 
 def add_site(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender, "quel site dois-je surveiller ?",
                         msg.channel, msg.nick)
 
-    rx = explore_url(msg.cmd[1])
+    rx = explore_url(msg.cmds[1])
     if rx is None:
         return Response(msg.sender, "je ne peux pas surveiller cette URL",
                         channel=msg.channel, nick=msg.nick)

@@ -5,14 +5,14 @@ import imp
 from datetime import datetime
 from datetime import timedelta
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""
   return "as http://sleepyti.me/, give you the best time to go to bed"
 
 def help_full ():
-  return "TODO"
+  return "If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm"
 
 def load(context):
     from hooks import Hook
@@ -21,10 +21,10 @@ def load(context):
 
 
 def cmd_sleep(msg):
-    if len (msg.cmd) > 1 and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
-                                      msg.cmd[1]) is not None:
+    if len (msg.cmds) > 1 and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
+                                      msg.cmds[1]) is not None:
         # First, parse the hour
-        p = re.match("([0-9]{1,2})[h':.,-]([0-9]{1,2})?[m':.,-]?", msg.cmd[1])
+        p = re.match("([0-9]{1,2})[h':.,-]([0-9]{1,2})?[m':.,-]?", msg.cmds[1])
         f = [datetime(datetime.today().year,
                       datetime.today().month,
                       datetime.today().day,

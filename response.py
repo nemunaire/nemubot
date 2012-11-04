@@ -39,6 +39,13 @@ class Response:
         self.set_sender(sender)
         self.count = count
 
+    @property
+    def content(self):
+        if self.title is not None:
+            return self.title + ", ".join(self.messages)
+        else:
+            return ", ".join(self.messages)
+
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:
             if sender is not None:

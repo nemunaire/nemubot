@@ -353,7 +353,7 @@ class Bot:
         """Treat a message before send"""
         for h, lvl, store in self.create_cache("all_post"):
             if h.is_matching(None, channel=res.channel, server=res.server):
-                c = h.run(msg)
+                c = h.run(res)
                 self.check_rest_times(store, h)
                 if not c:
                     return False
