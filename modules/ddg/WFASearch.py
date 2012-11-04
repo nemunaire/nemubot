@@ -65,7 +65,7 @@ class WFASearch:
 
 
 def getPage(terms):
-  conn = http.client.HTTPConnection("api.wolframalpha.com", timeout=5)
+  conn = http.client.HTTPConnection("api.wolframalpha.com", timeout=15)
   try:
     conn.request("GET", "/v2/query?input=%s&appid=%s" % (quote(terms), CONF.getNode("wfaapi")["key"]))
   except socket.gaierror:

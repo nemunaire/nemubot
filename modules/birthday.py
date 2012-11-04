@@ -7,37 +7,37 @@ from datetime import date
 
 from xmlparser.node import ModuleState
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 def load(context):
-  global DATAS
-  DATAS.setIndex("name", "birthday")
+    global DATAS
+    DATAS.setIndex("name", "birthday")
 
 
 def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "People birthdays and ages"
+    """Line inserted in the response to the command !help"""
+    return "People birthdays and ages"
 
 
 def help_full ():
-  return "!anniv /who/: gives the remaining time before the anniversary of /who/\n!age /who/: gives the age of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
+    return "!anniv /who/: gives the remaining time before the anniversary of /who/\n!age /who/: gives the age of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
 
 
 def findName(msg):
-  if len(msg.cmd) < 2 or msg.cmd[1].lower() == "moi" or msg.cmd[1].lower() == "me":
-    name = msg.nick.lower()
-  else:
-    name = msg.cmd[1].lower()
+    if len(msg.cmds) < 2 or msg.cmds[1].lower() == "moi" or msg.cmds[1].lower() == "me":
+        name = msg.nick.lower()
+    else:
+        name = msg.cmds[1].lower()
 
-  matches = []
+    matches = []
 
-  if name in DATAS.index:
-    matches.append(name)
-  else:
-    for k in DATAS.index.keys ():
-      if k.find (name) == 0:
-        matches.append (k)
-  return (matches, name)
+    if name in DATAS.index:
+        matches.append(name)
+    else:
+        for k in DATAS.index.keys ():
+            if k.find (name) == 0:
+                matches.append (k)
+    return (matches, name)
 
 
 def cmd_anniv(msg):
@@ -83,29 +83,29 @@ def cmd_age(msg):
     return True
 
 def parseask(msg):
-  msgl = msg.content.lower ()
-  if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl) is not None:
-    try:
-      extDate = msg.extractDate()
-      if extDate is None or extDate.year > datetime.now().year:
-          return Response(msg.sender,
-                          "ta date de naissance ne paraît pas valide...",
-                          msg.channel,
-                          msg.nick)
-      else:
-        if msg.nick.lower() in DATAS.index:
-          DATAS.index[msg.nick.lower()]["born"] = extDate
-        else:
-          ms = ModuleState("birthday")
-          ms.setAttribute("name", msg.nick.lower())
-          ms.setAttribute("born", extDate)
-          DATAS.addChild(ms)
-        save()
-        return Response(msg.sender,
-                        "ok, c'est noté, ta date de naissance est le %s"
-                        % extDate.strftime("%A %d %B %Y à %H:%M"),
-                        msg.channel,
-                        msg.nick)
-    except:
-        return Response(msg.sender, "ta date de naissance ne paraît pas valide...",
-                        msg.channel, msg.nick)
+    msgl = msg.content.lower ()
+    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl) is not None:
+        try:
+            extDate = msg.extractDate()
+            if extDate is None or extDate.year > datetime.now().year:
+                return Response(msg.sender,
+                                "ta date de naissance ne paraît pas valide...",
+                                msg.channel,
+                                msg.nick)
+            else:
+                if msg.nick.lower() in DATAS.index:
+                    DATAS.index[msg.nick.lower()]["born"] = extDate
+                else:
+                    ms = ModuleState("birthday")
+                    ms.setAttribute("name", msg.nick.lower())
+                    ms.setAttribute("born", extDate)
+                    DATAS.addChild(ms)
+                save()
+                return Response(msg.sender,
+                                "ok, c'est noté, ta date de naissance est le %s"
+                                % extDate.strftime("%A %d %B %Y à %H:%M"),
+                                msg.channel,
+                                msg.nick)
+        except:
+            return Response(msg.sender, "ta date de naissance ne paraît pas valide...",
+                            msg.channel, msg.nick)

@@ -2,7 +2,7 @@
 
 import imp
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 from . import DDGSearch
 from . import WFASearch
@@ -38,12 +38,12 @@ def reload():
 
 
 def define(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender,
                         "Indicate a term to define",
                         msg.channel, nick=msg.nick)
 
-    s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
+    s = DDGSearch.DDGSearch(' '.join(msg.cmds[1:]))
 
     res = Response(msg.sender, channel=msg.channel)
 
@@ -53,12 +53,12 @@ def define(msg):
 
 
 def search(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender,
                         "Indicate a term to search",
                         msg.channel, nick=msg.nick)
 
-    s = DDGSearch.DDGSearch(' '.join(msg.cmd[1:]))
+    s = DDGSearch.DDGSearch(' '.join(msg.cmds[1:]))
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results",
                    count=" (%d more results)")
@@ -75,34 +75,35 @@ def search(msg):
 
 
 def calculate(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender,
                         "Indicate a calcul to compute",
                         msg.channel, nick=msg.nick)
 
-    s = WFASearch.WFASearch(' '.join(msg.cmd[1:]))
+    s = WFASearch.WFASearch(' '.join(msg.cmds[1:]))
 
     if s.success:
         res = Response(msg.sender, channel=msg.channel, nomore="No more results")
         for result in s.nextRes:
             res.append_message(result)
-        res.messages.pop(0)
+        if (len(res.messages) > 0):
+            res.messages.pop(0)
         return res
     else:
         return Response(msg.sender, s.error, msg.channel)
 
 
 def wiki(msg):
-    if len(msg.cmd) <= 1:
+    if len(msg.cmds) <= 1:
         return Response(msg.sender,
                         "Indicate a term to search",
                         msg.channel, nick=msg.nick)
-    if msg.cmd[0] == "w" or msg.cmd[0] == "wf" or msg.cmd[0] == "wfr":
+    if msg.cmds[0] == "w" or msg.cmds[0] == "wf" or msg.cmds[0] == "wfr":
         lang = "fr"
     else:
         lang = "en"
 
-    s = Wikipedia.Wikipedia(' '.join(msg.cmd[1:]), lang)
+    s = Wikipedia.Wikipedia(' '.join(msg.cmds[1:]), lang)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results")
     for result in s.nextRes:
@@ -112,5 +113,5 @@ def wiki(msg):
         return res
     else:
         return Response(msg.sender,
-                        "No information about " + msg.cmd[1],
+                        "No information about " + msg.cmds[1],
                         msg.channel)
