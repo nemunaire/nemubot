@@ -83,6 +83,7 @@ class MessageConsumer:
         """Create, parse and treat the message"""
         try:
             msg = Message(self.raw, self.time, self.prvt)
+            msg.server = self.srv.id
             if msg.cmd == "PRIVMSG":
                 msg.is_owner = (msg.nick == self.srv.owner)
             res = self.treat_in(context, msg)
@@ -139,39 +140,3 @@ class Consumer(threading.Thread):
             pass
         finally:
             self.context.cnsr_thrd_size -= 2
-
-
-
-def _help_msg(modules, sndr, cmd):
-    """Parse and response to help messages"""
-    res = response.Response(sndr)
-    if len(cmd) > 1:
-        if cmd[1] in modules:
-            if len(cmd) > 2:
-                if hasattr(modules[cmd[1]], "HELP_cmd"):
-                    res.append_message(modules[cmd[1]].HELP_cmd(cmd[2]))
-                else:
-                    res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
-            elif hasattr(modules[cmd[1]], "help_full"):
-                res.append_message(modules[cmd[1]].help_full())
-            else:
-                res.append_message("No help for module %s" % cmd[1])
-        else:
-            res.append_message("No module named %s" % cmd[1])
-    else:
-        res.append_message("Pour me demander quelque chose, commencez "
-                           "votre message par mon nom ; je réagis "
-                           "également à certaine commandes commençant par"
-                           " !.  Pour plus d'informations, envoyez le "
-                           "message \"!more\".")
-        res.append_message("Mon code source est libre, publié sous "
-                           "licence AGPL (http://www.gnu.org/licenses/). "
-                           "Vous pouvez le consulter, le dupliquer, "
-                           "envoyer des rapports de bogues ou bien "
-                           "contribuer au projet sur GitHub : "
-                           "http://github.com/nemunaire/nemubot/")
-        res.append_message(title="Pour plus de détails sur un module, "
-                           "envoyez \"!help nomdumodule\". Voici la liste"
-                           " de tous les modules disponibles localement",
-                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].help_tiny ()) for im in modules if hasattr(modules[im], "help_tiny")])
-    return res

@@ -413,7 +413,7 @@ class Bot:
             msg.cmds[0] = msg.cmds[0][1:]
 
             if msg.cmds[0] == "help":
-                return _help_msg(msg.sender)
+                return _help_msg(msg.sender, self.modules, msg.cmds)
 
             elif msg.cmds[0] == "more":
                 if msg.channel == srv.nick:
@@ -555,6 +555,41 @@ class Bot:
 
 def _ctcp_response(sndr, msg):
     return response.Response(sndr, msg, ctcp=True)
+
+
+def _help_msg(sndr, modules, cmd):
+    """Parse and response to help messages"""
+    res = response.Response(sndr)
+    if len(cmd) > 1:
+        if cmd[1] in modules:
+            if len(cmd) > 2:
+                if hasattr(modules[cmd[1]], "HELP_cmd"):
+                    res.append_message(modules[cmd[1]].HELP_cmd(cmd[2]))
+                else:
+                    res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
+            elif hasattr(modules[cmd[1]], "help_full"):
+                res.append_message(modules[cmd[1]].help_full())
+            else:
+                res.append_message("No help for module %s" % cmd[1])
+        else:
+            res.append_message("No module named %s" % cmd[1])
+    else:
+        res.append_message("Pour me demander quelque chose, commencez "
+                           "votre message par mon nom ; je réagis "
+                           "également à certaine commandes commençant par"
+                           " !.  Pour plus d'informations, envoyez le "
+                           "message \"!more\".")
+        res.append_message("Mon code source est libre, publié sous "
+                           "licence AGPL (http://www.gnu.org/licenses/). "
+                           "Vous pouvez le consulter, le dupliquer, "
+                           "envoyer des rapports de bogues ou bien "
+                           "contribuer au projet sur GitHub : "
+                           "http://github.com/nemunaire/nemubot/")
+        res.append_message(title="Pour plus de détails sur un module, "
+                           "envoyez \"!help nomdumodule\". Voici la liste"
+                           " de tous les modules disponibles localement",
+                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].help_tiny ()) for im in modules if hasattr(modules[im], "help_tiny")])
+    return res
 
 def hotswap(bak):
     return Bot(bak.servers, bak.modules, bak.modules_path)
