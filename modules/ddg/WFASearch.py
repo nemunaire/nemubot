@@ -1,19 +1,22 @@
 # coding=utf-8
 
-import http.client
-import re
-import socket
 from urllib.parse import quote
 
-import xmlparser
+from tools import web
 
 class WFASearch:
     def __init__(self, terms):
         self.terms = terms
-        (res, page) = getPage(terms)
-        if res == http.client.OK:
-            self.wfares = xmlparser.parse_string(page)
-        else:
+        try:
+            self.wfares = web.getXML("http://api.wolframalpha.com/v2/query?"
+                                     "input=%s&appid=%s"
+                                     % (quote(terms),
+                                        CONF.getNode("wfaapi")["key"]))
+        except (TypeError, KeyError):
+            print ("You need a Wolfram|Alpha API key in order to use this "
+                   "module. Add it to the module configuration file:\n<wfaapi"
+                   " key=\"XXXXXX-XXXXXXXXXX\" />\nRegister at "
+                   "http://products.wolframalpha.com/api/")
             self.wfares = None
 
     @property
@@ -25,7 +28,9 @@ class WFASearch:
 
     @property
     def error(self):
-        if self.wfares["error"] == "true":
+        if self.wfares is None:
+            return "An error occurs during computation."
+        elif self.wfares["error"] == "true":
             return "An error occurs during computation: " + self.wfares.getNode("error").getNode("msg").getContent()
         elif self.wfares.hasNode("didyoumeans"):
             start = "Did you mean: "
@@ -62,21 +67,3 @@ class WFASearch:
                         yield node["title"] + " " + subnode["title"] + ": " + subnode.getFirstNode("plaintext").getContent()
         except IndexError:
             pass
-
-
-def getPage(terms):
-  conn = http.client.HTTPConnection("api.wolframalpha.com", timeout=15)
-  try:
-    conn.request("GET", "/v2/query?input=%s&appid=%s" % (quote(terms), CONF.getNode("wfaapi")["key"]))
-  except socket.gaierror:
-    print ("impossible de récupérer la page Wolfram|Alpha.")
-    return (http.client.INTERNAL_SERVER_ERROR, None)
-  except (TypeError, KeyError):
-    print ("You need a Wolfram|Alpha API key in order to use this module. Add it to the module configuration file:\n<wfaapi key=\"XXXXXX-XXXXXXXXXX\" />\nRegister at http://products.wolframalpha.com/api/")
-    return (http.client.INTERNAL_SERVER_ERROR, None)
-
-  res = conn.getresponse()
-  data = res.read()
-
-  conn.close()
-  return (res.status, data)

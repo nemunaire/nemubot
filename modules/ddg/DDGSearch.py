@@ -1,19 +1,13 @@
 # coding=utf-8
 
-import http.client
-import re
 from urllib.parse import quote
 
-import xmlparser
+from tools import web
 
 class DDGSearch:
     def __init__(self, terms):
         self.terms = terms
-        (res, page) = getPage(terms)
-        if res == http.client.OK or res == http.client.SEE_OTHER:
-            self.ddgres = xmlparser.parse_string(page)
-        else:
-            self.ddgres = None
+        self.ddgres = web.getXML("http://api.duckduckgo.com/?q=%s&format=xml" % quote(terms))
 
     @property
     def type(self):
@@ -55,7 +49,7 @@ class DDGSearch:
     @property
     def answer(self):
         try:
-            return striphtml(self.ddgres.getFirstNode("Answer").getContent())
+            return web.striphtml(self.ddgres.getFirstNode("Answer").getContent())
         except:
             return None
 
@@ -68,22 +62,3 @@ class DDGSearch:
                 return None
         except:
             return None
-
-
-def striphtml(data):
-    p = re.compile(r'<.*?>')
-    return p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\"")
-
-def getPage(terms):
-    conn = http.client.HTTPConnection("api.duckduckgo.com", timeout=5)
-    try:
-        conn.request("GET", "/?q=%s&format=xml" % quote(terms))
-    except socket.gaierror:
-        print ("impossible de récupérer la page %s."%(p))
-        return (http.client.INTERNAL_SERVER_ERROR, None)
-
-    res = conn.getresponse()
-    data = res.read()
-
-    conn.close()
-    return (res.status, data)

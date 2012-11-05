@@ -7,9 +7,8 @@ from datetime import date
 from datetime import datetime
 
 from . import SiteSoutenances
-from .Delayed import Delayed
 
-nemubotversion = 3.2
+nemubotversion = 3.3
 
 def help_tiny():
   """Line inserted in the response to the command !help"""
@@ -24,11 +23,11 @@ def load(context):
 
 def ask_soutenance(msg):
     req = ModuleState("request")
-    if len(msg.cmd) > 1:
-        req.setAttribute("user", msg.cmd[1])
+    if len(msg.cmds) > 1:
+        req.setAttribute("user", msg.cmds[1])
     else:
         req.setAttribute("user", "next")
-    req.setAttribute("server", msg.srv.id)
+    req.setAttribute("server", msg.server)
     req.setAttribute("channel", msg.channel)
     req.setAttribute("sender", msg.sender)
 
