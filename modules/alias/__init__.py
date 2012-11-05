@@ -113,7 +113,7 @@ def treat_variables(res):
     return True
 
 def treat_alias(msg, hooks_cache):
-    if (len(msg.cmds[0]) > 0 and
+    if msg.cmd == "PRIVMSG" and (len(msg.cmds[0]) > 0 and
         msg.cmds[0][1:] in DATAS.getNode("aliases").index and
         msg.cmds[0][1:] not in hooks_cache("cmd_hook")):
         msg.content = msg.content.replace(msg.cmds[0],
