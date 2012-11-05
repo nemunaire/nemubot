@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import shlex
+import traceback
 from datetime import datetime
 from datetime import timedelta
 import _thread
@@ -28,7 +29,7 @@ else:
 
 import xmlparser as msf
 import message
-import server
+import IRCServer
 
 SMILEY = list()
 CORRECTIONS = list()
@@ -43,10 +44,10 @@ def speak(endstate):
     stopSpk = 0
 
     if lastmsg is None:
-        lastmsg = message.Message(None, b":Quelqun!someone@p0m.fr PRIVMSG channel nothing", datetime.now())
+        lastmsg = message.Message(b":Quelqun!someone@p0m.fr PRIVMSG channel nothing", datetime.now())
 
     while not stopSpk and len(g_queue) > 0:
-        msg = g_queue.pop(0)
+        srv, msg = g_queue.pop(0)
         lang = "fr"
         sentence = ""
         force = 0
@@ -60,7 +61,7 @@ def speak(endstate):
             force = 1
 
         if force or msg.channel != lastmsg.channel:
-            if msg.channel == msg.srv.owner:
+            if msg.channel == srv.owner:
                 sentence += "En message priver. " #Just to avoid é :p
             else:
                 sentence += "Sur " + msg.channel + ". "
@@ -112,36 +113,36 @@ def speak(endstate):
         talkEC = 1
 
 
-class Server(server.Server):
+class Server(IRCServer.IRCServer):
     def treat_msg(self, line, private = False):
         global stopSpk, talkEC, g_queue
         try:
-            msg = message.Message (self, line, datetime.now(), private)
+            msg = message.Message (line, datetime.now(), private)
             if msg.cmd == 'PING':
                 msg.treat (self.mods)
-            elif msg.cmd == 'PRIVMSG' and msg.authorize():
-                if msg.nick != msg.srv.owner:
-                    g_queue.append(msg)
+            elif msg.cmd == 'PRIVMSG' and self.accepted_channel(msg.channel):
+                if msg.nick != self.owner:
+                    g_queue.append((self, msg))
                     if talkEC == 0:
                         _thread.start_new_thread(speak, (0,))
-                elif msg.content[0] == "`":
-                    cmd = shlex.split(msg.content[1:])
-                    if cmd[0] == "speak":
+                elif msg.content[0] == "`" and len(msg.content) > 1:
+                    msg.cmds = msg.cmds[1:]
+                    if msg.cmds[0] == "speak":
                         _thread.start_new_thread(speak, (0,))
-                    elif cmd[0] == "reset":
+                    elif msg.cmds[0] == "reset":
                         while len(g_queue) > 0:
                             g_queue.pop()
-                    elif cmd[0] == "save":
+                    elif msg.cmds[0] == "save":
                         if talkEC == 0:
                             talkEC = 1
                         stopSpk = 1
-                    elif cmd[0] == "add":
-                        self.channels.append(cmd[1])
+                    elif msg.cmds[0] == "add":
+                        self.channels.append(msg.cmds[1])
                         print (cmd[1] + " added to listened channels")
-                    elif cmd[0] == "del":
-                        if self.channels.count(cmd[1]) > 0:
-                            self.channels.remove(cmd[1])
-                            print (cmd[1] + " removed from listened channels")
+                    elif msg.cmds[0] == "del":
+                        if self.channels.count(msg.cmds[1]) > 0:
+                            self.channels.remove(msg.cmds[1])
+                            print (msg.cmds[1] + " removed from listened channels")
                         else:
                             print (cmd[1] + " not in listened channels")
         except:
