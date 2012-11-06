@@ -1,9 +1,8 @@
 # coding=utf-8
 
-import http.client
-import imp
 import re
-import sys
+
+from tools import web
 
 nemubotversion = 3.3
 
@@ -40,9 +39,11 @@ def cmd_ycc(msg):
     if len(msg.cmds) < 6:
         res = list()
         for url in msg.cmds[1:]:
-            srv = re.match(".*((ht|f)tps?://|www.)([^/ ]+).*", url)
+            srv = web.getHost(url)
             if srv is not None:
-                res.append(gen_response(tinyfy(url), msg, srv.group(3)))
+                res.append(gen_response(
+                    web.getURLContent("http://ycc.fr/redirection/create/"
+                                      + url).decode(), msg, srv))
             else:
                 res.append(gen_response(False, msg, url))
         return res
@@ -52,38 +53,19 @@ def cmd_ycc(msg):
 
 def parselisten(msg):
     global LAST_URLS
-    res = re.match(".*(((ht|f)tps?://|www\.)[^ ]+).*", msg.content)
+    res = re.match(".*([a-zA-Z0-9+.-]+):(//)?([^ ]*).*", msg.content)
     if res is not None:
-        if res.group(1).find("ycc.fr") >= 0:
-            return False
-        if msg.channel not in LAST_URLS:
-            LAST_URLS[msg.channel] = list()
-        LAST_URLS[msg.channel].append(res.group(1))
-        return True
+        url = res.group(1)
+        srv = web.getHost(url)
+        if srv is not None:
+            if srv == "ycc.fr":
+                return False
+            if msg.channel not in LAST_URLS:
+                LAST_URLS[msg.channel] = list()
+            LAST_URLS[msg.channel].append(url)
+            return True
     return False
+
 def parseresponse(res):
     parselisten(res)
     return True
-
-def tinyfy(url):
-    (status, page) = getPage("ycc.fr", "/redirection/create/" + url)
-    if status == http.client.OK and len(page) < 100:
-        return page.decode()
-    else:
-        print ("ERROR: ycc.fr seem down?")
-        return None
-
-
-def getPage(s, p):
-    conn = http.client.HTTPConnection(s, timeout=10)
-    try:
-        conn.request("GET", p)
-    except socket.gaierror:
-        print ("[%s] impossible de récupérer la page %s."%(s, p))
-        return None
-
-    res = conn.getresponse()
-    data = res.read()
-
-    conn.close()
-    return (res.status, data)

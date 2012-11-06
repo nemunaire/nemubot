@@ -27,68 +27,98 @@ import xmlparser
 
 def parseURL(url):
     """Separate protocol, domain, port and page request"""
-    res = re.match("^(([^:]+)://)?([^:/]+)(:([0-9]{1,5}))?(.*)$", url)
+    res = re.match("^([a-zA-Z0-9+.-]+):(//)?(.*)$", url)
     if res is not None:
-        if res.group(5) is not None:
-            port = int(res.group(5))
-        elif res.group(2) is not None:
-            if res.group(2) == "http":
-                port = 80
-            elif res.group(2) == "https":
-                port = 443
-            else:
-                print ("<tools.web> WARNING: unknown protocol %s"
-                       % res.group(2))
-                port = 0
+        scheme = res.group(1)
+        if scheme == "https":
+            port = 443
+        elif scheme == "http":
+            port = 80
+        elif scheme == "ftp":
+            port = 21
+        elif scheme == "telnet":
+            port = 23
         else:
             port = 0
-        return (res.group(2), res.group(3), port, res.group(6))
+        if res.group(2) == "//":
+            # Waiting Common Internet Scheme Syntax
+            ciss = re.match("^(([^:]+)(:([^@]+))@)?([^:/]+)(:([0-9]+))?(/.*)$", res.group(3))
+            user = ciss.group(2)
+            password = ciss.group(4)
+            host = ciss.group(5)
+            if ciss.group(7) is not None and ciss.group(7) != "" and int(ciss.group(7)) > 0:
+                port = int(ciss.group(7))
+            path = ciss.group(8)
+            return (scheme, (user, password), host, port, path)
+        else:
+            return (scheme, (None, None), None, None, res.group(3))
     else:
-        return (None, None, None, None)
+        return (None, (None, None), None, None, None)
 
-def getDomain(url):
-    """Return the domain of a given URL"""
-    (protocol, domain, port, page) = parseURL(url)
-    return domain
+def isURL(url):
+    """Return True if the URL can be parsed"""
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return scheme is not None
 
-def getProtocol(url):
+def getScheme(url):
     """Return the protocol of a given URL"""
-    (protocol, domain, port, page) = parseURL(url)
-    return protocol
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return scheme
+
+def getHost(url):
+    """Return the domain of a given URL"""
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return host
 
 def getPort(url):
     """Return the port of a given URL"""
-    (protocol, domain, port, page) = parseURL(url)
+    (scheme, (user, password), host, port, path) = parseURL(url)
     return port
 
-def getRequest(url):
+def getPath(url):
     """Return the page request of a given URL"""
-    (protocol, domain, port, page) = parseURL(url)
-    return page
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return path
+
+def getUser(url):
+    """Return the page request of a given URL"""
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return user
+def getPassword(url):
+    """Return the page request of a given URL"""
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    return password
 
 
 # Get real pages
 
 def getURLContent(url, timeout=15):
     """Return page content corresponding to URL or None if any error occurs"""
-    (protocol, domain, port, page) = parseURL(url)
-    if port == 0: port = 80
-    conn = http.client.HTTPConnection(domain, port=port, timeout=15)
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    if port is None:
+        return None
+    conn = http.client.HTTPConnection(host, port=port, timeout=timeout)
     try:
-        conn.request("GET", page, None, {"User-agent": "Nemubot v3"})
+        conn.request("GET", path, None, {"User-agent": "Nemubot v3"})
+    except socket.timeout:
+        return None
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s from %s on %d."
-               % (page, domain, port))
+               % (path, host, port))
         return None
 
-    res = conn.getresponse()
-    data = res.read()
-
-    conn.close()
+    try:
+        res = conn.getresponse()
+        data = res.read()
+    except http.client.BadStatusLine:
+        return None
+    finally:
+        conn.close()
 
     if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
         return data
-    #TODO: follow redirections
+    elif res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY:
+        return getURLContent(res.getheader("Location"), timeout)
     else:
         return None
 
@@ -100,6 +130,46 @@ def getXML(url, timeout=15):
     else:
         return xmlparser.parse_string(cnt)
 
+def traceURL(url, timeout=5, stack=None):
+    """Follow redirections and return the redirections stack"""
+    if stack is None:
+        stack = list()
+    stack.append(url)
+
+    (scheme, (user, password), host, port, path) = parseURL(url)
+    if port is None or port == 0:
+        return stack
+    conn = http.client.HTTPConnection(host, port=port, timeout=timeout)
+    try:
+        conn.request("HEAD", path, None, {"User-agent": "Nemubot v3"})
+    except socket.timeout:
+        stack.append("Timeout")
+        return stack
+    except socket.gaierror:
+        print ("<tools.web> Unable to receive page %s from %s on %d."
+               % (path, host, port))
+        return None
+
+    try:
+        res = conn.getresponse()
+    except http.client.BadStatusLine:
+        return None
+    finally:
+        conn.close()
+
+    if res.status == http.client.OK:
+        return stack
+    elif res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY or res.status == http.client.SEE_OTHER:
+        url = res.getheader("Location")
+        if url in stack:
+            stack.append(url)
+            return stack
+        else:
+            return traceURL(url, timeout, stack)
+    else:
+        return None
+    
+
 # Other utils
 
 def striphtml(data):
@@ -110,9 +180,10 @@ def striphtml(data):
 
 # Tests when called alone
 if __name__ == "__main__":
-    print(parseURL("www.nemunai.re"))
-    print(parseURL("www.nemunai.re/?p0m"))
+    print(parseURL("http://www.nemunai.re/"))
+    print(parseURL("http://www.nemunai.re/?p0m"))
     print(parseURL("http://www.nemunai.re/?p0m"))
     print(parseURL("http://www.nemunai.re:42/?p0m"))
-    print(parseURL("www.nemunai.re:42/?p0m"))
+    print(parseURL("ftp://www.nemunai.re:42/?p0m"))
     print(parseURL("http://www.nemunai.re/?p0m"))
+    print(parseURL("magnet:ceciestunmagnet!"))
