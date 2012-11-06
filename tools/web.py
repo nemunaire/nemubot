@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import http.client
+import json
 import re
 import socket
 from urllib.parse import quote
@@ -129,6 +130,14 @@ def getXML(url, timeout=15):
         return None
     else:
         return xmlparser.parse_string(cnt)
+
+def getJSON(url, timeout=15):
+    """Get content page and return JSON content"""
+    cnt = getURLContent(url, timeout)
+    if cnt is None:
+        return None
+    else:
+        return json.loads(cnt.decode())
 
 def traceURL(url, timeout=5, stack=None):
     """Follow redirections and return the redirections stack"""
