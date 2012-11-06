@@ -41,10 +41,14 @@ class Response:
 
     @property
     def content(self):
-        if self.title is not None:
-            return self.title + ", ".join(self.messages)
-        else:
-            return ", ".join(self.messages)
+        #FIXME: error when messages in self.messages are list!
+        try:
+            if self.title is not None:
+                return self.title + ", ".join(self.messages)
+            else:
+                return ", ".join(self.messages)
+        except:
+            return ""
 
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:

@@ -109,7 +109,10 @@ def replace_variables(cnt, msg=None):
 
 def treat_variables(res):
     for i in range(0, len(res.messages)):
-        res.messages[i] = replace_variables(res.messages[i], res)
+        if isinstance(res.messages[i], list):
+            res.messages[i] = replace_variables(", ".join(res.messages[i]), res)
+        else:
+            res.messages[i] = replace_variables(res.messages[i], res)
     return True
 
 def treat_alias(msg, hooks_cache):

@@ -28,6 +28,7 @@ import event
 import hooks
 from networkbot import NetworkBot
 from IRCServer import IRCServer
+from DCC import DCC
 import response
 
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -94,7 +95,7 @@ class Bot:
 
     def _ctcp_dcc(self, srv, msg):
         """Response to DCC CTCP message"""
-        ip = self.srv.toIP(int(msg.cmds[3]))
+        ip = srv.toIP(int(msg.cmds[3]))
         conn = DCC(srv, msg.sender)
         if conn.accept_user(ip, int(msg.cmds[4])):
             srv.dcc_clients[conn.sender] = conn
