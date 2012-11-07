@@ -134,5 +134,5 @@ def wiki(msg):
         return res
     else:
         return Response(msg.sender,
-                        "No information about " + msg.cmds[1],
+                        "No information about " + " ".join(msg.cmds[1:]),
                         msg.channel)

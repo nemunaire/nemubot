@@ -1,8 +1,8 @@
 # coding=utf-8
 
 import re
-
-from tools import web
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 nemubotversion = 3.3
 
@@ -39,11 +39,14 @@ def cmd_ycc(msg):
     if len(msg.cmds) < 6:
         res = list()
         for url in msg.cmds[1:]:
-            srv = web.getHost(url)
-            if srv is not None:
-                res.append(gen_response(
-                    web.getURLContent("http://ycc.fr/redirection/create/"
-                                      + url).decode(), msg, srv))
+            o = urlparse(url, "http")
+            if o.scheme != "":
+                raw = urlopen("http://ycc.fr/redirection/create/" + url,
+                              timeout=10)
+                if o.netloc == "":
+                    res.append(gen_response(raw.read().decode(), msg, o.scheme))
+                else:
+                    res.append(gen_response(raw.read().decode(), msg, o.netloc))
             else:
                 res.append(gen_response(False, msg, url))
         return res
@@ -56,13 +59,13 @@ def parselisten(msg):
     res = re.match(".*([a-zA-Z0-9+.-]+):(//)?([^ ]*).*", msg.content)
     if res is not None:
         url = res.group(1)
-        srv = web.getHost(url)
-        if srv is not None:
-            if srv == "ycc.fr":
+        o = urlparse(url)
+        if o.scheme != "":
+            if o.netloc == "ycc.fr":
                 return False
             if msg.channel not in LAST_URLS:
                 LAST_URLS[msg.channel] = list()
-            LAST_URLS[msg.channel].append(url)
+            LAST_URLS[msg.channel].append(o.geturl())
             return True
     return False
 
