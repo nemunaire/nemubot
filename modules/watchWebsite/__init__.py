@@ -7,8 +7,9 @@ import hashlib
 import re
 import socket
 import sys
-import traceback
-from urllib.parse import unquote
+import urllib.parse
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from .atom import Atom
 
@@ -23,52 +24,61 @@ def help_full ():
 
 def load(context):
     """Register watched website"""
+    DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
         start_watching(site)
 
 def unload(context):
     """Unregister watched website"""
-    for site in DATAS.getNodes("watch"):
-        context.del_event(site["evt_id"])
+    # Useless in 3.3?
+#    for site in DATAS.getNodes("watch"):
+#        context.del_event(site["evt_id"])
+    pass
+
+def getPageContent(url):
+    """Returns the content of the given url"""
+    print_debug("Get page %s" % url)
+    raw = urlopen(url, timeout=15)
+    return raw.read().decode()
 
 def start_watching(site):
-    print_debug("Add event for site: http://%s%s" % (site["server"], site["page"]))
-    evt = ModuleEvent(func=getPage, cmp_data=site["lastcontent"],
-                      func_data=dict(s=site["server"], p=site["page"]),
+    o = urlparse(site["url"], "http")
+    print_debug("Add event for site: %s" % o.netloc)
+    evt = ModuleEvent(func=getPageContent, cmp_data=site["lastcontent"],
+                      func_data=site["url"],
                       intervalle=site.getInt("time"),
                       call=alert_change, call_data=site)
-    site["evt_id"] = add_event(evt)
+    site["_evt_id"] = add_event(evt)
 
-
-def explore_url(url):
-    return re.match("^(http://)?([^/:]+)(/.*)$", url)
-
-def found_site(s, p):
-    for site in DATAS.getNodes("watch"):
-        if site is not None and site["server"] == s and site["page"] == p:
-            return site
-    return None
 
 def del_site(msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender, "quel site dois-je arrêter de surveiller ?",
                         msg.channel, msg.nick)
 
-    rx = explore_url(msg.cmds[1])
-    if rx is not None:
-        site = found_site(rx.group(2), rx.group(3))
-        if site is not None and (msg.sender == site["sender"] or msg.is_owner):
-            del_event(site["evt_id"])
-            DATAS.delChild(site)
-            save()
-            return Response(msg.sender, "je ne surveille désormais plus cette URL.",
-                            channel=msg.channel, nick=msg.nick)
-        elif site is None:
-            return Response(msg.sender, "je ne surveillais pas cette URL, impossible de la supprimer.",
-                            channel=msg.channel, nick=msg.nick)
-        else:
-            return Response(msg.sender, "Vous ne pouvez pas supprimer cette URL.",
-                            channel=msg.channel, nick=msg.nick)
+    url = msg.cmds[1]
+
+    o = urlparse(url, "http")
+    if o.scheme != "" and url in DATAS.index:
+        site = DATAS.index[url]
+        for a in site.getNodes("alert"):
+            if a["channel"] == msg.channel:
+                if (msg.sender == a["sender"] or msg.is_owner):
+                    site.delChild(a)
+                    if not site.hasNode("alert"):
+                      del_event(site["_evt_id"])
+                      DATAS.delChild(site)
+                    save()
+                    return Response(msg.sender,
+                                   "je ne surveille désormais plus cette URL.",
+                                   channel=msg.channel, nick=msg.nick)
+                else:
+                  return Response(msg.sender,
+                                  "Vous ne pouvez pas supprimer cette URL.",
+                                  channel=msg.channel, nick=msg.nick)
+        return Response(msg.sender,
+                        "je ne surveillais pas cette URL, impossible de la supprimer.",
+                        channel=msg.channel, nick=msg.nick)
     return Response(msg.sender, "je ne surveillais pas cette URL pour vous.",
                     channel=msg.channel, nick=msg.nick)
 
@@ -77,27 +87,43 @@ def add_site(msg):
         return Response(msg.sender, "quel site dois-je surveiller ?",
                         msg.channel, msg.nick)
 
-    rx = explore_url(msg.cmds[1])
-    if rx is None:
+    url = msg.cmds[1]
+
+    o = urlparse(url, "http")
+    if o.netloc != "":
+        alert = ModuleState("alert")
+        alert["sender"] = msg.sender
+        alert["server"] = msg.server
+        alert["channel"] = msg.channel
+        alert["message"] = "%s a changé !" % url
+
+        if url not in DATAS.index:
+            watch = ModuleState("watch")
+            watch["type"] = "diff"
+            watch["url"] = url
+            watch["time"] = 123
+            DATAS.addChild(watch)
+            watch.addChild(alert)
+            start_watching(watch)
+        else:
+            DATAS.index[url].addChild(alert)
+    else:
         return Response(msg.sender, "je ne peux pas surveiller cette URL",
                         channel=msg.channel, nick=msg.nick)
-    else:
-        watch = ModuleState("watch")
-        watch["sender"] = msg.sender
-        watch["irc"] = msg.srv.id
-        watch["channel"] = msg.channel
-        watch["type"] = "diff"
-        watch["server"] = rx.group(2)
-        watch["page"] = rx.group(3)
-        watch["time"] = 123
-        watch["message"] = "http://%s%s a changé !" % (watch["server"],
-                                                       watch["page"])
-        DATAS.addChild(watch)
-        start_watching(watch)
 
     save()
     return Response(msg.sender, channel=msg.channel, nick=msg.nick,
                     message="ce site est maintenant sous ma surveillance.")
+
+def format_response(site, data1='%s', data2='%s', data3='%s', data4='%s'):
+    for a in site.getNodes("alert"):
+        if a["message"].count("%s") == 1: data = data1
+        elif a["message"].count("%s") == 2: data = (data2, data1)
+        elif a["message"].count("%s") == 3: data = (data3, data2, data1)
+        elif a["message"].count("%s") == 4: data = (data4, data3, data2, data1)
+        else: data = ()
+        send_response(a["server"], Response(a["sender"], a["message"] % data,
+                                     channel=a["channel"], server=a["server"]))
 
 def alert_change(content, site):
     """Alert when a change is detected"""
@@ -120,55 +146,25 @@ def alert_change(content, site):
         diff = site["_lastpage"].diff(page)
         if len(diff) > 0:
             site["_lastpage"] = page
-            print_debug("[%s] Page differ!" % site["server"])
+            print_debug("[%s] Page differ!" % getHost(site["url"]))
             diff.reverse()
             for d in diff:
                 site.setIndex("term", "category")
                 categories = site.index
 
-                if site["message"].count("%s") == 2 and len(categories) > 0:
+                if len(categories) > 0:
                     if d.category is None or d.category not in categories:
-                        messageI = site["message"] % (categories[""]["part"], "%s")
+                        format_response(site, link, categories[""]["part"])
                     else:
-                        messageI = site["message"] % (categories[d.category]["part"], "%s")
-                    send_response(site["irc"], Response(site["sender"],
-                                                        messageI % d.link,
-                                                        site["channel"]))
-                elif site["message"].count("%s") == 2:
-                    send_response(site["irc"], Response(site["sender"],
-                                                        site["message"] % (unquote(d.title), d.link),
-                                                        site["channel"]))
-                elif site["message"].count("%s") == 1:
-                    send_response(site["irc"], Response(site["sender"],
-                                                        site["message"] % unquote (d.title),
-                                                        site["channel"]))
+                        format_response(site, link, categories[d.category]["part"])
                 else:
-                    send_response(site["irc"], Response(site["sender"],
-                                                        site["message"],
-                                                        site["channel"]))
+                    format_response(site, link, urllib.parse.unquote(d.title))
         else:
             start_watching(site)
             return #Stop here, no changes, so don't save
 
     else: # Just looking for any changes
-        send_response(site["irc"], Response(site["sender"], site["message"], site["channel"]))
+        format_response(site, site["url"])
     site["lastcontent"] = content
     start_watching(site)
     save()
-
-#TODO: built-in this function
-def getPage(s, p):
-    """Return the page content"""
-    print_debug("Looking http://%s%s"%(s,p))
-    conn = http.client.HTTPConnection(s, timeout=10)
-    try:
-        conn.request("GET", p)
-
-        res = conn.getresponse()
-        data = res.read()
-    except:
-        print ("[%s] impossible de récupérer la page %s."%(s, p))
-        return None
-
-    conn.close()
-    return data.decode()
