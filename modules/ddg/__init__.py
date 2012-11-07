@@ -25,6 +25,7 @@ def load(context):
     add_hook("cmd_hook", Hook(calculate, "wa"))
     add_hook("cmd_hook", Hook(calculate, "wfa"))
     add_hook("cmd_hook", Hook(calculate, "calc"))
+    add_hook("cmd_hook", Hook(wiki, "dico"))
     add_hook("cmd_hook", Hook(wiki, "w"))
     add_hook("cmd_hook", Hook(wiki, "wf"))
     add_hook("cmd_hook", Hook(wiki, "wfr"))
@@ -98,12 +99,20 @@ def wiki(msg):
         return Response(msg.sender,
                         "Indicate a term to search",
                         msg.channel, nick=msg.nick)
-    if msg.cmds[0] == "w" or msg.cmds[0] == "wf" or msg.cmds[0] == "wfr":
+    if msg.cmds[0] == "dico":
         lang = "fr"
+        site = "wiktionary.org"
+        section = 1
+    elif msg.cmds[0] == "w" or msg.cmds[0] == "wf" or msg.cmds[0] == "wfr":
+        lang = "fr"
+        site = "wikipedia.org"
+        section = 0
     else:
         lang = "en"
+        site = "wikipedia.org"
+        section = 0
 
-    s = Wikipedia.Wikipedia(' '.join(msg.cmds[1:]), lang)
+    s = Wikipedia.Wikipedia(' '.join(msg.cmds[1:]), lang, site, section)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results")
     for result in s.nextRes:

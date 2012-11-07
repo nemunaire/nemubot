@@ -1,17 +1,19 @@
 # coding=utf-8
 
 from urllib.parse import quote
+from urllib.request import urlopen
 
-from tools import web
+import xmlparser
 
 class WFASearch:
     def __init__(self, terms):
         self.terms = terms
         try:
-            self.wfares = web.getXML("http://api.wolframalpha.com/v2/query?"
+            raw = urlopen("http://api.wolframalpha.com/v2/query?"
                                      "input=%s&appid=%s"
                                      % (quote(terms),
-                                        CONF.getNode("wfaapi")["key"]))
+                                    CONF.getNode("wfaapi")["key"]), timeout=15)
+            self.wfares = xmlparser.parse_string(raw.read())
         except (TypeError, KeyError):
             print ("You need a Wolfram|Alpha API key in order to use this "
                    "module. Add it to the module configuration file:\n<wfaapi"

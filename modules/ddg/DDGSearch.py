@@ -1,13 +1,17 @@
 # coding=utf-8
 
 from urllib.parse import quote
+from urllib.request import urlopen
 
+import xmlparser
 from tools import web
 
 class DDGSearch:
     def __init__(self, terms):
         self.terms = terms
-        self.ddgres = web.getXML("http://api.duckduckgo.com/?q=%s&format=xml" % quote(terms))
+
+        raw = urlopen("https://api.duckduckgo.com/?q=%s&format=xml" % quote(terms), timeout=10)
+        self.ddgres = xmlparser.parse_string(raw.read())
 
     @property
     def type(self):

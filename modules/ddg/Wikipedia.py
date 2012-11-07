@@ -1,76 +1,55 @@
 # coding=utf-8
 
-import http.client
 import re
 from urllib.parse import quote
+import urllib.request
 
 import xmlparser
 
 class Wikipedia:
-    def __init__(self, terms, lang="fr"):
+    def __init__(self, terms, lang="fr", site="wikipedia.org", section=0):
         self.terms = terms
         self.lang = lang
         self.curRT = 0
-        (res, page) = getPage(terms, self.lang)
-        if res == http.client.OK or res == http.client.SEE_OTHER:
-            self.wres = xmlparser.parse_string(page)
-            if self.wres is None or not (self.wres.hasNode("query") and self.wres.getFirstNode("query").hasNode("pages") and self.wres.getFirstNode("query").getFirstNode("pages").hasNode("page") and self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").hasNode("revisions")):
-                self.wres = None
-            else:
-                self.infobox = parseInfobox(self)
-        else:
+
+        raw = urllib.request.urlopen(urllib.request.Request("http://" + self.lang + "." + site + "/w/api.php?format=xml&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (quote(terms)), headers={"User-agent": "Nemubot v3"}))
+        self.wres = xmlparser.parse_string(raw.read())
+        if self.wres is None or not (self.wres.hasNode("query") and self.wres.getFirstNode("query").hasNode("pages") and self.wres.getFirstNode("query").getFirstNode("pages").hasNode("page") and self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").hasNode("revisions")):
             self.wres = None
+        else:
+            self.wres = self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent()
+            self.wres = striplink(self.wres) 
 
     @property
     def nextRes(self):
         if self.wres is not None:
-            for cnt in self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent().split("\n"):
+            for cnt in self.wres.split("\n"):
                 if self.curRT > 0:
                     self.curRT -= 1
                     continue
 
-                c = striplink(cnt).strip()
+                (c, u) = RGXP_s.subn(' ', cnt)
+                c = c.strip()
                 if c != "":
                     yield c
 
+RGXP_p = re.compile(r'(<!--.*-->|<ref[^>]*/>|<ref[^>]*>[^>]*</ref>|<dfn[^>]*>[^>]*</dfn>|\{\{[^}]*\}\}|\[\[([^\[\]]*\[\[[^\]\[]*\]\])+[^\[\]]*\]\]|\{\{([^{}]*\{\{.*\}\}[^{}]*)+\}\}|\[\[[^\]|]+(\|[^\]\|]+)*\]\])', re.I)
+RGXP_l = re.compile(r'\{\{(nobr|lang\|[^|}]+)\|([^}]+)\}\}', re.I)
+RGXP_t = re.compile("==+ *([^=]+) *=+=\n+([^\n])", re.I)
+RGXP_q = re.compile(r'\[\[([^\[\]|]+)\|([^\]|]+)]]', re.I)
+RGXP_r = re.compile(r'\[\[([^\[\]|]+)\]\]', re.I)
+RGXP_s = re.compile(r'\s+')
 
-def parseInfobox(w):
-    inInfobox = False
-    view=-1
-    for cnt in w.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent().split("\n"):
-        view += 1
-        if inInfobox:
-            if cnt.find("}}") == 0:
-                inInfobox=False
-        elif cnt.find("{{") == 0:
-            inInfobox=True
-        else:
-            w.curRT += view
-            break
+def striplink(s):
+    (s, n) = RGXP_l.subn(r"\2", s)
+    if s == "": return s
 
-def striplink(data):
-    p = re.compile(r'(<!--.*-->|\{\{.*\}\}|\[\[[^\]]+\|[^\]]+\|[^\]\|]+\]\])')
-    q = re.compile(r'\[\[([^\]]+)\|([^\]]+)]]')
-    r = re.compile(r'\[\[([^\]]+)\]\]')
-    (s, n) = p.subn('', data)
-    if s == "":
-        return s
-    (s, n) = q.subn(r"\1", s)
-    if s == "":
-        return s
-    (s, n) = r.subn(r"\1", s)
-    return s.replace("'''", "*")
+    (s, n) = RGXP_q.subn(r"\1", s)
+    if s == "": return s
 
-def getPage(terms, lang, site="wikipedia"):
-    conn = http.client.HTTPConnection(lang + "." + site + ".org", timeout=5)
-    try:
-        conn.request("GET", "/w/api.php?format=xml&redirects&action=query&prop=revisions&rvprop=content&rvsection=0&titles=%s" % quote(terms), None, {"User-agent": "Nemubot v3"})
-    except socket.gaierror:
-        print ("impossible de récupérer la page %s."%(p))
-        return (http.client.INTERNAL_SERVER_ERROR, None)
+    (s, n) = RGXP_r.subn(r"\1", s)
+    if s == "": return s
 
-    res = conn.getresponse()
-    data = res.read()
-
-    conn.close()
-    return (res.status, data)
+    (s, n) = RGXP_p.subn('', s)
+    (s, n) = RGXP_t.subn("\x03\x16" + r"\1" + " :\x03\x16  " + r"\2", s)
+    return s.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
