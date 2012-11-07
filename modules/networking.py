@@ -57,6 +57,10 @@ def traceURL(url, timeout=5, stack=None):
         stack = list()
     stack.append(url)
 
+    if len(stack) > 15:
+        stack.append('stack overflow :(')
+        return stack
+
     o = urlparse(url, "http")
     if o.netloc == "":
         return stack
@@ -72,12 +76,12 @@ def traceURL(url, timeout=5, stack=None):
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s from %s on %d."
                % (o.path, o.netloc, o.port))
-        return None
+        return stack
 
     try:
         res = conn.getresponse()
     except http.client.BadStatusLine:
-        return None
+        return stack
     finally:
         conn.close()
 
@@ -86,9 +90,9 @@ def traceURL(url, timeout=5, stack=None):
     elif res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY or res.status == http.client.SEE_OTHER:
         url = res.getheader("Location")
         if url in stack:
-            stack.append(url)
+            stack.append("loop on " + url)
             return stack
         else:
             return traceURL(url, timeout, stack)
     else:
-        return None
+        return stack
