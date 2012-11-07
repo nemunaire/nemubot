@@ -115,8 +115,20 @@ def wiki(msg):
     s = Wikipedia.Wikipedia(' '.join(msg.cmds[1:]), lang, site, section)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results")
-    for result in s.nextRes:
-        res.append_message(result)
+    if site == "wiktionary.org":
+        tout = [result for result in s.nextRes if result.find("\x03\x16 :\x03\x16 ") != 0]
+        tout.remove(tout[0])
+        defI=1
+        for t in tout:
+            if t.find("# ") == 0:
+                t = t.replace("# ", "%d. " % defI)
+                defI += 1
+            elif t.find("#* ") == 0:
+                t = t.replace("#* ", "  * ")
+            res.append_message(t)
+    else:
+        for result in s.nextRes:
+            res.append_message(result)
 
     if len(res.messages) > 0:
         return res

@@ -33,23 +33,24 @@ class Wikipedia:
                 if c != "":
                     yield c
 
-RGXP_p = re.compile(r'(<!--.*-->|<ref[^>]*/>|<ref[^>]*>[^>]*</ref>|<dfn[^>]*>[^>]*</dfn>|\{\{[^}]*\}\}|\[\[([^\[\]]*\[\[[^\]\[]*\]\])+[^\[\]]*\]\]|\{\{([^{}]*\{\{.*\}\}[^{}]*)+\}\}|\[\[[^\]|]+(\|[^\]\|]+)*\]\])', re.I)
+RGXP_p = re.compile(r"(<!--.*-->|<ref[^>]*/>|<ref[^>]*>[^>]*</ref>|<dfn[^>]*>[^>]*</dfn>|\{\{[^}]*\}\}|\[\[([^\[\]]*\[\[[^\]\[]*\]\])+[^\[\]]*\]\]|\{\{([^{}]*\{\{.*\}\}[^{}]*)+\}\}|\[\[[^\]|]+(\|[^\]\|]+)*\]\])|#\* ''" + "\n", re.I)
 RGXP_l = re.compile(r'\{\{(nobr|lang\|[^|}]+)\|([^}]+)\}\}', re.I)
+RGXP_m = re.compile(r'\{\{pron\|([^|}]+)\|[^}]+\}\}', re.I)
 RGXP_t = re.compile("==+ *([^=]+) *=+=\n+([^\n])", re.I)
 RGXP_q = re.compile(r'\[\[([^\[\]|]+)\|([^\]|]+)]]', re.I)
 RGXP_r = re.compile(r'\[\[([^\[\]|]+)\]\]', re.I)
 RGXP_s = re.compile(r'\s+')
 
 def striplink(s):
+    s.replace("{{m}}", "masculin").replace("{{f}}", "feminin").replace("{{n}}", "neutre")
+    (s, n) = RGXP_m.subn(r"[\1]", s)
     (s, n) = RGXP_l.subn(r"\2", s)
-    if s == "": return s
 
     (s, n) = RGXP_q.subn(r"\1", s)
-    if s == "": return s
-
     (s, n) = RGXP_r.subn(r"\1", s)
-    if s == "": return s
 
     (s, n) = RGXP_p.subn('', s)
-    (s, n) = RGXP_t.subn("\x03\x16" + r"\1" + " :\x03\x16  " + r"\2", s)
+    if s == "": return s
+
+    (s, n) = RGXP_t.subn("\x03\x16" + r"\1" + " :\x03\x16 " + r"\2", s)
     return s.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
