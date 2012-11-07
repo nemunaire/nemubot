@@ -122,13 +122,13 @@ class Response:
                 msg += self.title + ": "
 
         if self.elt > 0:
-            msg += "... "
+            msg += "[…] "
 
         elts = self.messages[0][self.elt:]
         if isinstance(elts, list):
             for e in elts:
                 if len(msg) + len(e) > 430:
-                    msg += "..."
+                    msg += "[…]"
                     self.alone = False
                     return msg
                 else:
@@ -152,11 +152,11 @@ class Response:
 
                 if len(words[0]) > 432 - len(msg):
                     self.elt += 432 - len(msg)
-                    return msg + elts[:self.elt] + "..."
+                    return msg + elts[:self.elt] + "[…]"
 
                 for w in words:
                     if len(msg) + len(w) > 431:
-                        msg += "..."
+                        msg += "[…]"
                         self.alone = False
                         return msg
                     else:
