@@ -26,6 +26,7 @@ class Server(threading.Thread):
       self.stopping = threading.Event()
       self.s = socket
       self.connected = self.s is not None
+      self.closing_event = None
 
       self.moremessages = dict()
 
@@ -61,6 +62,9 @@ class Server(threading.Thread):
         """Gives the server identifiant"""
         raise NotImplemented()
 
+    def accepted_channel(self, msg, sender=None):
+        return True
+
     def msg_treated(self, origin):
         """Action done on server when a message was treated"""
         raise NotImplemented()
@@ -75,6 +79,8 @@ class Server(threading.Thread):
             self.send_msg(res.channel, res.get_message())
 
             if not res.alone:
+                if hasattr(self, "send_bot"):
+                    self.send_bot("NOMORE %s" % res.channel)
                 self.moremessages[res.channel] = res
         elif res.sender is not None:
             self.send_msg_usr(res.sender, res.get_message())

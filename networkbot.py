@@ -34,6 +34,9 @@ class NetworkBot:
         self.dest = dest
 
         self.dcc = dcc # DCC connection to the other bot
+        if self.dcc is not None:
+            self.dcc.closing_event = self.closing_event
+
         self.hooks = list()
         self.REGISTERED_HOOKS = list()
 
@@ -43,25 +46,32 @@ class NetworkBot:
         self.tags = dict()
 
     @property
+    def id(self):
+        return self.dcc.id
+    @property
     def sender(self):
         if self.dcc is not None:
             return self.dcc.sender
         return None
-
     @property
     def nick(self):
         if self.dcc is not None:
             return self.dcc.nick
         return None
-
     @property
     def realname(self):
         if self.dcc is not None:
             return self.dcc.realname
         return None
+    @property
+    def owner(self):
+        return self.srv.owner
 
     def isDCC(self, someone):
         """Abstract implementation"""
+        return True
+
+    def accepted_channel(self, chan, sender=None):
         return True
 
     def send_cmd(self, cmd, data=None):
@@ -114,6 +124,7 @@ class NetworkBot:
         """Making the connexion with dest through srv"""
         if self.dcc is None or not self.dcc.connected:
             self.dcc = DCC(self.srv, self.dest)
+            self.dcc.closing_event = self.closing_event
             self.dcc.treatement = self.hello
             self.dcc.send_dcc("NEMUBOT###")
         else:
@@ -156,6 +167,10 @@ class NetworkBot:
                     args = list()
                 #print ("request:", line)
                 self.request(tag, cmd, args)
+
+    def closing_event(self):
+        for lvl in self.hooks:
+            lvl.clear()
 
     def response(self, line, tag, args, t):
         (cmds, data) = t

@@ -187,6 +187,8 @@ class Bot:
         """Add a new server to the context"""
         srv = IRCServer(node, nick, owner, realname)
         srv.add_hook = lambda h: self.hooks.add_hook("irc_hook", h, self)
+        srv.add_networkbot = self.add_networkbot
+        srv.send_bot = lambda d: self.send_networkbot(srv, d)
         srv.register_hooks()
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
@@ -263,6 +265,10 @@ class Bot:
             self.network[id] = NetworkBot(self, srv, dest, dcc)
         return self.network[id]
 
+    def send_networkbot(self, srv, cmd, data=None):
+        for bot in self.network:
+            if self.network[bot].srv == srv:
+                self.network[bot].send_cmd(cmd, data)
 
     def quit(self, verb=False):
         """Save and unload modules and disconnect servers"""
