@@ -99,6 +99,40 @@ class MessagesHook:
                 node["type"] == "all"):
                 self.register_hook_attributes("answer", module, node)
 
+    def clear(self):
+        for h in self.all_pre:
+            self.del_hook("all_pre", h)
+        for h in self.all_post:
+            self.del_hook("all_post", h)
+
+        for l in self.irc_hook:
+            for h in self.irc_hook[l]:
+                self.del_hook("irc_hook", h)
+
+        for l in self.cmd_hook:
+            for h in self.cmd_hook[l]:
+                self.del_hook("cmd_hook", h)
+        for l in self.ask_hook:
+            for h in self.ask_hook[l]:
+                self.del_hook("ask_hook", h)
+        for l in self.msg_hook:
+            for h in self.msg_hook[l]:
+                self.del_hook("msg_hook", h)
+
+        for h in self.cmd_rgxp:
+            self.del_hook("cmd_rgxp", h)
+        for h in self.ask_rgxp:
+            self.del_hook("ask_rgxp", h)
+        for h in self.msg_rgxp:
+            self.del_hook("msg_rgxp", h)
+
+        for h in self.cmd_default:
+            self.del_hook("cmd_default", h)
+        for h in self.ask_default:
+            self.del_hook("ask_default", h)
+        for h in self.msg_default:
+            self.del_hook("msg_default", h)
+
     def del_hook(self, store, hook, module_src=None):
         """Remove a registered hook from a given store"""
         if store in self.context.hooks_cache:
