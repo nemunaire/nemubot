@@ -146,7 +146,6 @@ def alert_change(content, site):
         diff = site["_lastpage"].diff(page)
         if len(diff) > 0:
             site["_lastpage"] = page
-            print_debug("[%s] Page differ!" % getHost(site["url"]))
             diff.reverse()
             for d in diff:
                 site.setIndex("term", "category")
@@ -154,11 +153,11 @@ def alert_change(content, site):
 
                 if len(categories) > 0:
                     if d.category is None or d.category not in categories:
-                        format_response(site, link, categories[""]["part"])
+                        format_response(site, d.link, categories[""]["part"], d.title)
                     else:
-                        format_response(site, link, categories[d.category]["part"])
+                        format_response(site, d.link, categories[d.category]["part"], d.title)
                 else:
-                    format_response(site, link, urllib.parse.unquote(d.title))
+                    format_response(site, d.link, urllib.parse.unquote(d.title))
         else:
             start_watching(site)
             return #Stop here, no changes, so don't save
