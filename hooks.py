@@ -19,8 +19,9 @@
 from response import Response
 
 class MessagesHook:
-    def __init__(self, context):
+    def __init__(self, context, bot):
         self.context = context
+        self.bot = bot
 
         # Store specials hooks
         self.all_pre  = list() # Treated before any parse

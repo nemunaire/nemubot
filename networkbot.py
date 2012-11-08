@@ -188,7 +188,7 @@ class NetworkBot:
         elif cmd == "FETCH" and len(args) >= 5:
             level = int(args[1])
             while len(self.hooks) <= level:
-                self.hooks.append(hooks.MessagesHook(self.context))
+                self.hooks.append(hooks.MessagesHook(self.context, self))
 
             if args[2] == "": args[2] = None
             if args[3] == "": args[3] = None
@@ -224,7 +224,7 @@ class NetworkBot:
             for name in ["cmd_hook", "ask_hook", "msg_hook"]:
                 elts = self.context.create_cache(name)
                 for elt in elts:
-                    (hooks, lvl, store) = elts[elt]
+                    (hooks, lvl, store, bot) = elts[elt]
                     for h in hooks:
                         self.send_response_final(tag, [name, lvl, elt, h.regexp, ','.join(h.channels)])
             self.send_ack(tag)

@@ -58,7 +58,7 @@ class Bot:
         self.event_timer = None
 
         # Own hooks
-        self.hooks       = hooks.MessagesHook(self)
+        self.hooks       = hooks.MessagesHook(self, self)
 
         # Other known bots, making a bots network
         self.network     = dict()
@@ -295,7 +295,7 @@ class Bot:
 
                 # Start by adding locals hooks
                 for h in self.hooks.__dict__[name]:
-                    tpl = (h, 0, self.hooks.__dict__[name])
+                    tpl = (h, 0, self.hooks.__dict__[name], self.hooks.bot)
                     self.hooks_cache[name].append(tpl)
 
                 # Now, add extermal hooks
@@ -308,7 +308,7 @@ class Bot:
                             for h in self.network[ext].hooks[level].__dict__[name]:
                                 if h not in self.hooks_cache[name]:
                                     self.hooks_cache[name].append((h, level + 1,
-                                                                   self.network[ext].hooks[level].__dict__[name]))
+                                                                   self.network[ext].hooks[level].__dict__[name], self.network[ext].hooks[level].bot))
                     level += 1
 
             elif isinstance(self.hooks.__dict__[name], dict):
@@ -317,7 +317,8 @@ class Bot:
                 # Start by adding locals hooks
                 for h in self.hooks.__dict__[name]:
                     self.hooks_cache[name][h] = (self.hooks.__dict__[name][h], 0,
-                                                 self.hooks.__dict__[name])
+                                                 self.hooks.__dict__[name],
+                                                 self.hooks.bot)
 
                 # Now, add extermal hooks
                 level = 0
@@ -328,7 +329,7 @@ class Bot:
                             lvl_exist = True
                             for h in self.network[ext].hooks[level].__dict__[name]:
                                 if h not in self.hooks_cache[name]:
-                                    self.hooks_cache[name][h] = (self.network[ext].hooks[level].__dict__[name][h], level + 1, self.network[ext].hooks[level].__dict__[name])
+                                    self.hooks_cache[name][h] = (self.network[ext].hooks[level].__dict__[name][h], level + 1, self.network[ext].hooks[level].__dict__[name], self.network[ext].hooks[level].bot)
                     level += 1
 
             else:
@@ -350,7 +351,7 @@ class Bot:
 
     def treat_pre(self, msg, srv):
         """Treat a message before all other treatment"""
-        for h, lvl, store in self.create_cache("all_pre"):
+        for h, lvl, store, bot in self.create_cache("all_pre"):
             if h.is_matching(None, server=srv):
                 h.run(msg, self.create_cache)
                 self.check_rest_times(store, h)
@@ -358,7 +359,7 @@ class Bot:
 
     def treat_post(self, res):
         """Treat a message before send"""
-        for h, lvl, store in self.create_cache("all_post"):
+        for h, lvl, store, bot in self.create_cache("all_post"):
             if h.is_matching(None, channel=res.channel, server=res.server):
                 c = h.run(res)
                 self.check_rest_times(store, h)
@@ -373,7 +374,7 @@ class Bot:
 
         irc_hooks = self.create_cache("irc_hook")
         if msg.cmd in irc_hooks:
-            (hks, lvl, store) = irc_hooks[msg.cmd]
+            (hks, lvl, store, bot) = irc_hooks[msg.cmd]
             for h in hks:
                 if h.is_matching(msg.cmd, server=srv):
                     res = h.run(msg, srv, msg.cmd)
@@ -459,9 +460,9 @@ class Bot:
         # First, treat simple hook
         cmd_hook = self.create_cache("cmd_hook")
         if msg.cmds[0] in cmd_hook:
-            (hks, lvl, store) = cmd_hook[msg.cmds[0]]
+            (hks, lvl, store, bot) = cmd_hook[msg.cmds[0]]
             for h in hks:
-                if h.is_matching(msg.cmds[0], channel=msg.channel, server=srv):
+                if h.is_matching(msg.cmds[0], channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                     res = h.run(msg, strcmp=msg.cmds[0])
                     if res is not None and res != False:
                         treated.append(res)
@@ -469,8 +470,8 @@ class Bot:
 
         # Then, treat regexp based hook
         cmd_rgxp = self.create_cache("cmd_rgxp")
-        for hook, lvl, store in cmd_rgxp:
-            if hook.is_matching(msg.cmds[0], msg.channel, server=srv):
+        for hook, lvl, store, bot in cmd_rgxp:
+            if hook.is_matching(msg.cmds[0], msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                 res = hook.run(msg)
                 if res is not None and res != False:
                     treated.append(res)
@@ -478,7 +479,7 @@ class Bot:
 
         # Finally, treat default hooks if not catched before
         cmd_default = self.create_cache("cmd_default")
-        for hook, lvl, store in cmd_default:
+        for hook, lvl, store, bot in cmd_default:
             if treated:
                 break
             res = hook.run(msg)
@@ -495,9 +496,9 @@ class Bot:
         # First, treat simple hook
         ask_hook = self.create_cache("ask_hook")
         if msg.content in ask_hook:
-            hks, lvl, store = ask_hook[msg.content]
+            hks, lvl, store, bot = ask_hook[msg.content]
             for h in hks:
-                if h.is_matching(msg.content, channel=msg.channel, server=srv):
+                if h.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                     res = h.run(msg, strcmp=msg.content)
                     if res is not None and res != False:
                         treated.append(res)
@@ -505,8 +506,8 @@ class Bot:
 
         # Then, treat regexp based hook
         ask_rgxp = self.create_cache("ask_rgxp")
-        for hook, lvl, store in ask_rgxp:
-            if hook.is_matching(msg.content, channel=msg.channel, server=srv):
+        for hook, lvl, store, bot in ask_rgxp:
+            if hook.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                 res = hook.run(msg, strcmp=msg.content)
                 if res is not None and res != False:
                     treated.append(res)
@@ -514,7 +515,7 @@ class Bot:
 
         # Finally, treat default hooks if not catched before
         ask_default = self.create_cache("ask_default")
-        for hook, lvl, store in ask_default:
+        for hook, lvl, store, bot in ask_default:
             if treated:
                 break
             res = hook.run(msg)
@@ -531,9 +532,9 @@ class Bot:
         # First, treat simple hook
         msg_hook = self.create_cache("msg_hook")
         if msg.content in msg_hook:
-            hks, lvl, store = msg_hook[msg.content]
+            hks, lvl, store, bot = msg_hook[msg.content]
             for h in hks:
-                if h.is_matching(msg.content, channel=msg.channel, server=srv):
+                if h.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                     res = h.run(msg, strcmp=msg.content)
                     if res is not None and res != False:
                         treated.append(res)
@@ -541,8 +542,8 @@ class Bot:
 
         # Then, treat regexp based hook
         msg_rgxp = self.create_cache("msg_rgxp")
-        for hook, lvl, store in msg_rgxp:
-            if hook.is_matching(msg.content, channel=msg.channel, server=srv):
+        for hook, lvl, store, bot in msg_rgxp:
+            if hook.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
                 res = hook.run(msg, strcmp=msg.content)
                 if res is not None and res != False:
                     treated.append(res)
@@ -550,7 +551,7 @@ class Bot:
 
         # Finally, treat default hooks if not catched before
         msg_default = self.create_cache("msg_default")
-        for hook, lvl, store in msg_default:
+        for hook, lvl, store, bot in msg_default:
             if len(treated) > 0:
                 break
             res = hook.run(msg)
