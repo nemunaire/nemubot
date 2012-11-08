@@ -43,11 +43,12 @@ class MessageConsumer:
         if msg.cmd == "PING":
             self.srv.send_pong(msg.content)
         else:
-            # All messages
-            context.treat_pre(msg, self.srv)
-
             # TODO: Manage credits
-            return context.treat_irc(msg, self.srv)
+            if msg.channel is None or self.srv.accepted_channel(msg.channel):
+                # All messages
+                context.treat_pre(msg, self.srv)
+
+                return context.treat_irc(msg, self.srv)
 
     def treat_out(self, context, res):
         """Treat the output message"""
