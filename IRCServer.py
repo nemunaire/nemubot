@@ -122,7 +122,7 @@ class IRCServer(server.Server):
             if msg.channel in self.channels:
                 self.channels[msg.channel].treat(msg.cmd, msg)
 
-    def accepted_channel(self, chan, sender = None):
+    def accepted_channel(self, chan, sender=None):
         """Return True if the channel (or the user) is authorized"""
         if self.allow_all:
             return True
@@ -204,6 +204,8 @@ class IRCServer(server.Server):
         if self.connected:
             self.s.close()
             self.connected = False
+            if self.closing_event is not None:
+                self.closing_event()
             print ("Server `%s' successfully stopped." % self.id)
         self.stopping.set()
         # Rearm Thread

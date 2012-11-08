@@ -206,13 +206,15 @@ class DCC(server.Server):
 
         print ("Closing connection with", self.nick)
         self.stopping.set()
+        if self.closing_event is not None:
+            self.closing_event()
         #Rearm Thread
         threading.Thread.__init__(self)
 
     def treat_msg(self, line):
         """Treat a receive message, *can be overwritten*"""
         if line == b'NEMUBOT###':
-            bot = self.srv.context.add_networkbot(self.srv, self.sender, self)
+            bot = self.srv.add_networkbot(self.srv, self.sender, self)
             self.treatement = bot.treat_msg
             self.send_dcc("NEMUBOT###")
         elif (line[:self.nicksize] == self.Bnick and
