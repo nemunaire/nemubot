@@ -45,6 +45,8 @@ def cmd_spell(msg):
 def check_spell(word, lang='fr'):
     a = Aspell(("lang", lang))
     if a.check(word):
-        return True
+        ret = True
     else:
-        return a.suggest(word)
+        ret = a.suggest(word)
+    a.close()
+    return ret
