@@ -56,17 +56,15 @@ def cmd_ycc(msg):
 
 def parselisten(msg):
     global LAST_URLS
-    res = re.match("([a-zA-Z0-9+.-]+:(//)?[^ ]*)", msg.content)
-    if res is not None:
-        url = res.group(1)
+    urls = re.findall("([a-zA-Z0-9+.-]+:(//)?[^ ]+)", msg.content)
+    for (url, osef) in urls:
         o = urlparse(url)
         if o.scheme != "":
             if o.netloc == "ycc.fr" or (o.netloc == "" and len(o.path) < 10):
-                return False
+                continue
             if msg.channel not in LAST_URLS:
                 LAST_URLS[msg.channel] = list()
             LAST_URLS[msg.channel].append(o.geturl())
-            return True
     return False
 
 def parseresponse(res):
