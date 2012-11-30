@@ -83,6 +83,8 @@ def cmd_unalias(msg):
     if len (msg.cmds) > 1:
         res = list()
         for alias in msg.cmds[1:]:
+            if alias[0] == "!" and len(alias) > 1:
+                alias = alias[1:]
             if alias in DATAS.getNode("aliases").index:
                 if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.is_owner:
                     DATAS.getNode("aliases").delChild(DATAS.getNode("aliases").index[alias])
