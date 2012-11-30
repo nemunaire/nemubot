@@ -13,24 +13,14 @@ def load(context):
     WFASearch.CONF = CONF
 
     from hooks import Hook
-    add_hook("cmd_hook", Hook(define, "d"))
-    add_hook("cmd_hook", Hook(define, "def"))
-    add_hook("cmd_hook", Hook(define, "defini"))
-    add_hook("cmd_hook", Hook(define, "definit"))
     add_hook("cmd_hook", Hook(define, "define"))
-    add_hook("cmd_hook", Hook(define, "definition"))
     add_hook("cmd_hook", Hook(search, "search"))
     add_hook("cmd_hook", Hook(search, "ddg"))
     add_hook("cmd_hook", Hook(search, "g"))
     add_hook("cmd_hook", Hook(calculate, "wa"))
-    add_hook("cmd_hook", Hook(calculate, "wfa"))
     add_hook("cmd_hook", Hook(calculate, "calc"))
     add_hook("cmd_hook", Hook(wiki, "dico"))
-    add_hook("cmd_hook", Hook(wiki, "w"))
-    add_hook("cmd_hook", Hook(wiki, "wf"))
-    add_hook("cmd_hook", Hook(wiki, "wfr"))
-    add_hook("cmd_hook", Hook(wiki, "we"))
-    add_hook("cmd_hook", Hook(wiki, "wen"))
+    add_hook("cmd_hook", Hook(wiki, "wiki"))
 
 def reload():
     imp.reload(DDGSearch)
@@ -99,33 +89,34 @@ def wiki(msg):
         return Response(msg.sender,
                         "Indicate a term to search",
                         msg.channel, nick=msg.nick)
-    if msg.cmds[0] == "dico":
+    if len(msg.cmds) > 2 and len(msg.cmds[1]) < 4:
+        lang = msg.cmds[1]
+        extract = 2
+    else:
         lang = "fr"
+        extract = 1
+    if msg.cmds[0] == "dico":
         site = "wiktionary.org"
         section = 1
-    elif msg.cmds[0] == "w" or msg.cmds[0] == "wf" or msg.cmds[0] == "wfr":
-        lang = "fr"
-        site = "wikipedia.org"
-        section = 0
     else:
-        lang = "en"
         site = "wikipedia.org"
         section = 0
 
-    s = Wikipedia.Wikipedia(' '.join(msg.cmds[1:]), lang, site, section)
+    s = Wikipedia.Wikipedia(' '.join(msg.cmds[extract:]), lang, site, section)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more results")
     if site == "wiktionary.org":
         tout = [result for result in s.nextRes if result.find("\x03\x16 :\x03\x16 ") != 0]
-        tout.remove(tout[0])
-        defI=1
-        for t in tout:
-            if t.find("# ") == 0:
-                t = t.replace("# ", "%d. " % defI)
-                defI += 1
-            elif t.find("#* ") == 0:
-                t = t.replace("#* ", "  * ")
-            res.append_message(t)
+        if len(tout) > 0:
+            tout.remove(tout[0])
+            defI=1
+            for t in tout:
+                if t.find("# ") == 0:
+                    t = t.replace("# ", "%d. " % defI)
+                    defI += 1
+                elif t.find("#* ") == 0:
+                    t = t.replace("#* ", "  * ")
+                res.append_message(t)
     else:
         for result in s.nextRes:
             res.append_message(result)
