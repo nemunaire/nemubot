@@ -115,14 +115,9 @@ def add_site(msg):
     return Response(msg.sender, channel=msg.channel, nick=msg.nick,
                     message="ce site est maintenant sous ma surveillance.")
 
-def format_response(site, data1='%s', data2='%s', data3='%s', data4='%s'):
+def format_response(site, link='%s', title='%s', categ='%s'):
     for a in site.getNodes("alert"):
-        if a["message"].count("%s") == 1: data = data1
-        elif a["message"].count("%s") == 2: data = (data2, data1)
-        elif a["message"].count("%s") == 3: data = (data3, data2, data1)
-        elif a["message"].count("%s") == 4: data = (data4, data3, data2, data1)
-        else: data = ()
-        send_response(a["server"], Response(a["sender"], a["message"] % data,
+        send_response(a["server"], Response(a["sender"], a["message"].format(url=site["url"], link=link, title=title, categ=categ),
                                      channel=a["channel"], server=a["server"]))
 
 def alert_change(content, site):
@@ -153,17 +148,17 @@ def alert_change(content, site):
 
                 if len(categories) > 0:
                     if d.category is None or d.category not in categories:
-                        format_response(site, d.link, categories[""]["part"], d.title)
+                        format_response(site, link=d.link, categ=categories[""]["part"], title=d.title)
                     else:
-                        format_response(site, d.link, categories[d.category]["part"], d.title)
+                        format_response(site, link=d.link, categ=categories[d.category]["part"], title=d.title)
                 else:
-                    format_response(site, d.link, urllib.parse.unquote(d.title))
+                    format_response(site, link=d.link, title=urllib.parse.unquote(d.title))
         else:
             start_watching(site)
             return #Stop here, no changes, so don't save
 
     else: # Just looking for any changes
-        format_response(site, site["url"])
+        format_response(site, link=site["url"])
     site["lastcontent"] = content
     start_watching(site)
     save()

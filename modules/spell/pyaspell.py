@@ -113,7 +113,7 @@ class AspellLinux(object):
 			return bool(
 				self.__lib.aspell_speller_check(
 					self.__speller,
-					word,
+					_to_bytes(word),
 					len(word)
 				))
 		else:
@@ -132,7 +132,7 @@ class AspellLinux(object):
 			return self._aspellwordlist(
 				self.__lib.aspell_speller_suggest(
 					self.__speller,
-					word,
+					_to_bytes(word),
 					len(word)
 				))
 		else:
