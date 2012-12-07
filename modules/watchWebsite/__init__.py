@@ -38,7 +38,10 @@ def unload(context):
 def getPageContent(url):
     """Returns the content of the given url"""
     print_debug("Get page %s" % url)
-    raw = urlopen(url, timeout=15)
+    try:
+        raw = urlopen(url, timeout=15)
+    except socket.timeout:
+        return None
     return raw.read().decode()
 
 def start_watching(site):
