@@ -95,26 +95,26 @@ def start_countdown(msg):
         evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
         if len(msg.cmds) > 2:
-            result1 = re.findall("([0-9]+)([smhdjwSMHDJW])?", msg.cmds[2])
-            result2 = re.match("([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmds[2])
-            result3 = re.match("([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmds[2])
+            result1 = re.findall("([0-9]+)([smhdjwyaSMHDJWYA])?", msg.cmds[2])
+            result2 = re.match("(.*[^0-9])?([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmds[2])
+            result3 = re.match("(.*[^0-9])?([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmds[2])
             if result2 is not None or result3 is not None:
                 try:
                     now = datetime.now()
-                    if result3 is None or result3.group(4) is None: sec = 0
-                    else: sec = int(result3.group(4))
-                    if result3 is None or result3.group(2) is None: minu = 0
-                    else: minu = int(result3.group(2))
-                    if result3 is None or result3.group(1) is None: hou = 0
-                    else: hou = int(result3.group(1))
+                    if result3 is None or result3.group(5) is None: sec = 0
+                    else: sec = int(result3.group(5))
+                    if result3 is None or result3.group(3) is None: minu = 0
+                    else: minu = int(result3.group(3))
+                    if result3 is None or result3.group(2) is None: hou = 0
+                    else: hou = int(result3.group(2))
 
-                    if result2 is None or result2.group(3) is None: yea = now.year
-                    else: yea = int(result2.group(3))
+                    if result2 is None or result2.group(4) is None: yea = now.year
+                    else: yea = int(result2.group(4))
 
                     if result2 is not None and result3 is not None:
-                        strnd["end"] = datetime(yea, int(result2.group(2)), int(result2.group(1)), hou, minu, sec)
+                        strnd["end"] = datetime(yea, int(result2.group(3)), int(result2.group(2)), hou, minu, sec)
                     elif result2 is not None:
-                      strnd["end"] = datetime(int(result2.group(3)), int(result2.group(2)), int(result2.group(1)))
+                      strnd["end"] = datetime(int(result2.group(4)), int(result2.group(3)), int(result2.group(2)))
                     elif result3 is not None:
                       if hou * 3600 + minu * 60 + sec > now.hour * 3600 + now.minute * 60 + now.second:
                         strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
@@ -142,6 +142,8 @@ def start_countdown(msg):
                         strnd["end"] += timedelta(days=int(t))
                     elif g == "w" or g == "W":
                         strnd["end"] += timedelta(days=int(t)*7)
+                    elif g == "y" or g == "Y" or g == "a" or g == "A":
+                        strnd["end"] += timedelta(days=int(t)*365)
                     else:
                         strnd["end"] += timedelta(seconds=int(t))
                 evt.end = strnd.getDate("end")
