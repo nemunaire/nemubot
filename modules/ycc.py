@@ -2,6 +2,7 @@
 
 import re
 from urllib.parse import urlparse
+from urllib.parse import quote
 from urllib.request import urlopen
 
 nemubotversion = 3.3
@@ -41,8 +42,9 @@ def cmd_ycc(msg):
         for url in msg.cmds[1:]:
             o = urlparse(url, "http")
             if o.scheme != "":
-                raw = urlopen("http://ycc.fr/redirection/create/" + url,
-                              timeout=10)
+                snd_url = "http://ycc.fr/redirection/create/" + quote(url, "/:%#@&=?")
+                print_debug(snd_url)
+                raw = urlopen(snd_url, timeout=10)
                 if o.netloc == "":
                     res.append(gen_response(raw.read().decode(), msg, o.scheme))
                 else:
