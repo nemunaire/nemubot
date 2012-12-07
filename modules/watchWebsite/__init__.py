@@ -40,9 +40,9 @@ def getPageContent(url):
     print_debug("Get page %s" % url)
     try:
         raw = urlopen(url, timeout=15)
+        return raw.read().decode()
     except socket.timeout:
         return None
-    return raw.read().decode()
 
 def start_watching(site):
     o = urlparse(site["url"], "http")
@@ -85,7 +85,7 @@ def del_site(msg):
     return Response(msg.sender, "je ne surveillais pas cette URL pour vous.",
                     channel=msg.channel, nick=msg.nick)
 
-def add_site(msg):
+def add_site(msg, diffType="diff"):
     if len(msg.cmds) <= 1:
         return Response(msg.sender, "quel site dois-je surveiller ?",
                         msg.channel, msg.nick)
@@ -102,7 +102,7 @@ def add_site(msg):
 
         if url not in DATAS.index:
             watch = ModuleState("watch")
-            watch["type"] = "diff"
+            watch["type"] = diffType
             watch["url"] = url
             watch["time"] = 123
             DATAS.addChild(watch)
@@ -125,6 +125,15 @@ def format_response(site, link='%s', title='%s', categ='%s'):
 
 def alert_change(content, site):
     """Alert when a change is detected"""
+    if site["type"] == "updown":
+        if site["lastcontent"] is None:
+            site["lastcontent"] = content is not None
+
+        if content is None != site.getInt("lastcontent"):
+            format_response(site, link=site["url"])
+            site["lastcontent"] = content is not None
+        return
+
     if content is None:
         start_watching(site)
         return

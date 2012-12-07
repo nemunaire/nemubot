@@ -48,8 +48,7 @@ def cmd_isup(msg):
                 res.append(Response(msg.sender, "%s n'est pas une URL valide" % url, channel=msg.channel))
         return res
     else:
-        return Response(msg.sender, "Indiquer une URL a verifier !", channel=msg.channel)
-
+        return Response(msg.sender, "Indiquer une URL à vérifier !", channel=msg.channel)
 
 def traceURL(url, timeout=5, stack=None):
     """Follow redirections and return the redirections stack"""
