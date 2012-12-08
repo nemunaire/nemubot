@@ -78,13 +78,17 @@ class MessagesHook:
             module_src.REGISTERED_HOOKS.append((store, hook))
 
     def register_hook_attributes(self, store, module, node):
+        if node.hasAttribute("data"):
+            data = node["data"]
+        else:
+            data = None
         if node.hasAttribute("name"):
             self.add_hook(store + "_hook", Hook(getattr(module, node["call"]),
-                                                node["name"]),
+                                                node["name"], data=data),
                           module)
         elif node.hasAttribute("regexp"):
             self.add_hook(store + "_rgxp", Hook(getattr(module, node["call"]),
-                                                None, None, node["regexp"]),
+                                                regexp=node["regexp"], data=data),
                           module)
 
     def register_hook(self, module, node):
