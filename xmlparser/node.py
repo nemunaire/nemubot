@@ -73,6 +73,13 @@ class ModuleState:
     else:
       return None
 
+  def getBool(self, name):
+    """Get the asked argument and return it as an integer"""
+    if name in self.attributes.keys():
+        return (isinstance(self.attributes[name], bool) and self.attributes[name]) or self.attributes[name] == "True"
+    else:
+        return False
+
   def setIndex(self, fieldname = "name", tagname = None):
     """Defines an hash table to accelerate childs search. You have just to define a common attribute"""
     self.index = dict()
