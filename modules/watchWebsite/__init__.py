@@ -41,7 +41,7 @@ def getPageContent(url):
     try:
         raw = urlopen(url, timeout=15)
         return raw.read().decode()
-    except socket.timeout:
+    except:
         return None
 
 def start_watching(site):
@@ -86,6 +86,7 @@ def del_site(msg):
                     channel=msg.channel, nick=msg.nick)
 
 def add_site(msg, diffType="diff"):
+    print (diffType)
     if len(msg.cmds) <= 1:
         return Response(msg.sender, "quel site dois-je surveiller ?",
                         msg.channel, msg.nick)
@@ -129,9 +130,10 @@ def alert_change(content, site):
         if site["lastcontent"] is None:
             site["lastcontent"] = content is not None
 
-        if content is None != site.getInt("lastcontent"):
+        if (content is not None) != site.getBool("lastcontent"):
             format_response(site, link=site["url"])
             site["lastcontent"] = content is not None
+        start_watching(site)
         return
 
     if content is None:

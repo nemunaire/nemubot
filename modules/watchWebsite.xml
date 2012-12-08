@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <nemubotmodule name="watchWebsite">
-  <message type="cmd" name="watch" call="add_site" />
+  <message type="cmd" name="watch" call="add_site" data="diff" />
+  <message type="cmd" name="updown" call="add_site" data="updown" />
   <message type="cmd" name="unwatch" call="del_site" />
 </nemubotmodule>
