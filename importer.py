@@ -156,7 +156,7 @@ class ModuleLoader(SourceLoader):
         module.del_hook = lambda store, hook: self.context.hooks.del_hook(store, hook)
         module.add_event = lambda evt: self.context.add_event(evt, module_src=module)
         module.add_event_eid = lambda evt, eid: self.context.add_event(evt, eid, module_src=module)
-        module.del_event = lambda evt: self.context.add_event(evt, module_src=module)
+        module.del_event = lambda evt: self.context.del_event(evt, module_src=module)
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path
@@ -258,4 +258,7 @@ def mod_has_access(mod, config, msg):
         return True
 
 def mod_send_response(context, server, res):
-    context.servers[server].send_response(res, None)
+    if server in context.servers:
+        context.servers[server].send_response(res, None)
+    else:
+        print("\033[1;35mWarning:\033[0m Try to send a message to the unknown server: %s" % server)
