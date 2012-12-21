@@ -192,14 +192,17 @@ class IRCServer(server.Server):
 
 
         readbuffer = b'' #Here we store all the messages from server
-        while not self.stop:
-            readbuffer = readbuffer + raw
-            temp = readbuffer.split(b'\n')
-            readbuffer = temp.pop()
+        try:
+            while not self.stop:
+                readbuffer = readbuffer + raw
+                temp = readbuffer.split(b'\n')
+                readbuffer = temp.pop()
 
-            for line in temp:
-                self.treat_msg(line)
-            raw = self.s.recv(1024) #recieve server messages
+                for line in temp:
+                    self.treat_msg(line)
+                raw = self.s.recv(1024) #recieve server messages
+        except socket.error:
+            pass
 
         if self.connected:
             self.s.close()

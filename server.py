@@ -126,7 +126,10 @@ class Server(threading.Thread):
         """Close the socket with the server"""
         if self.connected:
             self.stop = True
-            self.s.shutdown(socket.SHUT_RDWR)
+            try:
+                self.s.shutdown(socket.SHUT_RDWR)
+            except socket.error:
+                pass
 
             self.stopping.wait()
             return True
@@ -139,7 +142,10 @@ class Server(threading.Thread):
             self.stop = True
             self.connected = False
             #Send a message in order to close the socket
-            self.s.send(("Bye!\r\n" % self.nick).encode ())
+            try:
+                self.s.send(("Bye!\r\n" % self.nick).encode ())
+            except:
+                pass
             self.stopping.wait()
             return True
         else:
