@@ -26,7 +26,11 @@ def load(context):
     """Register watched website"""
     DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
-        start_watching(site)
+        if site.hasNode("alert"):
+            start_watching(site)
+        else:
+            print("No alert defined for this site: " + site["url"])
+            #DATAS.delChild(site)
 
 def unload(context):
     """Unregister watched website"""
@@ -69,8 +73,8 @@ def del_site(msg):
                 if (msg.sender == a["sender"] or msg.is_owner):
                     site.delChild(a)
                     if not site.hasNode("alert"):
-                      del_event(site["_evt_id"])
-                      DATAS.delChild(site)
+                        del_event(site["_evt_id"])
+                        DATAS.delChild(site)
                     save()
                     return Response(msg.sender,
                                    "je ne surveille désormais plus cette URL.",
