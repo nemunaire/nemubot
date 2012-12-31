@@ -53,9 +53,8 @@ class Response:
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:
             if sender is not None:
-                print("\033[1;35mWarning:\033[0m bad sender provided in Response, it will be ignored.")
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback.print_exception(exc_type, exc_value, exc_traceback)
+                traceback.print_exception(exc_type, "\033[1;35mWarning:\033[0m bad sender provided in Response, it will be ignored.", exc_traceback)
             self.sender = None
         else:
             self.sender = sender
