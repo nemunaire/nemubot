@@ -235,6 +235,9 @@ class Bot:
             # Remove registered hooks
             for (s, h) in self.modules[name].REGISTERED_HOOKS:
                 self.hooks.del_hook(s, h)
+            # Remove registered events
+            for e in self.modules[name].REGISTERED_EVENTS:
+                self.del_event(e)
             # Remove from the dict
             del self.modules[name]
             return True
