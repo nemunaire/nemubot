@@ -11,7 +11,4 @@
   <message type="cmd" name="goûter" call="cmd_gouter" />
   <message type="cmd" name="week-end" call="cmd_we" />
   <message type="cmd" name="weekend" call="cmd_we" />
-  <message type="cmd" name="new-year" call="cmd_newyear" />
-  <message type="cmd" name="newyear" call="cmd_newyear" />
-  <message type="cmd" name="ny" call="cmd_newyear" />
 </nemubotmodule>

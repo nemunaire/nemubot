@@ -66,13 +66,6 @@ def cmd_we(msg):
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
 
-def cmd_newyear(msg):
-    return Response(msg.sender,
-        msg.countdown_format(datetime(datetime.today().year + 1, 1, 1, 0, 0, 1),
-                             "Il reste %s avant la nouvelle année.",
-                             "Nous faisons déjà la fête depuis %s !"),
-                    channel=msg.channel)
-
 def cmd_vacances(msg):
     return Response(msg.sender,
         msg.countdown_format(datetime(2013, 7, 30, 18, 0, 1),
