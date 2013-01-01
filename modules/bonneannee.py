@@ -13,7 +13,7 @@ def load(context):
     add_event(ModuleEvent(intervalle=0, offset=d.total_seconds(), call=bonneannee))
 
     from hooks import Hook
-    add_hook("cmd_rgxp", Hook(cmd_timetoyear, data=yrn, regexp="[0-9]{4}"))
+    add_hook("cmd_rgxp", Hook(cmd_timetoyear, data=yrn, regexp="^[0-9]{4}$"))
     add_hook("cmd_hook", Hook(cmd_newyear, str(yrn), yrn))
     add_hook("cmd_hook", Hook(cmd_newyear, "ny", yrn))
     add_hook("cmd_hook", Hook(cmd_newyear, "newyear", yrn))

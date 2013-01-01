@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 from response import Response
 
 class MessagesHook:
@@ -181,8 +183,8 @@ class Hook:
         return (channel is None or len(self.channels) <= 0 or
                 channel in self.channels) and (server is None or
              self.server is None or self.server == server) and (
-            (self.name is None or strcmp == self.name) or (
-            self.end is None or strcmp == self.end) or (
+            (self.name is None or strcmp == self.name) and (
+            self.end is None or strcmp == self.end) and (
             self.regexp is None or re.match(self.regexp, strcmp)))
 
     def run(self, msg, data2=None, strcmp=None):
