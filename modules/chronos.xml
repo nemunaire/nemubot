@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="chronos">
+  <server url="http://chronos.23.tf/index.php?xml" />
+  <message type="cmd" name="chronos" call="cmd_chronos" />
+  <message type="cmd" name="Χρονος" call="cmd_chronos" />
+</nemubotmodule>
