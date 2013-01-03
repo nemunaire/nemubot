@@ -49,36 +49,49 @@ class ModuleState:
     else:
       return None
 
-  def getDate(self, name):
+  def getDate(self, name=None):
     """Get the asked argument and return it as a date"""
-    if name in self.attributes.keys():
-      if isinstance(self.attributes[name], datetime):
-        return self.attributes[name]
-      else:
+    if name is None:
+        source = self.content
+    elif name in self.attributes.keys():
+        source = self.attributes[name]
+    else:
+        return None
+
+    if isinstance(source, datetime):
+        return source
+    else:
         try:
-          return datetime.fromtimestamp(float(self.attributes[name]))
+            return datetime.fromtimestamp(float(source))
         except ValueError:
-         while True:
-          try:
-            return datetime.fromtimestamp(time.mktime(time.strptime(self.attributes[name][:19], "%Y-%m-%d %H:%M:%S")))
-          except ImportError:
-            pass
-    else:
-      return None
+            while True:
+                try:
+                    return datetime.fromtimestamp(time.mktime(
+                        time.strptime(source[:19], "%Y-%m-%d %H:%M:%S")))
+                except ImportError:
+                    pass
 
-  def getInt(self, name):
+  def getInt(self, name=None):
     """Get the asked argument and return it as an integer"""
-    if name in self.attributes.keys():
-      return int(float(self.attributes[name]))
+    if name is None:
+        source = self.content
+    elif name in self.attributes.keys():
+        source = self.attributes[name]
     else:
-      return None
+        return None
 
-  def getBool(self, name):
+    return int(float(source))
+
+  def getBool(self, name=None):
     """Get the asked argument and return it as an integer"""
-    if name in self.attributes.keys():
-        return (isinstance(self.attributes[name], bool) and self.attributes[name]) or self.attributes[name] == "True"
+    if name is None:
+        source = self.content
+    elif name in self.attributes.keys():
+        source = self.attributes[name]
     else:
         return False
+
+    return (isinstance(source, bool) and source) or source == "True"
 
   def setIndex(self, fieldname = "name", tagname = None):
     """Defines an hash table to accelerate childs search. You have just to define a common attribute"""
