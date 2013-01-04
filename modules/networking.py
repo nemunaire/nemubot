@@ -5,12 +5,15 @@ import json
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from tools import web
+
 nemubotversion = 3.3
 
 def load(context):
     from hooks import Hook
     add_hook("cmd_hook", Hook(cmd_traceurl, "traceurl"))
     add_hook("cmd_hook", Hook(cmd_isup, "isup"))
+    add_hook("cmd_hook", Hook(cmd_curl, "curl"))
 
 
 def help_tiny ():
@@ -19,6 +22,20 @@ def help_tiny ():
 
 def help_full ():
     return "!traceurl /url/: Follow redirections from /url/."
+
+def cmd_curl(msg):
+    if len(msg.cmds) > 1:
+        req = web.getURLContent(" ".join(msg.cmds[1:]))
+        if req is not None:
+            res = Response(msg.sender, channel=msg.channel)
+            for m in req.decode().split("\n"):
+                res.append_message(m)
+            return res
+        else:
+            return Response(msg.sender, "Une erreur est survenue lors de l'accès à cette URL", channel=msg.channel)
+    else:
+        return Response(msg.sender, "Veuillez indiquer une URL à visiter.",
+                        channel=msg.channel)
 
 def cmd_traceurl(msg):
     if 1 < len(msg.cmds) < 6:
