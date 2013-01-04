@@ -110,7 +110,13 @@ def getURLContent(url, timeout=15):
 
     try:
         res = conn.getresponse()
-        data = res.read()
+        size = int(res.getheader("Content-Length", 5000))
+        cntype = res.getheader("Content-Type")
+
+        if size > 10000 or cntype[:4] != "text":
+            return None
+
+        data = res.read(size)
     except http.client.BadStatusLine:
         return None
     finally:
@@ -177,7 +183,7 @@ def traceURL(url, timeout=5, stack=None):
             return traceURL(url, timeout, stack)
     else:
         return None
-    
+
 
 # Other utils
 
