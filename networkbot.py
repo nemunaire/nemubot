@@ -32,6 +32,7 @@ class NetworkBot:
         self.context = context
         self.srv = srv
         self.dest = dest
+        self.key = None
 
         self.dcc = dcc # DCC connection to the other bot
         if self.dcc is not None:
@@ -219,6 +220,23 @@ class NetworkBot:
             while args[0] == self.my_tag:
                 self.my_tag = random.randint(0,255)
             self.send_ack(tag)
+
+        elif cmd == b'AUTH': # Authenticate bot
+            if len(args) == 3: # Request pairing
+                g = int.from_bytes(args[0].decode('hex'), byteorder='big')
+                p = int.from_bytes(args[1].decode('hex'), byteorder='big')
+                A = int.from_bytes(args[2].decode('hex'), byteorder='big')
+
+                self.key = pow(A, b, p)
+
+                b = random.getrandbits(1024)
+                B = pow(g, b, p)
+
+                self.send_response_final(tag, pack("!x", pow(r, self.key, q)))
+            elif len(args) == 2: # Auth
+                r = int.from_bytes(args[0].decode('hex'), byteorder='big')
+                q = int.from_bytes(args[1].decode('hex'), byteorder='big')
+                self.send_response_final(tag, pack("!x", pow(r, self.key, q)))
 
         elif cmd == b'FETCH': # Get known commands
             for name in ["cmd_hook", "ask_hook", "msg_hook"]:
