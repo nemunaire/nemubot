@@ -19,9 +19,11 @@
 from datetime import datetime
 from datetime import timedelta
 from queue import Queue
+import os
+import random
+import re
 import threading
 import time
-import re
 
 import consumer
 import event
@@ -34,10 +36,22 @@ import response
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 class Bot:
-    def __init__(self, ip, realname, mp=list()):
+    def __init__(self, ip, realname, key=None, mp=list()):
         # Bot general informations
         self.version     = 3.3
         self.version_txt = "3.3-dev"
+
+        if os.path.exists("datas/dhk"):
+            try:
+                self.key = int.from_bytes(open("datas/dhk", 'rb').read(), byteorder='big', signed=False)
+            except:
+                self.key = None
+        else:
+            self.key = None
+        if self.key is None:
+            print ("No key found for association, please wait while I generate it for you...")
+            self.key = random.getrandbits(1024)
+            open("datas/dhk", 'wb').write(self.key.to_bytes((self.key.bit_length() // 8) + 1, byteorder='big', signed=False))
 
         # Save various informations
         self.ip = ip
