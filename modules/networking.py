@@ -2,6 +2,8 @@
 
 import http.client
 import json
+import socket
+from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
@@ -25,14 +27,17 @@ def help_full ():
 
 def cmd_curl(msg):
     if len(msg.cmds) > 1:
-        req = web.getURLContent(" ".join(msg.cmds[1:]))
-        if req is not None:
-            res = Response(msg.sender, channel=msg.channel)
-            for m in req.decode().split("\n"):
-                res.append_message(m)
-            return res
-        else:
-            return Response(msg.sender, "Une erreur est survenue lors de l'accès à cette URL", channel=msg.channel)
+        try:
+            req = web.getURLContent(" ".join(msg.cmds[1:]))
+            if req is not None:
+                res = Response(msg.sender, channel=msg.channel)
+                for m in req.decode().split("\n"):
+                    res.append_message(m)
+                return res
+            else:
+                return Response(msg.sender, "Une erreur est survenue lors de l'accès à cette URL", channel=msg.channel)
+        except socket.error as e:
+            return Response(msg.sender, e.strerror, channel=msg.channel)
     else:
         return Response(msg.sender, "Veuillez indiquer une URL à visiter.",
                         channel=msg.channel)
