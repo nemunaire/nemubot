@@ -26,8 +26,10 @@ def get_courses(classe=None, room=None, teacher=None, date=None):
         url += "&teacher=" + quote(teacher)
     #TODO: date, not implemented at 23.tf
 
+    print_debug(url)
     response = web.getXML(url)
     if response is not None:
+        print_debug(response)
         return response.getNodes("course")
     else:
         return None
@@ -55,6 +57,7 @@ def cmd_chronos(msg):
     res = Response(msg.sender, channel=msg.channel, nomore="Je n'ai pas d'autre cours à afficher")
 
     courses = get_courses(classe)
+    print_debug(courses)
     if courses is not None:
         now = datetime.now()
         tomorrow = now + timedelta(days=1)
