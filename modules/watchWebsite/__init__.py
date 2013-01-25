@@ -146,10 +146,9 @@ def alert_change(content, site):
 
     if site["type"] == "atom":
         if site["_lastpage"] is None:
-            if site["lastcontent"] is None:
-                site["_lastpage"] = Atom(content)
-            else:
-                site["_lastpage"] = Atom(site["lastcontent"])
+            if site["lastcontent"] is None or site["lastcontent"] == "":
+                site["lastcontent"] = content
+            site["_lastpage"] = Atom(site["lastcontent"])
         try:
             page = Atom(content)
         except:
