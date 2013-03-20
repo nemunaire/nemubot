@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import re
+import traceback
+import sys
 from urllib.parse import quote
 
 from tools import web
@@ -22,7 +24,14 @@ def load(context):
 def cmd_syno(msg):
     if 1 < len(msg.cmds) < 6:
         for word in msg.cmds[1:]:
-            synos = get_synos(word)
+            try:
+                synos = get_synos(word)
+            except:
+                synos = None
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value,
+                                          exc_traceback)
+
             if synos is None:
                 return Response(msg.sender,
                                 "Une erreur s'est produite durant la recherche"
@@ -38,7 +47,9 @@ def cmd_syno(msg):
 
 
 def get_synos(word):
-    page = web.getURLContent("http://www.crisco.unicaen.fr/des/synonymes/%s" % quote(word))
+    url = "http://www.crisco.unicaen.fr/des/synonymes/" + quote(word.encode("ISO-8859-1"))
+    print_debug (url)
+    page = web.getURLContent(url)
     if page is not None:
         synos = list()
         for line in page.decode().split("\n"):
