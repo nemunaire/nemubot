@@ -8,6 +8,7 @@
   <command name="join" call="join" />
   <command name="leave" call="join" />
   <command name="part" call="join" />
+  <command name="save" call="save_mod" />
   <command name="send" call="send" />
   <command name="zap" call="zap" />
 </nemubotmodule>

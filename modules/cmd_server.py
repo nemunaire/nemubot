@@ -133,6 +133,20 @@ def join(data, toks, context, prompt):
         srv.leave(toks[rd])
     return
 
+def save_mod(data, toks, context, prompt):
+    """Force save module data"""
+    if len(toks) < 2:
+        print ("save: not enough arguments.")
+        return
+
+    for mod in toks[1:]:
+        if mod in context.modules:
+            context.modules[mod].save()
+            print ("save: module `%s´ saved successfully" % mod)
+        else:
+            print ("save: no module named `%s´" % mod)
+    return
+
 def send(data, toks, context, prompt):
     """Send a message on a channel"""
     rd = 1
