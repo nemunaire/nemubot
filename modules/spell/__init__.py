@@ -80,10 +80,10 @@ def cmd_score(msg):
     return res
 
 def check_spell(word, lang='fr'):
-    a = Aspell(("lang", lang))
-    if a.check(word):
+    a = Aspell([("lang", lang), ("lang", "fr")])
+    if a.check(word.encode("iso-8859-15")):
         ret = True
     else:
-        ret = a.suggest(word)
+        ret = a.suggest(word.encode("iso-8859-15"))
     a.close()
     return ret

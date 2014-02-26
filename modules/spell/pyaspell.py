@@ -37,10 +37,10 @@ try:
 	bytes
 
 	def _to_bytes(s):
-		return s.encode()
+		return s.encode("ISO-8859-15")
 
 	def _from_bytes(s):
-		return s.decode()
+		return s.decode("ISO-8859-15")
 
 except NameError:
 	def _to_bytes(s):
@@ -109,15 +109,12 @@ class AspellLinux(object):
 		Check if word is present in main, personal or session
 		dictionary.  Boolean value is returned
 		"""
-		if type(word) is str:
-			return bool(
-				self.__lib.aspell_speller_check(
-					self.__speller,
-					_to_bytes(word),
-					len(word)
+		return bool(
+			self.__lib.aspell_speller_check(
+				self.__speller,
+				word,
+				len(word)
 				))
-		else:
-			raise TypeError("String expected")
 
 
 	__contains__ = check
@@ -128,15 +125,12 @@ class AspellLinux(object):
 		Return list of spelling suggestions of given word.
 		Works even if word is correct.
 		"""
-		if type(word) is str:
-			return self._aspellwordlist(
-				self.__lib.aspell_speller_suggest(
-					self.__speller,
-					_to_bytes(word),
-					len(word)
+		return self._aspellwordlist(
+			self.__lib.aspell_speller_suggest(
+				self.__speller,
+				word,
+				len(word)
 				))
-		else:
-			raise TypeError("String expected")
 
 
 	def personal_dict(self, word=None):
