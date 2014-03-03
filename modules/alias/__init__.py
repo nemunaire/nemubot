@@ -99,13 +99,20 @@ def cmd_unalias(msg):
 
 def replace_variables(cnt, msg=None):
     cnt = cnt.split(' ')
+    unsetCnt = list()
     for i in range(0, len(cnt)):
-        res = re.match("^([^a-zA-Z0-9]*)(\\\\)\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
+      if i not in unsetCnt:
+        res = re.match("^([^$]*)(\\\\)?\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
         if res is not None:
-            if res.group(2) != "":
-                cnt[i] = res.group(1) + "$" + res.group(3) + res.group(4)
-            else:
-                cnt[i] = res.group(1) + get_variable(res.group(3), msg) + res.group(4)
+            try:
+                varI = int(res.group(3))
+                unsetCnt.append(varI)
+                cnt[i] = res.group(1) + msg.cmds[varI] + res.group(4)
+            except:
+                if res.group(2) != "":
+                    cnt[i] = res.group(1) + "$" + res.group(3) + res.group(4)
+                else:
+                    cnt[i] = res.group(1) + get_variable(res.group(3), msg) + res.group(4)
     return " ".join(cnt)
 
 
