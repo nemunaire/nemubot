@@ -82,7 +82,7 @@ def cmd_chronos(msg):
                 title = "Prochainement "
                 duration = (end - start).total_seconds() / 60
 
-                msg = "\x03\x02" + crs + "\x03\x02 le \x03\x02" + end.strftime("%a %d à %H:%M") + "\x03\x02 pour " + "%dh%02d" % (int(duration / 60), duration % 60) + " en \x03\x02" + where + "\x03\x02"
+                msg = "\x03\x02" + crs + "\x03\x02 le \x03\x02" + start.strftime("%a %d à %H:%M") + "\x03\x02 pour " + "%dh%02d" % (int(duration / 60), duration % 60) + " en \x03\x02" + where + "\x03\x02"
 
             if teacher != "":
                 msg += " avec " + teacher
