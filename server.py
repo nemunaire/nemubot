@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import socket
-import sys
 import threading
 
 class Server(threading.Thread):
