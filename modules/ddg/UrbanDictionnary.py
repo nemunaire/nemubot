@@ -22,6 +22,6 @@ class UrbanDictionnary:
     def definitions(self):
         if self.udres and "list" in self.udres:
             for d in self.udres["list"]:
-                yield d["definition"]
+                yield d["definition"] + "\n" + d["example"]
         else:
             yield "Sorry, no definition found for %s" % self.terms
