@@ -5,6 +5,7 @@ import imp
 nemubotversion = 3.3
 
 from . import DDGSearch
+from . import UrbanDictionnary
 from . import WFASearch
 from . import Wikipedia
 
@@ -21,9 +22,11 @@ def load(context):
     add_hook("cmd_hook", Hook(calculate, "calc"))
     add_hook("cmd_hook", Hook(wiki, "dico"))
     add_hook("cmd_hook", Hook(wiki, "wiki"))
+    add_hook("cmd_hook", Hook(udsearch, "urbandictionnary"))
 
 def reload():
     imp.reload(DDGSearch)
+    imp.reload(UrbanDictionnary)
     imp.reload(WFASearch)
     imp.reload(Wikipedia)
 
@@ -61,6 +64,23 @@ def search(msg):
 
     for rt in s.relatedTopics:
         res.append_message(rt)
+
+    return res
+
+
+def udsearch(msg):
+    if len(msg.cmds) <= 1:
+        return Response(msg.sender,
+                        "Indicate a term to search",
+                        msg.channel, nick=msg.nick)
+
+    s = UrbanDictionnary.UrbanDictionnary(' '.join(msg.cmds[1:]))
+
+    res = Response(msg.sender, channel=msg.channel, nomore="No more results",
+                   count=" (%d more definitions)")
+
+    for d in s.definitions:
+        res.append_message(d)
 
     return res
 
