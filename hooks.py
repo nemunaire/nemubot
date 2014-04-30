@@ -19,6 +19,7 @@
 import re
 
 from response import Response
+from exception import IRCException
 
 class MessagesHook:
     def __init__(self, context, bot):
@@ -199,22 +200,25 @@ class Hook:
         else:
             call = self.call
 
-        if self.data is None:
-            if data2 is None:
-                return call(msg)
-            elif isinstance(data2, dict):
-                return call(msg, **data2)
+        try:
+            if self.data is None:
+                if data2 is None:
+                    return call(msg)
+                elif isinstance(data2, dict):
+                    return call(msg, **data2)
+                else:
+                    return call(msg, data2)
+            elif isinstance(self.data, dict):
+                if data2 is None:
+                    return call(msg, **self.data)
+                else:
+                    return call(msg, data2, **self.data)
             else:
-                return call(msg, data2)
-        elif isinstance(self.data, dict):
-            if data2 is None:
-                return call(msg, **self.data)
-            else:
-                return call(msg, data2, **self.data)
-        else:
-            if data2 is None:
-                return call(msg, self.data)
-            elif isinstance(data2, dict):
-                return call(msg, self.data, **data2)
-            else:
-                return call(msg, self.data, data2)
+                if data2 is None:
+                    return call(msg, self.data)
+                elif isinstance(data2, dict):
+                    return call(msg, self.data, **data2)
+                else:
+                    return call(msg, self.data, data2)
+        except IRCException as e:
+            return e.fill_response(msg)

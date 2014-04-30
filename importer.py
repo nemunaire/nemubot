@@ -23,6 +23,7 @@ import os
 import sys
 
 import event
+import exception
 from hooks import Hook
 import response
 import xmlparser
@@ -172,6 +173,7 @@ class ModuleLoader(SourceLoader):
         module.ModuleEvent = event.ModuleEvent
         module.ModuleState = xmlparser.module_state.ModuleState
         module.Response = response.Response
+        module.IRCException = exception.IRCException
 
         # Load dependancies
         if module.CONF is not None and module.CONF.hasNode("dependson"):
