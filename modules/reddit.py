@@ -32,8 +32,8 @@ def cmd_subreddit(msg):
         subs = msg.cmds[1:]
 
     all_res = list()
-    for sub in subs:
-        sub = re.match(r"^/?(?:(\w)/)?(\w+)/?$", sub)
+    for osub in subs:
+        sub = re.match(r"^/?(?:(\w)/)?(\w+)/?$", osub)
         if sub is not None:
             if sub.group(1) is not None and sub.group(1) != "":
                 where = sub.group(1)
@@ -48,12 +48,14 @@ def cmd_subreddit(msg):
 
             if "title" in sbr["data"]:
                 res = Response(msg.sender, channel=msg.channel, nomore="No more information")
-                res.append_message(("[NSFW] " if sbr["data"]["over18"] else "") + sbr["data"]["title"] + ": " + sbr["data"]["public_description" if sbr["data"]["public_description"] != "" else "description"].replace("\n", " ") + " %s subscriber(s)" % sbr["data"]["subscribers"])
+                res.append_message(("[NSFW] " if sbr["data"]["over18"] else "") + sbr["data"]["url"] + " " + sbr["data"]["title"] + ": " + sbr["data"]["public_description" if sbr["data"]["public_description"] != "" else "description"].replace("\n", " ") + " %s subscriber(s)" % sbr["data"]["subscribers"])
                 if sbr["data"]["public_description"] != "":
                     res.append_message(sbr["data"]["description"].replace("\n", " "))
                 all_res.append(res)
             else:
                 all_res.append(Response(msg.sender, "/%s/%s doesn't exist" % (where, sub.group(2)), channel=msg.channel))
+        else:
+            all_res.append(Response(msg.sender, "%s is not a valid subreddit" % osub, channel=msg.channel, nick=msg.nick))
 
     return all_res
 
