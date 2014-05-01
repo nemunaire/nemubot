@@ -2,12 +2,10 @@
 # coding=utf-8
 
 import sys
-import socket
 import signal
 import os
 import re
 import subprocess
-import shlex
 import traceback
 from datetime import datetime
 from datetime import timedelta
@@ -164,7 +162,7 @@ for correct in config.getNodes("correction"):
 print ("%d corrections loaded"%len(CORRECTIONS))
 
 for serveur in config.getNodes("server"):
-    srv = Server(serveur, config["nick"], config["owner"], config["realname"])
+    srv = Server(serveur, config["nick"], config["owner"], config["realname"], serveur.hasAttribute("ssl"))
     srv.launch(None)
 
 def sighup_h(signum, frame):

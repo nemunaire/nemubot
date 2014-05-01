@@ -64,7 +64,8 @@ def load_file(filename, context):
             # Preset each server in this file
             for server in config.getNodes("server"):
                 if context.addServer(server, config["nick"],
-                                     config["owner"], config["realname"]):
+                                     config["owner"], config["realname"],
+                                     server.hasAttribute("ssl")):
                     print ("  Server `%s:%s' successfully added."
                            % (server["server"], server["port"]))
                 else:

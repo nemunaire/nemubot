@@ -18,6 +18,7 @@
 
 import errno
 import os
+import ssl
 import socket
 import threading
 import traceback
@@ -32,7 +33,7 @@ import xmlparser
 class IRCServer(server.Server):
     """Class to interact with an IRC server"""
 
-    def __init__(self, node, nick, owner, realname):
+    def __init__(self, node, nick, owner, realname, ssl=False):
         """Initialize an IRC server
 
         Arguments:
@@ -40,7 +41,7 @@ class IRCServer(server.Server):
         nick -- nick used by the bot on this server
         owner -- nick used by the bot owner on this server
         realname -- string used as realname on this server
-
+        ssl -- require SSL?
         """
         server.Server.__init__(self)
 
@@ -49,6 +50,7 @@ class IRCServer(server.Server):
         self.nick = nick
         self.owner = owner
         self.realname = realname
+        self.ssl = ssl
 
         # Listen private messages?
         self.listen_nick = True
@@ -164,6 +166,9 @@ class IRCServer(server.Server):
     def run(self):
         if not self.connected:
             self.s = socket.socket() #Create the socket
+            if self.ssl:
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+                self.s = ctx.wrap_socket(self.s)
             try:
                 self.s.connect((self.host, self.port)) #Connect to server
             except socket.error as e:

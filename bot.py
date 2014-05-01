@@ -183,9 +183,9 @@ class Bot:
         self.update_timer()
 
 
-    def addServer(self, node, nick, owner, realname):
+    def addServer(self, node, nick, owner, realname, ssl=False):
         """Add a new server to the context"""
-        srv = IRCServer(node, nick, owner, realname)
+        srv = IRCServer(node, nick, owner, realname, ssl)
         srv.add_hook = lambda h: self.hooks.add_hook("irc_hook", h, self)
         srv.add_networkbot = self.add_networkbot
         srv.send_bot = lambda d: self.send_networkbot(srv, d)
