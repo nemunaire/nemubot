@@ -3,7 +3,9 @@
 import xml.sax
 from datetime import datetime
 from datetime import date
+import sys
 import time
+import traceback
 
 class ModuleState:
   """Tiny tree representation of an XML file"""
@@ -175,12 +177,18 @@ class ModuleState:
                 attribs[att] = str(self.attributes[att])
     attrs = xml.sax.xmlreader.AttributesImpl(attribs)
 
-    gen.startElement(self.name, attrs)
+    try:
+      gen.startElement(self.name, attrs)
 
-    for child in self.childs:
-      child.save_node(gen)
+      for child in self.childs:
+        child.save_node(gen)
 
-    gen.endElement(self.name)
+      gen.endElement(self.name)
+    except:
+      print ("\033[1;31mERROR:\033[0m occurred when saving the "
+             "following XML node: %s with %s" % (self.name, attrs))
+      exc_type, exc_value, exc_traceback = sys.exc_info()
+      traceback.print_exception(exc_type, exc_value, exc_traceback)
 
   def save(self, filename):
     """Save the current node as root node in a XML file"""
