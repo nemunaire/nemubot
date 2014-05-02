@@ -19,7 +19,7 @@ def help_tiny ():
     return "events manager"
 
 def help_full ():
-    return "This module store a lot of events: ny, we, vacs, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
+    return "This module store a lot of events: ny, we, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
 
 CONTEXT = None
 
@@ -64,13 +64,6 @@ def cmd_we(msg):
         msg.countdown_format(ndate,
                              "Il reste %s avant le week-end, courage ;)",
                              "Youhou, on est en week-end depuis %s."),
-                    channel=msg.channel)
-
-def cmd_vacances(msg):
-    return Response(msg.sender,
-        msg.countdown_format(datetime(2013, 7, 30, 18, 0, 1),
-                             "Il reste %s avant les vacances :)",
-                             "Profitons, c'est les vacances depuis %s."),
                     channel=msg.channel)
 
 def start_countdown(msg):
