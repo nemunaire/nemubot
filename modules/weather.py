@@ -22,6 +22,7 @@ def load(context):
     from hooks import Hook
     add_hook("cmd_hook", Hook(cmd_weather, "météo"))
     add_hook("cmd_hook", Hook(cmd_alert, "alert"))
+    add_hook("cmd_hook", Hook(cmd_coordinates, "coordinates"))
 
 
 def help_tiny ():
@@ -123,6 +124,17 @@ def get_json_weather(coords):
 
     return wth
 
+
+def cmd_coordinates(msg):
+    if len(msg.cmds) <= 1:
+        raise IRCException("indique-moi un nom de ville.")
+
+    j = msg.cmds[1].lower()
+    if j not in DATAS.index:
+        raise IRCException("%s n'est pas une ville connue" % msg.cmds[1])
+
+    coords = DATAS.index[j]
+    return Response(msg.sender, "Les coordonnées de %s sont %s,%s" % (msg.cmds[1], coords["lat"], coords["long"]), channel=msg.channel)
 
 def cmd_alert(msg):
     coords, specific = treat_coord(msg)
