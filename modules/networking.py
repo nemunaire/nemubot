@@ -172,7 +172,7 @@ def traceURL(url, timeout=5, stack=None):
         stack.append('stack overflow :(')
         return stack
 
-    o = urlparse(url, "http")
+    o = urllib.parse.urlparse(url, "http")
     if o.netloc == "":
         return stack
     if o.scheme == "http":
