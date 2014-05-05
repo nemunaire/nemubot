@@ -120,7 +120,13 @@ def cmd_whois(msg):
     except urllib.error.HTTPError as e:
         raise IRCException("HTTP error occurs: %s %s" % (e.code, e.reason))
 
-    whois = json.loads(raw.read().decode())["WhoisRecord"]
+    js = json.loads(raw.read().decode())
+
+    if "ErrorMessage" in js:
+        err = js["ErrorMessage"]
+        raise IRCException(js["ErrorMessage"]["msg"])
+
+    whois = js["WhoisRecord"]
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more whois information")
 
