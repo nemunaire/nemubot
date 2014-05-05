@@ -21,6 +21,7 @@ def load(context):
     else:
         add_hook("cmd_hook", Hook(cmd_whois, "netwhois"))
 
+    add_hook("cmd_hook", Hook(cmd_w3c, "w3c"))
     add_hook("cmd_hook", Hook(cmd_traceurl, "traceurl"))
     add_hook("cmd_hook", Hook(cmd_isup, "isup"))
     add_hook("cmd_hook", Hook(cmd_curl, "curl"))
@@ -200,3 +201,37 @@ def traceURL(url, timeout=5, stack=None):
             return traceURL(url, timeout, stack)
     else:
         return stack
+
+def cmd_w3c(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("Indiquer une URL à valider !")
+
+    o = urllib.parse.urlparse(msg.cmds[1], "http")
+    if o.netloc == "":
+        o = urllib.parse.urlparse("http://" + msg.cmds[1])
+    if o.netloc == "":
+        raise IRCException("Indiquer une URL valide !")
+
+    try:
+        req = urllib.request.Request("http://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "nemubot v3" })
+        raw = urllib.request.urlopen(req, timeout=10)
+    except urllib.error.HTTPError as e:
+        raise IRCException("HTTP error occurs: %s %s" % (e.code, e.reason))
+
+    headers = dict()
+    for Hname, Hval in raw.getheaders():
+        headers[Hname] = Hval
+
+    if "X-W3C-Validator-Status" not in headers or (headers["X-W3C-Validator-Status"] != "Valid" and headers["X-W3C-Validator-Status"] != "Invalid"):
+        raise IRCException("Unexpected error on W3C servers" + (" (" + headers["X-W3C-Validator-Status"] + ")" if "X-W3C-Validator-Status" in headers else ""))
+
+    validator = json.loads(raw.read().decode())
+
+    res = Response(msg.sender, channel=msg.channel, nomore="No more error")
+
+    res.append_message("%s: status: %s, %s warning(s), %s error(s)" % (validator["url"], headers["X-W3C-Validator-Status"], headers["X-W3C-Validator-Warnings"], headers["X-W3C-Validator-Errors"]))
+
+    for m in validator["messages"]:
+        res.append_message("%s%s on line %s, col %s: %s" % (m["type"][0].upper(), m["type"][1:], m["lastLine"], m["lastColumn"], m["message"]))
+
+    return res
