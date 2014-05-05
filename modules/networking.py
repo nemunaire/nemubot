@@ -129,9 +129,9 @@ def cmd_whois(msg):
                                                              "\x03\x02created on\x03\x02 " + extractdate(whois["createdDate"]).strftime("%c") + ", " if "createdDate" in whois else "",
                                                              "\x03\x02updated on\x03\x02 " + extractdate(whois["updatedDate"]).strftime("%c") + ", " if "updatedDate" in whois else "",
                                                              "\x03\x02expires on\x03\x02 " + extractdate(whois["expiresDate"]).strftime("%c") + ", " if "expiresDate" in whois else "",
-                                                             whois_entityformat(whois["registrant"]),
-                                                             whois_entityformat(whois["administrativeContact"]),
-                                                             whois_entityformat(whois["technicalContact"]),
+                                                             whois_entityformat(whois["registrant"]) if "registrant" in whois else "unknown",
+                                                             whois_entityformat(whois["administrativeContact"]) if "administrativeContact" in whois else "unknown",
+                                                             whois_entityformat(whois["technicalContact"]) if "technicalContact" in whois else "unknown",
                                                          ))
     return res
 
