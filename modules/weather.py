@@ -72,6 +72,11 @@ def format_forecast_daily(wth):
                int(wth["ozone"])
            ))
 
+def format_timestamp(timestamp, tzname, tzoffset, format="%c"):
+    tz = datetime.timezone(datetime.timedelta(hours=tzoffset), tzname)
+    time = datetime.datetime.fromtimestamp(timestamp, tz=tz)
+    return time.strftime(format)
+
 
 def treat_coord(msg):
     if len(msg.cmds) > 1:
@@ -127,7 +132,7 @@ def cmd_alert(msg):
 
     if "alerts" in wth:
         for alert in wth["alerts"]:
-            res.append_message("\x03\x02%s\x03\x02 (see %s expire on %s): %s" % (alert["title"], alert["uri"], datetime.datetime.fromtimestamp(int(alert["expires"])).strftime("%c"), alert["description"].replace("\n", " ")))
+            res.append_message("\x03\x02%s\x03\x02 (see %s expire on %s): %s" % (alert["title"], alert["uri"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"]), alert["description"].replace("\n", " ")))
 
     return res
 
@@ -140,7 +145,7 @@ def cmd_weather(msg):
     if "alerts" in wth:
         alert_msgs = list()
         for alert in wth["alerts"]:
-            alert_msgs.append("\x03\x02%s\x03\x02 expire on %s" % (alert["title"], datetime.datetime.fromtimestamp(int(alert["expires"])).strftime("%c")))
+            alert_msgs.append("\x03\x02%s\x03\x02 expire on %s" % (alert["title"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"])))
         res.append_message("\x03\x16\x03\x02/!\\\x03\x02 Alert%s:\x03\x16 " % ("s" if len(alert_msgs) > 1 else "") + ", ".join(alert_msgs))
 
     if specific is not None:
@@ -152,13 +157,11 @@ def cmd_weather(msg):
 
         if gr.group(2).lower() == "h" and gr1 < len(wth["hourly"]["data"]):
             hour = wth["hourly"]["data"][gr1]
-            time = datetime.datetime.fromtimestamp(int(hour["time"]))
-            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (time.strftime('%H'), format_wth(hour)))
+            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (format_timestamp(int(hour["time"]), wth["timezone"], wth["offset"], '%H'), format_wth(hour)))
 
         elif gr.group(2).lower() == "d" and gr1 < len(wth["daily"]["data"]):
             day = wth["daily"]["data"][gr1]
-            time = datetime.datetime.fromtimestamp(int(day["time"]))
-            res.append_message("\x03\x02On %s:\x03\x02 %s" % (time.strftime('%A'), format_forecast_daily(day)))
+            res.append_message("\x03\x02On %s:\x03\x02 %s" % (format_timestamp(int(day["time"]), wth["timezone"], wth["offset"], '%A'), format_forecast_daily(day)))
 
         else:
             res.append_message("I don't understand %s or information is not available" % specific)
@@ -173,12 +176,12 @@ def cmd_weather(msg):
         res.append_message(nextres)
 
         for hour in wth["hourly"]["data"][1:4]:
-            time = datetime.datetime.fromtimestamp(int(hour["time"]))
-            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (time.strftime('%H'), format_wth(hour)))
+            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (format_timestamp(int(hour["time"]), wth["timezone"], wth["offset"], '%H'),
+                                                               format_wth(hour)))
 
         for day in wth["daily"]["data"][1:]:
-            time = datetime.datetime.fromtimestamp(int(day["time"]))
-            res.append_message("\x03\x02On %s:\x03\x02 %s" % (time.strftime('%A'), format_forecast_daily(day)))
+            res.append_message("\x03\x02On %s:\x03\x02 %s" % (format_timestamp(int(day["time"]), wth["timezone"], wth["offset"], '%A'),
+                                                              format_forecast_daily(day)))
 
     return res
 
