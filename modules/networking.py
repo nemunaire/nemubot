@@ -3,9 +3,7 @@
 import http.client
 import json
 import socket
-from urllib.parse import quote
-from urllib.parse import urlparse
-from urllib.request import urlopen
+import urllib
 
 from tools import web
 
@@ -56,11 +54,12 @@ def cmd_isup(msg):
     if 1 < len(msg.cmds) < 6:
         res = list()
         for url in msg.cmds[1:]:
-            o = urlparse(url, "http")
+            o = urllib.parse.urlparse(url, "http")
             if o.netloc == "":
-                o = urlparse("http://" + url)
+                o = urllib.parse.urlparse("http://" + url)
             if o.netloc != "":
-                raw = urlopen("http://isitup.org/" + o.netloc + ".json", timeout=10)
+                req = urllib.request.Request("http://isitup.org/%s.json" % (o.netloc), headers={ 'User-Agent' : "nemubot v3" })
+                raw = urllib.request.urlopen(req, timeout=10)
                 isup = json.loads(raw.read().decode())
                 if "status_code" in isup and isup["status_code"] == 1:
                     res.append(Response(msg.sender, "%s est accessible (temps de reponse : %ss)" % (isup["domain"], isup["response_time"]), channel=msg.channel))
