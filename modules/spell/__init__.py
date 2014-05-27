@@ -26,7 +26,7 @@ def load(context):
 
 def cmd_spell(msg):
     if len(msg.cmds) < 2:
-        return Response(msg.sender, "Indiquer une orthographe approximative du mot dont vous voulez vérifier l'orthographe.", msg.channel)
+        return Response(msg.sender, "indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.", msg.channel, msg.nick)
 
     lang = "fr"
     strRes = list()
@@ -37,7 +37,7 @@ def cmd_spell(msg):
             try:
                 r = check_spell(word, lang)
             except AspellError:
-                return Response(msg.sender, "Je n'ai pas le dictionnaire `%s' :(" % lang, msg.channel)
+                return Response(msg.sender, "Je n'ai pas le dictionnaire `%s' :(" % lang, msg.channel, msg.nick)
             if r == True:
                 add_score(msg.nick, "correct")
                 strRes.append("l'orthographe de `%s' est correcte" % word)
@@ -47,7 +47,7 @@ def cmd_spell(msg):
             else:
                 add_score(msg.nick, "bad")
                 strRes.append("aucune suggestion pour `%s'" % word)
-    return Response(msg.sender, strRes, channel=msg.channel)
+    return Response(msg.sender, strRes, channel=msg.channel, nick=msg.nick)
 
 def add_score(nick, t):
     global DATAS
@@ -80,10 +80,10 @@ def cmd_score(msg):
     return res
 
 def check_spell(word, lang='fr'):
-    a = Aspell([("lang", lang), ("lang", "fr")])
-    if a.check(word.encode("iso-8859-15")):
+    a = Aspell([("lang", lang)])
+    if a.check(word.encode("utf-8")):
         ret = True
     else:
-        ret = a.suggest(word.encode("iso-8859-15"))
+        ret = a.suggest(word.encode("utf-8"))
     a.close()
     return ret
