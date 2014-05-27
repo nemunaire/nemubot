@@ -13,7 +13,7 @@ nemubotversion = 3.3
 def load(context):
     from hooks import Hook
 
-    if not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
+    if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
         print ("You need a WhoisXML API account in order to use the "
                "!netwhois feature. Add it to the module configuration file:\n"
                "<whoisxmlapi username=\"XX\" password=\"XXX\" />\nRegister at "

@@ -12,7 +12,7 @@ def load(context):
     global DATAS
     DATAS.setIndex("name", "city")
 
-    if not CONF.hasNode("darkskyapi") or not CONF.getNode("darkskyapi").hasAttribute("key"):
+    if not CONF or not CONF.hasNode("darkskyapi") or not CONF.getNode("darkskyapi").hasAttribute("key"):
         print ("You need a Dark-Sky API key in order to use this "
                "module. Add it to the module configuration file:\n<darkskyapi"
                " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
