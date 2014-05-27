@@ -117,7 +117,7 @@ class Server(IRCServer.IRCServer):
         try:
             msg = message.Message (line, datetime.now(), private)
             if msg.cmd == 'PING':
-                msg.treat (self.mods)
+                self.send_pong(msg.content)
             elif msg.cmd == 'PRIVMSG' and self.accepted_channel(msg.channel):
                 if msg.nick != self.owner:
                     g_queue.append((self, msg))
