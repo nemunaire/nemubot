@@ -95,14 +95,18 @@ class ModuleState:
 
     return (isinstance(source, bool) and source) or source == "True"
 
-  def setIndex(self, fieldname = "name", tagname = None):
-    """Defines an hash table to accelerate childs search. You have just to define a common attribute"""
-    self.index = dict()
-    self.index_fieldname = fieldname
-    self.index_tagname = tagname
+  def tmpIndex(self, fieldname="name", tagname=None):
+    index = dict()
     for child in self.childs:
       if (tagname is None or tagname == child.name) and child.hasAttribute(fieldname):
-        self.index[child[fieldname]] = child
+        index[child[fieldname]] = child
+    return index
+
+  def setIndex(self, fieldname="name", tagname=None):
+    """Defines an hash table to accelerate childs search. You have just to define a common attribute"""
+    self.index = self.tmpIndex(fieldname, tagname)
+    self.index_fieldname = fieldname
+    self.index_tagname = tagname
 
   def __contains__(self, i):
     """Return true if i is found in the index"""
