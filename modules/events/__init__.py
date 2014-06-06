@@ -142,14 +142,17 @@ def start_countdown(msg):
         return Response(msg.sender, "%s commencé le %s"% (msg.cmds[1],
                             datetime.now().strftime("%A %d %B %Y a %H:%M:%S")))
     else:
-        return Response(msg.sender, "%s existe déjà."% (msg.cmds[1]))
+        return Response(msg.sender, "%s existe déjà."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
 def end_countdown(msg):
+    if len(msg.cmds) < 2:
+        return Response(msg.sender, "Quel événement terminer ?", channel=msg.channel, nick=msg.nick)
+
     if msg.cmds[1] in DATAS.index:
         res = Response(msg.sender,
                        "%s a duré %s." % (msg.cmds[1],
                                           msg.just_countdown(datetime.now () - DATAS.index[msg.cmds[1]].getDate("start"))),
-                       channel=msg.channel)
+                       channel=msg.channel, nick=msg.nick)
         if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.is_owner):
             CONTEXT.del_event(DATAS.index[msg.cmds[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])
@@ -158,10 +161,20 @@ def end_countdown(msg):
             res.append_message("Vous ne pouvez pas terminer le compteur %s, créé par %s."% (msg.cmds[1], DATAS.index[msg.cmds[1]]["proprio"]))
         return res
     else:
-        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]))
+        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
 def liste(msg):
-    msg.send_snd ("Compteurs connus : %s." % ", ".join(DATAS.index.keys()))
+    if len(msg.cmds) > 1:
+        res = list()
+        for user in msg.cmds[1:]:
+            cmptr = [x["name"] for x in DATAS.index.values() if x["proprio"] == user]
+            if len(cmptr) > 0:
+                res.append("Compteurs créés par %s : %s" % (user, ", ".join(cmptr)))
+            else:
+                res.append("%s n'a pas créé de compteur" % user)
+        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+    else:
+        return Response(msg.sender, "Compteurs connus : %s." % ", ".join(DATAS.index.keys()), channel=msg.channel)
 
 def parseanswer(msg):
     if msg.cmds[0] in DATAS.index:
