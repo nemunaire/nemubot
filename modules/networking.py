@@ -40,11 +40,13 @@ def cmd_curl(msg):
             req = web.getURLContent(" ".join(msg.cmds[1:]))
             if req is not None:
                 res = Response(msg.sender, channel=msg.channel)
-                for m in req.decode().split("\n"):
+                for m in req.split("\n"):
                     res.append_message(m)
                 return res
             else:
                 return Response(msg.sender, "Une erreur est survenue lors de l'accès à cette URL", channel=msg.channel)
+        except socket.timeout:
+            return Response(msg.sender, "le délais d'attente a été dépassé durant l'accès à %s" % msg.cmds[1:], channel=msg.channel, nick=msg.nick)
         except socket.error as e:
             return Response(msg.sender, e.strerror, channel=msg.channel)
     else:
@@ -117,6 +119,8 @@ def cmd_whois(msg):
     try:
         req = urllib.request.Request("http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainName=%s&outputFormat=json&userName=%s&password=%s" % (urllib.parse.quote(dom), urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"])), headers={ 'User-Agent' : "nemubot v3" })
         raw = urllib.request.urlopen(req, timeout=10)
+    except socket.timeout:
+        raise IRCException("Sorry, the request has timed out.")
     except urllib.error.HTTPError as e:
         raise IRCException("HTTP error occurs: %s %s" % (e.code, e.reason))
 

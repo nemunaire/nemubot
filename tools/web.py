@@ -61,7 +61,17 @@ def getPassword(url):
 def getURLContent(url, timeout=15):
     """Return page content corresponding to URL or None if any error occurs"""
     o = urlparse(url)
-    conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=timeout)
+    if o.netloc == "":
+        o = urlparse("http://" + url)
+
+    if o.scheme == "http":
+        conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=timeout)
+    elif o.scheme == "https":
+        conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=timeout)
+    elif o.scheme is None or o.scheme == "":
+        conn = http.client.HTTPConnection(o.netloc, port=80, timeout=timeout)
+    else:
+        return None
     try:
         if o.query != '':
             conn.request("GET", o.path + "?" + o.query, None, {"User-agent": "Nemubot v3"})
@@ -70,8 +80,8 @@ def getURLContent(url, timeout=15):
     except socket.timeout:
         return None
     except socket.gaierror:
-        print ("<tools.web> Unable to receive page %s from %s on %d."
-               % (o.path, o.netloc, o.port))
+        print ("<tools.web> Unable to receive page %s on %s from %s."
+               % (o.path, o.netloc, url))
         return None
 
     try:
@@ -83,6 +93,14 @@ def getURLContent(url, timeout=15):
             return None
 
         data = res.read(size)
+
+        # Decode content
+        charset = res.getheader("Content-Type").split(";")
+        if len(charset) > 1:
+            for c in charset:
+                ch = c.split("=")
+                if ch[0].strip().lower() == "charset" and len(ch) > 1:
+                    data = data.decode(ch[1])
     except http.client.BadStatusLine:
         return None
     finally:
