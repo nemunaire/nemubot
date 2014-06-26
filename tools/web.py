@@ -100,7 +100,12 @@ def getURLContent(url, timeout=15):
             for c in charset:
                 ch = c.split("=")
                 if ch[0].strip().lower() == "charset" and len(ch) > 1:
-                    data = data.decode(ch[1])
+                    cha = ch[1].split(".")
+                    if len(cha) > 1:
+                        charset = cha[1]
+                    else:
+                        charset = cha[0]
+                    data = data.decode(charset)
     except http.client.BadStatusLine:
         return None
     finally:
