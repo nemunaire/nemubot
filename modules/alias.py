@@ -9,6 +9,8 @@ nemubotversion = 3.3
 def load(context):
     """Load this module"""
     from hooks import Hook
+    add_hook("cmd_hook", Hook(cmd_listalias, "listalias"))
+    add_hook("cmd_hook", Hook(cmd_listvars, "listvars"))
     add_hook("cmd_hook", Hook(cmd_unalias, "unalias"))
     add_hook("cmd_hook", Hook(cmd_alias, "alias"))
     add_hook("cmd_hook", Hook(cmd_set, "set"))
@@ -31,10 +33,11 @@ def help_tiny ():
 def help_full ():
     return "TODO"
 
-def set_variable(name, value):
+def set_variable(name, value, creator):
     var = ModuleState("variable")
     var["name"] = name
     var["value"] = value
+    var["creator"] = creator
     DATAS.getNode("variables").addChild(var)
 
 def get_variable(name, msg=None):
@@ -55,11 +58,37 @@ def get_variable(name, msg=None):
 
 def cmd_set(msg):
     if len (msg.cmds) > 2:
-        set_variable(msg.cmds[1], " ".join(msg.cmds[2:]))
+        set_variable(msg.cmds[1], " ".join(msg.cmds[2:]), msg.nick)
         res = Response(msg.sender, "Variable \$%s définie." % msg.cmds[1])
         save()
         return res
     return Response(msg.sender, "!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
+
+def cmd_listalias(msg):
+    if len(msg.cmds) > 1:
+        res = list()
+        for user in msg.cmds[1:]:
+            als = [x["alias"] for x in DATAS.getNode("aliases").index.values() if x["creator"] == user]
+            if len(als) > 0:
+                res.append("Alias créés par %s : %s" % (user, ", ".join(als)))
+            else:
+                res.append("%s n'a pas encore créé d'alias" % user)
+        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+    else:
+        return Response(msg.sender, "Alias connus : %s." % ", ".join(DATAS.getNode("aliases").index.keys()), channel=msg.channel)
+
+def cmd_listvars(msg):
+    if len(msg.cmds) > 1:
+        res = list()
+        for user in msg.cmds[1:]:
+            als = [x["alias"] for x in DATAS.getNode("variables").index.values() if x["creator"] == user]
+            if len(als) > 0:
+                res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
+            else:
+                res.append("%s n'a pas encore créé de variable" % user)
+        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+    else:
+        return Response(msg.sender, "Variables connues : %s." % ", ".join(DATAS.getNode("variables").index.keys()), channel=msg.channel)
 
 def cmd_alias(msg):
     if len (msg.cmds) > 1:
