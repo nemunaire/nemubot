@@ -76,7 +76,7 @@ class Bot:
 
     def init_ctcp_capabilities(self):
         """Reset existing CTCP capabilities to default one"""
-        self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive")
+        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive")
         self.ctcp_capabilities["CLIENTINFO"] = self._ctcp_clientinfo
         self.ctcp_capabilities["DCC"] = self._ctcp_dcc
         self.ctcp_capabilities["NEMUBOT"] = lambda srv, msg: _ctcp_response(
