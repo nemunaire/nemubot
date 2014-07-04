@@ -128,7 +128,6 @@ def wiki(msg):
     if site == "wiktionary.org":
         tout = [result for result in s.nextRes if result.find("\x03\x16 :\x03\x16 ") != 0]
         if len(tout) > 0:
-            tout.remove(tout[0])
             defI=1
             for t in tout:
                 if t.find("# ") == 0:
