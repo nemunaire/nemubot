@@ -95,8 +95,9 @@ def getURLContent(url, timeout=15):
         data = res.read(size)
 
         # Decode content
-        charset = res.getheader("Content-Type").split(";")
-        if len(charset) > 1:
+        charset = "utf-8"
+        lcharset = res.getheader("Content-Type").split(";")
+        if len(lcharset) > 1:
             for c in charset:
                 ch = c.split("=")
                 if ch[0].strip().lower() == "charset" and len(ch) > 1:
@@ -105,14 +106,13 @@ def getURLContent(url, timeout=15):
                         charset = cha[1]
                     else:
                         charset = cha[0]
-                    data = data.decode(charset)
     except http.client.BadStatusLine:
         return None
     finally:
         conn.close()
 
     if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
-        return data
+        return data.decode(charset)
     elif res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY:
         return getURLContent(res.getheader("Location"), timeout)
     else:

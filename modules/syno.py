@@ -52,7 +52,7 @@ def get_synos(word):
     page = web.getURLContent(url)
     if page is not None:
         synos = list()
-        for line in page.decode().split("\n"):
+        for line in page.split("\n"):
             if re.match("[ \t]*<tr[^>]*>.*</tr>[ \t]*</table>.*", line) is not None:
                 for elt in re.finditer(">&[^;]+;([^&]*)&[^;]+;<", line):
                     synos.append(elt.group(1))
