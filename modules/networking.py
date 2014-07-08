@@ -4,6 +4,7 @@ import datetime
 import http.client
 import json
 import socket
+import subprocess
 import urllib
 
 from tools import web
@@ -22,6 +23,7 @@ def load(context):
         add_hook("cmd_hook", Hook(cmd_whois, "netwhois"))
 
     add_hook("cmd_hook", Hook(cmd_w3c, "w3c"))
+    add_hook("cmd_hook", Hook(cmd_w3m, "w3m"))
     add_hook("cmd_hook", Hook(cmd_traceurl, "traceurl"))
     add_hook("cmd_hook", Hook(cmd_isup, "isup"))
     add_hook("cmd_hook", Hook(cmd_curl, "curl"))
@@ -33,6 +35,18 @@ def help_tiny ():
 
 def help_full ():
     return "!traceurl /url/: Follow redirections from /url/."
+
+def cmd_w3m(msg):
+    if len(msg.cmds) > 1:
+        args = ["w3m", "-T", "text/html", "-dump"]
+        args.append(msg.cmds[1])
+        res = Response(msg.sender, channel=msg.channel)
+        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            for line in proc.stdout.read().split(b"\n"):
+                res.append_message(line.decode())
+        return res
+    else:
+        raise IRCException("Veuillez indiquer une URL à visiter.")
 
 def cmd_curl(msg):
     if len(msg.cmds) > 1:
