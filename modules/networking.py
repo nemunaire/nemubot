@@ -27,6 +27,7 @@ def load(context):
     add_hook("cmd_hook", Hook(cmd_traceurl, "traceurl"))
     add_hook("cmd_hook", Hook(cmd_isup, "isup"))
     add_hook("cmd_hook", Hook(cmd_curl, "curl"))
+    add_hook("cmd_hook", Hook(cmd_curly, "curly"))
 
 
 def help_tiny ():
@@ -66,6 +67,36 @@ def cmd_curl(msg):
     else:
         return Response(msg.sender, "Veuillez indiquer une URL à visiter.",
                         channel=msg.channel)
+
+def cmd_curly(msg):
+    if len(msg.cmds) > 1:
+        url = msg.cmds[1]
+        o = urllib.parse.urlparse(url, "http")
+        if o.netloc == "":
+            raise IRCException("URL invalide")
+        if o.scheme == "http":
+            conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=5)
+        else:
+            conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=5)
+        try:
+            conn.request("HEAD", o.path, None, {"User-agent": "Nemubot v3"})
+        except socket.timeout:
+            raise IRCException("Délais d'attente dépassé")
+        except socket.gaierror:
+            print ("<tools.web> Unable to receive page %s from %s on %d."
+                   % (o.path, o.netloc, o.port))
+            raise IRCException("Une erreur innatendue est survenue")
+
+        try:
+            res = conn.getresponse()
+        except http.client.BadStatusLine:
+            raise IRCException("Une erreur est survenue")
+        finally:
+            conn.close()
+
+        return Response(msg.sender, "Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, res.version, res.status, res.reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in res.getheaders()])), channel=msg.channel)
+    else:
+        raise IRCException("Veuillez indiquer une URL à visiter.")
 
 def cmd_traceurl(msg):
     if 1 < len(msg.cmds) < 6:
