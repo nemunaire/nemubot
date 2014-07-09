@@ -1,13 +1,27 @@
-<nemubotconfig nick="nemubot" realname="nemubot speaker" owner="someone">
-  <server server="irc.freenode.org" port="6667" password="secret" autoconnect="true">
+<nemubotconfig nick="nemubot" realname="nemubot clone" owner="someone">
+
+  <server server="irc.rezosup.org" port="6667" autoconnect="true">
     <channel name="#nemutest" />
   </server>
-  <load path="modules/birthday.xml" />
-  <load path="modules/ycc.xml" />
-  <load path="modules/qcm.xml" />
-  <load path="modules/soutenance.xml" />
-  <load path="modules/velib.xml" />
-  <load path="modules/whereis.xml" />
-  <load path="modules/watchWebsite.xml" />
-  <load path="modules/events.xml" />
+
+  <!--
+  <server server="my_host.local" port="6667" password="secret" autoconnect="true" ip="10.69.42.23" ssl="on" allowall="true">
+    <channel name="#nemutest" />
+  </server>
+  -->
+
+  <load path="cmd_server" />
+
+  <load path="alias" />
+  <load path="birthday" />
+  <load path="ycc" />
+  <load path="velib" />
+  <load path="watchWebsite" />
+  <load path="events" />
+  <load path="sleepytime" />
+  <load path="spell" />
+  <load path="syno" />
+  <load path="man" />
+  <load path="reddit" />
+
 </nemubotconfig>

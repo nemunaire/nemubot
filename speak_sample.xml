@@ -1,12 +1,17 @@
-<config nick="nemubot" realname="nemubot speaker" owner="nemunaire">
+<config nick="nemubot" realname="nemubot speaker" owner="someone">
+
   <!-- Bitlbee/Minbif -->
-  <server server="nemunai.re" port="6666" password="bitlbee" />
+  <server server="nemunai.re" port="6666" password="bitlbee" allowall="true" />
 
   <!-- Rezosup -->
   <server server="nemunai.re" port="6667">
     <channel name="#epita" />
   </server>
 
+  <correction bad="ca" good="ça" />
+
+  <smiley txt=":p" mood="tire la langue" />
+  <smiley txt=":P" mood="tire la langue" />
   <smiley txt=":)" mood="sourit" />
   <smiley txt=":(" mood="est triste" />
   <smiley txt=";)" mood="fait un clin d'oeil" />
@@ -24,4 +29,5 @@
   <smiley txt="/o/" mood="danse" />
   <smiley txt="\\o\\" mood="danse" />
   <smiley txt="\\o/" mood="fait une accolade" />
+
 </config>
