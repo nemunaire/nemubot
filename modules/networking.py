@@ -287,6 +287,9 @@ def cmd_w3c(msg):
     res.append_message("%s: status: %s, %s warning(s), %s error(s)" % (validator["url"], headers["X-W3C-Validator-Status"], headers["X-W3C-Validator-Warnings"], headers["X-W3C-Validator-Errors"]))
 
     for m in validator["messages"]:
-        res.append_message("%s%s on line %s, col %s: %s" % (m["type"][0].upper(), m["type"][1:], m["lastLine"], m["lastColumn"], m["message"]))
+        if "lastLine" not in m:
+            res.append_message("%s%s: %s" % (m["type"][0].upper(), m["type"][1:], m["message"]))
+        else:
+            res.append_message("%s%s on line %s, col %s: %s" % (m["type"][0].upper(), m["type"][1:], m["lastLine"], m["lastColumn"], m["message"]))
 
     return res
