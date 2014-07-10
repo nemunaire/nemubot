@@ -55,7 +55,7 @@ def cmd_sms(msg):
     for u in msg.cmds[1].split(","):
         if u not in DATAS.index:
             raise IRCException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
-        elif cur_epoch - DATAS.index[u]["lastuse"] < 42:
+        elif cur_epoch - float(DATAS.index[u]["lastuse"]) < 42:
             raise IRCException("Un peu de calme, %s a déjà reçu un SMS il n'y a pas si longtemps." % u)
 
     # Go!
