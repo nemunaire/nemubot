@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from html.entities import name2codepoint
 import http.client
 import json
 import re
@@ -136,7 +137,12 @@ def getJSON(url, timeout=15):
 
 # Other utils
 
+def htmlentitydecode(s):
+    """Decode htmlentities"""
+    return re.sub('&(%s);' % '|'.join(name2codepoint),
+                  lambda m: chr(name2codepoint[m.group(1)]), s)
+
 def striphtml(data):
     """Remove HTML tags from text"""
     p = re.compile(r'<.*?>')
-    return p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\"")
+    return htmlentitydecode(p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\""))
