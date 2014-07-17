@@ -37,7 +37,7 @@ class Bot:
     def __init__(self, ip, realname, mp=list()):
         # Bot general informations
         self.version     = 3.3
-        self.version_txt = "3.3-dev"
+        self.version_txt = "3.3"
 
         # Save various informations
         self.ip = ip

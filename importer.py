@@ -167,8 +167,6 @@ class ModuleLoader(SourceLoader):
             module.DATAS = None
             module.save = lambda: False
         module.CONF = self.config
-        module.has_access = lambda msg: mod_has_access(module,
-                                                       module.CONF, msg)
 
         module.ModuleEvent = event.ModuleEvent
         module.ModuleState = xmlparser.module_state.ModuleState
@@ -248,16 +246,6 @@ def mod_print_dbg(mod, msg):
 def mod_save(mod, datas_path):
     mod.DATAS.save(datas_path + "/" + mod.name + ".xml")
     mod.print_debug("Saving!")
-
-def mod_has_access(mod, config, msg):
-    if config is not None and config.hasNode("channel"):
-        for chan in config.getNodes("channel"):
-            if (chan["server"] is None or chan["server"] == msg.srv.id) and (
-                chan["channel"] is None or chan["channel"] == msg.channel):
-                return True
-        return False
-    else:
-        return True
 
 def mod_send_response(context, server, res):
     if server in context.servers:

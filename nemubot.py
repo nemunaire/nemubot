@@ -35,7 +35,6 @@ if __name__ == "__main__":
     prmpt = prompt.Prompt()
 
     # Register the hook for futur import
-    import sys
     sys.meta_path.append(importer.ModuleFinder(context, prmpt))
 
     #Add modules dir path
