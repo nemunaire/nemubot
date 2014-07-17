@@ -73,4 +73,7 @@ if __name__ == "__main__":
                                                               exc_value)[0])
 
     print ("\nWaiting for other threads shuts down...")
+
+    # Indeed, the server socket is waiting for receiving some data
+
     sys.exit(0)
