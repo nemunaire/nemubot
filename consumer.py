@@ -136,8 +136,10 @@ class Consumer(threading.Thread):
             while not self.stop:
                 stm = self.context.cnsr_queue.get(True, 20)
                 stm.run(self.context)
+                self.context.cnsr_queue.task_done()
 
         except queue.Empty:
             pass
         finally:
             self.context.cnsr_thrd_size -= 2
+            self.context.cnsr_thrd.remove(self)

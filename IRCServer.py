@@ -258,15 +258,15 @@ class IRCServer(server.Server):
             print ("\033[1;35mWarning:\033[0m Nemubot talks to himself: %s" % msg)
             traceback.print_stack()
         if line is not None and channel is not None:
-                    if self.s is None:
-                        print ("\033[1;35mWarning:\033[0m Attempt to send message on a non connected server: %s: %s" % (self.id, line))
-                        traceback.print_stack()
-                    elif len(line) < 442:
-                        self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
-                    else:
-                        print ("\033[1;35mWarning:\033[0m Message truncated due to size (%d ; max : 442) : %s" % (len(line), line))
-                        traceback.print_stack()
-                        self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"...", endl)).encode ())
+            if self.s is None:
+                print ("\033[1;35mWarning:\033[0m Attempt to send message on a non connected server: %s: %s" % (self.id, line))
+                traceback.print_stack()
+            elif len(line) < 442:
+                self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+            else:
+                print ("\033[1;35mWarning:\033[0m Message truncated due to size (%d ; max : 442) : %s" % (len(line), line))
+                traceback.print_stack()
+                self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"<…>", endl)).encode ())
 
     def send_msg_usr(self, user, msg):
         """Send a message to a user instead of a channel"""
