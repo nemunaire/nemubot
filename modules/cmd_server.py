@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import traceback
+import sys
+
 from networkbot import NetworkBot
 
 nemubotversion = 3.3
@@ -199,3 +202,16 @@ def zap(data, toks, context, prompt):
         prompt.selectedServer.connected = not prompt.selectedServer.connected
     else:
         print ("  Please SELECT a server or give its name in argument.")
+
+def top(data, toks, context, prompt):
+    """Display consumers load information"""
+    print("Queue size: %d, %d thread(s) running (counter: %d)" % (context.cnsr_queue.qsize(), len(context.cnsr_thrd), context.cnsr_thrd_size))
+    if len(context.events) > 0:
+        print("Events registered: %d, next in %d seconds" % (len(context.events), context.events[0].time_left.seconds))
+    else:
+        print("No events registered")
+
+    for th in context.cnsr_thrd:
+        if th.is_alive():
+            print("################ Stack trace for thread %u ################" % th.ident)
+            traceback.print_stack(sys._current_frames()[th.ident])
