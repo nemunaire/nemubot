@@ -16,7 +16,7 @@ def load(context):
     add_hook("cmd_hook", Hook(cmd_worldcup, "worldcup"))
 
     from event import ModuleEvent
-    add_event(ModuleEvent(func=lambda url: urlopen(url).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, intervalle=30))
+    add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, intervalle=30))
 
 
 def help_tiny ():
