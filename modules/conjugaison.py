@@ -54,8 +54,16 @@ def cmd_conjug(msg):
       return Response(msg.sender,
                       "Demande incorrecte.\n %s" % help_full(),
                       msg.channel)
+
     tens = msg.cmds[1]
-    verb = msg.cmds[2]
+
+    for i in range(2, len(msg.cmds) - 1):
+      tens += " " + msg.cmds[i]
+
+    print_debug(tens)
+
+    verb = msg.cmds[len(msg.cmds) - 1]
+
     try:
          conjug = get_conjug(verb, tens)
     except:
