@@ -11,17 +11,6 @@ from collections import defaultdict
 
 nemubotversion = 3.3
 
-dic = {'pr' : '0',
-       'ps' : '12',
-       'pa' : '112',
-       'pc' : '100',
-       'f'  : '18',
-       'fa' : '118',
-       'spr' : '24',
-       'spa' : '124',
-       'ii' : '6',
-       'pqp' : '106'}
-
 s = [('present', '0'), ('présent', '0'), ('pr', '0'),
      ('passé simple', '12'), ('passe simple', '12'), ('ps', '12'),
      ('passé antérieur', '112'), ('passe anterieur', '112'), ('pa', '112'),
