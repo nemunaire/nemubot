@@ -12,4 +12,5 @@
   <command name="send" call="send" />
   <command name="zap" call="zap" />
   <command name="top" call="top" />
+  <command name="netstat" call="netstat" />
 </nemubotmodule>

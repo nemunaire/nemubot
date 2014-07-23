@@ -215,3 +215,24 @@ def top(data, toks, context, prompt):
         if th.is_alive():
             print("################ Stack trace for thread %u ################" % th.ident)
             traceback.print_stack(sys._current_frames()[th.ident])
+
+def netstat(data, toks, context, prompt):
+    """Display sockets in use and many other things"""
+    if len(context.network) > 0:
+        print("Distant bots connected: %d:" % len(context.network))
+        for name, bot in context.network.items():
+            print("# %s:" % name)
+            print("  * Declared hooks:")
+            lvl = 0
+            for hlvl in bot.hooks:
+                lvl += 1
+                for hook in hlvl.all_pre + hlvl.all_post + hlvl.cmd_rgxp + hlvl.cmd_default + hlvl.ask_rgxp + hlvl.ask_default + hlvl.msg_rgxp + hlvl.msg_default:
+                    print("  %s- %s" % (' ' * lvl * 2, hook))
+                for kind in [ "irc_hook", "cmd_hook", "ask_hook", "msg_hook" ]:
+                    print("  %s- <%s> %s" % (' ' * lvl * 2, kind, ", ".join(hlvl.__dict__[kind].keys())))
+            print("  * My tag: %d" % bot.my_tag)
+            print("  * Tags in use (%d):" % bot.inc_tag)
+            for tag, (cmd, data) in bot.tags.items():
+                print("    - %11s: %s « %s »" % (tag, cmd, data))
+    else:
+        print("No distant bot connected")
