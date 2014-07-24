@@ -23,5 +23,6 @@
   <load path="syno" />
   <load path="man" />
   <load path="reddit" />
+  <load path="sap" />
 
 </nemubotconfig>
