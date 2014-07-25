@@ -32,18 +32,11 @@ def load(context):
             print("No alert defined for this site: " + site["url"])
             #DATAS.delChild(site)
 
-def unload(context):
-    """Unregister watched website"""
-    # Useless in 3.3?
-#    for site in DATAS.getNodes("watch"):
-#        context.del_event(site["evt_id"])
-    pass
-
 def getPageContent(url):
     """Returns the content of the given url"""
     print_debug("Get page %s" % url)
     try:
-        raw = urlopen(url, timeout=15)
+        raw = urlopen(url, timeout=10)
         return raw.read().decode()
     except:
         return None
@@ -60,8 +53,7 @@ def start_watching(site):
 
 def del_site(msg):
     if len(msg.cmds) <= 1:
-        return Response(msg.sender, "quel site dois-je arrêter de surveiller ?",
-                        msg.channel, msg.nick)
+        raise IRCException("quel site dois-je arrêter de surveiller ?")
 
     url = msg.cmds[1]
 
@@ -71,53 +63,44 @@ def del_site(msg):
         for a in site.getNodes("alert"):
             if a["channel"] == msg.channel:
                 if (msg.sender == a["sender"] or msg.is_owner):
-                    site.delChild(a)
-                    if not site.hasNode("alert"):
-                        del_event(site["_evt_id"])
-                        DATAS.delChild(site)
-                    save()
-                    return Response(msg.sender,
-                                   "je ne surveille désormais plus cette URL.",
-                                   channel=msg.channel, nick=msg.nick)
-                else:
-                  return Response(msg.sender,
-                                  "Vous ne pouvez pas supprimer cette URL.",
-                                  channel=msg.channel, nick=msg.nick)
-        return Response(msg.sender,
-                        "je ne surveillais pas cette URL, impossible de la supprimer.",
-                        channel=msg.channel, nick=msg.nick)
-    return Response(msg.sender, "je ne surveillais pas cette URL pour vous.",
-                    channel=msg.channel, nick=msg.nick)
+                    raise IRCException("vous ne pouvez pas supprimer cette URL.")
+                site.delChild(a)
+                if not site.hasNode("alert"):
+                    del_event(site["_evt_id"])
+                    DATAS.delChild(site)
+                save()
+                return Response(msg.sender,
+                                "je ne surveille désormais plus cette URL.",
+                                channel=msg.channel, nick=msg.nick)
+    raise IRCException("je ne surveillais pas cette URL !")
 
 def add_site(msg, diffType="diff"):
     print (diffType)
     if len(msg.cmds) <= 1:
-        return Response(msg.sender, "quel site dois-je surveiller ?",
-                        msg.channel, msg.nick)
+        raise IRCException("quel site dois-je surveiller ?")
 
     url = msg.cmds[1]
 
     o = urlparse(url, "http")
-    if o.netloc != "":
-        alert = ModuleState("alert")
-        alert["sender"] = msg.sender
-        alert["server"] = msg.server
-        alert["channel"] = msg.channel
-        alert["message"] = "%s a changé !" % url
+    if o.netloc == "":
+        raise IRCException("je ne peux pas surveiller cette URL")
 
-        if url not in DATAS.index:
-            watch = ModuleState("watch")
-            watch["type"] = diffType
-            watch["url"] = url
-            watch["time"] = 123
-            DATAS.addChild(watch)
-            watch.addChild(alert)
-            start_watching(watch)
-        else:
-            DATAS.index[url].addChild(alert)
+    alert = ModuleState("alert")
+    alert["sender"] = msg.sender
+    alert["server"] = msg.server
+    alert["channel"] = msg.channel
+    alert["message"] = "%s a changé !" % url
+
+    if url not in DATAS.index:
+        watch = ModuleState("watch")
+        watch["type"] = diffType
+        watch["url"] = url
+        watch["time"] = 123
+        DATAS.addChild(watch)
+        watch.addChild(alert)
+        start_watching(watch)
     else:
-        return Response(msg.sender, "je ne peux pas surveiller cette URL",
-                        channel=msg.channel, nick=msg.nick)
+        DATAS.index[url].addChild(alert)
 
     save()
     return Response(msg.sender, channel=msg.channel, nick=msg.nick,

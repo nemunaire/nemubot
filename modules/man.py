@@ -13,7 +13,7 @@ def load(context):
 
 def help_tiny ():
     """Line inserted in the response to the command !help"""
-    return "Read man on IRC"
+    return "Read manual pages on IRC"
 
 def help_full ():
     return "!man [0-9] /what/: gives informations about /what/."

@@ -37,7 +37,7 @@ def cmd_sleep(msg):
             g.append(f[i+1].strftime("%H:%M"))
         return Response(msg.sender,
                         "You should try to fall asleep at one of the following"
-                        " times: %s" % ', '.join(g), msg.channel)
+                        " times: %s" % ', '.join(g), channel=msg.channel)
 
     # Just get awake times
     else:
@@ -49,4 +49,4 @@ def cmd_sleep(msg):
         return Response(msg.sender,
                         "If you head to bed right now, you should try to wake"
                         " up at one of the following times: %s" %
-                        ', '.join(g), msg.channel)
+                        ', '.join(g), channel=msg.channel)

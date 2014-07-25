@@ -26,7 +26,7 @@ def load(context):
 
 def cmd_spell(msg):
     if len(msg.cmds) < 2:
-        return Response(msg.sender, "indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.", msg.channel, msg.nick)
+        raise IRCException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
 
     lang = "fr"
     strRes = list()
