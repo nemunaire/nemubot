@@ -6,10 +6,10 @@ import json
 nemubotversion = 3.3
 
 def help_tiny ():
-  return "Find info about a movie"
+  return "Show many information about a movie or serie"
 
 def help_full ():
-  return "!imdb <film>"
+  return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"
 
 def load(context):
     from hooks import Hook
@@ -18,59 +18,51 @@ def load(context):
 
 
 def cmd_imdb(msg):
-    if (len(msg.cmds) < 2):
-        return Response(msg.sender,
-                        "Demande incorrecte.\n %s" % help_full(),
-                        msg.channel)
+    if len(msg.cmds) < 2:
+        raise IRCException("precise a movie/serie title!")
 
-    movie_name = msg.cmds[1]
-
-    for x in range(2, len(msg.cmds)):
-      movie_name += urllib.parse.quote(' ') + urllib.parse.quote(msg.cmds[x])    
-
-    url = "http://www.omdbapi.com/?t=" + movie_name
+    url = "http://www.omdbapi.com/?t=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
     print_debug(url)
+
     response = urllib.request.urlopen(url)
-
     data = json.loads(response.read().decode())
-    string = "\x02IMDB Rating\x0F: " + data['imdbRating'] + "\n\x02Plot\x0F: " + data['Plot']
 
-    res =  Response(msg.sender,
-                    string,
-                    msg.channel)
-    res.append_message("\x02Released\x0F: " + data['Released']
-                       + " \x02Type\x0F: " + data['Type']
-                       + " \x02Genre\x0F: " + data['Genre']
-                       + " \x02Director\x0F: " + data['Director']
-                       + " \x02Writer\x0F: " + data['Writer']
-                       + " \x02Actors\x0F: " + data['Actors']
-                       + " \x02Country\x0F: " + data['Country'])
+    if "Error" in data:
+        raise IRCException(data["Error"])
 
-    return res
-                   
+    elif "Response" in data and data["Response"] == "True":
+        res =  Response(msg.sender, channel=msg.channel,
+                        title="%s (%s)" % (data['Title'], data['Year']),
+                        nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
+
+        res.append_message("\x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
+                           (data['imdbRating'], data['imdbVotes'], data['Plot']))
+
+        res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02genre:\x0F %s; \x02directed by:\x0F %s; \x02writed by:\x0F %s; \x02main actors:\x0F %s"
+                           % (data['Type'], data['Country'], data['Released'], data['Genre'], data['Director'], data['Writer'], data['Actors']))
+        return res
+
+    else:
+        raise IRCException("An error occurs during movie search")
+
+
 def cmd_search(msg):
+    url = "http://www.omdbapi.com/?s=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
+    print_debug(url)
 
-  movie_name = msg.cmds[1]
+    raw = urllib.request.urlopen(url)
+    data = json.loads(raw.read().decode())
 
-  for x in range(2, len(msg.cmds)):
-    movie_name += urllib.parse.quote(' ') + urllib.parse.quote(msg.cmds[x])    
+    if "Error" in data:
+        raise IRCException(data["Error"])
 
-  url = "http://www.omdbapi.com/?s=" + movie_name
-  print_debug(url)
+    elif "Search" in data:
+        movies = list()
 
-  raw = urllib.request.urlopen(url)
-  data = json.loads(raw.read().decode())
+        for m in data['Search']:
+            movies.append("\x02%s\x0F (%s of %s)" % (m['Title'], m['Type'], m['Year']))
 
-  search = data['Search']
+        return Response(msg.sender, movies, title="Titles found", channel=msg.channel)
 
-  movie_list = ""
-
-  for i in range(0, len(search)):
-    movie_list += "\x02Title\x0F: " + search[i]['Title']
-    movie_list += " \x02Year\x0F: " + search[i]['Year']
-    movie_list += " \x02Type\x0F:" + search[i]['Type']
-    movie_list += " |--| "
-                     
-  res = Response(msg.sender, movie_list, msg.channel)
-  return res
-
+    else:
+        raise IRCException("An error occurs during movie search")

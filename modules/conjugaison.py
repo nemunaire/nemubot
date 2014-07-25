@@ -40,63 +40,42 @@ def load(context):
 
 def cmd_conjug(msg):
     if len(msg.cmds) < 3:
-      return Response(msg.sender,
-                      "Demande incorrecte.\n %s" % help_full(),
-                      msg.channel)
+        raise IRCException("donne moi un temps et un verbe, et je te donnerai sa conjugaison!")
 
-    tens = msg.cmds[1]
-
-    for i in range(2, len(msg.cmds) - 1):
-      tens += " " + msg.cmds[i]
-
+    tens = ' '.join(msg.cmds[1:-1])
     print_debug(tens)
 
-    verb = msg.cmds[len(msg.cmds) - 1]
+    verb = msg.cmds[-1]
 
-    try:
-         conjug = get_conjug(verb, tens)
-    except:
-         conjug = None
-         exc_type, exc_value, exc_traceback = sys.exc_info()
-         traceback.print_exception(exc_type, exc_value,
-                                   exc_traceback)
+    conjug = get_conjug(verb, tens)
 
-    if conjug is None:
-          return Response(msg.sender,
-                          "Une erreur s'est produite durant la recherche"
-                          " du verbe %s" % verb, msg.channel)
-    elif len(conjug) > 0:
-          return Response(msg.sender, conjug, msg.channel,
+    if len(conjug) > 0:
+          return Response(msg.sender, conjug, channel=msg.channel,
                           title="Conjugaison de %s" % verb)
     else:
-          return Response(msg.sender,
-                          "Aucune conjugaison de %s n'a été trouvé" % verb,
-                          msg.channel)
-    return False
+        raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)
 
 
 def get_conjug(verb, stringTens):
-    url = "http://leconjugueur.lefigaro.fr/conjugaison/verbe/" + quote(verb.encode("ISO-8859-1")) + ".html"
+    url = ("http://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
+           quote(verb.encode("ISO-8859-1")))
     print_debug (url)
     page = web.getURLContent(url)
+
     if page is not None:
         for line in page.split("\n"):
             if re.search('<div class="modeBloc">', line) is not None:
               return compute_line(line, stringTens)
-    else:
-        return None
+    return list()
 
 def compute_line(line, stringTens):
-  res = list()
   try:
-    idTemps = d[stringTens]
+      idTemps = d[stringTens]
   except:
-    res.append("Le temps demandé n'existe pas")
-    return res
+      raise IRCException("le temps demandé n'existe pas")
 
   if len(idTemps) == 0:
-    res.append("Le temps demandé n'existe pas")
-    return res
+      raise IRCException("le temps demandé n'existe pas")
 
   index = line.index('<div id="temps' + idTemps[0] + '\"')
   endIndex = line[index:].index('<div class=\"conjugBloc\"')
@@ -104,8 +83,7 @@ def compute_line(line, stringTens):
   endIndex += index
   newLine = line[index:endIndex]
 
+  res = list()
   for elt in re.finditer("[p|/]>([^/]*/b>)", newLine):
-    res.append(striphtml(elt.group(1)))
-
+      res.append(striphtml(elt.group(1).replace("<b>", "\x02").replace("</b>", "\x0F")))
   return res
-
