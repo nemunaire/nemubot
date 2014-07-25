@@ -42,8 +42,10 @@ def cmd_translate(msg):
     if len(msg.cmds) < 2:
         raise IRCException("which word would you translate?")
 
-    if len(msg.cmds) > 3 and msg.cmds[1] == "en" and msg.cmds[2] in LANG:
-        langFrom = "en"
+    if len(msg.cmds) > 3 and msg.cmds[1] in LANG and msg.cmds[2] in LANG:
+        if msg.cmds[1] != "en" and msg.cmds[2] != "en":
+            raise IRCException("sorry, I can only translate to or from english")
+        langFrom = msg.cmds[1]
         langTo = msg.cmds[2]
         term = ' '.join(msg.cmds[3:])
     elif len(msg.cmds) > 2 and msg.cmds[1] in LANG:
