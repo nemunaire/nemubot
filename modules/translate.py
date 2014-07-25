@@ -5,6 +5,7 @@ import re
 import socket
 import json
 from urllib.parse import quote
+from urllib.request import urlopen
 
 nemubotversion = 3.3
 
@@ -12,86 +13,91 @@ import xmlparser
 
 LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
         "ja", "ko", "pl", "pt", "ro", "es", "tr"]
+URL = "http://api.wordreference.com/0.8/%s/json/%%s%%s/%%s"
 
 def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_translate, "translate"))
-    add_hook("cmd_hook", Hook(cmd_translate, "traduction"))
-    add_hook("cmd_hook", Hook(cmd_translate, "traduit"))
-    add_hook("cmd_hook", Hook(cmd_translate, "traduire"))
-
-
-def cmd_translate(msg):
-    global LANG
-    startWord = 1
-    if msg.cmds[startWord] in LANG:
-        langTo = msg.cmds[startWord]
-        startWord += 1
-    else:
-        langTo = "fr"
-    if msg.cmds[startWord] in LANG:
-        langFrom = langTo
-        langTo = msg.cmds[startWord]
-        startWord += 1
-    else:
-        if langTo == "en":
-            langFrom = "fr"
-        else:
-            langFrom = "en"
-
-    (res, page) = getPage(' '.join(msg.cmds[startWord:]), langFrom, langTo)
-    if res == http.client.OK:
-        wres = json.loads(page.decode())
-        if "Error" in wres:
-            return Response(msg.sender, wres["Note"], msg.channel)
-        else:
-            start = "Traduction de %s : "%' '.join(msg.cmds[startWord:])
-            if "Entries" in wres["term0"]:
-                if "SecondTranslation" in wres["term0"]["Entries"]["0"]:
-                    return Response(msg.sender, start +
-                                    wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"] +
-                                    " ; " +
-                                    wres["term0"]["Entries"]["0"]["SecondTranslation"]["term"],
-                                    msg.channel)
-                else:
-                    return Response(msg.sender, start +
-                                    wres["term0"]["Entries"]["0"]["FirstTranslation"]["term"],
-                                    msg.channel)
-            elif "PrincipalTranslations" in wres["term0"]:
-                if "1" in wres["term0"]["PrincipalTranslations"]:
-                    return Response(msg.sender, start +
-                                    wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"] +
-                                    " ; " +
-                                    wres["term0"]["PrincipalTranslations"]["1"]["FirstTranslation"]["term"],
-                                    msg.channel)
-                else:
-                    return Response(msg.sender, start +
-                                    wres["term0"]["PrincipalTranslations"]["0"]["FirstTranslation"]["term"],
-                                    msg.channel)
-            else:
-                return Response(msg.sender, "Une erreur s'est produite durant la recherche"
-                                " d'une traduction de %s"
-                                % ' '.join(msg.cmds[startWord:]),
-                                msg.channel)
-
-
-def getPage(terms, langfrom="fr", langto="en"):
-    conn = http.client.HTTPConnection("api.wordreference.com", timeout=5)
-    try:
-        conn.request("GET", "/0.8/%s/json/%s%s/%s" % (
-                CONF.getNode("wrapi")["key"], langfrom, langto, quote(terms)))
-    except socket.gaierror:
-        print ("impossible de récupérer la page WordReference.")
-        return (http.client.INTERNAL_SERVER_ERROR, None)
-    except (TypeError, KeyError):
+    global URL
+    if not CONF or not CONF.hasNode("wrapi") or not CONF.getNode("wrapi").hasAttribute("key"):
         print ("You need a WordReference API key in order to use this module."
                " Add it to the module configuration file:\n<wrapi key=\"XXXXX\""
                " />\nRegister at "
                "http://www.wordreference.com/docs/APIregistration.aspx")
-        return (http.client.INTERNAL_SERVER_ERROR, None)
+        return None
+    else:
+        URL = URL % CONF.getNode("wrapi")["key"]
 
-    res = conn.getresponse()
-    data = res.read()
+    from hooks import Hook
+    add_hook("cmd_hook", Hook(cmd_translate, "translate"))
 
-    conn.close()
-    return (res.status, data)
+
+def help_tiny():
+    """Line inserted in the response to the command !help"""
+    return "Translation module"
+
+def help_full():
+    return "!translate [lang] <term>[ <term>[...]]: Found translation of <term> from/to english to/from <lang>. Data © WordReference.com"
+
+
+def cmd_translate(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("which word would you translate?")
+
+    if len(msg.cmds) > 3 and msg.cmds[1] == "en" and msg.cmds[2] in LANG:
+        langFrom = "en"
+        langTo = msg.cmds[2]
+        term = ' '.join(msg.cmds[3:])
+    elif len(msg.cmds) > 2 and msg.cmds[1] in LANG:
+        langFrom = msg.cmds[1]
+        if langFrom == "en":
+            langTo = "fr"
+        else:
+            langTo = "en"
+        term = ' '.join(msg.cmds[2:])
+    else:
+        langFrom = "en"
+        langTo = "fr"
+        term = ' '.join(msg.cmds[1:])
+
+    try:
+        raw = urlopen(URL % (langFrom, langTo, quote(term)))
+    except:
+        raise IRCException("invalid request")
+    wres = json.loads(raw.read().decode())
+
+    if "Error" in wres:
+        raise IRCException(wres["Note"])
+
+    else:
+        res = Response(msg.sender, channel=msg.channel,
+                       nomore="No more translation")
+        for k, t in wres.items():
+            if len(k) > 4 and k[:4] == "term":
+                if "Entries" in t:
+                    ent = t["Entries"]
+                else:
+                    ent = t["PrincipalTranslations"]
+
+                for i in ent:
+                    res.append_message("Translation of %s%s: %s" % (
+                        ent[i]["OriginalTerm"]["term"],
+                        meaning(ent[i]["OriginalTerm"]),
+                        extract_traslation(ent[i])))
+        return res
+
+def meaning(entry):
+    ret = list()
+    if "sense" in entry and len(entry["sense"]) > 0:
+        ret.append('« %s »' % entry["sense"])
+    if "usage" in entry and len(entry["usage"]) > 0:
+        ret.append(entry["usage"])
+    if len(ret) > 0:
+        return " as " + "/".join(ret)
+    else:
+        return ""
+
+def extract_traslation(entry):
+    ret = list()
+    for i in [ "FirstTranslation", "SecondTranslation", "ThirdTranslation", "FourthTranslation" ]:
+        if i in entry:
+            ret.append("\x03\x02%s\x03\x02%s" % (entry[i]["term"], meaning(entry[i])))
+    return ", ".join(ret)
