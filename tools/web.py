@@ -114,7 +114,7 @@ def getURLContent(url, timeout=15):
 
     if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
         return data.decode(charset)
-    elif res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY:
+    elif (res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY) and res.getheader("Location") != url:
         return getURLContent(res.getheader("Location"), timeout)
     else:
         return None
