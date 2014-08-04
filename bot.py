@@ -415,11 +415,11 @@ class Bot:
             return self.treat_prvmsg_ask(msg, srv)
 
         # Owner commands
-        elif msg.content[0] == '`' and msg.nick == srv.owner:
+        elif len(msg.content) > 0 and msg.content[0] == '`' and msg.nick == srv.owner:
             #TODO: owner commands
             pass
 
-        elif msg.content[0] == '!' and len(msg.content) > 1:
+        elif len(msg.content) > 0 and msg.content[0] == '!' and len(msg.content) > 1:
             # Remove the !
             msg.cmds[0] = msg.cmds[0][1:]
 
