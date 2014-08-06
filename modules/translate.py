@@ -71,6 +71,7 @@ def cmd_translate(msg):
 
     else:
         res = Response(msg.sender, channel=msg.channel,
+                       count=" (%d more meanings)",
                        nomore="No more translation")
         for k, t in wres.items():
             if len(k) > 4 and k[:4] == "term":
