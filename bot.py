@@ -354,6 +354,13 @@ class Bot:
 
     def treat_pre(self, msg, srv):
         """Treat a message before all other treatment"""
+        # Treat all messages starting with 'nemubot:' as distinct commands
+        if msg.cmd == "PRIVMSG" and msg.content.find("%s:"%srv.nick) == 0:
+            # Remove the bot name
+            msg.content = msg.content[len(srv.nick)+1:].strip()
+            msg.parse_content()
+            msg.private = True
+
         for h, lvl, store, bot in self.create_cache("all_pre"):
             if h.is_matching(None, server=srv):
                 h.run(msg, self.create_cache)
@@ -407,19 +414,12 @@ class Bot:
             else:
                 return _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
-        # Treat all messages starting with 'nemubot:' as distinct commands
-        elif msg.content.find("%s:"%srv.nick) == 0:
-            # Remove the bot name
-            msg.content = msg.content[len(srv.nick)+1:].strip()
-
-            return self.treat_prvmsg_ask(msg, srv)
-
         # Owner commands
-        elif len(msg.content) > 0 and msg.content[0] == '`' and msg.nick == srv.owner:
+        if len(msg.content) > 1 and msg.content[0] == '`' and msg.nick == srv.owner:
             #TODO: owner commands
             pass
 
-        elif len(msg.content) > 0 and msg.content[0] == '!' and len(msg.content) > 1:
+        elif len(msg.content) > 1 and msg.content[0] == '!':
             # Remove the !
             msg.cmds[0] = msg.cmds[0][1:]
 
@@ -450,8 +450,9 @@ class Bot:
 
         else:
             res = self.treat_answer(msg, srv)
+
             # Assume the message starts with nemubot:
-            if (res is None or len(res) <= 0) and msg.private:
+            if not res and msg.private:
                 return self.treat_prvmsg_ask(msg, srv)
             return res
 

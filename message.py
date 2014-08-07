@@ -41,7 +41,7 @@ def save():
 
 
 class Message:
-  def __init__ (self, line, timestamp, private = False):
+  def __init__ (self, line, timestamp, private=False):
     self.raw = line
     self.time = timestamp
     self.channel = None

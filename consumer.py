@@ -87,6 +87,7 @@ class MessageConsumer:
             msg.server = self.srv.id
             if msg.cmd == "PRIVMSG":
                 msg.is_owner = (msg.nick == self.srv.owner)
+                msg.private = msg.private or msg.channel == self.srv.nick
             res = self.treat_in(context, msg)
         except:
             print ("\033[1;31mERROR:\033[0m occurred during the "
