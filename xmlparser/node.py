@@ -110,7 +110,10 @@ class ModuleState:
 
   def __contains__(self, i):
     """Return true if i is found in the index"""
-    return i in self.index
+    if self.index:
+      return i in self.index
+    else:
+      return self.hasAttribute(i)
 
   def hasAttribute(self, name):
     """DOM like method"""
