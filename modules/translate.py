@@ -73,14 +73,15 @@ def cmd_translate(msg):
         res = Response(msg.sender, channel=msg.channel,
                        count=" (%d more meanings)",
                        nomore="No more translation")
-        for k, t in wres.items():
+        for k in sorted(wres.keys()):
+            t = wres[k]
             if len(k) > 4 and k[:4] == "term":
                 if "Entries" in t:
                     ent = t["Entries"]
                 else:
                     ent = t["PrincipalTranslations"]
 
-                for i in ent:
+                for i in sorted(ent.keys()):
                     res.append_message("Translation of %s%s: %s" % (
                         ent[i]["OriginalTerm"]["term"],
                         meaning(ent[i]["OriginalTerm"]),
@@ -103,4 +104,6 @@ def extract_traslation(entry):
     for i in [ "FirstTranslation", "SecondTranslation", "ThirdTranslation", "FourthTranslation" ]:
         if i in entry:
             ret.append("\x03\x02%s\x03\x02%s" % (entry[i]["term"], meaning(entry[i])))
+    if "Note" in entry and entry["Note"]:
+        ret.append("note: %s" % entry["Note"])
     return ", ".join(ret)
