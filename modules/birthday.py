@@ -10,16 +10,20 @@ from xmlparser.node import ModuleState
 nemubotversion = 3.3
 
 def load(context):
+    from hooks import Hook
+    add_hook("cmd_hook", Hook(cmd_anniv, "anniv"))
+    add_hook("cmd_hook", Hook(cmd_age, "age"))
+
     global DATAS
     DATAS.setIndex("name", "birthday")
 
 
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "People birthdays and ages"
 
 
-def help_full ():
+def help_full():
     return "!anniv /who/: gives the remaining time before the anniversary of /who/\n!age /who/: gives the age of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
 
 
@@ -83,8 +87,7 @@ def cmd_age(msg):
     return True
 
 def parseask(msg):
-    msgl = msg.content.lower ()
-    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl) is not None:
+    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl, re.I) is not None:
         try:
             extDate = msg.extractDate()
             if extDate is None or extDate.year > datetime.now().year:
@@ -107,5 +110,4 @@ def parseask(msg):
                                 msg.channel,
                                 msg.nick)
         except:
-            return Response(msg.sender, "ta date de naissance ne paraît pas valide...",
-                            msg.channel, msg.nick)
+            raise IRCException("ta date de naissance ne paraît pas valide.")

@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<nemubotmodule name="birthday">
-  <message type="cmd" name="anniv" call="cmd_anniv" />
-  <message type="cmd" name="age" call="cmd_age" />
-</nemubotmodule>
