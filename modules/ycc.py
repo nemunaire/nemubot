@@ -5,19 +5,16 @@ from urllib.parse import urlparse
 from urllib.parse import quote
 from urllib.request import urlopen
 
+from hooks import hook
+
 nemubotversion = 3.3
 
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "Gets YCC urls"
 
-def help_full ():
+def help_full():
     return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."
-
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_ycc, "ycc"))
-    add_hook("all_post", Hook(parseresponse))
 
 LAST_URLS = dict()
 
@@ -29,6 +26,7 @@ def gen_response(res, msg, srv):
     else:
         raise IRCException("mauvaise URL : %s" % srv)
 
+@hook("cmd_hook", "ycc", help="!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel.")
 def cmd_ycc(msg):
     if len(msg.cmds) == 1:
         global LAST_URLS
@@ -71,6 +69,7 @@ def parselisten(msg):
         pass
     return False
 
+@hook("all_post")
 def parseresponse(res):
     parselisten(res)
     return True

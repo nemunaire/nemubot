@@ -3,27 +3,24 @@
 import re
 from urllib.parse import quote
 
+from hooks import hook
+
 from .pyaspell import Aspell
 from .pyaspell import AspellError
 
 nemubotversion = 3.3
 
-def help_tiny ():
+def help_tiny():
   return "Check words spelling"
 
-def help_full ():
+def help_full():
   return "!spell [<lang>] <word>: give the correct spelling of <word> in <lang=fr>."
 
 def load(context):
     global DATAS
     DATAS.setIndex("name", "score")
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_spell, "spell"))
-    add_hook("cmd_hook", Hook(cmd_spell, "orthographe"))
-    add_hook("cmd_hook", Hook(cmd_score, "spellscore"))
-
-
+@hook("cmd_hook", "spell")
 def cmd_spell(msg):
     if len(msg.cmds) < 2:
         raise IRCException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
@@ -62,6 +59,7 @@ def add_score(nick, t):
         DATAS.index[nick][t] = 1
     save()
 
+@hook("cmd_hook", "spellscore")
 def cmd_score(msg):
     global DATAS
     res = list()

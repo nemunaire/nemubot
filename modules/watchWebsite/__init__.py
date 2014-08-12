@@ -11,6 +11,8 @@ import urllib.parse
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from hooks import hook
+
 from .atom import Atom
 
 nemubotversion = 3.3
@@ -24,11 +26,6 @@ def help_full ():
 
 def load(context):
     """Register watched website"""
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(add_site, "watch", data="diff"))
-    add_hook("cmd_hook", Hook(add_site, "updown", data="updown"))
-    add_hook("cmd_hook", Hook(del_site, "unwatch"))
-
     DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
         if site.hasNode("alert"):
@@ -56,6 +53,7 @@ def start_watching(site):
     site["_evt_id"] = add_event(evt)
 
 
+@hook("cmd_hook", "unwatch")
 def del_site(msg):
     if len(msg.cmds) <= 1:
         raise IRCException("quel site dois-je arrêter de surveiller ?")
@@ -79,6 +77,9 @@ def del_site(msg):
                                 channel=msg.channel, nick=msg.nick)
     raise IRCException("je ne surveillais pas cette URL !")
 
+
+@hook("cmd_hook", "watch", data="diff")
+@hook("cmd_hook", "updown", data="updown")
 def add_site(msg, diffType="diff"):
     print (diffType)
     if len(msg.cmds) <= 1:

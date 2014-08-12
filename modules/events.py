@@ -12,7 +12,7 @@ import traceback
 nemubotversion = 3.3
 
 from event import ModuleEvent
-from hooks import Hook
+from hooks import Hook, hook
 
 def help_tiny ():
     """Line inserted in the response to the command !help"""
@@ -25,14 +25,6 @@ def load(context):
     global DATAS
     #Define the index
     DATAS.setIndex("name")
-
-    add_hook("cmd_hook", Hook(start_countdown, "start"))
-    add_hook("cmd_hook", Hook(end_countdown, "end"))
-    add_hook("cmd_hook", Hook(end_countdown, "forceend"))
-    add_hook("cmd_hook", Hook(liste, "eventslist"))
-
-    add_hook("cmd_hook", Hook(cmd_gouter, "goûter"))
-    add_hook("cmd_hook", Hook(cmd_we, "week-end"))
 
     for evt in DATAS.index.keys():
         if DATAS.index[evt].hasAttribute("end"):
@@ -48,6 +40,7 @@ def fini(d, strend):
     DATAS.delChild(DATAS.index[strend["name"]])
     save()
 
+@hook("cmd_hook", "goûter")
 def cmd_gouter(msg):
     ndate = datetime.today()
     ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42)
@@ -57,6 +50,7 @@ def cmd_gouter(msg):
                              "Nous avons %s de retard pour le goûter :("),
                     channel=msg.channel)
 
+@hook("cmd_hook", "week-end")
 def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
@@ -66,6 +60,7 @@ def cmd_we(msg):
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
 
+@hook("cmd_hook", "start", help="!start /something/: launch a timer")
 def start_countdown(msg):
     if len(msg.cmds) < 2:
         raise IRCException("indique le nom d'un événement à chronométrer")
@@ -140,6 +135,8 @@ def start_countdown(msg):
         return Response(msg.sender, "%s commencé le %s"% (msg.cmds[1],
                             datetime.now().strftime("%A %d %B %Y à %H:%M:%S")))
 
+@hook("cmd_hook", "end")
+@hook("cmd_hook", "forceend")
 def end_countdown(msg):
     if len(msg.cmds) < 2:
         raise IRCException("quel événement terminer ?")
@@ -157,6 +154,7 @@ def end_countdown(msg):
     else:
         return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
+@hook("cmd_hook", "eventslist", help="!eventslist: gets list of timer")
 def liste(msg):
     if len(msg.cmds) > 1:
         res = list()

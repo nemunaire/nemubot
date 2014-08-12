@@ -3,6 +3,8 @@
 import urllib.request
 import json
 import re
+
+from hooks import hook
 from tools import web
 from tools.web import striphtml
 
@@ -14,11 +16,7 @@ def help_tiny ():
 def help_full ():
   return "!tcode <transaction code|keywords>"
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_tcode, "tcode"))
-
-
+@hook("cmd_hook", "tcode")
 def cmd_tcode(msg):
   if len(msg.cmds) != 2:
       raise IRCException("indicate a transaction code or a keyword to search!")

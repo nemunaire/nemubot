@@ -6,21 +6,18 @@ import urllib
 
 nemubotversion = 3.3
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_subreddit, "subreddit"))
-    add_hook("all_post", Hook(parseresponse))
+from hooks import hook
 
-
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "The subreddit module"
 
-def help_full ():
+def help_full():
     return "!subreddit /subreddit/: Display information on the subreddit."
 
 LAST_SUBS = dict()
 
+@hook("cmd_hook", "subreddit", help="!subreddit /subreddit/: Display information on the subreddit.")
 def cmd_subreddit(msg):
     global LAST_SUBS
     if len(msg.cmds) <= 1:
@@ -74,6 +71,7 @@ def parselisten(msg):
 
     return False
 
+@hook("all_post")
 def parseresponse(res):
     parselisten(res)
     return True

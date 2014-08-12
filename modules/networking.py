@@ -7,13 +7,12 @@ import socket
 import subprocess
 import urllib
 
+from hooks import Hook, hook
 from tools import web
 
 nemubotversion = 3.3
 
 def load(context):
-    from hooks import Hook
-
     if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
         print ("You need a WhoisXML API account in order to use the "
                "!netwhois feature. Add it to the module configuration file:\n"
@@ -22,21 +21,14 @@ def load(context):
     else:
         add_hook("cmd_hook", Hook(cmd_whois, "netwhois"))
 
-    add_hook("cmd_hook", Hook(cmd_w3c, "w3c"))
-    add_hook("cmd_hook", Hook(cmd_w3m, "w3m"))
-    add_hook("cmd_hook", Hook(cmd_traceurl, "traceurl"))
-    add_hook("cmd_hook", Hook(cmd_isup, "isup"))
-    add_hook("cmd_hook", Hook(cmd_curl, "curl"))
-    add_hook("cmd_hook", Hook(cmd_curly, "curly"))
-
-
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "The networking module"
 
-def help_full ():
+def help_full():
     return "!traceurl /url/: Follow redirections from /url/."
 
+@hook("cmd_hook", "w3m")
 def cmd_w3m(msg):
     if len(msg.cmds) > 1:
         args = ["w3m", "-T", "text/html", "-dump"]
@@ -49,6 +41,7 @@ def cmd_w3m(msg):
     else:
         raise IRCException("Veuillez indiquer une URL à visiter.")
 
+@hook("cmd_hook", "curl")
 def cmd_curl(msg):
     if len(msg.cmds) > 1:
         try:
@@ -68,6 +61,7 @@ def cmd_curl(msg):
         return Response(msg.sender, "Veuillez indiquer une URL à visiter.",
                         channel=msg.channel)
 
+@hook("cmd_hook", "curly")
 def cmd_curly(msg):
     if len(msg.cmds) > 1:
         url = msg.cmds[1]
@@ -98,6 +92,7 @@ def cmd_curly(msg):
     else:
         raise IRCException("Veuillez indiquer une URL à visiter.")
 
+@hook("cmd_hook", "traceurl")
 def cmd_traceurl(msg):
     if 1 < len(msg.cmds) < 6:
         res = list()
@@ -190,6 +185,7 @@ def cmd_whois(msg):
                                                          ))
     return res
 
+@hook("cmd_hook", "isup")
 def cmd_isup(msg):
     if 1 < len(msg.cmds) < 6:
         res = list()
@@ -257,6 +253,7 @@ def traceURL(url, timeout=5, stack=None):
     else:
         return stack
 
+@hook("cmd_hook", "w3c")
 def cmd_w3c(msg):
     if len(msg.cmds) < 2:
         raise IRCException("Indiquer une URL à valider !")

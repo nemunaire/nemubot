@@ -5,15 +5,12 @@ import sys
 from datetime import datetime
 from datetime import date
 
+from hooks import hook
 from xmlparser.node import ModuleState
 
 nemubotversion = 3.3
 
 def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_anniv, "anniv"))
-    add_hook("cmd_hook", Hook(cmd_age, "age"))
-
     global DATAS
     DATAS.setIndex("name", "birthday")
 
@@ -44,6 +41,7 @@ def findName(msg):
     return (matches, name)
 
 
+@hook("cmd_hook", "anniv")
 def cmd_anniv(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
@@ -71,6 +69,7 @@ def cmd_anniv(msg):
                         " de %s. Quand est-il né ?" % name,
                         msg.channel, msg.nick)
 
+@hook("cmd_hook", "age")
 def cmd_age(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:

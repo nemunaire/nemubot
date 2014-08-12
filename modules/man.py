@@ -4,22 +4,20 @@ import subprocess
 import re
 import os
 
+from hooks import hook
+
 nemubotversion = 3.3
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_man, "MAN"))
-    add_hook("cmd_hook", Hook(cmd_whatis, "man"))
-
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "Read manual pages on IRC"
 
-def help_full ():
+def help_full():
     return "!man [0-9] /what/: gives informations about /what/."
 
 RGXP_s = re.compile(b'\x1b\\[[0-9]+m')
 
+@hook("cmd_hook", "MAN")
 def cmd_man(msg):
     args = ["man"]
     num = None
@@ -48,6 +46,7 @@ def cmd_man(msg):
 
     return res
 
+@hook("cmd_hook", "man")
 def cmd_whatis(msg):
     args = ["whatis", " ".join(msg.cmds[1:])]
 

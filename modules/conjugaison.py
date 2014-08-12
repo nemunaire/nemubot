@@ -5,6 +5,7 @@ import traceback
 import sys
 from urllib.parse import quote
 
+from hooks import hook
 from tools import web
 from tools.web import striphtml
 from collections import defaultdict
@@ -27,17 +28,14 @@ d = defaultdict(list)
 for k, v in s:
   d[k].append(v)
 
-def help_tiny ():
+def help_tiny():
   return "Find french conjugaison"
 
-def help_full ():
+def help_full():
   return "!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>."
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_conjug, "conjugaison"))
 
-
+@hook("cmd_hook", "conjugaison", help="!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>.")
 def cmd_conjug(msg):
     if len(msg.cmds) < 3:
         raise IRCException("donne moi un temps et un verbe, et je te donnerai sa conjugaison!")
@@ -50,8 +48,8 @@ def cmd_conjug(msg):
     conjug = get_conjug(verb, tens)
 
     if len(conjug) > 0:
-          return Response(msg.sender, conjug, channel=msg.channel,
-                          title="Conjugaison de %s" % verb)
+        return Response(msg.sender, conjug, channel=msg.channel,
+                        title="Conjugaison de %s" % verb)
     else:
         raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)
 

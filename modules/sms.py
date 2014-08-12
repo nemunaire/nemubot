@@ -7,20 +7,19 @@ import urllib.error
 import urllib.request
 import urllib.parse
 
+from hooks import hook
+
 nemubotversion = 3.3
 
 def load(context):
     global DATAS
     DATAS.setIndex("name", "phone")
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_sms, "sms"))
-
-def help_tiny ():
+def help_tiny():
     """Line inserted in the response to the command !help"""
     return "Send SMS using SMS API (currently only Free Mobile)"
 
-def help_full ():
+def help_full():
     return "!sms /who/[,/who/[,...]] message: send a SMS to /who/."
 
 def send_sms(frm, api_usr, api_key, content):
@@ -46,6 +45,7 @@ def send_sms(frm, api_usr, api_key, content):
     return None
 
 
+@hook("cmd_hook", "sms")
 def cmd_sms(msg):
     if len(msg.cmds) <= 2:
         raise IRCException("À qui veux-tu envoyer ce SMS ?")

@@ -4,19 +4,12 @@ import re
 import sys
 from datetime import datetime
 
+from hooks import hook
+
 nemubotversion = 3.3
 
 def load(context):
     """Load this module"""
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_listalias, "listalias"))
-    add_hook("cmd_hook", Hook(cmd_listvars, "listvars"))
-    add_hook("cmd_hook", Hook(cmd_unalias, "unalias"))
-    add_hook("cmd_hook", Hook(cmd_alias, "alias"))
-    add_hook("cmd_hook", Hook(cmd_set, "set"))
-    add_hook("all_pre", Hook(treat_alias))
-    add_hook("all_post", Hook(treat_variables))
-
     global DATAS
     if not DATAS.hasNode("aliases"):
         DATAS.addChild(ModuleState("aliases"))
@@ -56,6 +49,7 @@ def get_variable(name, msg=None):
     else:
         return ""
 
+@hook("cmd_hook", "set")
 def cmd_set(msg):
     if len (msg.cmds) > 2:
         set_variable(msg.cmds[1], " ".join(msg.cmds[2:]), msg.nick)
@@ -64,6 +58,7 @@ def cmd_set(msg):
         return res
     return Response(msg.sender, "!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
 
+@hook("cmd_hook", "listalias")
 def cmd_listalias(msg):
     if len(msg.cmds) > 1:
         res = list()
@@ -77,6 +72,7 @@ def cmd_listalias(msg):
     else:
         return Response(msg.sender, "Alias connus : %s." % ", ".join(DATAS.getNode("aliases").index.keys()), channel=msg.channel)
 
+@hook("cmd_hook", "listvars")
 def cmd_listvars(msg):
     if len(msg.cmds) > 1:
         res = list()
@@ -90,6 +86,7 @@ def cmd_listvars(msg):
     else:
         return Response(msg.sender, "Variables connues : %s." % ", ".join(DATAS.getNode("variables").index.keys()), channel=msg.channel)
 
+@hook("cmd_hook", "alias")
 def cmd_alias(msg):
     if len (msg.cmds) > 1:
         res = list()
@@ -108,6 +105,7 @@ def cmd_alias(msg):
         return Response(msg.sender, "!alias prend en argument l'alias à étendre.",
                         channel=msg.channel)
 
+@hook("cmd_hook", "unalias")
 def cmd_unalias(msg):
     if len (msg.cmds) > 1:
         res = list()
@@ -145,6 +143,7 @@ def replace_variables(cnt, msg=None):
     return " ".join(cnt)
 
 
+@hook("all_post")
 def treat_variables(res):
     for i in range(0, len(res.messages)):
         if isinstance(res.messages[i], list):
@@ -153,6 +152,7 @@ def treat_variables(res):
             res.messages[i] = replace_variables(res.messages[i], res)
     return True
 
+@hook("all_pre")
 def treat_alias(msg, hooks_cache):
     if msg.cmd == "PRIVMSG":
         if len(msg.cmds) > 0 and (len(msg.cmds[0]) > 0

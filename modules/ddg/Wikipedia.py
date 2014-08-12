@@ -10,7 +10,7 @@ class Wikipedia:
     def __init__(self, terms, lang="fr", site="wikipedia.org", section=0):
         self.terms = terms
         self.lang = lang
-        self.curRT = 0
+        self.curRT = section
 
         raw = urllib.request.urlopen(urllib.request.Request("http://" + self.lang + "." + site + "/w/api.php?format=xml&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (quote(terms)), headers={"User-agent": "Nemubot v3"}))
         self.wres = xmlparser.parse_string(raw.read())
@@ -18,7 +18,7 @@ class Wikipedia:
             self.wres = None
         else:
             self.wres = self.wres.getFirstNode("query").getFirstNode("pages").getFirstNode("page").getFirstNode("revisions").getFirstNode("rev").getContent()
-            self.wres = striplink(self.wres) 
+            self.wres = striplink(self.wres)
 
     @property
     def nextRes(self):

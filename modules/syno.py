@@ -5,24 +5,22 @@ import traceback
 import sys
 from urllib.parse import quote
 
+from hooks import hook
 from tools import web
 
 nemubotversion = 3.3
 
-def help_tiny ():
-  return "Find french synonyms"
+def help_tiny():
+    return "Find french synonyms"
 
-def help_full ():
-  return "!syno <word>: give a list of synonyms for <word>."
+def help_full():
+    return "!syno <word>: give a list of synonyms for <word>."
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_syno, "synonymes"))
-    add_hook("cmd_hook", Hook(cmd_anto, "antonymes"))
-
+@hook("cmd_hook", "synonymes", help="!syno <word>: give a list of synonyms for <word>.")
 def cmd_syno(msg):
     return go("synonymes", msg)
 
+@hook("cmd_hook", "antonymes")
 def cmd_anto(msg):
     return go("antonymes", msg)
 

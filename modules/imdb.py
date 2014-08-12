@@ -3,6 +3,8 @@
 import urllib.request
 import json
 
+from hooks import hook
+
 nemubotversion = 3.3
 
 def help_tiny ():
@@ -11,12 +13,7 @@ def help_tiny ():
 def help_full ():
   return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"
 
-def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_imdb, "imdb"))
-    add_hook("cmd_hook", Hook(cmd_search, "imdbs"))
-
-
+@hook("cmd_hook", "imdb", help="View movie details with !imdb <title>")
 def cmd_imdb(msg):
     if len(msg.cmds) < 2:
         raise IRCException("precise a movie/serie title!")
@@ -46,6 +43,7 @@ def cmd_imdb(msg):
         raise IRCException("An error occurs during movie search")
 
 
+@hook("cmd_hook", "imdbs", help="!imdbs <approximative title> to search a movie title")
 def cmd_search(msg):
     url = "http://www.omdbapi.com/?s=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
     print_debug(url)

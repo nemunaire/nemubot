@@ -2,6 +2,8 @@
 
 import imp
 
+from hooks import hook
+
 nemubotversion = 3.3
 
 from . import DDGSearch
@@ -13,17 +15,6 @@ def load(context):
     global CONF
     WFASearch.CONF = CONF
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(define, "define"))
-    add_hook("cmd_hook", Hook(search, "search"))
-    add_hook("cmd_hook", Hook(search, "ddg"))
-    add_hook("cmd_hook", Hook(search, "g"))
-    add_hook("cmd_hook", Hook(calculate, "wa"))
-    add_hook("cmd_hook", Hook(calculate, "calc"))
-    add_hook("cmd_hook", Hook(wiki, "dico"))
-    add_hook("cmd_hook", Hook(wiki, "wiki"))
-    add_hook("cmd_hook", Hook(udsearch, "urbandictionnary"))
-
 def reload():
     imp.reload(DDGSearch)
     imp.reload(UrbanDictionnary)
@@ -31,6 +22,7 @@ def reload():
     imp.reload(Wikipedia)
 
 
+@hook("cmd_hook", "define")
 def define(msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender,
@@ -45,7 +37,7 @@ def define(msg):
 
     return res
 
-
+@hook("cmd_hook", "search")
 def search(msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender,
@@ -68,6 +60,7 @@ def search(msg):
     return res
 
 
+@hook("cmd_hook", "urbandictionnary")
 def udsearch(msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender,
@@ -85,6 +78,7 @@ def udsearch(msg):
     return res
 
 
+@hook("cmd_hook", "calculate")
 def calculate(msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender,
@@ -104,7 +98,19 @@ def calculate(msg):
         return Response(msg.sender, s.error, msg.channel)
 
 
-def wiki(msg):
+@hook("cmd_hook", "wikipedia")
+def wikipedia(msg):
+    return wiki("wikipedia.org", 0, msg)
+
+@hook("cmd_hook", "wiktionary")
+def wiktionary(msg):
+    return wiki("wiktionary.org", 1, msg)
+
+@hook("cmd_hook", "etymology")
+def wiktionary(msg):
+    return wiki("wiktionary.org", 0, msg)
+
+def wiki(site, section, msg):
     if len(msg.cmds) <= 1:
         return Response(msg.sender,
                         "Indicate a term to search",
@@ -115,12 +121,6 @@ def wiki(msg):
     else:
         lang = "fr"
         extract = 1
-    if msg.cmds[0] == "dico":
-        site = "wiktionary.org"
-        section = 1
-    else:
-        site = "wikipedia.org"
-        section = 0
 
     s = Wikipedia.Wikipedia(' '.join(msg.cmds[extract:]), lang, site, section)
 
