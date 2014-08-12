@@ -228,7 +228,7 @@ class Bot:
     def unload_module(self, name, verb=False):
         """Unload a module"""
         if name in self.modules:
-            print (name)
+            self.modules[name].print_debug("Unloading module %s" % name)
             self.modules[name].save()
             if hasattr(self.modules[name], "unload"):
                 self.modules[name].unload(self)
@@ -240,6 +240,7 @@ class Bot:
                 self.del_event(e)
             # Remove from the dict
             del self.modules[name]
+            print("  Module `%s' successfully unloaded." % name)
             return True
         return False
 
