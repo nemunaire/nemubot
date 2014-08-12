@@ -144,25 +144,53 @@ class ModuleLoader(SourceLoader):
         # Set module common functions and datas
         module.__LOADED__ = True
 
+        def prnt(*args):
+            print("[%s]" % module.name, *args)
+        def prnt_dbg(*args):
+            if module.DEBUG:
+                print("{%s}" % module.name, *args)
+
+        def mod_save():
+            module.print_debug("Saving DATAS...")
+            module.DATAS.save(self.context.datas_path + "/" + module.name + ".xml")
+
+        def send_response(server, res):
+            if server in self.context.servers:
+                return self.context.servers[server].send_response(res, None)
+            else:
+                print("\033[1;35mWarning:\033[0m Try to send a message to the unknown server: %s" % server)
+                return False
+
+        def add_hook(store, hook):
+            return self.context.hooks.add_hook(store, hook, module)
+        def del_hook(store, hook):
+            return self.context.hooks.del_hook(store, hook)
+        def add_event(evt, eid=None):
+            return self.context.add_event(evt, eid, module_src=module)
+        def add_event_eid(evt, eid):
+            return add_event(evt, eid)
+        def del_event(evt):
+            return self.context.del_event(evt, module_src=module)
+
         # Set module common functions and datas
         module.REGISTERED_HOOKS = list()
         module.REGISTERED_EVENTS = list()
         module.DEBUG = False
         module.DIR = self.mpath
         module.name = fullname
-        module.print = lambda msg: print("[%s] %s"%(module.name, msg))
-        module.print_debug = lambda msg: mod_print_dbg(module, msg)
-        module.send_response = lambda srv, res: mod_send_response(self.context, srv, res)
-        module.add_hook = lambda store, hook: self.context.hooks.add_hook(store, hook, module)
-        module.del_hook = lambda store, hook: self.context.hooks.del_hook(store, hook)
-        module.add_event = lambda evt: self.context.add_event(evt, module_src=module)
-        module.add_event_eid = lambda evt, eid: self.context.add_event(evt, eid, module_src=module)
-        module.del_event = lambda evt: self.context.del_event(evt, module_src=module)
+        module.print = prnt
+        module.print_debug = prnt_dbg
+        module.send_response = send_response
+        module.add_hook = add_hook
+        module.del_hook = del_hook
+        module.add_event = add_event
+        module.add_event_eid = add_event_eid
+        module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.datas_path
                                                 + module.name + ".xml")
-            module.save = lambda: mod_save(module, self.context.datas_path)
+            module.save = mod_save
         else:
             module.DATAS = None
             module.save = lambda: False
@@ -232,23 +260,3 @@ def register_hooks(module, context, prompt):
         context.hooks.add_hook("ask_default", Hook(module.parseask), module)
     if hasattr(module, "parselisten"):
         context.hooks.add_hook("msg_default", Hook(module.parselisten), module)
-
-##########################
-#                        #
-#    Module functions    #
-#                        #
-##########################
-
-def mod_print_dbg(mod, msg):
-    if mod.DEBUG:
-        print("{%s} %s"%(mod.name, msg))
-
-def mod_save(mod, datas_path):
-    mod.DATAS.save(datas_path + "/" + mod.name + ".xml")
-    mod.print_debug("Saving!")
-
-def mod_send_response(context, server, res):
-    if server in context.servers:
-        context.servers[server].send_response(res, None)
-    else:
-        print("\033[1;35mWarning:\033[0m Try to send a message to the unknown server: %s" % server)
