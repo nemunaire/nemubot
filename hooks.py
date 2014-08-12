@@ -165,7 +165,7 @@ class MessagesHook:
 
 class Hook:
     """Class storing hook informations"""
-    def __init__(self, call, name=None, data=None, regexp=None, channels=list(), server=None, end=None, call_end=None):
+    def __init__(self, call, name=None, data=None, regexp=None, channels=list(), server=None, end=None, call_end=None, help=None):
         self.name = name
         self.end = end
         self.call = call
@@ -178,6 +178,7 @@ class Hook:
         self.times = -1
         self.server = server
         self.channels = channels
+        self.help = help
 
     def is_matching(self, strcmp, channel=None, server=None):
         """Test if the current hook correspond to the message"""
@@ -222,3 +223,11 @@ class Hook:
                     return call(msg, self.data, data2)
         except IRCException as e:
             return e.fill_response(msg)
+
+last_registered = []
+
+def hook(store, *args, **kargs):
+    def sec(call):
+        last_registered.append((store, Hook(call, *args, **kargs)))
+        return call
+    return sec

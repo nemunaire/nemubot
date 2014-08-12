@@ -24,7 +24,7 @@ import sys
 
 import event
 import exception
-from hooks import Hook
+import hooks
 import response
 import xmlparser
 
@@ -241,6 +241,11 @@ def add_cap_hook(prompt, module, cmd):
 
 def register_hooks(module, context, prompt):
     """Register all available hooks"""
+    # Register decorated functions
+    for s, h in hooks.last_registered:
+        context.hooks.add_hook(s, h, module)
+    hooks.last_registered = []
+
     if module.CONF is not None:
         # Register command hooks
         if module.CONF.hasNode("command"):
@@ -255,8 +260,8 @@ def register_hooks(module, context, prompt):
 
     # Register legacy hooks
     if hasattr(module, "parseanswer"):
-        context.hooks.add_hook("cmd_default", Hook(module.parseanswer), module)
+        context.hooks.add_hook("cmd_default", hooks.Hook(module.parseanswer), module)
     if hasattr(module, "parseask"):
-        context.hooks.add_hook("ask_default", Hook(module.parseask), module)
+        context.hooks.add_hook("ask_default", hooks.Hook(module.parseask), module)
     if hasattr(module, "parselisten"):
-        context.hooks.add_hook("msg_default", Hook(module.parselisten), module)
+        context.hooks.add_hook("msg_default", hooks.Hook(module.parselisten), module)
