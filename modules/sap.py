@@ -8,7 +8,7 @@ from hooks import hook
 from tools import web
 from tools.web import striphtml
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def help_tiny ():
   return "Find information about an SAP transaction codes"

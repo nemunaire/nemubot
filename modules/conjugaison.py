@@ -10,7 +10,7 @@ from tools import web
 from tools.web import striphtml
 from collections import defaultdict
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 s = [('present', '0'), ('présent', '0'), ('pr', '0'),
      ('passé simple', '12'), ('passe simple', '12'), ('ps', '12'),

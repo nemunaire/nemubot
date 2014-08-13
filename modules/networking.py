@@ -10,7 +10,7 @@ import urllib
 from hooks import Hook, hook
 from tools import web
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def load(context):
     if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):

@@ -6,7 +6,7 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 API_URL="http://worldcup.sfg.io/%s"
 

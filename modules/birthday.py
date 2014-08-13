@@ -8,7 +8,7 @@ from datetime import date
 from hooks import hook
 from xmlparser.node import ModuleState
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def load(context):
     global DATAS

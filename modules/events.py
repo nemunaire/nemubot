@@ -9,7 +9,7 @@ import time
 import threading
 import traceback
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 from event import ModuleEvent
 from hooks import Hook, hook

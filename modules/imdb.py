@@ -5,7 +5,7 @@ import json
 
 from hooks import hook
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def help_tiny ():
   return "Show many information about a movie or serie"

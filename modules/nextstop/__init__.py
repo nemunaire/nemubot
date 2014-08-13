@@ -6,7 +6,7 @@ from xml.dom.minidom import parseString
 
 from .external.src import ratp
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def load(context):
   global DATAS

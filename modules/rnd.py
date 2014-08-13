@@ -4,7 +4,7 @@ import random
 
 from hooks import hook
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):

@@ -21,7 +21,7 @@ import sys
 
 from networkbot import NetworkBot
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 NODATA = True
 
 def getserver(toks, context, prompt):

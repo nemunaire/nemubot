@@ -15,7 +15,7 @@ from hooks import hook
 
 from .atom import Atom
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def help_tiny ():
   """Line inserted in the response to the command !help"""

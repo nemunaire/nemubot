@@ -6,7 +6,7 @@ from datetime import datetime
 
 from hooks import hook
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def load(context):
     """Load this module"""

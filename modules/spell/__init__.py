@@ -8,7 +8,7 @@ from hooks import hook
 from .pyaspell import Aspell
 from .pyaspell import AspellError
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def help_tiny():
   return "Check words spelling"

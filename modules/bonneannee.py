@@ -4,7 +4,7 @@ from datetime import datetime
 
 from hooks import hook
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 yr = datetime.today().year
 yrn = datetime.today().year + 1

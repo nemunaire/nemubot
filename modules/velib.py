@@ -4,7 +4,7 @@ import re
 
 from tools import web
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def load(context):
     global DATAS

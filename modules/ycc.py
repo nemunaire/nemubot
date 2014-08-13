@@ -7,7 +7,7 @@ from urllib.request import urlopen
 
 from hooks import hook
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 def help_tiny():
     """Line inserted in the response to the command !help"""

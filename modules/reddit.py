@@ -4,7 +4,7 @@ import json
 import re
 import urllib
 
-nemubotversion = 3.3
+nemubotversion = 3.4
 
 from hooks import hook
 
