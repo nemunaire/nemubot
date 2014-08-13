@@ -27,8 +27,8 @@ import consumer
 import event
 import hooks
 from networkbot import NetworkBot
-from IRCServer import IRCServer
-from DCC import DCC
+from server.IRC import IRCServer
+from server.DCC import DCC
 import response
 
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

@@ -24,7 +24,7 @@ import threading
 import traceback
 
 from channel import Channel
-from DCC import DCC
+from server.DCC import DCC
 from hooks import Hook
 import message
 import server

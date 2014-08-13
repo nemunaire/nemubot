@@ -23,7 +23,7 @@ import traceback
 import sys
 
 import bot
-from DCC import DCC
+from server.DCC import DCC
 from message import Message
 import response
 import server

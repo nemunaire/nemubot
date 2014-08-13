@@ -22,7 +22,7 @@ import shlex
 import urllib.parse
 import zlib
 
-from DCC import DCC
+from server.DCC import DCC
 import hooks
 from response import Response
 

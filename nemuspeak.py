@@ -27,7 +27,7 @@ else:
 
 import xmlparser as msf
 import message
-import IRCServer
+from server.IRC import IRCServer
 
 SMILEY = list()
 CORRECTIONS = list()
@@ -111,7 +111,7 @@ def speak(endstate):
         talkEC = 1
 
 
-class Server(IRCServer.IRCServer):
+class Server(IRCServer):
     def treat_msg(self, line, private = False):
         global stopSpk, talkEC, g_queue
         try:
