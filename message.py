@@ -21,24 +21,10 @@ import re
 import shlex
 import time
 
-import credits
-from credits import Credits
 from response import Response
 import xmlparser
 
-CREDITS = {}
 filename = ""
-
-def load(config_file):
-  global CREDITS, filename
-  CREDITS = dict ()
-  filename = config_file
-  credits.BANLIST = xmlparser.parse_file(filename)
-
-def save():
-  global filename
-  credits.BANLIST.save(filename)
-
 
 class Message:
   def __init__ (self, line, timestamp, private=False):
@@ -132,19 +118,6 @@ class Message:
       except UnicodeDecodeError:
         #TODO: use encoding from config file
         self.content = self.content.decode('utf-8', 'replace')
-
-  def authorize_DEPRECATED(self):
-      """Is nemubot listening for the sender on this channel?"""
-      # TODO: deprecated
-      if self.srv.isDCC(self.sender):
-          return True
-      elif self.realname not in CREDITS:
-          CREDITS[self.realname] = Credits(self.realname)
-      elif self.content[0] == '`':
-          return True
-      elif not CREDITS[self.realname].ask():
-          return False
-      return self.srv.accepted_channel(self.channel)
 
 ##############################
 #                            #
