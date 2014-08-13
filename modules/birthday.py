@@ -86,7 +86,7 @@ def cmd_age(msg):
     return True
 
 def parseask(msg):
-    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msgl, re.I) is not None:
+    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msg.content, re.I) is not None:
         try:
             extDate = msg.extractDate()
             if extDate is None or extDate.year > datetime.now().year:
