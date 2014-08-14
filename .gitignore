@@ -1,5 +1,6 @@
 *#
 *~
+*.log
 TAGS
 *.py[cod]
 __pycache__

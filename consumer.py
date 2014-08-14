@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import queue
 import re
 import threading
@@ -27,6 +28,8 @@ from server.DCC import DCC
 from message import Message
 import response
 import server
+
+logger = logging.getLogger(__name__)
 
 class MessageConsumer:
     """Store a message before treating"""
@@ -63,8 +66,8 @@ class MessageConsumer:
                 res.server = context.servers[res.server]
             if (res.server is not None and
                 not isinstance(res.server, server.Server)):
-                print ("\033[1;35mWarning:\033[0m the server defined in this "
-                       "response doesn't exist: %s" % (res.server))
+                logger.error("The server defined in this response doesn't "
+                             "exist: %s" % res.server)
                 res.server = None
             if res.server is None:
                 res.server = self.srv
@@ -77,8 +80,7 @@ class MessageConsumer:
             context.hooks.add_hook(res.type, res.hook, res.src)
 
         elif res is not None:
-            print ("\033[1;35mWarning:\033[0m unrecognized response type "
-                   ": %s" % res)
+            logger.error("Unrecognized response type: %s" % res)
 
     def run(self, context):
         """Create, parse and treat the message"""
@@ -90,11 +92,12 @@ class MessageConsumer:
                 msg.private = msg.private or msg.channel == self.srv.nick
             res = self.treat_in(context, msg)
         except:
-            print ("\033[1;31mERROR:\033[0m occurred during the "
-                   "processing of the message: %s" % self.raw)
+            logger.error("Error occurred during the processing of the message:"
+                         " %s" % self.raw)
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value,
-                                      exc_traceback)
+            logger.debug(traceback.format_exception(exc_type,
+                                                    exc_value,
+                                                    exc_traceback))
             return
 
         # Send message
@@ -116,10 +119,11 @@ class EventConsumer:
         try:
             self.evt.launch_check()
         except:
-            print ("\033[1;31mError:\033[0m during event end")
+            logger.error("Error during event end")
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value,
-                                      exc_traceback)
+            logger.debug(traceback.format_exception(exc_type,
+                                                    exc_value,
+                                                    exc_traceback))
         if self.evt.next is not None:
             context.add_event(self.evt, self.evt.id)
 

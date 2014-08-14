@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import socket
 import threading
 
@@ -28,6 +29,8 @@ class Server(threading.Thread):
       self.closing_event = None
 
       self.moremessages = dict()
+
+      self.logger = logging.getLogger(__name__ + "/" + self.id)
 
       threading.Thread.__init__(self)
 
@@ -142,7 +145,7 @@ class Server(threading.Thread):
             self.connected = False
             #Send a message in order to close the socket
             try:
-                self.s.send(("Bye!\r\n" % self.nick).encode ())
+                self.s.send(("Bye!\r\n").encode ())
             except:
                 pass
             self.stopping.wait()
@@ -155,6 +158,7 @@ class Server(threading.Thread):
         self._receive_action = receive_action
         if not self.connected:
             self.stop = False
+            self.logger.info("Entering main loop for server")
             try:
                 self.start()
             except RuntimeError:

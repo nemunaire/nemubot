@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import re
 
 from response import Response
 from exception import IRCException
+
+logger = logging.getLogger(__name__)
 
 class MessagesHook:
     def __init__(self, context, bot):
@@ -51,16 +54,19 @@ class MessagesHook:
 
     def add_hook(self, store, hook, module_src=None):
         """Insert in the right place a hook into the given store"""
+        logger.info("Adding hook '%s' to store '%s' from module '%s'" % (hook, store, module_src))
         if module_src is None:
-            print ("\033[1;35mWarning:\033[0m No source module was passed to "
-                   "add_hook function, please fix it in order to be "
-                   "compatible with unload feature")
+            logger.warn("No source module was passed to add_hook function, "
+                        "please fix it in order to be compatible with unload "
+                        "feature")
 
         if store in self.context.hooks_cache:
+            logger.debug("Cleaning hooks cache for " + store)
             del self.context.hooks_cache[store]
 
         if not hasattr(self, store):
-            print ("\033[1;35mWarning:\033[0m unrecognized hook store")
+            # TODO: raise custom exception, this is a user problem, not internal one!
+            logger.error("Unrecognized hook store: " + store)
             return
         attr = getattr(self, store)
 
@@ -75,7 +81,7 @@ class MessagesHook:
         elif isinstance(attr, list):
             attr.append(hook)
         else:
-            print ("\033[1;32mWarning:\033[0m unrecognized hook store type")
+            logger.critical("Unrecognized hook store type: " + type(attr))
             return
         if module_src is not None and hasattr(module_src, "REGISTERED_HOOKS"):
             module_src.REGISTERED_HOOKS.append((store, hook))
@@ -147,7 +153,7 @@ class MessagesHook:
             del self.context.hooks_cache[store]
 
         if not hasattr(self, store):
-            print ("Warning: unrecognized hook store type")
+            logger.warn("unrecognized hook store type")
             return
         attr = getattr(self, store)
 

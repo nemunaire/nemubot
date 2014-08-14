@@ -67,7 +67,7 @@ class Prompt:
             (f,d) = self.HOOKS_CAPS[toks[0]]
             return f(d, toks, context, self)
         else:
-            print ("Unknown command: `%s'" % toks[0])
+            print("Unknown command: `%s'" % toks[0])
             return ""
 
     def getPS1(self):
@@ -88,7 +88,7 @@ class Prompt:
                 line = sys.stdin.readline()
                 if len(line) <= 0:
                     line = "quit"
-                    print ("quit")
+                    print("quit")
                 cmds = self.lex_cmd(line.strip())
                 for toks in cmds:
                     try:
@@ -97,7 +97,7 @@ class Prompt:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
             except KeyboardInterrupt:
-                print ("")
+                print("")
         return ret != "quit"
 
 

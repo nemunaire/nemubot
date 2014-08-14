@@ -41,7 +41,7 @@ class Channel:
 
     def join(self, nick, level = 0):
         """Someone join the channel"""
-        #print ("%s arrive sur %s" % (nick, self.name))
+        logger.debug("%s join %s" % (nick, self.name))
         self.people[nick] = level
 
     def chtopic(self, newtopic):
@@ -52,7 +52,7 @@ class Channel:
     def nick(self, oldnick, newnick):
         """Someone change his nick"""
         if oldnick in self.people:
-            #print ("%s change de nom pour %s sur %s" % (oldnick, newnick, self.name))
+            logger.debug("%s switch nick to %s on %s" % (oldnick, newnick, self.name))
             lvl = self.people[oldnick]
             del self.people[oldnick]
             self.people[newnick] = lvl
@@ -60,7 +60,7 @@ class Channel:
     def part(self, nick):
         """Someone leave the channel"""
         if nick in self.people:
-            #print ("%s vient de quitter %s" % (nick, self.name))
+            logger.debug("%s has left %s" % (nick, self.name))
             del self.people[nick]
 
     def mode(self, msg):

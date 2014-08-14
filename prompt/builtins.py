@@ -16,8 +16,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import xmlparser
+
+logger = logging.getLogger(__name__)
 
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
@@ -66,11 +69,11 @@ def load_file(filename, context):
                 if context.addServer(server, config["nick"],
                                      config["owner"], config["realname"],
                                      server.hasAttribute("ssl")):
-                    print ("  Server `%s:%s' successfully added."
-                           % (server["server"], server["port"]))
+                    logger.info("Server `%s:%s' successfully added."
+                                % (server["server"], server["port"]))
                 else:
-                    print ("  Server `%s:%s' already added, skiped."
-                           % (server["server"], server["port"]))
+                    logger.warn("Server `%s:%s' already added, skiped."
+                                % (server["server"], server["port"]))
 
             # Load files asked by the configuration file
             for load in config.getNodes("load"):

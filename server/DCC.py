@@ -55,7 +55,7 @@ class DCC(server.Server):
         self.port = self.foundPort()
 
         if self.port is None:
-            print ("No more available slot for DCC connection")
+            self.logger.critical("No more available slot for DCC connection")
             self.setError("Il n'y a plus de place disponible sur le serveur"
                           " pour initialiser une session DCC.")
 
@@ -81,7 +81,7 @@ class DCC(server.Server):
         self.s = socket.socket()
         try:
             self.s.connect((host, port))
-            print ('Accepted user from', host, port, "for", self.sender)
+            self.logger.info("Accepted user from %s:%d for %s" % (host, port, self.sender))
             self.connected = True
             self.stop = False
         except:
@@ -106,7 +106,7 @@ class DCC(server.Server):
                 self.setError("Une erreur s'est produite durant la tentative"
                               " d'ouverture d'une session DCC.")
                 return False
-        print ('Listen on', self.port, "for", self.sender)
+        self.logger.info("Listening on %d for %s" % (self.port, self.sender))
 
         #Send CTCP request for DCC
         self.srv.send_ctcp(self.sender,
@@ -117,7 +117,7 @@ class DCC(server.Server):
         s.listen(1)
         #Waiting for the client
         (self.s, addr) = s.accept()
-        print ('Connected by', addr)
+        self.logger.info("Connected by %d" % addr)
         self.connected = True
         return True
 
@@ -151,7 +151,7 @@ class DCC(server.Server):
             except RuntimeError:
                 pass
         else:
-            print("File not found `%s'" % filename)
+            self.logger.error("File not found `%s'" % filename)
 
     def run(self):
         self.stopping.clear()
@@ -204,7 +204,7 @@ class DCC(server.Server):
         if self.realname in self.srv.dcc_clients:
             del self.srv.dcc_clients[self.realname]
 
-        print ("Closing connection with", self.nick)
+        self.logger.info("Closing connection with " + self.nick)
         self.stopping.set()
         if self.closing_event is not None:
             self.closing_event()

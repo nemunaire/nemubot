@@ -76,10 +76,8 @@ class Message:
         self.channel = words[3]
         self.content = self.pickWords(words[4:])
       else:
-        #print (line)
         self.content = self.pickWords(words[3:])
     else:
-      print (line)
       if self.cmd == 'PRIVMSG':
         self.channel = words[2].decode()
         self.content = b' '.join(words[3:])
@@ -247,7 +245,6 @@ class Message:
       minute = result.group(9)
       second = result.group(11)
 
-      print ("Chaîne reconnue : %s/%s/%s %s:%s:%s"%(day, month, year, hour, minute, second))
       if year == None:
         year = date.today().year
       if hour == None:

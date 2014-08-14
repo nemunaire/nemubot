@@ -17,9 +17,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
 import imp
+import logging
+import os
+import sys
 import traceback
 
 import bot
@@ -28,6 +29,11 @@ from prompt.builtins import load_file
 import importer
 
 if __name__ == "__main__":
+    # Setup loggin interface
+    logging.basicConfig(filename='nemubot.log', level=logging.DEBUG)
+    logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+    logger = logging.getLogger(__name__)
+
     # Create bot context
     context = bot.Bot(0, "FIXME")
 

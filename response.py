@@ -16,8 +16,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import traceback
 import sys
+
+logger = logging.getLogger(__name__)
 
 class Response:
     def __init__(self, sender, message=None, channel=None, nick=None, server=None,
@@ -54,7 +57,9 @@ class Response:
         if sender is None or sender.find("!") < 0:
             if sender is not None:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                traceback.print_exception(exc_type, "\033[1;35mWarning:\033[0m bad sender provided in Response, it will be ignored.", exc_traceback)
+                logger.warn(traceback.format_exception(exc_type,
+                                                       "Bad sender provided in Response, it will be ignored.",
+                                                       exc_traceback))
             self.sender = None
         else:
             self.sender = sender

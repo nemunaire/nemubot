@@ -19,6 +19,7 @@
 from importlib.abc import Finder
 from importlib.abc import SourceLoader
 import imp
+import logging
 import os
 import sys
 
@@ -27,6 +28,8 @@ import exception
 import hooks
 import response
 import xmlparser
+
+logger = logging.getLogger(__name__)
 
 class ModuleFinder(Finder):
     def __init__(self, context, prompt):
@@ -143,22 +146,26 @@ class ModuleLoader(SourceLoader):
 
         # Set module common functions and datas
         module.__LOADED__ = True
+        module.logger = logging.getLogger("module/" + fullname)
 
         def prnt(*args):
             print("[%s]" % module.name, *args)
+            module.logger.info(*args)
         def prnt_dbg(*args):
             if module.DEBUG:
                 print("{%s}" % module.name, *args)
+            module.logger.debug(*args)
 
         def mod_save():
-            module.print_debug("Saving DATAS...")
-            module.DATAS.save(self.context.datas_path + "/" + module.name + ".xml")
+            fpath = self.context.datas_path + "/" + module.name + ".xml"
+            module.print_debug("Saving DATAS to " + fpath)
+            module.DATAS.save(fpath)
 
         def send_response(server, res):
             if server in self.context.servers:
                 return self.context.servers[server].send_response(res, None)
             else:
-                print("\033[1;35mWarning:\033[0m Try to send a message to the unknown server: %s" % server)
+                module.logger.error("Try to send a message to the unknown server: %s" % server)
                 return False
 
         def add_hook(store, hook):
@@ -210,9 +217,9 @@ class ModuleLoader(SourceLoader):
                         mod.MODS[md.name] = md
                         break
                 if depend["name"] not in module.MODS:
-                    print ("\033[1;31mERROR:\033[0m in module `%s', module "
-                           "`%s' require by this module but is not loaded."
-                           % (module.name, depend["name"]))
+                    logger.error("In module `%s', module `%s' require by this "
+                                 "module but is not loaded." % (module.name,
+                                                               depend["name"]))
                     return
 
         # Add the module to the global modules list
@@ -225,8 +232,9 @@ class ModuleLoader(SourceLoader):
             # Register hooks
             register_hooks(module, self.context, self.prompt)
 
-            print ("  Module `%s' successfully loaded." % module.name)
+            logger.info("Module '%s' successfully loaded." % module.name)
         else:
+            logger.error("An error occurs while importing `%s'." % module.name)
             raise ImportError("An error occurs while importing `%s'."
                               % module.name)
         return module
@@ -236,7 +244,7 @@ def add_cap_hook(prompt, module, cmd):
     if hasattr(module, cmd["call"]):
         prompt.add_cap_hook(cmd["name"], getattr(module, cmd["call"]))
     else:
-        print ("Warning: In module `%s', no function `%s' defined for `%s' "
+        logger.warn("In module `%s', no function `%s' defined for `%s' "
                "command hook." % (module.name, cmd["call"], cmd["name"]))
 
 def register_hooks(module, context, prompt):

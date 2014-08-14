@@ -43,9 +43,9 @@ class IRCServer(server.Server):
         realname -- string used as realname on this server
         ssl -- require SSL?
         """
-        server.Server.__init__(self)
-
         self.node = node
+
+        server.Server.__init__(self)
 
         self.nick = nick
         self.owner = owner
@@ -173,7 +173,7 @@ class IRCServer(server.Server):
                 self.s.connect((self.host, self.port)) #Connect to server
             except socket.error as e:
                 self.s = None
-                print ("\033[1;31mError:\033[0m Unable to connect to %s:%d: %s"
+                self.logger.critical("Unable to connect to %s:%d: %s"
                        % (self.host, self.port, os.strerror(e.errno)))
                 return
             self.stopping.clear()
@@ -185,10 +185,10 @@ class IRCServer(server.Server):
                                                      self.realname)).encode())
             raw = self.s.recv(1024)
             if not raw:
-                print ("Unable to connect to %s:%d" % (self.host, self.port))
+                self.logger.critical("Unable to connect to %s:%d" % (self.host, self.port))
                 return
             self.connected = True
-            print ("Connection to %s:%d completed" % (self.host, self.port))
+            self.logger.info("Connection to %s:%d completed" % (self.host, self.port))
 
             if len(self.channels) > 0:
                 for chn in self.channels.keys():
@@ -214,7 +214,7 @@ class IRCServer(server.Server):
             self.connected = False
             if self.closing_event is not None:
                 self.closing_event()
-            print ("Server `%s' successfully stopped." % self.id)
+            self.logger.info("Server `%s' successfully stopped." % self.id)
         self.stopping.set()
         # Rearm Thread
         threading.Thread.__init__(self)
@@ -255,17 +255,17 @@ class IRCServer(server.Server):
         """Send a message without checks or format"""
         #TODO: add something for post message treatment here
         if channel == self.nick:
-            print ("\033[1;35mWarning:\033[0m Nemubot talks to himself: %s" % msg)
-            traceback.print_stack()
+            self.logger.warn("Nemubot talks to himself: %s" % msg)
+            self.logger.debug(traceback.print_stack())
         if line is not None and channel is not None:
             if self.s is None:
-                print ("\033[1;35mWarning:\033[0m Attempt to send message on a non connected server: %s: %s" % (self.id, line))
-                traceback.print_stack()
+                self.logger.warn("Attempt to send message on a non connected server: %s: %s" % (self.id, line))
+                self.logger.debug(traceback.format_stack())
             elif len(line) < 442:
-                self.s.send (("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
+                self.s.send(("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
             else:
-                print ("\033[1;35mWarning:\033[0m Message truncated due to size (%d ; max : 442) : %s" % (len(line), line))
-                traceback.print_stack()
+                self.logger.warn("Message truncated due to size (%d ; max : 442) : %s" % (len(line), line))
+                self.logger.debug(traceback.format_stack())
                 self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"<…>", endl)).encode ())
 
     def send_msg_usr(self, user, msg):

@@ -18,6 +18,7 @@
 
 from datetime import datetime
 from datetime import timedelta
+import logging
 from queue import Queue
 import threading
 import time
@@ -31,6 +32,8 @@ from server.IRC import IRCServer
 from server.DCC import DCC
 import response
 
+logger = logging.getLogger(__name__)
+
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 class Bot:
@@ -38,6 +41,7 @@ class Bot:
         # Bot general informations
         self.version     = 3.4
         self.version_txt = "3.4-dev"
+        logger.info("Initiate nemubot v%s" % self.version_txt)
 
         # Save various informations
         self.ip = ip
@@ -87,6 +91,7 @@ class Bot:
                                      msg.sender, "USERINFO %s" % self.realname)
         self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
                           msg.sender, "VERSION nemubot v%s" % self.version_txt)
+        logger.debug("CTCP capabilities setup: %s" % ", ".join(self.ctcp_capabilities))
 
     def _ctcp_clientinfo(self, srv, msg):
         """Response to CLIENTINFO CTCP message"""
@@ -101,7 +106,7 @@ class Bot:
             srv.dcc_clients[conn.sender] = conn
             conn.send_dcc("Hello %s!" % conn.nick)
         else:
-            print ("DCC: unable to connect to %s:%s" % (ip, msg.cmds[4]))
+            logger.error("DCC: unable to connect to %s:%s" % (ip, msg.cmds[4]))
 
 
     def add_event(self, evt, eid=None, module_src=None):
@@ -132,10 +137,12 @@ class Bot:
         if module_src is not None:
             module_src.REGISTERED_EVENTS.append(evt.id)
 
+        logger.info("New event registered: %s -> %s" % (evt.id, evt))
         return evt.id
 
     def del_event(self, id, module_src=None):
         """Find and remove an event from list"""
+        logger.info("Removing event: %s from %s" % (id, module_src))
         if len(self.events) > 0 and id == self.events[0].id:
             self.events.remove(self.events[0])
             self.update_timer()
@@ -158,8 +165,8 @@ class Bot:
         if self.event_timer is not None:
             self.event_timer.cancel()
         if len(self.events) > 0:
-            #print ("Update timer, next in", self.events[0].time_left.seconds,
-            #       "seconds")
+            logger.debug("Update timer: next event in %d seconds" %
+                         self.events[0].time_left.seconds)
             if datetime.now() + timedelta(seconds=5) >= self.events[0].current:
                 while datetime.now() < self.events[0].current:
                     time.sleep(0.6)
@@ -168,13 +175,13 @@ class Bot:
                 self.event_timer = threading.Timer(
                     self.events[0].time_left.seconds + 1, self.end_timer)
                 self.event_timer.start()
-        #else:
-        #    print ("Update timer: no timer left")
+        else:
+            logger.debug("Update timer: no timer left")
 
     def end_timer(self):
         """Function called at the end of the timer"""
         #print ("end timer")
-        while len(self.events)>0 and datetime.now() >= self.events[0].current:
+        while len(self.events) > 0 and datetime.now() >= self.events[0].current:
             #print ("end timer: while")
             evt = self.events.pop(0)
             self.cnsr_queue.put_nowait(consumer.EventConsumer(evt))
@@ -225,7 +232,7 @@ class Bot:
         return False
 
 
-    def unload_module(self, name, verb=False):
+    def unload_module(self, name):
         """Unload a module"""
         if name in self.modules:
             self.modules[name].print_debug("Unloading module %s" % name)
@@ -240,7 +247,7 @@ class Bot:
                 self.del_event(e)
             # Remove from the dict
             del self.modules[name]
-            print("  Module `%s' successfully unloaded." % name)
+            logger.info("Module `%s' successfully unloaded." % name)
             return True
         return False
 
@@ -274,18 +281,18 @@ class Bot:
             if self.network[bot].srv == srv:
                 self.network[bot].send_cmd(cmd, data)
 
-    def quit(self, verb=False):
+    def quit(self):
         """Save and unload modules and disconnect servers"""
         if self.event_timer is not None:
-            if verb: print ("Stop the event timer...")
+            logger.info("Stop the event timer...")
             self.event_timer.cancel()
 
-        if verb: print ("Save and unload all modules...")
+        logger.info("Save and unload all modules...")
         k = list(self.modules.keys())
         for mod in k:
-            self.unload_module(mod, verb)
+            self.unload_module(mod)
 
-        if verb: print ("Close all servers connection...")
+        logger.info("Close all servers connection...")
         k = list(self.servers.keys())
         for srv in k:
             self.servers[srv].disconnect()
@@ -436,13 +443,13 @@ class Bot:
                         return srv.moremessages[msg.channel]
 
             elif msg.cmds[0] == "dcc":
-                print("dcctest for", msg.sender)
+                logger.debug("dcctest for " + msg.sender)
                 srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
             elif msg.cmds[0] == "pvdcctest":
-                print("dcctest")
+                logger.debug("dcctest")
                 return Response(msg.sender, message="Test DCC")
             elif msg.cmds[0] == "dccsendtest":
-                print("dccsendtest")
+                logger.debug("dccsendtest")
                 conn = DCC(srv, msg.sender)
                 conn.send_file("bot_sample.xml")
 
