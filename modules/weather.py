@@ -6,6 +6,8 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
+import mapquest
+
 nemubotversion = 3.4
 
 def load(context):
@@ -106,7 +108,15 @@ def treat_coord(msg):
             coords = list()
             coords.append(DATAS.index[j]["lat"])
             coords.append(DATAS.index[j]["long"])
-            return coords, specific
+            return j, coords, specific
+
+        else:
+            geocode = [x for x in mapquest.geocode(j)]
+            if len(geocode):
+                coords = list()
+                coords.append(geocode[0]["latLng"]["lat"])
+                coords.append(geocode[0]["latLng"]["lng"])
+                return mapquest.where(geocode[0]), coords, specific
 
         raise IRCException("Je ne sais pas où se trouve %s." % " ".join(msg.cmds[1:]))
 
@@ -137,7 +147,7 @@ def cmd_coordinates(msg):
     return Response(msg.sender, "Les coordonnées de %s sont %s,%s" % (msg.cmds[1], coords["lat"], coords["long"]), channel=msg.channel)
 
 def cmd_alert(msg):
-    coords, specific = treat_coord(msg)
+    loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more weather alert", count=" (%d more alerts)")
@@ -149,7 +159,7 @@ def cmd_alert(msg):
     return res
 
 def cmd_weather(msg):
-    coords, specific = treat_coord(msg)
+    loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
 
     res = Response(msg.sender, channel=msg.channel, nomore="No more weather information")
