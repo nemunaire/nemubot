@@ -25,9 +25,13 @@ def cmd_imdb(msg):
     data = json.loads(response.read().decode())
 
     if "Error" in data:
-        raise IRCException(data["Error"])
+        url = "http://www.omdbapi.com/?i=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
+        response = urllib.request.urlopen(url)
+        data = json.loads(response.read().decode())
+        if "Error" in data:
+            raise IRCException(data["Error"])
 
-    elif "Response" in data and data["Response"] == "True":
+    if "Response" in data and data["Response"] == "True":
         res =  Response(msg.sender, channel=msg.channel,
                         title="%s (%s)" % (data['Title'], data['Year']),
                         nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
