@@ -86,27 +86,31 @@ def cmd_age(msg):
     return True
 
 def parseask(msg):
-    if re.match("^.*(date de naissance|birthday|geburtstag|née? |nee? le|born on).*$", msg.content, re.I) is not None:
+    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.content, re.I)
+    if res is not None:
         try:
             extDate = msg.extractDate()
             if extDate is None or extDate.year > datetime.now().year:
                 return Response(msg.sender,
-                                "ta date de naissance ne paraît pas valide...",
+                                "la date de naissance ne paraît pas valide...",
                                 msg.channel,
                                 msg.nick)
             else:
-                if msg.nick.lower() in DATAS.index:
+                nick = res.group(1)
+                if nick == "my" or nick == "I" or nick == "i" or nick == "je" or nick == "mon" or nick == "ma":
+                    nick = msg.nick
+                if nick.lower() in DATAS.index:
                     DATAS.index[msg.nick.lower()]["born"] = extDate
                 else:
                     ms = ModuleState("birthday")
-                    ms.setAttribute("name", msg.nick.lower())
+                    ms.setAttribute("name", nick.lower())
                     ms.setAttribute("born", extDate)
                     DATAS.addChild(ms)
                 save()
                 return Response(msg.sender,
-                                "ok, c'est noté, ta date de naissance est le %s"
-                                % extDate.strftime("%A %d %B %Y à %H:%M"),
+                                "ok, c'est noté, %s est né le %s"
+                                % (nick, extDate.strftime("%A %d %B %Y à %H:%M")),
                                 msg.channel,
                                 msg.nick)
         except:
-            raise IRCException("ta date de naissance ne paraît pas valide.")
+            raise IRCException("la date de naissance ne paraît pas valide.")
