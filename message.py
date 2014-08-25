@@ -60,6 +60,9 @@ class Message:
           # Check for CTCP request
           self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
           self.content = self.pickWords(words[3:])
+          # If CTCP, remove 0x01
+          if self.ctcp:
+            self.content = self.content[1:len(self.content)-1]
       elif self.cmd == '353' and len(words) > 3:
         for i in range(2, len(words)):
           if words[i][0] == 58:
@@ -88,10 +91,6 @@ class Message:
 
   def parse_content(self):
       """Parse or reparse the message content"""
-      # If CTCP, remove 0x01
-      if self.ctcp:
-          self.content = self.content[1:len(self.content)-1]
-
       # Split content by words
       try:
           self.cmds = shlex.split(self.content)
