@@ -1,7 +1,8 @@
 # coding=utf-8
 
-import urllib.request
 import json
+import re
+import urllib.request
 
 from hooks import hook
 
@@ -18,20 +19,22 @@ def cmd_imdb(msg):
     if len(msg.cmds) < 2:
         raise IRCException("precise a movie/serie title!")
 
-    url = "http://www.omdbapi.com/?t=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
+    title = ' '.join(msg.cmds[1:])
+
+    if re.match("^tt[0-9]{7}$", title) is not None:
+        url = "http://www.omdbapi.com/?i=%s" % urllib.parse.quote(title)
+    else:
+        url = "http://www.omdbapi.com/?t=%s" % urllib.parse.quote(title)
+
     print_debug(url)
 
     response = urllib.request.urlopen(url)
     data = json.loads(response.read().decode())
 
     if "Error" in data:
-        url = "http://www.omdbapi.com/?i=%s" % urllib.parse.quote(' '.join(msg.cmds[1:]))
-        response = urllib.request.urlopen(url)
-        data = json.loads(response.read().decode())
-        if "Error" in data:
-            raise IRCException(data["Error"])
+        raise IRCException(data["Error"])
 
-    if "Response" in data and data["Response"] == "True":
+    elif "Response" in data and data["Response"] == "True":
         res =  Response(msg.sender, channel=msg.channel,
                         title="%s (%s)" % (data['Title'], data['Year']),
                         nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
