@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""The weather module"""
+
 import datetime
 import json
 import re
@@ -26,10 +28,6 @@ def load(context):
     add_hook("cmd_hook", Hook(cmd_alert, "alert"))
     add_hook("cmd_hook", Hook(cmd_coordinates, "coordinates"))
 
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "The weather module"
 
 def help_full ():
     return "!weather /city/: Display the current weather in /city/."

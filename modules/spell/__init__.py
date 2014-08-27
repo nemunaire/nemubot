@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Check words spelling"""
+
 import re
 from urllib.parse import quote
 
@@ -9,9 +11,6 @@ from .pyaspell import Aspell
 from .pyaspell import AspellError
 
 nemubotversion = 3.4
-
-def help_tiny():
-  return "Check words spelling"
 
 def help_full():
   return "!spell [<lang>] <word>: give the correct spelling of <word> in <lang=fr>."

@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Create countdowns and reminders"""
+
 import imp
 import re
 import sys
@@ -13,10 +15,6 @@ nemubotversion = 3.4
 
 from event import ModuleEvent
 from hooks import Hook, hook
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "events manager"
 
 def help_full ():
     return "This module store a lot of events: ny, we, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"

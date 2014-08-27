@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Find french conjugaison"""
+
 import re
 import traceback
 import sys
@@ -27,9 +29,6 @@ d = defaultdict(list)
 
 for k, v in s:
   d[k].append(v)
-
-def help_tiny():
-  return "Find french conjugaison"
 
 def help_full():
   return "!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>."

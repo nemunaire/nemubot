@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Find french synonyms"""
+
 import re
 import traceback
 import sys
@@ -9,9 +11,6 @@ from hooks import hook
 from tools import web
 
 nemubotversion = 3.4
-
-def help_tiny():
-    return "Find french synonyms"
 
 def help_full():
     return "!syno <word>: give a list of synonyms for <word>."

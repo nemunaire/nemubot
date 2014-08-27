@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Search around various search engine or knowledges database"""
+
 import imp
 
 from hooks import hook

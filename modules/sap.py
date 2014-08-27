@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Find information about an SAP transaction codes"""
+
 import urllib.request
 import json
 import re
@@ -9,9 +11,6 @@ from tools import web
 from tools.web import striphtml
 
 nemubotversion = 3.4
-
-def help_tiny ():
-  return "Find information about an SAP transaction codes"
 
 def help_full ():
   return "!tcode <transaction code|keywords>"

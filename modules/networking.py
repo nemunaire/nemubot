@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Various network tools (w3m, w3c validator, curl, traceurl, ...)"""
+
 import datetime
 import http.client
 import json
@@ -20,10 +22,6 @@ def load(context):
                "http://www.whoisxmlapi.com/newaccount.php")
     else:
         add_hook("cmd_hook", Hook(cmd_whois, "netwhois"))
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "The networking module"
 
 def help_full():
     return "!traceurl /url/: Follow redirections from /url/."

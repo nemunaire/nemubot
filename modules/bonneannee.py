@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Wishes Happy New Year when the time comes"""
+
 from datetime import datetime
 
 from hooks import hook

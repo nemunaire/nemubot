@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Get information about subreddit"""
+
 import json
 import re
 import urllib
@@ -7,10 +9,6 @@ import urllib
 nemubotversion = 3.4
 
 from hooks import hook
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "The subreddit module"
 
 def help_full():
     return "!subreddit /subreddit/: Display information on the subreddit."

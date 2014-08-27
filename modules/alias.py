@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Create alias of commands"""
+
 import re
 import sys
 from datetime import datetime
@@ -18,10 +20,6 @@ def load(context):
         DATAS.addChild(ModuleState("variables"))
     DATAS.getNode("variables").setIndex("name")
 
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "alias module"
 
 def help_full ():
     return "TODO"

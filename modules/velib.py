@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Gets information about velib stations"""
+
 import re
 
 from tools import web
@@ -14,10 +16,6 @@ def load(context):
 #                    (lambda a, b: a != b), None, 60,
 #                    station_status)
 #  context.add_event(evt)
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "Gets information about velib stations"
 
 def help_full ():
     return "!velib /number/ ...: gives available bikes and slots at the station /number/."

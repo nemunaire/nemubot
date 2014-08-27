@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Show many information about a movie or serie"""
+
 import json
 import re
 import urllib.request
@@ -7,9 +9,6 @@ import urllib.request
 from hooks import hook
 
 nemubotversion = 3.4
-
-def help_tiny ():
-  return "Show many information about a movie or serie"
 
 def help_full ():
   return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"

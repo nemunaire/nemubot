@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Send SMS using SMS API (currently only Free Mobile)"""
+
 import re
 import socket
 import time
@@ -14,10 +16,6 @@ nemubotversion = 3.4
 def load(context):
     global DATAS
     DATAS.setIndex("name", "phone")
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "Send SMS using SMS API (currently only Free Mobile)"
 
 def help_full():
     return "!sms /who/[,/who/[,...]] message: send a SMS to /who/."

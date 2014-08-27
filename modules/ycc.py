@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""URL reducer module"""
+
 import re
 from urllib.parse import urlparse
 from urllib.parse import quote
@@ -8,10 +10,6 @@ from urllib.request import urlopen
 from hooks import hook
 
 nemubotversion = 3.4
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "Gets YCC urls"
 
 def help_full():
     return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."

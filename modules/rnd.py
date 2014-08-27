@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Help to make choice"""
+
 import random
 
 from hooks import hook

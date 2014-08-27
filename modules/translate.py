@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Translation module"""
+
 import http.client
 import re
 import socket
@@ -29,10 +31,6 @@ def load(context):
     from hooks import Hook
     add_hook("cmd_hook", Hook(cmd_translate, "translate"))
 
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "Translation module"
 
 def help_full():
     return "!translate [lang] <term>[ <term>[...]]: Found translation of <term> from/to english to/from <lang>. Data © WordReference.com"

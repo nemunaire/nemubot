@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""The 2014 football worldcup module"""
+
 import datetime
 import json
 import re
@@ -18,10 +20,6 @@ def load(context):
     from event import ModuleEvent
     add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, intervalle=30))
 
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "The 2014 football worldcup module"
 
 def help_full ():
     return "!worldcup: do something."

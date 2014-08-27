@@ -608,7 +608,7 @@ def _help_msg(sndr, modules, cmd):
         res.append_message(title="Pour plus de détails sur un module, "
                            "envoyez \"!help nomdumodule\". Voici la liste"
                            " de tous les modules disponibles localement",
-                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].help_tiny ()) for im in modules if hasattr(modules[im], "help_tiny")])
+                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].__doc__) for im in modules if modules[im].__doc__])
     return res
 
 def hotswap(bak):

@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Informe les usagers des prochains passages des transports en communs de la RATP"""
+
 import http.client
 import re
 from xml.dom.minidom import parseString
@@ -12,10 +14,6 @@ def load(context):
   global DATAS
   DATAS.setIndex("name", "station")
 
-
-def help_tiny ():
-    """Line inserted in the response to the command !help"""
-    return "Informe les usagers des prochains passages des transports en communs de la RATP"
 
 def help_full ():
     return "!ratp transport line [station]: Donne des informations sur les prochains passages du transport en commun séléctionné à l'arrêt désiré. Si aucune station n'est précisée, les liste toutes."

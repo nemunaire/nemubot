@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""Alert on changes on websites"""
+
 from datetime import datetime
 from datetime import timedelta
 import http.client
@@ -16,10 +18,6 @@ from hooks import hook
 from .atom import Atom
 
 nemubotversion = 3.4
-
-def help_tiny ():
-  """Line inserted in the response to the command !help"""
-  return "Alert on changes on websites"
 
 def help_full ():
   return "This module is autonomous you can't interract with it."

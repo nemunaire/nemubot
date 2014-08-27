@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""People birthdays and ages"""
+
 import re
 import sys
 from datetime import datetime
@@ -13,11 +15,6 @@ nemubotversion = 3.4
 def load(context):
     global DATAS
     DATAS.setIndex("name", "birthday")
-
-
-def help_tiny():
-    """Line inserted in the response to the command !help"""
-    return "People birthdays and ages"
 
 
 def help_full():

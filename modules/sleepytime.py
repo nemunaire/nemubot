@@ -1,5 +1,7 @@
 # coding=utf-8
 
+"""as http://sleepyti.me/, give you the best time to go to bed"""
+
 import re
 import imp
 from datetime import datetime
@@ -8,10 +10,6 @@ from datetime import timedelta
 from hooks import hook
 
 nemubotversion = 3.4
-
-def help_tiny():
-  """Line inserted in the response to the command !help"""
-  return "as http://sleepyti.me/, give you the best time to go to bed"
 
 def help_full():
   return "If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm"
