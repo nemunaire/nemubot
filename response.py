@@ -20,7 +20,7 @@ import logging
 import traceback
 import sys
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.response")
 
 class Response:
     def __init__(self, sender, message=None, channel=None, nick=None, server=None,
@@ -56,10 +56,7 @@ class Response:
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:
             if sender is not None:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.warn(traceback.format_exception(exc_type,
-                                                       "Bad sender provided in Response, it will be ignored.",
-                                                       exc_traceback))
+                logger.warn("Bad sender provided in Response, it will be ignored.", stack_info=True)
             self.sender = None
         else:
             self.sender = sender

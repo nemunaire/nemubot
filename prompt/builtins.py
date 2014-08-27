@@ -20,7 +20,7 @@ import logging
 import os
 import xmlparser
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.prompt.builtins")
 
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
@@ -69,11 +69,11 @@ def load_file(filename, context):
                 if context.addServer(server, config["nick"],
                                      config["owner"], config["realname"],
                                      server.hasAttribute("ssl")):
-                    logger.info("Server `%s:%s' successfully added."
-                                % (server["server"], server["port"]))
+                    logger.info("Server `%s:%s' successfully added.",
+                                server["server"], server["port"])
                 else:
-                    logger.warn("Server `%s:%s' already added, skiped."
-                                % (server["server"], server["port"]))
+                    logger.warn("Server `%s:%s' already added, skiped.",
+                                server["server"], server["port"])
 
             # Load files asked by the configuration file
             for load in config.getNodes("load"):

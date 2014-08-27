@@ -30,7 +30,7 @@ class Server(threading.Thread):
 
       self.moremessages = dict()
 
-      self.logger = logging.getLogger(__name__ + "/" + self.id)
+      self.logger = logging.getLogger("nemubot.server." + self.id)
 
       threading.Thread.__init__(self)
 

@@ -32,7 +32,7 @@ from server.IRC import IRCServer
 from server.DCC import DCC
 import response
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.bot")
 
 ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -41,7 +41,7 @@ class Bot:
         # Bot general informations
         self.version     = 3.4
         self.version_txt = "3.4-dev"
-        logger.info("Initiate nemubot v%s" % self.version_txt)
+        logger.info("Initiate nemubot v%s", self.version_txt)
 
         # Save various informations
         self.ip = ip
@@ -91,7 +91,7 @@ class Bot:
                                      msg.sender, "USERINFO %s" % self.realname)
         self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
                           msg.sender, "VERSION nemubot v%s" % self.version_txt)
-        logger.debug("CTCP capabilities setup: %s" % ", ".join(self.ctcp_capabilities))
+        logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
     def _ctcp_clientinfo(self, srv, msg):
         """Response to CLIENTINFO CTCP message"""
@@ -106,7 +106,7 @@ class Bot:
             srv.dcc_clients[conn.sender] = conn
             conn.send_dcc("Hello %s!" % conn.nick)
         else:
-            logger.error("DCC: unable to connect to %s:%s" % (ip, msg.cmds[4]))
+            logger.error("DCC: unable to connect to %s:%s", ip, msg.cmds[4])
 
 
     def add_event(self, evt, eid=None, module_src=None):
@@ -137,12 +137,12 @@ class Bot:
         if module_src is not None:
             module_src.REGISTERED_EVENTS.append(evt.id)
 
-        logger.info("New event registered: %s -> %s" % (evt.id, evt))
+        logger.info("New event registered: %s -> %s", evt.id, evt)
         return evt.id
 
     def del_event(self, id, module_src=None):
         """Find and remove an event from list"""
-        logger.info("Removing event: %s from %s" % (id, module_src))
+        logger.info("Removing event: %s from %s", id, module_src)
         if len(self.events) > 0 and id == self.events[0].id:
             self.events.remove(self.events[0])
             self.update_timer()
@@ -165,7 +165,7 @@ class Bot:
         if self.event_timer is not None:
             self.event_timer.cancel()
         if len(self.events) > 0:
-            logger.debug("Update timer: next event in %d seconds" %
+            logger.debug("Update timer: next event in %d seconds",
                          self.events[0].time_left.seconds)
             if datetime.now() + timedelta(seconds=5) >= self.events[0].current:
                 while datetime.now() < self.events[0].current:
@@ -247,7 +247,7 @@ class Bot:
                 self.del_event(e)
             # Remove from the dict
             del self.modules[name]
-            logger.info("Module `%s' successfully unloaded." % name)
+            logger.info("Module `%s' successfully unloaded.", name)
             return True
         return False
 
@@ -443,7 +443,7 @@ class Bot:
                         return srv.moremessages[msg.channel]
 
             elif msg.cmds[0] == "dcc":
-                logger.debug("dcctest for " + msg.sender)
+                logger.debug("dcctest for %s", msg.sender)
                 srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
             elif msg.cmds[0] == "pvdcctest":
                 logger.debug("dcctest")

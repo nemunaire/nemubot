@@ -29,7 +29,7 @@ from message import Message
 import response
 import server
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.consumer")
 
 class MessageConsumer:
     """Store a message before treating"""
@@ -67,7 +67,7 @@ class MessageConsumer:
             if (res.server is not None and
                 not isinstance(res.server, server.Server)):
                 logger.error("The server defined in this response doesn't "
-                             "exist: %s" % res.server)
+                             "exist: %s", res.server)
                 res.server = None
             if res.server is None:
                 res.server = self.srv
@@ -80,7 +80,7 @@ class MessageConsumer:
             context.hooks.add_hook(res.type, res.hook, res.src)
 
         elif res is not None:
-            logger.error("Unrecognized response type: %s" % res)
+            logger.error("Unrecognized response type: %s", res)
 
     def run(self, context):
         """Create, parse and treat the message"""
@@ -92,12 +92,7 @@ class MessageConsumer:
                 msg.private = msg.private or msg.channel == self.srv.nick
             res = self.treat_in(context, msg)
         except:
-            logger.error("Error occurred during the processing of the message:"
-                         " %s" % self.raw)
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            logger.debug(traceback.format_exception(exc_type,
-                                                    exc_value,
-                                                    exc_traceback))
+            logger.exception("Error occurred during the processing of the message: %s", self.raw)
             return
 
         # Send message
@@ -119,11 +114,7 @@ class EventConsumer:
         try:
             self.evt.launch_check()
         except:
-            logger.error("Error during event end")
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            logger.debug(traceback.format_exception(exc_type,
-                                                    exc_value,
-                                                    exc_traceback))
+            logger.exception("Error during event end")
         if self.evt.next is not None:
             context.add_event(self.evt, self.evt.id)
 

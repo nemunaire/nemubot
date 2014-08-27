@@ -22,7 +22,7 @@ import re
 from response import Response
 from exception import IRCException
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.hooks")
 
 class MessagesHook:
     def __init__(self, context, bot):
@@ -54,19 +54,19 @@ class MessagesHook:
 
     def add_hook(self, store, hook, module_src=None):
         """Insert in the right place a hook into the given store"""
-        logger.info("Adding hook '%s' to store '%s' from module '%s'" % (hook, store, module_src))
+        logger.info("Adding hook '%s' to store '%s' from module '%s'", hook, store, module_src)
         if module_src is None:
             logger.warn("No source module was passed to add_hook function, "
                         "please fix it in order to be compatible with unload "
                         "feature")
 
         if store in self.context.hooks_cache:
-            logger.debug("Cleaning hooks cache for " + store)
+            logger.debug("Cleaning hooks cache for %s", store)
             del self.context.hooks_cache[store]
 
         if not hasattr(self, store):
             # TODO: raise custom exception, this is a user problem, not internal one!
-            logger.error("Unrecognized hook store: " + store)
+            logger.error("Unrecognized hook store: %s", store)
             return
         attr = getattr(self, store)
 
@@ -81,7 +81,7 @@ class MessagesHook:
         elif isinstance(attr, list):
             attr.append(hook)
         else:
-            logger.critical("Unrecognized hook store type: " + type(attr))
+            logger.critical("Unrecognized hook store type: %s", type(attr))
             return
         if module_src is not None and hasattr(module_src, "REGISTERED_HOOKS"):
             module_src.REGISTERED_HOOKS.append((store, hook))

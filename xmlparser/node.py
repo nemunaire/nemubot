@@ -3,9 +3,12 @@
 import xml.sax
 from datetime import datetime
 from datetime import date
+import logging
 import sys
 import time
 import traceback
+
+logger = logging.getLogger("nemubot.xmlparser.node")
 
 class ModuleState:
   """Tiny tree representation of an XML file"""
@@ -192,10 +195,7 @@ class ModuleState:
 
       gen.endElement(self.name)
     except:
-      print ("\033[1;31mERROR:\033[0m occurred when saving the "
-             "following XML node: %s with %s" % (self.name, attrs))
-      exc_type, exc_value, exc_traceback = sys.exc_info()
-      traceback.print_exception(exc_type, exc_value, exc_traceback)
+      logger.exception("Error occured when saving the following XML node: %s with %s", self.name, attrs)
 
   def save(self, filename):
     """Save the current node as root node in a XML file"""

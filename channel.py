@@ -16,12 +16,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 class Channel:
     def __init__(self, name, password=None):
         self.name = name
         self.password = password
         self.people = dict()
         self.topic = ""
+        self.logger = logging.getLogger("nemubot.channel." + name)
 
     def treat(self, cmd, msg):
         if cmd == "353":
@@ -41,7 +44,7 @@ class Channel:
 
     def join(self, nick, level = 0):
         """Someone join the channel"""
-        logger.debug("%s join %s" % (nick, self.name))
+        self.logger.debug("%s join", nick)
         self.people[nick] = level
 
     def chtopic(self, newtopic):
@@ -52,7 +55,7 @@ class Channel:
     def nick(self, oldnick, newnick):
         """Someone change his nick"""
         if oldnick in self.people:
-            logger.debug("%s switch nick to %s on %s" % (oldnick, newnick, self.name))
+            self.logger.debug("%s switch nick to %s on", oldnick, newnick)
             lvl = self.people[oldnick]
             del self.people[oldnick]
             self.people[newnick] = lvl
@@ -60,7 +63,7 @@ class Channel:
     def part(self, nick):
         """Someone leave the channel"""
         if nick in self.people:
-            logger.debug("%s has left %s" % (nick, self.name))
+            self.logger.debug("%s has left", nick)
             del self.people[nick]
 
     def mode(self, msg):

@@ -30,9 +30,19 @@ import importer
 
 if __name__ == "__main__":
     # Setup loggin interface
-    logging.basicConfig(filename='nemubot.log', level=logging.DEBUG)
-    logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("nemubot")
+
+    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+
+    fh = logging.FileHandler('./nemubot.log')
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     # Create bot context
     context = bot.Bot(0, "FIXME")
@@ -68,14 +78,11 @@ if __name__ == "__main__":
             prmpt = prompt.hotswap(prmpt)
             # Reload all other modules
             bot.reload()
-            print ("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
-                   context.version_txt)
+            print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
+                  context.version_txt)
         except:
-            print ("\033[1;31mUnable to reload the prompt due to errors.\033[0"
-                   "m Fix them before trying to reload the prompt.")
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            sys.stderr.write (traceback.format_exception_only(exc_type,
-                                                              exc_value)[0])
+            logger.exception("\033[1;31mUnable to reload the prompt due to errors.\033[0"
+                             "m Fix them before trying to reload the prompt.")
 
     print ("\nWaiting for other threads shuts down...")
 

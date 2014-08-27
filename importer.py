@@ -29,7 +29,7 @@ import hooks
 import response
 import xmlparser
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nemubot.importer")
 
 class ModuleFinder(Finder):
     def __init__(self, context, prompt):
@@ -146,7 +146,7 @@ class ModuleLoader(SourceLoader):
 
         # Set module common functions and datas
         module.__LOADED__ = True
-        module.logger = logging.getLogger("module/" + fullname)
+        module.logger = logging.getLogger("nemubot.module." + fullname)
 
         def prnt(*args):
             print("[%s]" % module.name, *args)
@@ -165,7 +165,7 @@ class ModuleLoader(SourceLoader):
             if server in self.context.servers:
                 return self.context.servers[server].send_response(res, None)
             else:
-                module.logger.error("Try to send a message to the unknown server: %s" % server)
+                module.logger.error("Try to send a message to the unknown server: %s", server)
                 return False
 
         def add_hook(store, hook):
@@ -218,8 +218,8 @@ class ModuleLoader(SourceLoader):
                         break
                 if depend["name"] not in module.MODS:
                     logger.error("In module `%s', module `%s' require by this "
-                                 "module but is not loaded." % (module.name,
-                                                               depend["name"]))
+                                 "module but is not loaded.", module.name,
+                                                              depend["name"])
                     return
 
         # Add the module to the global modules list
@@ -232,9 +232,9 @@ class ModuleLoader(SourceLoader):
             # Register hooks
             register_hooks(module, self.context, self.prompt)
 
-            logger.info("Module '%s' successfully loaded." % module.name)
+            logger.info("Module '%s' successfully loaded.", module.name)
         else:
-            logger.error("An error occurs while importing `%s'." % module.name)
+            logger.error("An error occurs while importing `%s'.", module.name)
             raise ImportError("An error occurs while importing `%s'."
                               % module.name)
         return module
@@ -245,7 +245,7 @@ def add_cap_hook(prompt, module, cmd):
         prompt.add_cap_hook(cmd["name"], getattr(module, cmd["call"]))
     else:
         logger.warn("In module `%s', no function `%s' defined for `%s' "
-               "command hook." % (module.name, cmd["call"], cmd["name"]))
+               "command hook.", module.name, cmd["call"], cmd["name"])
 
 def register_hooks(module, context, prompt):
     """Register all available hooks"""
