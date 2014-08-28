@@ -62,18 +62,20 @@ def load_file(filename, context):
         config = xmlparser.parse_file(filename)
 
         # This is a true nemubot configuration file, load it!
-        if (config.getName() == "nemubotconfig"
-            or config.getName() == "config"):
+        if (config.getName() == "botconfig"
+            or config.getName() == "nemubotconfig"):
             # Preset each server in this file
             for server in config.getNodes("server"):
-                if context.addServer(server, config["nick"],
-                                     config["owner"], config["realname"],
+                nick = server["nick"] if server.hasAttribute("nick") else config["nick"]
+                owner = server["owner"] if server.hasAttribute("owner") else config["owner"]
+                realname = server["realname"] if server.hasAttribute("realname") else config["realname"]
+                if context.add_server(server, nick, owner, realname,
                                      server.hasAttribute("ssl")):
-                    logger.info("Server `%s:%s' successfully added.",
-                                server["server"], server["port"])
+                    print("Server `%s:%s' successfully added." %
+                          (server["server"], server["port"]))
                 else:
-                    logger.warn("Server `%s:%s' already added, skiped.",
-                                server["server"], server["port"])
+                    print("Server `%s:%s' already added, skiped." %
+                          (server["server"], server["port"]))
 
             # Load files asked by the configuration file
             for load in config.getNodes("load"):
@@ -88,7 +90,7 @@ def load_file(filename, context):
             print ("  Can't load `%s'; this is not a valid nemubot "
                    "configuration file." % filename)
 
-        # Unexisting file, assume a name was passed, import the module!
+    # Unexisting file, assume a name was passed, import the module!
     else:
         __import__(filename)
 
