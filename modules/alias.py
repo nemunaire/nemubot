@@ -171,7 +171,7 @@ def treat_alias(msg, hooks_cache):
             return False
     return False
 
-
+@hook("ask_default")
 def parseask(msg):
     global ALIAS
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:

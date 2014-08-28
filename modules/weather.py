@@ -8,6 +8,8 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
+from hooks import hook
+
 import mapquest
 
 nemubotversion = 3.4
@@ -208,6 +210,7 @@ def cmd_weather(msg):
 
 gps_ask = re.compile(r"^\s*(?P<city>.*\w)\s*(?:(?:se|est)\s+(?:trouve|situ[ée]*)\s+[aà])\s*(?P<lat>-?[0-9]+(?:[,.][0-9]+))[^0-9.](?P<long>-?[0-9]+(?:[,.][0-9]+))\s*$", re.IGNORECASE)
 
+@hook("ask_default")
 def parseask(msg):
     res = gps_ask.match(msg.content)
     if res is not None:

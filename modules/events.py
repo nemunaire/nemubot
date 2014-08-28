@@ -166,6 +166,7 @@ def liste(msg):
     else:
         return Response(msg.sender, "Compteurs connus : %s." % ", ".join(DATAS.index.keys()), channel=msg.channel)
 
+@hook("cmd_default")
 def parseanswer(msg):
     if msg.cmds[0] in DATAS.index:
         res = Response(msg.sender, channel=msg.channel)
@@ -185,6 +186,7 @@ def parseanswer(msg):
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
 
+@hook("ask_default")
 def parseask(msg):
     if RGXP_ask.match(msg.content) is not None:
         name = re.match("^.*!([^ \"'@!]+).*$", msg.content)

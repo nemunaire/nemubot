@@ -54,7 +54,7 @@ def cmd_subreddit(msg):
 
     return all_res
 
-
+@hook("msg_default")
 def parselisten(msg):
     global LAST_SUBS
 

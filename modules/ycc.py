@@ -51,6 +51,7 @@ def cmd_ycc(msg):
             res.append(gen_response(False, msg, url))
     return res
 
+@hook("msg_default")
 def parselisten(msg):
     global LAST_URLS
     try:

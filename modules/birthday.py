@@ -82,6 +82,7 @@ def cmd_age(msg):
                         " Quand est-il né ?" % name, msg.channel, msg.nick)
     return True
 
+@hook("ask_default")
 def parseask(msg):
     res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.content, re.I)
     if res is not None:

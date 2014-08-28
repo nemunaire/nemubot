@@ -76,6 +76,7 @@ def cmd_sms(msg):
 apiuser_ask = re.compile(r"(utilisateur|user|numéro|numero|compte|abonne|abone|abonné|account)\s+(est|is)\s+(?P<user>[0-9]{7,})", re.IGNORECASE)
 apikey_ask = re.compile(r"(clef|key|password|mot de passe?)\s+(?:est|is)?\s+(?P<key>[a-zA-Z0-9]{10,})", re.IGNORECASE)
 
+@hook("ask_default")
 def parseask(msg):
     if msg.content.find("Free") >= 0 and (
             msg.content.find("API") >= 0 or msg.content.find("api") >= 0) and (
