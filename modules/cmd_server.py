@@ -20,6 +20,7 @@ import traceback
 import sys
 
 from networkbot import NetworkBot
+from hooks import hook
 
 nemubotversion = 3.4
 NODATA = True
@@ -33,6 +34,7 @@ def getserver(toks, context, prompt):
     else:
         return (None, toks)
 
+@hook("prompt_cmd", "close")
 def close(data, toks, context, prompt):
     """Disconnect and forget (remove from the servers list) the server"""
     if len(toks) > 1:
@@ -48,6 +50,7 @@ def close(data, toks, context, prompt):
         prompt.selectedServer = None
     return
 
+@hook("prompt_cmd", "connect")
 def connect(data, toks, context, prompt):
     """Make the connexion to a server"""
     if len(toks) > 1:
@@ -62,6 +65,7 @@ def connect(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+@hook("prompt_cmd", "disconnect")
 def disconnect(data, toks, context, prompt):
     """Close the connection to a server"""
     if len(toks) > 1:
@@ -78,6 +82,7 @@ def disconnect(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+@hook("prompt_cmd", "discover")
 def discover(data, toks, context, prompt):
     """Discover a new bot on a server"""
     (srv, toks) = getserver(toks, context, prompt)
@@ -91,6 +96,7 @@ def discover(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in first argument.")
 
+@hook("prompt_cmd", "hotswap")
 def hotswap(data, toks, context, prompt):
     """Reload a server class"""
     if len(toks) > 1:
@@ -107,6 +113,7 @@ def hotswap(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+@hook("prompt_cmd", "join")
 def join(data, toks, context, prompt):
     """Join or leave a channel"""
     rd = 1
@@ -136,6 +143,7 @@ def join(data, toks, context, prompt):
         srv.leave(toks[rd])
     return
 
+@hook("prompt_cmd", "save")
 def save_mod(data, toks, context, prompt):
     """Force save module data"""
     if len(toks) < 2:
@@ -150,6 +158,7 @@ def save_mod(data, toks, context, prompt):
             print ("save: no module named `%s´" % mod)
     return
 
+@hook("prompt_cmd", "send")
 def send(data, toks, context, prompt):
     """Send a message on a channel"""
     rd = 1
@@ -190,6 +199,7 @@ def send(data, toks, context, prompt):
     srv.send_msg_final(chan, toks[rd])
     return "done"
 
+@hook("prompt_cmd", "zap")
 def zap(data, toks, context, prompt):
     """Hard change connexion state"""
     if len(toks) > 1:
@@ -203,6 +213,7 @@ def zap(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+@hook("prompt_cmd", "top")
 def top(data, toks, context, prompt):
     """Display consumers load information"""
     print("Queue size: %d, %d thread(s) running (counter: %d)" % (context.cnsr_queue.qsize(), len(context.cnsr_thrd), context.cnsr_thrd_size))
@@ -216,6 +227,7 @@ def top(data, toks, context, prompt):
             print("################ Stack trace for thread %u ################" % th.ident)
             traceback.print_stack(sys._current_frames()[th.ident])
 
+@hook("prompt_cmd", "netstat")
 def netstat(data, toks, context, prompt):
     """Display sockets in use and many other things"""
     if len(context.network) > 0:

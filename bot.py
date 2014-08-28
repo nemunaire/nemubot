@@ -52,6 +52,7 @@ class Bot:
         # Keep global context: servers and modules
         self.servers = dict()
         self.modules = dict()
+        self.modules_configuration = dict()
 
         # Context paths
         self.modules_path = mp

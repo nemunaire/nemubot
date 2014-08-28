@@ -10,19 +10,16 @@
   </server>
   -->
 
-  <load path="cmd_server" />
+  <!--
+  <module name="ddg">
+    <wfaapi key="YOUR-APIKEY" />
+  </module>
+  -->
 
-  <load path="alias" />
-  <load path="birthday" />
-  <load path="ycc" />
-  <load path="velib" />
-  <load path="watchWebsite" />
-  <load path="events" />
-  <load path="sleepytime" />
-  <load path="spell" />
-  <load path="syno" />
-  <load path="man" />
-  <load path="reddit" />
-  <load path="sap" />
+  <module name="cmd_server" />
+
+  <module name="alias" />
+  <module name="ycc" />
+  <module name="events" />
 
 </nemubotconfig>

@@ -42,28 +42,22 @@ class ModuleFinder(Finder):
         if path is None:
             for mpath in self.context.modules_path:
                 #print ("looking for", fullname, "in", mpath)
-                if os.path.isfile(mpath + fullname + ".xml"):
-                    return ModuleLoader(self.context, self.prompt, fullname,
-                                        mpath, mpath + fullname + ".xml")
-                elif (os.path.isfile(mpath + fullname + ".py") or
-                      os.path.isfile(mpath + fullname + "/__init__.py")):
+                if (os.path.isfile(mpath + fullname + ".py") or
+                    os.path.isfile(mpath + fullname + "/__init__.py")):
                     return ModuleLoader(self.context, self.prompt,
-                                        fullname, mpath, None)
+                                        fullname, mpath)
         #print ("not found")
         return None
 
 
 class ModuleLoader(SourceLoader):
-    def __init__(self, context, prompt, fullname, path, config_path):
+    def __init__(self, context, prompt, fullname, path):
         self.context = context
         self.prompt = prompt
         self.name = fullname
-        self.config_path = config_path
 
-        if config_path is not None:
-            self.config = xmlparser.parse_file(config_path)
-            if self.config.hasAttribute("name"):
-                self.name = self.config["name"]
+        if self.name in self.context.modules_configuration:
+            self.config = self.context.modules_configuration[self.name]
         else:
             self.config = None
 
@@ -251,25 +245,8 @@ def register_hooks(module, context, prompt):
     """Register all available hooks"""
     # Register decorated functions
     for s, h in hooks.last_registered:
-        context.hooks.add_hook(s, h, module)
+        if s == "prompt_cmd":
+            prompt.add_cap_hook(h.name, h.call)
+        else:
+            context.hooks.add_hook(s, h, module)
     hooks.last_registered = []
-
-    if module.CONF is not None:
-        # Register command hooks
-        if module.CONF.hasNode("command"):
-            for cmd in module.CONF.getNodes("command"):
-                if cmd.hasAttribute("name") and cmd.hasAttribute("call"):
-                    add_cap_hook(prompt, module, cmd)
-
-        # Register message hooks
-        if module.CONF.hasNode("message"):
-            for msg in module.CONF.getNodes("message"):
-                context.hooks.register_hook(module, msg)
-
-    # Register legacy hooks
-    if hasattr(module, "parseanswer"):
-        context.hooks.add_hook("cmd_default", hooks.Hook(module.parseanswer), module)
-    if hasattr(module, "parseask"):
-        context.hooks.add_hook("ask_default", hooks.Hook(module.parseask), module)
-    if hasattr(module, "parselisten"):
-        context.hooks.add_hook("msg_default", hooks.Hook(module.parselisten), module)

@@ -77,13 +77,15 @@ def load_file(filename, context):
                     print("Server `%s:%s' already added, skiped." %
                           (server["server"], server["port"]))
 
-            # Load files asked by the configuration file
-            for load in config.getNodes("load"):
-                load_file(load["path"], context)
+            # Load module and their configuration
+            for mod in config.getNodes("module"):
+                context.modules_configuration[mod["name"]] = mod
+                if not mod.hasAttribute("autoload") or (mod["autoload"].lower() != "false" and mod["autoload"].lower() != "off"):
+                    __import__(mod["name"])
 
-        # This is a nemubot module configuration file, load the module
-        elif config.getName() == "nemubotmodule":
-            __import__(config["name"])
+            # Load files asked by the configuration file
+            for load in config.getNodes("include"):
+                load_file(load["path"], context)
 
         # Other formats
         else:
