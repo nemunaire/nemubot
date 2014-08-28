@@ -47,6 +47,23 @@ def info_issue(repo, issue=None):
     except urllib.error.HTTPError:
         raise IRCException("Repository not found")
 
+def info_commit(repo, commit=None):
+    rp = info_repos(repo)
+    if rp["items"]:
+        fullname = rp["items"][0]["full_name"]
+    else:
+        fullname = repo
+
+    try:
+        if commit is not None:
+            raw = urlopen("https://api.github.com/repos/%s/commits/%s" % (quote(fullname), quote(commit)), timeout=10)
+            return [ json.loads(raw.read().decode()) ]
+        else:
+            raw = urlopen("https://api.github.com/repos/%s/commits" % quote(fullname), timeout=10)
+            return json.loads(raw.read().decode())
+    except urllib.error.HTTPError:
+        raise IRCException("Repository not found")
+
 
 @hook("cmd_hook", "github")
 def cmd_github(msg):
@@ -93,29 +110,63 @@ def cmd_github(msg):
 @hook("cmd_hook", "github_issue")
 def cmd_github(msg):
     if len(msg.cmds) < 2:
-        raise IRCException("indicate a user name to search")
+        raise IRCException("indicate a repository to view its issues")
+
+    issue = None
+    if len(msg.cmds) > 2:
+        li = re.match("^#?([0-9]+)$", msg.cmds[1])
+        ri = re.match("^#?([0-9]+)$", msg.cmds[-1])
+        if li is not None:
+            issue = msg.cmds[1]
+            del msg.cmds[1]
+        elif ri is not None:
+            issue = msg.cmds[-1]
+            del msg.cmds[-1]
 
     repo = " ".join(msg.cmds[1:])
-    li = re.match("^(?P<repo>.*)\s+(?:#(?P<issue>[0-9]+))$", repo)
-    ri = re.match("^(?:#(?P<issue>[0-9]+))\s+(?P<repo>.*)$", repo)
 
-    if li is not None:
-        issue = li.group("issue")
-        repo = li.group("repo")
-        count = None
-    elif ri is not None:
-        issue = ri.group("issue")
-        repo = ri.group("repo")
-        count = None
-    else:
-        issue = None
-        count = " (%d more issues)"
-
+    count = " (%d more issues)" if issue is None else None
     res = Response(msg.sender, channel=msg.channel, nomore="No more issue", count=count)
 
     issues = info_issue(repo, issue)
 
     for issue in issues:
-        res.append_message("%s%s issue #%d: \x03\x02%s\x03\x02 opened by %s on %s: %s" % (issue["state"][0].upper(), issue["state"][1:], issue["number"], issue["title"], issue["user"]["login"], issue["created_at"], issue["body"].replace("\n", " ")))
+        res.append_message("%s%s issue #%d: \x03\x02%s\x03\x02 opened by %s on %s: %s" %
+                           (issue["state"][0].upper(),
+                            issue["state"][1:],
+                            issue["number"],
+                            issue["title"],
+                            issue["user"]["login"],
+                            issue["created_at"],
+                            issue["body"].replace("\n", " ")))
+    return res
+
+
+@hook("cmd_hook", "github_commit")
+def cmd_github(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("indicate a repository to view its commits")
+
+    commit = None
+    if len(msg.cmds) > 2:
+        if re.match("^[a-fA-F0-9]+$", msg.cmds[1]):
+            commit = msg.cmds[1]
+            del msg.cmds[1]
+        elif re.match("^[a-fA-F0-9]+$", msg.cmds[-1]):
+            commit = msg.cmds[-1]
+            del msg.cmds[-1]
+
+    repo = " ".join(msg.cmds[1:])
+
+    count = " (%d more commits)" if commit is None else None
+    res = Response(msg.sender, channel=msg.channel, nomore="No more commit", count=count)
+
+    commits = info_commit(repo, commit)
+
+    for commit in commits:
+        res.append_message("Commit %s by %s on %s: %s" % (commit["sha"][:10],
+                                                          commit["commit"]["author"]["name"],
+                                                          commit["commit"]["author"]["date"],
+                                                          commit["commit"]["message"].replace("\n", " ")))
 
     return res
