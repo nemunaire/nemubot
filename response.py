@@ -100,6 +100,7 @@ class Response:
 
     def pop(self):
         self.messages.pop(0)
+        self.elt = 0
         if isinstance(self.rawtitle, list):
             self.rawtitle.pop(0)
             if len(self.rawtitle) <= 0:
@@ -136,13 +137,11 @@ class Response:
                     msg += e + ", "
                     self.elt += 1
             self.pop()
-            self.elt = 0
             return msg[:len(msg)-2]
 
         else:
             if len(elts) <= 432:
                 self.pop()
-                self.elt = 0
                 if self.count is not None:
                     return msg + elts + (self.count % len(self.messages))
                 else:
@@ -164,7 +163,6 @@ class Response:
                         msg += w + " "
                         self.elt += len(w) + 1
                 self.pop()
-                self.elt = 0
                 return msg
 
 import hooks

@@ -443,6 +443,18 @@ class Bot:
                     if msg.channel in srv.moremessages:
                         return srv.moremessages[msg.channel]
 
+            elif msg.cmds[0] == "next":
+                ret = None
+                if msg.channel == srv.nick:
+                    if msg.sender in srv.moremessages:
+                        ret = srv.moremessages[msg.sender]
+                else:
+                    if msg.channel in srv.moremessages:
+                        ret = srv.moremessages[msg.channel]
+                if ret is not None:
+                    ret.pop()
+                    return ret
+
             elif msg.cmds[0] == "dcc":
                 logger.debug("dcctest for %s", msg.sender)
                 srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
