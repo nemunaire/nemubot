@@ -120,21 +120,16 @@ class IRCServer(server.Server):
             self.channels[chan].treat(msg.cmd, msg)
 
     def evt_channel(self, msg, srv):
-        if msg.channel is not None:
-            if msg.channel in self.channels:
-                self.channels[msg.channel].treat(msg.cmd, msg)
+        if msg.receivers is not None:
+            for receiver in msg.receivers:
+                if receiver in self.channels:
+                    self.channels[receiver].treat(msg.cmd, msg)
 
     def accepted_channel(self, chan, sender=None):
         """Return True if the channel (or the user) is authorized"""
-        if self.allow_all:
-            return True
-        elif self.listen_nick:
-            return (chan in self.channels and (sender is None or sender in
-                                               self.channels[chan].people)
-                    ) or chan == self.nick
-        else:
-            return chan in self.channels and (sender is None or sender
-                                              in self.channels[chan].people)
+        return (self.allow_all or
+                (chan in self.channels and (sender is None or sender in self.channels[chan].people)) or
+                (self.listen_nick and chan == self.nick))
 
     def join(self, chan, password=None, force=False):
         """Join a channel"""
@@ -255,7 +250,7 @@ class IRCServer(server.Server):
         """Send a message without checks or format"""
         #TODO: add something for post message treatment here
         if channel == self.nick:
-            self.logger.warn("Nemubot talks to himself: %s", msg, stack_info=True)
+            self.logger.warn("Nemubot talks to himself: %s", line, stack_info=True)
         if line is not None and channel is not None:
             if self.s is None:
                 self.logger.warn("Attempt to send message on a non connected server: %s: %s", self.id, line, stack_info=True)

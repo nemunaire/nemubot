@@ -84,7 +84,7 @@ def cmd_age(msg):
 
 @hook("ask_default")
 def parseask(msg):
-    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.content, re.I)
+    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.text, re.I)
     if res is not None:
         try:
             extDate = msg.extractDate()

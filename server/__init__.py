@@ -73,22 +73,20 @@ class Server(threading.Thread):
 
     def send_response(self, res, origin):
         """Analyse a Response and send it"""
-        # TODO: how to send a CTCP message to a different person
-        if res.ctcp:
-            self.send_ctcp(res.sender, res.get_message())
+        if type(res.channel) != list:
+            res.channel = [ res.channel ]
 
-        elif res.channel is not None and res.channel != self.nick:
-            self.send_msg(res.channel, res.get_message())
+        for channel in res.channel:
+            if channel != self.nick:
+                self.send_msg(channel, res.get_message())
+            else:
+                channel = res.sender
+                self.send_msg_usr(channel, res.get_message(), "NOTICE" if res.is_ctcp else "PRIVMSG")
 
             if not res.alone:
                 if hasattr(self, "send_bot"):
                     self.send_bot("NOMORE %s" % res.channel)
-                self.moremessages[res.channel] = res
-        elif res.sender is not None:
-            self.send_msg_usr(res.sender, res.get_message())
-
-            if not res.alone:
-                self.moremessages[res.sender] = res
+                self.moremessages[channel] = res
 
     def send_ctcp(self, to, msg, cmd="NOTICE", endl="\r\n"):
         """Send a message as CTCP response"""

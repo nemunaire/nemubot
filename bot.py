@@ -116,7 +116,7 @@ class Bot:
                 logger.error("DCC: unable to connect to %s:%d", ip, port)
                 return _ctcp_response(msg.sender, "ERRMSG unable to connect to %s:%d" % (ip, port))
 
-        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive: %s" % msg.content)
+        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive: %s" % msg.text)
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
         self.ctcp_capabilities["DCC"] = _ctcp_dcc
         self.ctcp_capabilities["FINGER"] = lambda srv, msg: _ctcp_response(
@@ -298,8 +298,8 @@ class Bot:
     def add_modules_path(self, path):
         """Add a path to the modules_path array, used by module loader"""
         # The path must end by / char
-        if path[len(path)-1] != "/":
-            path = path + "/"
+        if path[-1] != "/":
+            path += "/"
 
         if path not in self.modules_paths:
             self.modules_paths.append(path)
@@ -444,9 +444,9 @@ class Bot:
     def treat_pre(self, msg, srv):
         """Treat a message before all other treatment"""
         # Treat all messages starting with 'nemubot:' as distinct commands
-        if msg.cmd == "PRIVMSG" and msg.content.find("%s:"%srv.nick) == 0:
+        if msg.cmd == "PRIVMSG" and msg.text.find("%s:"%srv.nick) == 0:
             # Remove the bot name
-            msg.content = msg.content[len(srv.nick)+1:].strip()
+            msg.text = msg.text[len(srv.nick)+1:].strip()
             msg.parse_content()
             msg.private = True
 
@@ -487,30 +487,28 @@ class Bot:
     def treat_prvmsg_ask(self, msg, srv):
         # Treat ping
         if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
-                    msg.content, re.I) is not None:
+                    msg.text, re.I) is not None:
             return response.Response(msg.sender, message="pong",
-                                     channel=msg.channel, nick=msg.nick)
+                                     channel=msg.receivers, nick=msg.nick)
 
         # Ask hooks
         else:
             return self.treat_ask(msg, srv)
 
     def treat_prvmsg(self, msg, srv):
-        msg.is_owner = msg.nick == srv.owner
-
         # First, treat CTCP
-        if msg.ctcp:
+        if msg.is_ctcp:
             if msg.cmds[0] in self.ctcp_capabilities:
                 return self.ctcp_capabilities[msg.cmds[0]](srv, msg)
             else:
                 return _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
 
         # Owner commands
-        if len(msg.content) > 1 and msg.content[0] == '`' and msg.nick == srv.owner:
+        if len(msg.text) > 1 and msg.text[0] == '`' and msg.nick == srv.owner:
             #TODO: owner commands
             pass
 
-        elif len(msg.content) > 1 and msg.content[0] == '!':
+        elif len(msg.text) > 1 and msg.text[0] == '!':
             # Remove the !
             msg.cmds[0] = msg.cmds[0][1:]
 
@@ -518,21 +516,21 @@ class Bot:
                 return _help_msg(msg.sender, self.modules, msg.cmds)
 
             elif msg.cmds[0] == "more":
-                if msg.channel == srv.nick:
+                if msg.receivers == srv.nick:
                     if msg.sender in srv.moremessages:
                         return srv.moremessages[msg.sender]
                 else:
-                    if msg.channel in srv.moremessages:
-                        return srv.moremessages[msg.channel]
+                    if msg.receivers in srv.moremessages:
+                        return srv.moremessages[msg.receivers]
 
             elif msg.cmds[0] == "next":
                 ret = None
-                if msg.channel == srv.nick:
+                if msg.receivers == srv.nick:
                     if msg.sender in srv.moremessages:
                         ret = srv.moremessages[msg.sender]
                 else:
-                    if msg.channel in srv.moremessages:
-                        ret = srv.moremessages[msg.channel]
+                    if msg.receivers in srv.moremessages:
+                        ret = srv.moremessages[msg.receivers]
                 if ret is not None:
                     ret.pop()
                     return ret
@@ -569,7 +567,7 @@ class Bot:
         if msg.cmds[0] in cmd_hook:
             (hks, lvl, store, bot) = cmd_hook[msg.cmds[0]]
             for h in hks:
-                if h.is_matching(msg.cmds[0], channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
+                if h.is_matching(msg.cmds[0], channel=msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
                     res = h.run(msg, strcmp=msg.cmds[0])
                     if res is not None and res != False:
                         treated.append(res)
@@ -578,7 +576,7 @@ class Bot:
         # Then, treat regexp based hook
         cmd_rgxp = self.create_cache("cmd_rgxp")
         for hook, lvl, store, bot in cmd_rgxp:
-            if hook.is_matching(msg.cmds[0], msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
+            if hook.is_matching(msg.cmds[0], msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
                 res = hook.run(msg)
                 if res is not None and res != False:
                     treated.append(res)
@@ -602,11 +600,11 @@ class Bot:
 
         # First, treat simple hook
         ask_hook = self.create_cache("ask_hook")
-        if msg.content in ask_hook:
-            hks, lvl, store, bot = ask_hook[msg.content]
+        if msg.text in ask_hook:
+            hks, lvl, store, bot = ask_hook[msg.text]
             for h in hks:
-                if h.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
-                    res = h.run(msg, strcmp=msg.content)
+                if h.is_matching(msg.text, channel=msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
+                    res = h.run(msg, strcmp=msg.text)
                     if res is not None and res != False:
                         treated.append(res)
                     self.check_rest_times(store, h)
@@ -614,8 +612,8 @@ class Bot:
         # Then, treat regexp based hook
         ask_rgxp = self.create_cache("ask_rgxp")
         for hook, lvl, store, bot in ask_rgxp:
-            if hook.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
-                res = hook.run(msg, strcmp=msg.content)
+            if hook.is_matching(msg.text, channel=msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
+                res = hook.run(msg, strcmp=msg.text)
                 if res is not None and res != False:
                     treated.append(res)
                 self.check_rest_times(store, hook)
@@ -638,11 +636,11 @@ class Bot:
 
         # First, treat simple hook
         msg_hook = self.create_cache("msg_hook")
-        if msg.content in msg_hook:
-            hks, lvl, store, bot = msg_hook[msg.content]
+        if msg.text in msg_hook:
+            hks, lvl, store, bot = msg_hook[msg.text]
             for h in hks:
-                if h.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
-                    res = h.run(msg, strcmp=msg.content)
+                if h.is_matching(msg.text, channel=msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
+                    res = h.run(msg, strcmp=msg.text)
                     if res is not None and res != False:
                         treated.append(res)
                     self.check_rest_times(store, h)
@@ -650,8 +648,8 @@ class Bot:
         # Then, treat regexp based hook
         msg_rgxp = self.create_cache("msg_rgxp")
         for hook, lvl, store, bot in msg_rgxp:
-            if hook.is_matching(msg.content, channel=msg.channel, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.channel].people):
-                res = hook.run(msg, strcmp=msg.content)
+            if hook.is_matching(msg.text, channel=msg.receivers, server=srv) and (msg.private or lvl == 0 or bot.nick not in srv.channels[msg.receivers].people):
+                res = hook.run(msg, strcmp=msg.text)
                 if res is not None and res != False:
                     treated.append(res)
                 self.check_rest_times(store, hook)

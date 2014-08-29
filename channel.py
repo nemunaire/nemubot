@@ -36,11 +36,11 @@ class Channel:
         elif cmd == "JOIN":
             self.join(msg.nick)
         elif cmd == "NICK":
-            self.nick(msg.nick, msg.content)
+            self.nick(msg.nick, msg.text)
         elif cmd == "PART" or cmd == "QUIT":
             self.part(msg.nick)
         elif cmd == "TOPIC":
-            self.topic = self.content
+            self.topic = self.text
 
     def join(self, nick, level = 0):
         """Someone join the channel"""
@@ -67,31 +67,31 @@ class Channel:
             del self.people[nick]
 
     def mode(self, msg):
-        if msg.content[0] == "-k":
+        if msg.text[0] == "-k":
             self.password = ""
-        elif msg.content[0] == "+k":
-            if len(msg.content) > 1:
-                self.password = ' '.join(msg.content[1:])[1:]
+        elif msg.text[0] == "+k":
+            if len(msg.text) > 1:
+                self.password = ' '.join(msg.text[1:])[1:]
             else:
-                self.password = msg.content[1]
-        elif msg.content[0] == "+o":
+                self.password = msg.text[1]
+        elif msg.text[0] == "+o":
             self.people[msg.nick] |= 4
-        elif msg.content[0] == "-o":
+        elif msg.text[0] == "-o":
             self.people[msg.nick] &= ~4
-        elif msg.content[0] == "+h":
+        elif msg.text[0] == "+h":
             self.people[msg.nick] |= 2
-        elif msg.content[0] == "-h":
+        elif msg.text[0] == "-h":
             self.people[msg.nick] &= ~2
-        elif msg.content[0] == "+v":
+        elif msg.text[0] == "+v":
             self.people[msg.nick] |= 1
-        elif msg.content[0] == "-v":
+        elif msg.text[0] == "-v":
             self.people[msg.nick] &= ~1
 
     def parse332(self, msg):
-        self.topic = msg.content
+        self.topic = msg.text
 
     def parse353(self, msg):
-        for p in msg.content:
+        for p in msg.text:
             p = p.decode()
             if p[0] == "@":
                 level = 4

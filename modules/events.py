@@ -188,14 +188,14 @@ RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?
 
 @hook("ask_default")
 def parseask(msg):
-    if RGXP_ask.match(msg.content) is not None:
-        name = re.match("^.*!([^ \"'@!]+).*$", msg.content)
+    if RGXP_ask.match(msg.text) is not None:
+        name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
         if name is None:
             raise IRCException("il faut que tu attribues une commande à l'événement.")
         if name.group(1) in DATAS.index:
             raise IRCException("un événement portant ce nom existe déjà.")
 
-        texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.content, re.I)
+        texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
         if texts is not None and texts.group(3) is not None:
             extDate = msg.extractDate()
             if extDate is None or extDate == "":

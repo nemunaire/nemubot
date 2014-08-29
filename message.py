@@ -22,99 +22,107 @@ import shlex
 import time
 
 from response import Response
-import xmlparser
 
-filename = ""
+mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
+                      (?::(?P<prefix>
+                         (?P<nick>[a-zA-Z][^!@ ]*)
+                         (?: !(?P<user>[^@ ]+))?
+                         (?:@(?P<host>[^ ]+))?
+                      )\ )?
+                      (?P<command>(?:[a-zA-Z]+|[0-9]{3}))
+                      (?P<params>(?:\ [^:][^ ]*)*)(?:\ :(?P<trailing>.*))?
+                 $''', re.X)
 
 class Message:
-  def __init__ (self, line, timestamp, private=False):
-    self.raw = line
-    self.time = timestamp
-    self.channel = None
-    self.content = b''
-    self.ctcp = False
-    line = line.rstrip() #remove trailing 'rn'
-
-    words = line.split(b' ')
-    if words[0][0] == 58: #58 is : in ASCII table
-      self.sender = words[0][1:].decode()
-      self.cmd = words[1].decode()
-    else:
-      self.cmd = words[0].decode()
-      self.sender = None
-
-    if self.cmd == 'PING':
-      self.content = words[1]
-    elif self.sender is not None:
-      self.nick = (self.sender.split('!'))[0]
-      if self.nick != self.sender:
-        self.realname = (self.sender.split('!'))[1]
-      else:
-        self.realname = self.nick
-        self.sender = self.nick + "!" + self.realname
-
-      if len(words) > 2:
-        self.channel = self.pickWords(words[2:]).decode()
-
-      if self.cmd == 'PRIVMSG':
-          # Check for CTCP request
-          self.ctcp = len(words[3]) > 1 and (words[3][0] == 0x01 or words[3][1] == 0x01)
-          self.content = self.pickWords(words[3:])
-          # If CTCP, remove 0x01
-          if self.ctcp:
-            self.content = self.content[1:len(self.content)-1]
-      elif self.cmd == '353' and len(words) > 3:
-        for i in range(2, len(words)):
-          if words[i][0] == 58:
-            self.content = words[i:]
-            #Remove the first :
-            self.content[0] = self.content[0][1:]
-            self.channel = words[i-1].decode()
-            break
-      elif self.cmd == 'NICK':
-        self.content = self.pickWords(words[2:])
-      elif self.cmd == 'MODE':
-        self.content = words[3:]
-      elif self.cmd == '332':
-        self.channel = words[3]
-        self.content = self.pickWords(words[4:])
-      else:
-        self.content = self.pickWords(words[3:])
-    else:
-      if self.cmd == 'PRIVMSG':
-        self.channel = words[2].decode()
-        self.content = b' '.join(words[3:])
-    self.decode()
-    if self.cmd == 'PRIVMSG':
-      self.parse_content()
+  def __init__ (self, raw_line, timestamp, private=False):
+    self.raw = raw_line
     self.private = private
+    self.tags = { 'time': timestamp }
+    self.params = list()
+
+    p = mgx.match(raw_line.rstrip())
+
+    # Parse tags if exists: @aaa=bbb;ccc;example.com/ddd=eee
+    if p.group("tags"):
+      for tgs in self.decode(p.group("tags")).split(';'):
+        tag = tgs.split('=')
+        if len(tag) > 1:
+          self.add_tag(tag[0], tag[1])
+        else:
+          self.add_tag(tag[0])
+
+    # Parse prefix if exists: :nick!user@host.com
+    self.prefix = self.decode(p.group("prefix"))
+    self.nick   = self.decode(p.group("nick"))
+    self.user   = self.decode(p.group("user"))
+    self.host   = self.decode(p.group("host"))
+
+    # Parse command
+    self.cmd = self.decode(p.group("command"))
+
+    # Parse params
+    if p.group("params"):
+      for param in p.group("params").strip().split(b' '):
+        self.params.append(param)
+
+    if p.group("trailing"):
+      self.params.append(p.group("trailing"))
+
+    # Special commands
+    if self.cmd == 'PRIVMSG':
+      self.receivers = self.decode(self.params[0]).split(',')
+
+      # If CTCP, remove 0x01
+      if len(self.params[1]) > 1 and (self.params[1][0] == 0x01 or self.params[1][1] == 0x01):
+        self.is_ctcp = True
+        self.text = self.decode(self.params[1][1:len(self.params[1])-1])
+      else:
+        self.is_ctcp = False
+        self.text = self.decode(self.params[1])
+
+      # Split content by words
+      self.parse_content()
+
+    elif self.cmd == '353': # RPL_NAMREPLY
+      self.receivers = [ self.decode(self.params[0]) ]
+      self.nicks = self.decode(self.params[1]).split(" ")
+
+    elif self.cmd == '332':
+      self.receivers = [ self.decode(self.params[0]) ]
+      self.topic = self.decode(self.params[1]).split(" ")
+
+    else:
+      for i in range(0, len(self.params)-1):
+        self.params[i] = self.decode(self.params[i])
+
+
+  # TODO: here for legacy content
+  @property
+  def sender(self):
+    return self.prefix
+  @property
+  def channel(self):
+    return self.receivers[0]
+
 
   def parse_content(self):
       """Parse or reparse the message content"""
       # Split content by words
       try:
-          self.cmds = shlex.split(self.content)
+          self.cmds = shlex.split(self.text)
       except ValueError:
-          self.cmds = self.content.split(' ')
+          self.cmds = self.text.split(' ')
 
-  def pickWords(self, words):
-    """Parse last argument of a line: can be a single word or a sentence starting with :"""
-    if len(words) > 0 and len(words[0]) > 0:
-      if words[0][0] == 58:
-        return b' '.join(words[0:])[1:]
-      else:
-        return words[0]
-    else:
-      return b''
 
-  def decode(self):
+  def decode(self, s):
     """Decode the content string usign a specific encoding"""
-    if isinstance(self.content, bytes):
+    if isinstance(s, bytes):
       try:
-        self.content = self.content.decode()
+        s = s.decode()
       except UnicodeDecodeError:
         #TODO: use encoding from config file
-        self.content = self.content.decode('utf-8', 'replace')
+        s = s.decode('utf-8', 'replace')
+    return s
 
 ##############################
 #                            #

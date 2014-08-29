@@ -78,11 +78,11 @@ apikey_ask = re.compile(r"(clef|key|password|mot de passe?)\s+(?:est|is)?\s+(?P<
 
 @hook("ask_default")
 def parseask(msg):
-    if msg.content.find("Free") >= 0 and (
-            msg.content.find("API") >= 0 or msg.content.find("api") >= 0) and (
-                msg.content.find("SMS") >= 0 or msg.content.find("sms") >= 0):
-        resuser = apiuser_ask.search(msg.content)
-        reskey = apikey_ask.search(msg.content)
+    if msg.text.find("Free") >= 0 and (
+            msg.text.find("API") >= 0 or msg.text.find("api") >= 0) and (
+                msg.text.find("SMS") >= 0 or msg.text.find("sms") >= 0):
+        resuser = apiuser_ask.search(msg.text)
+        reskey = apikey_ask.search(msg.text)
         if resuser is not None and reskey is not None:
             apiuser = resuser.group("user")
             apikey = reskey.group("key")

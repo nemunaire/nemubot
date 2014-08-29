@@ -55,7 +55,7 @@ def cmd_ycc(msg):
 def parselisten(msg):
     global LAST_URLS
     try:
-      urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.content)
+      urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
       for url in urls:
           o = urlparse(url)
           if o.scheme != "":

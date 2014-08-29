@@ -32,7 +32,9 @@ import server
 logger = logging.getLogger("nemubot.consumer")
 
 class MessageConsumer:
+
     """Store a message before treating"""
+
     def __init__(self, srv, raw, time, prvt, data):
         self.srv = srv
         self.raw = raw
@@ -44,10 +46,10 @@ class MessageConsumer:
     def treat_in(self, context, msg):
         """Treat the input message"""
         if msg.cmd == "PING":
-            self.srv.send_pong(msg.content)
-        else:
-            # TODO: Manage credits
-            if msg.channel is None or self.srv.accepted_channel(msg.channel):
+            self.srv.send_pong(msg.params[0])
+        elif hasattr(msg, "receivers"):
+            msg.receivers = [ receiver for receiver in msg.receivers if self.srv.accepted_channel(receiver) ]
+            if msg.receivers:
                 # All messages
                 context.treat_pre(msg, self.srv)
 
@@ -86,7 +88,7 @@ class MessageConsumer:
             msg.server = self.srv.id
             if msg.cmd == "PRIVMSG":
                 msg.is_owner = (msg.nick == self.srv.owner)
-                msg.private = msg.private or msg.channel == self.srv.nick
+                msg.private = msg.private or (len(msg.receivers) == 1 and msg.receivers[0] == self.srv.nick)
             res = self.treat_in(context, msg)
         except:
             logger.exception("Error occurred during the processing of the message: %s", self.raw)

@@ -59,7 +59,7 @@ def parselisten(msg):
     global LAST_SUBS
 
     try:
-        urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.content)
+        urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.text)
         for url in urls:
             if msg.channel not in LAST_SUBS:
                 LAST_SUBS[msg.channel] = list()

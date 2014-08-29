@@ -157,7 +157,7 @@ def treat_alias(msg, hooks_cache):
             and msg.cmds[0][0] == "!"
             and msg.cmds[0][1:] in DATAS.getNode("aliases").index
             and msg.cmds[0][1:] not in hooks_cache("cmd_hook")):
-            msg.content = msg.content.replace(msg.cmds[0],
+            msg.text = msg.text.replace(msg.cmds[0],
                       DATAS.getNode("aliases").index[msg.cmds[0][1:]]["origin"], 1)
 
             msg.parse_content()
@@ -166,7 +166,7 @@ def treat_alias(msg, hooks_cache):
             return True
 
         else:
-            msg.content = replace_variables(msg.content, msg)
+            msg.text = replace_variables(msg.text, msg)
             msg.parse_content()
             return False
     return False
@@ -174,8 +174,8 @@ def treat_alias(msg, hooks_cache):
 @hook("ask_default")
 def parseask(msg):
     global ALIAS
-    if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.content) is not None:
-        result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.content)
+    if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
+        result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
         if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
             return Response(msg.sender, "Cet alias est déjà défini.")
         else:

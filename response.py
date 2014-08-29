@@ -32,7 +32,7 @@ class Response:
         self.server = server
         self.messages = list()
         self.alone = True
-        self.ctcp = ctcp
+        self.is_ctcp = ctcp
         if message is not None:
             self.append_message(message, shown_first_count=shown_first_count)
         self.elt = 0 # Next element to display
@@ -106,12 +106,18 @@ class Response:
             if len(self.rawtitle) <= 0:
                 self.rawtitle = None
 
+    def treat_ctcp(self, content):
+        if self.is_ctcp:
+            return "\x01" + content + "\x01"
+        else:
+            return content
+
     def get_message(self):
         if self.alone and len(self.messages) > 1:
             self.alone = False
 
         if self.empty:
-            return self.nomore
+            return self.treat_ctcp(self.nomore)
 
         msg = ""
         if self.channel is not None and self.nick is not None:
@@ -132,35 +138,35 @@ class Response:
                 if len(msg) + len(e) > 430:
                     msg += "[…]"
                     self.alone = False
-                    return msg
+                    return self.treat_ctcp(msg)
                 else:
                     msg += e + ", "
                     self.elt += 1
             self.pop()
-            return msg[:len(msg)-2]
+            return self.treat_ctcp(msg[:len(msg)-2])
 
         else:
             if len(elts) <= 432:
                 self.pop()
                 if self.count is not None:
-                    return msg + elts + (self.count % len(self.messages))
+                    return self.treat_ctcp(msg + elts + (self.count % len(self.messages)))
                 else:
-                    return msg + elts
+                    return self.treat_ctcp(msg + elts)
 
             else:
                 words = elts.split(' ')
 
                 if len(words[0]) > 432 - len(msg):
                     self.elt += 432 - len(msg)
-                    return msg + elts[:self.elt] + "[…]"
+                    return self.treat_ctcp(msg + elts[:self.elt] + "[…]")
 
                 for w in words:
                     if len(msg) + len(w) > 431:
                         msg += "[…]"
                         self.alone = False
-                        return msg
+                        return self.treat_ctcp(msg)
                     else:
                         msg += w + " "
                         self.elt += len(w) + 1
                 self.pop()
-                return msg
+                return self.treat_ctcp(msg)
