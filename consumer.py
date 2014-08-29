@@ -76,9 +76,6 @@ class MessageConsumer:
             if context.treat_post(res):
                 res.server.send_response(res, self.data)
 
-        elif isinstance(res, response.Hook):
-            context.hooks.add_hook(res.type, res.hook, res.src)
-
         elif res is not None:
             logger.error("Unrecognized response type: %s", res)
 
