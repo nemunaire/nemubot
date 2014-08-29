@@ -45,7 +45,7 @@ if __name__ == "__main__":
     logger.addHandler(fh)
 
     # Create bot context
-    context = bot.Bot(0, "FIXME")
+    context = bot.Bot()
 
     # Load the prompt
     prmpt = prompt.Prompt()
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             else:
                 load_file(arg, context)
 
-    print ("Nemubot v%s ready, my PID is %i!" % (context.version_txt,
+    print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
                                                  os.getpid()))
     while prmpt.run(context):
         try:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             # Reload all other modules
             bot.reload()
             print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
-                  context.version_txt)
+                  bot.__version__)
         except:
             logger.exception("\033[1;31mUnable to reload the prompt due to errors.\033[0"
                              "m Fix them before trying to reload the prompt.")

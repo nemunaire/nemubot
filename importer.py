@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from distutils.version import LooseVersion
 from importlib.abc import Finder
 from importlib.abc import SourceLoader
 import imp
@@ -23,6 +24,7 @@ import logging
 import os
 import sys
 
+from bot import __version__
 import event
 import exception
 import hooks
@@ -40,7 +42,7 @@ class ModuleFinder(Finder):
         #print ("looking for", fullname, "in", path)
         # Search only for new nemubot modules (packages init)
         if path is None:
-            for mpath in self.context.modules_path:
+            for mpath in self.context.modules_paths:
                 #print ("looking for", fullname, "in", mpath)
                 if (os.path.isfile(mpath + fullname + ".py") or
                     os.path.isfile(mpath + fullname + "/__init__.py")):
@@ -134,11 +136,11 @@ class ModuleLoader(SourceLoader):
         if not hasattr(module, "nemubotversion"):
             raise ImportError("Module `%s' is not a nemubot module."%self.name)
         # Check module version
-        if module.nemubotversion != self.context.version:
+        if LooseVersion(__version__) < LooseVersion(str(module.nemubotversion)):
             raise ImportError("Module `%s' is not compatible with this "
                               "version." % self.name)
 
-        # Set module common functions and datas
+        # Set module common functions and data
         module.__LOADED__ = True
         module.logger = logging.getLogger("nemubot.module." + fullname)
 
@@ -151,7 +153,7 @@ class ModuleLoader(SourceLoader):
             module.logger.debug(*args)
 
         def mod_save():
-            fpath = self.context.datas_path + "/" + module.name + ".xml"
+            fpath = self.context.data_path + "/" + module.name + ".xml"
             module.print_debug("Saving DATAS to " + fpath)
             module.DATAS.save(fpath)
 
@@ -189,7 +191,7 @@ class ModuleLoader(SourceLoader):
         module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
-            module.DATAS = xmlparser.parse_file(self.context.datas_path
+            module.DATAS = xmlparser.parse_file(self.context.data_path
                                                 + module.name + ".xml")
             module.save = mod_save
         else:

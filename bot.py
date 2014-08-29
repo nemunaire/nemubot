@@ -20,12 +20,16 @@ from datetime import datetime
 from datetime import timedelta
 import logging
 from queue import Queue
+import re
 import threading
 import time
-import re
+import uuid
 
-import consumer
-import event
+__version__ = '3.4.dev0'
+__author__  = 'nemunaire'
+
+from consumer import Consumer, EventConsumer, MessageConsumer
+from event import ModuleEvent
 import hooks
 from networkbot import NetworkBot
 from server.IRC import IRCServer
@@ -34,18 +38,29 @@ import response
 
 logger = logging.getLogger("nemubot.bot")
 
-ID_letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 class Bot:
-    def __init__(self, ip, realname, mp=list()):
-        # Bot general informations
-        self.version     = 3.4
-        self.version_txt = "3.4-dev"
-        logger.info("Initiate nemubot v%s", self.version_txt)
+
+    """Class containing the bot context and ensuring key goals"""
+
+    def __init__(self, ip="127.0.0.1", modules_paths=list(), data_path="./datas/"):
+        """Initialize the bot context
+
+        Keyword arguments:
+        ip -- The external IP of the bot (default: 127.0.0.1)
+        modules_paths -- Paths to all directories where looking for module
+        data_path -- Path to directory where store bot context data
+        """
+
+        logger.info("Initiate nemubot v%s", __version__)
+
+        # External IP for accessing this bot
+        self.ip = ip
+
+        # Context paths
+        self.modules_paths = modules_paths
+        self.data_path = data_path
 
         # Save various informations
-        self.ip = ip
-        self.realname = realname
         self.ctcp_capabilities = dict()
         self.init_ctcp_capabilities()
 
@@ -53,10 +68,6 @@ class Bot:
         self.servers = dict()
         self.modules = dict()
         self.modules_configuration = dict()
-
-        # Context paths
-        self.modules_path = mp
-        self.datas_path   = './datas/'
 
         # Events
         self.events      = list()
@@ -85,13 +96,13 @@ class Bot:
         self.ctcp_capabilities["CLIENTINFO"] = self._ctcp_clientinfo
         self.ctcp_capabilities["DCC"] = self._ctcp_dcc
         self.ctcp_capabilities["NEMUBOT"] = lambda srv, msg: _ctcp_response(
-                                       msg.sender, "NEMUBOT %f" % self.version)
+                                       msg.sender, "NEMUBOT %s" % __version__)
         self.ctcp_capabilities["TIME"] = lambda srv, msg: _ctcp_response(
                                       msg.sender, "TIME %s" % (datetime.now()))
         self.ctcp_capabilities["USERINFO"] = lambda srv, msg: _ctcp_response(
-                                     msg.sender, "USERINFO %s" % self.realname)
+                                     msg.sender, "USERINFO %s" % srv.realname)
         self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
-                          msg.sender, "VERSION nemubot v%s" % self.version_txt)
+                          msg.sender, "VERSION nemubot v%s" % __version__)
         logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
     def _ctcp_clientinfo(self, srv, msg):
@@ -110,43 +121,85 @@ class Bot:
             logger.error("DCC: unable to connect to %s:%s", ip, msg.cmds[4])
 
 
-    def add_event(self, evt, eid=None, module_src=None):
-        """Register an event and return its identifiant for futur update"""
-        if eid is None:
-            # Find an ID
-            now = datetime.now()
-            evt.id = "%d%c%d%d%c%d%d%c%d" % (now.year, ID_letters[now.microsecond % 52],
-                                             now.month, now.day, ID_letters[now.microsecond % 42],
-                                             now.hour, now.minute, ID_letters[now.microsecond % 32],
-                                             now.second)
-        else:
-            evt.id = eid
+    # Events methods
 
-        # Add the event in place
+    def add_event(self, evt, eid=None, module_src=None):
+        """Register an event and return its identifiant for futur update
+
+        Return:
+        None if the event is not in the queue (eg. if it has been executed during the call) or
+        returns the event ID.
+
+        Argument:
+        evt -- The event object to add
+
+        Keyword arguments:
+        eid -- The desired event ID (object or string UUID)
+        module_src -- The module to which the event is attached to
+        """
+
+        # Generate the event id if no given
+        if eid is None:
+            eid = uuid.uuid1()
+
+        # Fill the id field of the event
+        if type(eid) is uuid.UUID:
+            evt.id = str(eid)
+        else:
+            # Ok, this is quite useless...
+            try:
+                evt.id = str(uuid.UUID(eid))
+            except ValueError:
+                evt.id = eid
+
+        # Add the event in its place
         t = evt.current
-        i = -1
+        i = 0 # sentinel
         for i in range(0, len(self.events)):
             if self.events[i].current > t:
-                i -= 1
                 break
-        self.events.insert(i + 1, evt)
-        if i == -1:
-            self.update_timer()
-            if len(self.events) <= 0 or self.events[i+1] != evt:
+        self.events.insert(i, evt)
+
+        if i == 0:
+            # First event changed, reset timer
+            self._update_event_timer()
+            if len(self.events) <= 0 or self.events[i] != evt:
+                # Our event has been executed and removed from queue
                 return None
 
+        # Register the event in the source module
         if module_src is not None:
             module_src.REGISTERED_EVENTS.append(evt.id)
+        evt.module_src = module_src
 
         logger.info("New event registered: %s -> %s", evt.id, evt)
         return evt.id
 
-    def del_event(self, id, module_src=None):
-        """Find and remove an event from list"""
-        logger.info("Removing event: %s from %s", id, module_src)
+
+    def del_event(self, evt, module_src=None):
+        """Find and remove an event from list
+
+        Return:
+        True if the event has been found and removed, False else
+
+        Argument:
+        evt -- The ModuleEvent object to remove or just the event identifier
+
+        Keyword arguments:
+        module_src -- The module to which the event is attached to (ignored if evt is a ModuleEvent)
+        """
+
+        logger.info("Removing event: %s from %s", evt, module_src)
+
+        if type(evt) is ModuleEvent:
+            id = evt.id
+            module_src = evt.module_src
+        else:
+            id = evt
+
         if len(self.events) > 0 and id == self.events[0].id:
             self.events.remove(self.events[0])
-            self.update_timer()
+            self._update_event_timer()
             if module_src is not None:
                 module_src.REGISTERED_EVENTS.remove(evt.id)
             return True
@@ -160,35 +213,52 @@ class Bot:
                 return True
         return False
 
-    def update_timer(self):
-        """Relaunch the timer to end with the closest event"""
+
+    def _update_event_timer(self):
+        """(Re)launch the timer to end with the closest event"""
+
         # Reset the timer if this is the first item
         if self.event_timer is not None:
             self.event_timer.cancel()
+
         if len(self.events) > 0:
             logger.debug("Update timer: next event in %d seconds",
                          self.events[0].time_left.seconds)
             if datetime.now() + timedelta(seconds=5) >= self.events[0].current:
                 while datetime.now() < self.events[0].current:
                     time.sleep(0.6)
-                self.end_timer()
+                self._end_event_timer()
             else:
                 self.event_timer = threading.Timer(
-                    self.events[0].time_left.seconds + 1, self.end_timer)
+                    self.events[0].time_left.seconds + 1, self._end_event_timer)
                 self.event_timer.start()
         else:
             logger.debug("Update timer: no timer left")
 
-    def end_timer(self):
-        """Function called at the end of the timer"""
-        #print ("end timer")
-        while len(self.events) > 0 and datetime.now() >= self.events[0].current:
-            #print ("end timer: while")
-            evt = self.events.pop(0)
-            self.cnsr_queue.put_nowait(consumer.EventConsumer(evt))
-            self.update_consumers()
 
-        self.update_timer()
+    def _end_event_timer(self):
+        """Function called at the end of the event timer"""
+
+        while len(self.events) > 0 and datetime.now() >= self.events[0].current:
+            evt = self.events.pop(0)
+            self.cnsr_queue.put_nowait(EventConsumer(evt))
+            self._launch_consumers()
+
+        self._update_event_timer()
+
+
+    # Consumers methods
+
+    def _launch_consumers(self):
+        """Launch new consumer threads if necessary"""
+
+        while self.cnsr_queue.qsize() > self.cnsr_thrd_size:
+            # Next launch if two more items in queue
+            self.cnsr_thrd_size += 2
+
+            c = Consumer(self)
+            self.cnsr_thrd.append(c)
+            c.start()
 
 
     def add_server(self, node, nick, owner, realname, ssl=False):
@@ -207,6 +277,21 @@ class Bot:
             return False
 
 
+    # Modules methods
+
+    def add_modules_path(self, path):
+        """Add a path to the modules_path array, used by module loader"""
+        # The path must end by / char
+        if path[len(path)-1] != "/":
+            path = path + "/"
+
+        if path not in self.modules_paths:
+            self.modules_paths.append(path)
+            return True
+
+        return False
+
+
     def add_module(self, module):
         """Add a module to the context, if already exists, unload the
         old one before"""
@@ -218,19 +303,6 @@ class Bot:
 
         self.modules[module.name] = module
         return True
-
-
-    def add_modules_path(self, path):
-        """Add a path to the modules_path array, used by module loader"""
-        # The path must end by / char
-        if path[len(path)-1] != "/":
-            path = path + "/"
-
-        if path not in self.modules_path:
-            self.modules_path.append(path)
-            return True
-
-        return False
 
 
     def unload_module(self, name):
@@ -252,22 +324,14 @@ class Bot:
             return True
         return False
 
-    def update_consumers(self):
-        """Launch new consumer thread if necessary"""
-        if self.cnsr_queue.qsize() > self.cnsr_thrd_size:
-            c = consumer.Consumer(self)
-            self.cnsr_thrd.append(c)
-            c.start()
-            self.cnsr_thrd_size += 2
-
 
     def receive_message(self, srv, raw_msg, private=False, data=None):
         """Queued the message for treatment"""
         #print (raw_msg)
-        self.cnsr_queue.put_nowait(consumer.MessageConsumer(srv, raw_msg, datetime.now(), private, data))
+        self.cnsr_queue.put_nowait(MessageConsumer(srv, raw_msg, datetime.now(), private, data))
 
         # Launch a new thread if necessary
-        self.update_consumers()
+        self._launch_consumers()
 
 
     def add_networkbot(self, srv, dest, dcc=None):
@@ -298,7 +362,7 @@ class Bot:
         for srv in k:
             self.servers[srv].disconnect()
 
-# Hooks cache
+    # Hooks cache
 
     def create_cache(self, name):
         if name not in self.hooks_cache:
@@ -349,7 +413,7 @@ class Bot:
 
         return self.hooks_cache[name]
 
-# Treatment
+    # Treatment
 
     def check_rest_times(self, store, hook):
         """Remove from store the hook if it has been executed given time"""
@@ -416,6 +480,8 @@ class Bot:
             return self.treat_ask(msg, srv)
 
     def treat_prvmsg(self, msg, srv):
+        msg.is_owner = msg.nick == srv.owner
+
         # First, treat CTCP
         if msg.ctcp:
             if msg.cmds[0] in self.ctcp_capabilities:
@@ -625,7 +691,15 @@ def _help_msg(sndr, modules, cmd):
     return res
 
 def hotswap(bak):
-    return Bot(bak.servers, bak.modules, bak.modules_path)
+    new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
+    new.ctcp_capabilities = bak.ctcp_capabilities
+    new.servers = bak.servers
+    new.modules = bak.modules
+    new.modules_configuration = bak.modules_configuration
+    new.events = bak.events
+    new.hooks = bak.hooks
+    new.network = bak.network
+    return new
 
 def reload():
     import imp
