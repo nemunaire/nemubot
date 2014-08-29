@@ -92,33 +92,49 @@ class Bot:
 
     def init_ctcp_capabilities(self):
         """Reset existing CTCP capabilities to default one"""
-        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive")
-        self.ctcp_capabilities["CLIENTINFO"] = self._ctcp_clientinfo
-        self.ctcp_capabilities["DCC"] = self._ctcp_dcc
+
+        def _ctcp_clientinfo(srv, msg):
+            """Response to CLIENTINFO CTCP message"""
+            return _ctcp_response(msg.sender,
+                                  " ".join(self.ctcp_capabilities.keys()))
+
+        def _ctcp_dcc(srv, msg):
+            """Response to DCC CTCP message"""
+            try:
+                ip = srv.toIP(int(msg.cmds[3]))
+                port = int(msg.cmds[4])
+                conn = DCC(srv, msg.sender)
+            except:
+                return _ctcp_response(msg.sender, "ERRMSG invalid parameters provided as DCC CTCP request")
+
+            logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
+
+            if conn.accept_user(ip, port):
+                srv.dcc_clients[conn.sender] = conn
+                conn.send_dcc("Hello %s!" % conn.nick)
+            else:
+                logger.error("DCC: unable to connect to %s:%d", ip, port)
+                return _ctcp_response(msg.sender, "ERRMSG unable to connect to %s:%d" % (ip, port))
+
+        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive: %s" % msg.content)
+        self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
+        self.ctcp_capabilities["DCC"] = _ctcp_dcc
+        self.ctcp_capabilities["FINGER"] = lambda srv, msg: _ctcp_response(
+            msg.sender, "VERSION nemubot v%s" % __version__)
         self.ctcp_capabilities["NEMUBOT"] = lambda srv, msg: _ctcp_response(
-                                       msg.sender, "NEMUBOT %s" % __version__)
+            msg.sender, "NEMUBOT %s" % __version__)
+        self.ctcp_capabilities["PING"] = lambda srv, msg: _ctcp_response(
+            msg.sender, "PING %s" % " ".join(msg.cmds[1:]))
+        self.ctcp_capabilities["SOURCE"] = lambda srv, msg: _ctcp_response(
+            msg.sender, "SOURCE https://github.com/nemunaire/nemubot")
         self.ctcp_capabilities["TIME"] = lambda srv, msg: _ctcp_response(
-                                      msg.sender, "TIME %s" % (datetime.now()))
+            msg.sender, "TIME %s" % (datetime.now()))
         self.ctcp_capabilities["USERINFO"] = lambda srv, msg: _ctcp_response(
-                                     msg.sender, "USERINFO %s" % srv.realname)
+            msg.sender, "USERINFO %s" % srv.realname)
         self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
-                          msg.sender, "VERSION nemubot v%s" % __version__)
+            msg.sender, "VERSION nemubot v%s" % __version__)
+
         logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
-
-    def _ctcp_clientinfo(self, srv, msg):
-        """Response to CLIENTINFO CTCP message"""
-        return _ctcp_response(msg.sndr,
-                              " ".join(self.ctcp_capabilities.keys()))
-
-    def _ctcp_dcc(self, srv, msg):
-        """Response to DCC CTCP message"""
-        ip = srv.toIP(int(msg.cmds[3]))
-        conn = DCC(srv, msg.sender)
-        if conn.accept_user(ip, int(msg.cmds[4])):
-            srv.dcc_clients[conn.sender] = conn
-            conn.send_dcc("Hello %s!" % conn.nick)
-        else:
-            logger.error("DCC: unable to connect to %s:%s", ip, msg.cmds[4])
 
 
     # Events methods
