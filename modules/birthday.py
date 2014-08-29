@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import date
 
 from hooks import hook
+from tools.countdown import countdown_format
 from xmlparser.node import ModuleState
 
 nemubotversion = 3.4
@@ -48,7 +49,7 @@ def cmd_anniv(msg):
 
         if (tyd.day == datetime.today().day and
             tyd.month == datetime.today().month):
-            return Response(msg.sender, msg.countdown_format(
+            return Response(msg.sender, countdown_format(
                     DATAS.index[name].getDate("born"), "",
                     "C'est aujourd'hui l'anniversaire de %s !"
                     " Il a %s. Joyeux anniversaire :)" % (name, "%s")),
@@ -57,7 +58,7 @@ def cmd_anniv(msg):
             if tyd < datetime.today():
                 tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
 
-            return Response(msg.sender, msg.countdown_format(tyd,
+            return Response(msg.sender, countdown_format(tyd,
                             "Il reste %s avant l'anniversaire de %s !" % ("%s",
                                                                     name), ""),
                             msg.channel)
@@ -73,7 +74,7 @@ def cmd_age(msg):
         name = matches[0]
         d = DATAS.index[name].getDate("born")
 
-        return Response(msg.sender, msg.countdown_format(d,
+        return Response(msg.sender, countdown_format(d,
                                         "%s va naître dans %s." % (name, "%s"),
                                         "%s a %s." % (name, "%s")),
                         msg.channel)

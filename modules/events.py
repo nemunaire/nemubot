@@ -15,6 +15,7 @@ nemubotversion = 3.4
 
 from event import ModuleEvent
 from hooks import Hook, hook
+from tools.countdown import countdown_format, countdown
 
 def help_full ():
     return "This module store a lot of events: ny, we, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
@@ -43,7 +44,7 @@ def cmd_gouter(msg):
     ndate = datetime.today()
     ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42)
     return Response(msg.sender,
-        msg.countdown_format(ndate,
+        countdown_format(ndate,
                              "Le goûter aura lieu dans %s, préparez vos biscuits !",
                              "Nous avons %s de retard pour le goûter :("),
                     channel=msg.channel)
@@ -53,7 +54,7 @@ def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
     return Response(msg.sender,
-        msg.countdown_format(ndate,
+        countdown_format(ndate,
                              "Il reste %s avant le week-end, courage ;)",
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
@@ -141,7 +142,7 @@ def end_countdown(msg):
 
     if msg.cmds[1] in DATAS.index:
         if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.is_owner):
-            duration = msg.just_countdown(datetime.now() - DATAS.index[msg.cmds[1]].getDate("start"))
+            duration = countdown(datetime.now() - DATAS.index[msg.cmds[1]].getDate("start"))
             del_event(DATAS.index[msg.cmds[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])
             save()
@@ -177,11 +178,11 @@ def parseanswer(msg):
 
         if DATAS.index[msg.cmds[0]].name == "strend":
             if DATAS.index[msg.cmds[0]].hasAttribute("end"):
-                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start")), msg.just_countdown(DATAS.index[msg.cmds[0]].getDate("end") - datetime.now())))
+                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start")), countdown(DATAS.index[msg.cmds[0]].getDate("end") - datetime.now())))
             else:
-                res.append_message("%s commencé il y a %s." % (msg.cmds[0], msg.just_countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start"))))
+                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start"))))
         else:
-            res.append_message(msg.countdown_format(DATAS.index[msg.cmds[0]].getDate("start"), DATAS.index[msg.cmds[0]]["msg_before"], DATAS.index[msg.cmds[0]]["msg_after"]))
+            res.append_message(countdown_format(DATAS.index[msg.cmds[0]].getDate("start"), DATAS.index[msg.cmds[0]]["msg_before"], DATAS.index[msg.cmds[0]]["msg_after"]))
         return res
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)

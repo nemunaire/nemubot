@@ -5,6 +5,7 @@
 from datetime import datetime
 
 from hooks import hook
+from tools.countdown import countdown_format
 
 nemubotversion = 3.4
 
@@ -29,9 +30,9 @@ def bonneannee():
 @hook("cmd_hook", str(yrn), yrn)
 def cmd_newyear(msg, yr):
     return Response(msg.sender,
-        msg.countdown_format(datetime(yr, 1, 1, 0, 0, 1),
-                             "Il reste %s avant la nouvelle année.",
-                             "Nous faisons déjà la fête depuis %s !"),
+        countdown_format(datetime(yr, 1, 1, 0, 0, 1),
+                         "Il reste %s avant la nouvelle année.",
+                         "Nous faisons déjà la fête depuis %s !"),
                     channel=msg.channel)
 
 @hook("cmd_rgxp", data=yrn, regexp="^[0-9]{4}$")
@@ -42,7 +43,7 @@ def cmd_timetoyear(msg, cur):
         return None
 
     return Response(msg.sender,
-        msg.countdown_format(datetime(yr, 1, 1, 0, 0, 1),
-                             "Il reste %s avant %d." % ("%s", yr),
-                             "Le premier janvier %d est passé depuis %s !" % (yr, "%s")),
+        countdown_format(datetime(yr, 1, 1, 0, 0, 1),
+                         "Il reste %s avant %d." % ("%s", yr),
+                         "Le premier janvier %d est passé depuis %s !" % (yr, "%s")),
                     channel=msg.channel)
