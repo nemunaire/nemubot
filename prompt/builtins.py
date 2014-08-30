@@ -69,8 +69,7 @@ def load_file(filename, context):
                 nick = server["nick"] if server.hasAttribute("nick") else config["nick"]
                 owner = server["owner"] if server.hasAttribute("owner") else config["owner"]
                 realname = server["realname"] if server.hasAttribute("realname") else config["realname"]
-                if context.add_server(server, nick, owner, realname,
-                                     server.hasAttribute("ssl")):
+                if context.add_server(server, nick, owner, realname):
                     print("Server `%s:%s' successfully added." %
                           (server["server"], server["port"]))
                 else:

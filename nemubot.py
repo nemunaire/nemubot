@@ -68,6 +68,7 @@ if __name__ == "__main__":
 
     print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
                                                  os.getpid()))
+    context.start()
     while prmpt.run(context):
         try:
             # Reload context

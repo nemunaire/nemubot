@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2014  nemunaire
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -16,156 +16,70 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import logging
 import socket
-import threading
+import queue
 
-class Server(threading.Thread):
-    def __init__(self, socket = None):
-      self.stop = False
-      self.stopping = threading.Event()
-      self.s = socket
-      self.connected = self.s is not None
-      self.closing_event = None
+# Lists for select
+_rlist = []
+_wlist = []
+_xlist = []
 
-      self.moremessages = dict()
+# Extends from IOBase in order to be compatible with select function
+class AbstractServer(io.IOBase):
 
-      self.logger = logging.getLogger("nemubot.server." + self.id)
+    """An abstract server: handle communication with an IM server"""
 
-      threading.Thread.__init__(self)
+    def __init__(self, send_callback=None):
+        """Initialize an abstract server
 
-    def isDCC(self, to=None):
-        return to is not None and to in self.dcc_clients
+        Keyword argument:
+        send_callback -- Callback when developper want to send a message
+        """
 
-    @property
-    def ip(self):
-        """Convert common IP representation to little-endian integer representation"""
-        sum = 0
-        if self.node.hasAttribute("ip"):
-            ip = self.node["ip"]
+        self.logger = logging.getLogger("nemubot.server.TODO")
+        self._sending_queue = queue.Queue()
+        if send_callback is not None:
+            self._send_callback = send_callback
         else:
-            #TODO: find the external IP
-            ip = "0.0.0.0"
-        for b in ip.split("."):
-            sum = 256 * sum + int(b)
-        return sum
+            self._send_callback = self._write_select
 
-    def toIP(self, input):
-        """Convert little-endian int to IPv4 adress"""
-        ip = ""
-        for i in range(0,4):
-            mod = input % 256
-            ip = "%d.%s" % (mod, ip)
-            input = (input - mod) / 256
-        return ip[:len(ip) - 1]
 
-    @property
-    def id(self):
-        """Gives the server identifiant"""
-        raise NotImplemented()
+    def open(self):
+        """Generic open function that register the server un _rlist in case of successful _open"""
+        if self._open():
+            _rlist.append(self)
 
-    def accepted_channel(self, msg, sender=None):
-        return True
 
-    def msg_treated(self, origin):
-        """Action done on server when a message was treated"""
-        raise NotImplemented()
+    def close(self):
+        """Generic close function that register the server un _{r,w,x}list in case of successful _close"""
+        if self._close():
+            if self in _rlist:
+                _rlist.remove(self)
+            if self in _wlist:
+                _wlist.remove(self)
+            if self in _xlist:
+                _xlist.remove(self)
 
-    def send_response(self, res, origin):
-        """Analyse a Response and send it"""
-        if type(res.channel) != list:
-            res.channel = [ res.channel ]
 
-        for channel in res.channel:
-            if channel != self.nick:
-                self.send_msg(channel, res.get_message())
-            else:
-                channel = res.sender
-                self.send_msg_usr(channel, res.get_message(), "NOTICE" if res.is_ctcp else "PRIVMSG")
+    def write(self, message):
+        """Send a message to the server using send_callback"""
+        self._send_callback(message)
 
-            if not res.alone:
-                if hasattr(self, "send_bot"):
-                    self.send_bot("NOMORE %s" % res.channel)
-                self.moremessages[channel] = res
+    def write_select(self):
+        """Internal function used by the select function"""
+        try:
+            while not self._sending_queue.empty():
+                self._write(self._sending_queue.get_nowait())
+            _wlist.remove(self)
 
-    def send_ctcp(self, to, msg, cmd="NOTICE", endl="\r\n"):
-        """Send a message as CTCP response"""
-        if msg is not None and to is not None:
-            for line in msg.split("\n"):
-                if line != "":
-                    self.send_msg_final(to.split("!")[0], "\x01" + line + "\x01", cmd, endl)
+        except queue.Empty:
+            pass
 
-    def send_dcc(self, msg, to):
-        """Send a message through DCC connection"""
-        raise NotImplemented()
-
-    def send_msg_final(self, channel, msg, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message without checks or format"""
-        raise NotImplemented()
-
-    def send_msg_usr(self, user, msg):
-        """Send a message to a user instead of a channel"""
-        raise NotImplemented()
-
-    def send_msg(self, channel, msg, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message to a channel"""
-        if msg is not None:
-            for line in msg.split("\n"):
-                if line != "":
-                    self.send_msg_final(channel, line, cmd, endl)
-
-    def send_msg_verified(self, sender, channel, msg, cmd="PRIVMSG", endl="\r\n"):
-        """A more secure way to send messages"""
-        raise NotImplemented()
-
-    def send_global(self, msg, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message to all channels on this server"""
-        raise NotImplemented()
-
-    def disconnect(self):
-        """Close the socket with the server"""
-        if self.connected:
-            self.stop = True
-            try:
-                self.s.shutdown(socket.SHUT_RDWR)
-            except socket.error:
-                pass
-
-            self.stopping.wait()
-            return True
-        else:
-            return False
-
-    def kill(self):
-        """Just stop the main loop, don't close the socket directly"""
-        if self.connected:
-            self.stop = True
-            self.connected = False
-            #Send a message in order to close the socket
-            try:
-                self.s.send(("Bye!\r\n").encode ())
-            except:
-                pass
-            self.stopping.wait()
-            return True
-        else:
-            return False
-
-    def launch(self, receive_action, verb=True):
-        """Connect to the server if it is no yet connected"""
-        self._receive_action = receive_action
-        if not self.connected:
-            self.stop = False
-            self.logger.info("Entering main loop for server")
-            try:
-                self.start()
-            except RuntimeError:
-                pass
-        elif verb:
-            print ("  Already connected.")
-
-    def treat_msg(self, line, private=False):
-        self._receive_action(self, line, private)
-
-    def run(self):
-        raise NotImplemented()
+    def _write_select(self, message):
+        """Send a message to the server safely through select"""
+        self._sending_queue.put(self.format(message))
+        self.logger.debug("Message '%s' appended to Queue", message)
+        if self not in _wlist:
+            _wlist.append(self)

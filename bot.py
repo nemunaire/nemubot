@@ -21,6 +21,7 @@ from datetime import timedelta
 import logging
 from queue import Queue
 import re
+from select import select
 import threading
 import time
 import uuid
@@ -38,7 +39,7 @@ import response
 
 logger = logging.getLogger("nemubot.bot")
 
-class Bot:
+class Bot(threading.Thread):
 
     """Class containing the bot context and ensuring key goals"""
 
@@ -50,6 +51,8 @@ class Bot:
         modules_paths -- Paths to all directories where looking for module
         data_path -- Path to directory where store bot context data
         """
+
+        threading.Thread.__init__(self)
 
         logger.info("Initiate nemubot v%s", __version__)
 
@@ -88,6 +91,22 @@ class Bot:
         self.hooks.add_hook("irc_hook",
                             hooks.Hook(self.treat_prvmsg, "PRIVMSG"),
                             self)
+
+
+    def run(self):
+        from server import _rlist, _wlist, _xlist
+
+        self.stop = False
+        while not self.stop:
+            rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
+
+            for x in xl:
+                x.exception()
+            for w in wl:
+                w.write_select()
+            for r in rl:
+                for i in r.read():
+                    self.receive_message(r, i)
 
 
     def init_ctcp_capabilities(self):
@@ -277,17 +296,16 @@ class Bot:
             c.start()
 
 
-    def add_server(self, node, nick, owner, realname, ssl=False):
+    def add_server(self, node, nick, owner, realname):
         """Add a new server to the context"""
-        srv = IRCServer(node, nick, owner, realname, ssl)
+        srv = IRCServer(node, nick, owner, realname)
         srv.add_hook = lambda h: self.hooks.add_hook("irc_hook", h, self)
         srv.add_networkbot = self.add_networkbot
         srv.send_bot = lambda d: self.send_networkbot(srv, d)
-        srv.register_hooks()
+        #srv.register_hooks()
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
-            if srv.autoconnect:
-                srv.launch(self.receive_message)
+            srv.open()
             return True
         else:
             return False
@@ -377,6 +395,9 @@ class Bot:
         k = list(self.servers.keys())
         for srv in k:
             self.servers[srv].disconnect()
+
+        self.stop = True
+
 
     # Hooks cache
 

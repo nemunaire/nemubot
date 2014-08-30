@@ -43,6 +43,13 @@ class Response:
         self.count = count
 
     @property
+    def receivers(self):
+        if type(self.channel) is list:
+            return self.channel
+        else:
+            return [ self.channel ]
+
+    @property
     def content(self):
         #FIXME: error when messages in self.messages are list!
         try:

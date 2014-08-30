@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2014  nemunaire
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -16,272 +16,32 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
-import os
-import ssl
-import socket
-import threading
-import traceback
-
-from channel import Channel
-from server.DCC import DCC
-from hooks import Hook
-import message
 import server
-import xmlparser
+from server.socket import SocketServer
 
-class IRCServer(server.Server):
-    """Class to interact with an IRC server"""
+class IRCServer(SocketServer):
 
-    def __init__(self, node, nick, owner, realname, ssl=False):
-        """Initialize an IRC server
-
-        Arguments:
-        node -- server node from XML configuration
-        nick -- nick used by the bot on this server
-        owner -- nick used by the bot owner on this server
-        realname -- string used as realname on this server
-        ssl -- require SSL?
-        """
-        self.node = node
-
-        server.Server.__init__(self)
+    def __init__(self, node, nick, owner, realname):
+        SocketServer.__init__(self,
+                              node["host"],
+                              node["port"],
+                              node["password"],
+                              node.hasAttribute("ssl") and node["ssl"].lower() == "true")
 
         self.nick = nick
         self.owner = owner
         self.realname = realname
-        self.ssl = ssl
+        self.id = "TODO"
 
-        # Listen private messages?
-        self.listen_nick = True
-
-        self.dcc_clients = dict()
-
-        self.channels = dict()
-        for chn in self.node.getNodes("channel"):
-            chan = Channel(chn["name"], chn["password"])
-            self.channels[chan.name] = chan
-
-
-    @property
-    def host(self):
-        """Return the server hostname"""
-        if self.node is not None and self.node.hasAttribute("server"):
-            return self.node["server"]
-        else:
-            return "localhost"
-
-    @property
-    def port(self):
-        """Return the connection port used on this server"""
-        if self.node is not None and self.node.hasAttribute("port"):
-            return self.node.getInt("port")
-        else:
-            return "6667"
-
-    @property
-    def password(self):
-        """Return the password used to connect to this server"""
-        if self.node is not None and self.node.hasAttribute("password"):
-            return self.node["password"]
-        else:
-            return None
-
-    @property
-    def allow_all(self):
-        """If True, treat message from all channels, not only listed one"""
-        return (self.node is not None and self.node.hasAttribute("allowall")
-                and self.node["allowall"] == "true")
-
-    @property
-    def autoconnect(self):
-        """Autoconnect the server when added"""
-        if self.node is not None and self.node.hasAttribute("autoconnect"):
-            value = self.node["autoconnect"].lower()
-            return value != "no" and value != "off" and value != "false"
-        else:
-            return False
-
-    @property
-    def id(self):
-        """Gives the server identifiant"""
-        return self.host + ":" + str(self.port)
-
-    def register_hooks(self):
-        self.add_hook(Hook(self.evt_channel, "JOIN"))
-        self.add_hook(Hook(self.evt_channel, "PART"))
-        self.add_hook(Hook(self.evt_server, "NICK"))
-        self.add_hook(Hook(self.evt_server, "QUIT"))
-        self.add_hook(Hook(self.evt_channel, "332"))
-        self.add_hook(Hook(self.evt_channel, "353"))
-
-    def evt_server(self, msg, srv):
-        for chan in self.channels:
-            self.channels[chan].treat(msg.cmd, msg)
-
-    def evt_channel(self, msg, srv):
-        if msg.receivers is not None:
-            for receiver in msg.receivers:
-                if receiver in self.channels:
-                    self.channels[receiver].treat(msg.cmd, msg)
-
-    def accepted_channel(self, chan, sender=None):
-        """Return True if the channel (or the user) is authorized"""
-        return (self.allow_all or
-                (chan in self.channels and (sender is None or sender in self.channels[chan].people)) or
-                (self.listen_nick and chan == self.nick))
-
-    def join(self, chan, password=None, force=False):
-        """Join a channel"""
-        if force or (chan is not None and
-                     self.connected and chan not in self.channels):
-            self.channels[chan] = Channel(chan, password)
-            if password is not None:
-                self.s.send(("JOIN %s %s\r\n" % (chan, password)).encode())
-            else:
-                self.s.send(("JOIN %s\r\n" % chan).encode())
+    def _open(self):
+        if SocketServer._open(self):
+            if self.password is not None:
+                self.write("PASS :" + self.password)
+            self.write("NICK :" + self.nick)
+            self.write("USER %s %s bla :%s" % (self.nick, self.host, self.realname))
             return True
-        else:
-            return False
+        return False
 
-    def leave(self, chan):
-        """Leave a channel"""
-        if chan is not None and self.connected and chan in self.channels:
-            if isinstance(chan, list):
-                for c in chan:
-                    self.leave(c)
-            else:
-                self.s.send(("PART %s\r\n" % self.channels[chan].name).encode())
-                del self.channels[chan]
-            return True
-        else:
-            return False
-
-# Main loop
-    def run(self):
-        if not self.connected:
-            self.s = socket.socket() #Create the socket
-            if self.ssl:
-                ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-                self.s = ctx.wrap_socket(self.s)
-            try:
-                self.s.connect((self.host, self.port)) #Connect to server
-            except socket.error as e:
-                self.s = None
-                self.logger.critical("Unable to connect to %s:%d: %s",
-                       self.host, self.port, os.strerror(e.errno))
-                return
-            self.stopping.clear()
-
-            if self.password != None:
-                self.s.send(b"PASS " + self.password.encode () + b"\r\n")
-            self.s.send(("NICK %s\r\n" % self.nick).encode ())
-            self.s.send(("USER %s %s bla :%s\r\n" % (self.nick, self.host,
-                                                     self.realname)).encode())
-            raw = self.s.recv(1024)
-            if not raw:
-                self.logger.critical("Unable to connect to %s:%d", self.host, self.port)
-                return
-            self.connected = True
-            self.logger.info("Connection to %s:%d completed", self.host, self.port)
-
-            if len(self.channels) > 0:
-                for chn in self.channels.keys():
-                    self.join(self.channels[chn].name,
-                              self.channels[chn].password, force=True)
-
-
-        readbuffer = b'' #Here we store all the messages from server
-        try:
-            while not self.stop:
-                readbuffer = readbuffer + raw
-                temp = readbuffer.split(b'\n')
-                readbuffer = temp.pop()
-
-                for line in temp:
-                    self.treat_msg(line)
-                raw = self.s.recv(1024) #recieve server messages
-        except socket.error:
-            pass
-
-        if self.connected:
-            self.s.close()
-            self.connected = False
-            if self.closing_event is not None:
-                self.closing_event()
-            self.logger.info("Server `%s' successfully stopped.", self.id)
-        self.stopping.set()
-        # Rearm Thread
-        threading.Thread.__init__(self)
-
-
-# Overwritted methods
-
-    def disconnect(self):
-        """Close the socket with the server and all DCC client connections"""
-        #Close all DCC connection
-        clts = [c for c in self.dcc_clients]
-        for clt in clts:
-            self.dcc_clients[clt].disconnect()
-        return server.Server.disconnect(self)
-
-
-
-# Abstract methods
-
-    def send_pong(self, cnt):
-        """Send a PONG command to the server with argument cnt"""
-        self.s.send(("PONG %s\r\n" % cnt).encode())
-
-    def msg_treated(self, origin):
-        """Do nothing; here for implement abstract class"""
-        pass
-
-    def send_dcc(self, msg, to):
-        """Send a message through DCC connection"""
-        if msg is not None and to is not None:
-            realname = to.split("!")[1]
-            if realname not in self.dcc_clients.keys():
-                d = DCC(self, to)
-                self.dcc_clients[realname] = d
-            self.dcc_clients[realname].send_dcc(msg)
-
-    def send_msg_final(self, channel, line, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message without checks or format"""
-        #TODO: add something for post message treatment here
-        if channel == self.nick:
-            self.logger.warn("Nemubot talks to himself: %s", line, stack_info=True)
-        if line is not None and channel is not None:
-            if self.s is None:
-                self.logger.warn("Attempt to send message on a non connected server: %s: %s", self.id, line, stack_info=True)
-            elif len(line) < 442:
-                self.s.send(("%s %s :%s%s" % (cmd, channel, line, endl)).encode ())
-            else:
-                self.logger.warn("Message truncated due to size (%d ; max : 442) : %s", len(line), line, stack_info=True)
-                self.s.send (("%s %s :%s%s" % (cmd, channel, line[0:442]+"<…>", endl)).encode ())
-
-    def send_msg_usr(self, user, msg):
-        """Send a message to a user instead of a channel"""
-        if user is not None and user[0] != "#":
-            realname = user.split("!")[1]
-            if realname in self.dcc_clients or user in self.dcc_clients:
-                self.send_dcc(msg, user)
-            else:
-                for line in msg.split("\n"):
-                    if line != "":
-                        self.send_msg_final(user.split('!')[0], msg)
-
-    def send_msg(self, channel, msg, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message to a channel"""
-        if self.accepted_channel(channel):
-            server.Server.send_msg(self, channel, msg, cmd, endl)
-
-    def send_msg_verified(self, sender, channel, msg, cmd = "PRIVMSG", endl = "\r\n"):
-        """Send a message to a channel, only if the source user is on this channel too"""
-        if self.accepted_channel(channel, sender):
-            self.send_msg_final(channel, msg, cmd, endl)
-
-    def send_global(self, msg, cmd="PRIVMSG", endl="\r\n"):
-        """Send a message to all channels on this server"""
-        for channel in self.channels.keys():
-            self.send_msg(channel, msg, cmd, endl)
+    def _close(self):
+        self.write("QUIT")
+        SocketServer._close(self)

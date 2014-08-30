@@ -46,9 +46,8 @@ class MessageConsumer:
     def treat_in(self, context, msg):
         """Treat the input message"""
         if msg.cmd == "PING":
-            self.srv.send_pong(msg.params[0])
+            self.srv.write("%s :%s" % ("PONG", msg.params[0]))
         elif hasattr(msg, "receivers"):
-            msg.receivers = [ receiver for receiver in msg.receivers if self.srv.accepted_channel(receiver) ]
             if msg.receivers:
                 # All messages
                 context.treat_pre(msg, self.srv)
@@ -62,21 +61,29 @@ class MessageConsumer:
                 if r is not None: self.treat_out(context, r)
 
         elif isinstance(res, response.Response):
-        # Define the destination server
-            if (res.server is not None and
-                isinstance(res.server, str) and res.server in context.servers):
-                res.server = context.servers[res.server]
-            if (res.server is not None and
-                not isinstance(res.server, server.Server)):
+            # Define the destination server
+            to_server = None
+            if res.server is None:
+                to_server = self.srv
+                res.server = self.srv.id
+            elif isinstance(res.server, str) and res.server in context.servers:
+                to_server = context.servers[res.server]
+
+            if to_server is None:
                 logger.error("The server defined in this response doesn't "
                              "exist: %s", res.server)
-                res.server = None
-            if res.server is None:
-                res.server = self.srv
+                return False
 
             # Sent the message only if treat_post authorize it
             if context.treat_post(res):
-                res.server.send_response(res, self.data)
+                if type(res.channel) != list:
+                    res.channel = [ res.channel ]
+                for channel in res.channel:
+                    if channel != to_server.nick:
+                        to_server.write("%s %s :%s" % ("PRIVMSG", channel, res.get_message()))
+                    else:
+                        channel = res.sender
+                        to_server.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
 
         elif res is not None:
             logger.error("Unrecognized response type: %s", res)
@@ -98,7 +105,7 @@ class MessageConsumer:
         self.treat_out(context, res)
 
         # Inform that the message has been treated
-        self.srv.msg_treated(self.data)
+        #self.srv.msg_treated(self.data)
 
 
 
