@@ -536,26 +536,6 @@ class Bot(threading.Thread):
             if msg.cmds[0] == "help":
                 return _help_msg(msg.sender, self.modules, msg.cmds)
 
-            elif msg.cmds[0] == "more":
-                if msg.receivers == srv.nick:
-                    if msg.sender in srv.moremessages:
-                        return srv.moremessages[msg.sender]
-                else:
-                    if msg.receivers in srv.moremessages:
-                        return srv.moremessages[msg.receivers]
-
-            elif msg.cmds[0] == "next":
-                ret = None
-                if msg.receivers == srv.nick:
-                    if msg.sender in srv.moremessages:
-                        ret = srv.moremessages[msg.sender]
-                else:
-                    if msg.receivers in srv.moremessages:
-                        ret = srv.moremessages[msg.receivers]
-                if ret is not None:
-                    ret.pop()
-                    return ret
-
             elif msg.cmds[0] == "dcc":
                 logger.debug("dcctest for %s", msg.sender)
                 srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
