@@ -79,10 +79,10 @@ class MessageConsumer:
                 if type(res.channel) != list:
                     res.channel = [ res.channel ]
                 for channel in res.channel:
-                    if channel != to_server.nick:
+                    if channel is not None and channel != to_server.nick:
                         to_server.write("%s %s :%s" % ("PRIVMSG", channel, res.get_message()))
                     else:
-                        channel = res.sender
+                        channel = res.sender.split("!")[0]
                         to_server.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
 
         elif res is not None:
