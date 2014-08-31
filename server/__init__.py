@@ -70,9 +70,10 @@ class AbstractServer(io.IOBase):
     def write_select(self):
         """Internal function used by the select function"""
         try:
+            _wlist.remove(self)
             while not self._sending_queue.empty():
                 self._write(self._sending_queue.get_nowait())
-            _wlist.remove(self)
+                self._sending_queue.task_done()
 
         except queue.Empty:
             pass

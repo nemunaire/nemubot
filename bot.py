@@ -394,7 +394,7 @@ class Bot(threading.Thread):
         logger.info("Close all servers connection...")
         k = list(self.servers.keys())
         for srv in k:
-            self.servers[srv].disconnect()
+            self.servers[srv].close()
 
         self.stop = True
 

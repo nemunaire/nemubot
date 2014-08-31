@@ -57,8 +57,9 @@ class SocketServer(AbstractServer):
         return True
 
     def _close(self):
+        self._sending_queue.join()
         if self.socket is not None:
-            self.socket.shutdown(SHUT_RDWR)
+            self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
             self.socket = None
 
