@@ -31,7 +31,7 @@ import server
 #Store all used ports
 PORTS = list()
 
-class DCC(server.Server):
+class DCC(server.AbstractServer):
     def __init__(self, srv, dest, socket=None):
         server.Server.__init__(self)
 

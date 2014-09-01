@@ -42,6 +42,17 @@ class IRCServer(SocketServer):
             return True
         return False
 
+    def send_response(self, res):
+        if type(res.channel) != list:
+            res.channel = [ res.channel ]
+        for channel in res.channel:
+            if channel is not None and channel != self.nick:
+                self.write("%s %s :%s" % ("PRIVMSG", channel, res.get_message()))
+            else:
+                channel = res.sender.split("!")[0]
+                self.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
+
+
     def _close(self):
         self.write("QUIT")
         SocketServer._close(self)

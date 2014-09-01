@@ -33,7 +33,7 @@ def parseresponse(res):
             SERVERS[res.server] = dict()
         for receiver in res.receivers:
             SERVERS[res.server][receiver] = res
-    return True
+    return res
 
 
 @hook("cmd_hook", "more")

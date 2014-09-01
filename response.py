@@ -69,6 +69,14 @@ class Response:
             self.sender = sender
 
     def append_message(self, message, title=None, shown_first_count=-1):
+        if type(message) is str:
+            message = message.split('\n')
+            if len(message) > 1:
+                for m in message:
+                    self.append_message(m)
+                return
+            else:
+                message = message[0]
         if message is not None and len(message) > 0:
             if shown_first_count >= 0:
                 self.messages.append(message[:shown_first_count])

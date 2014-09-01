@@ -68,7 +68,7 @@ class Message:
       self.params.append(p.group("trailing"))
 
     # Special commands
-    if self.cmd == 'PRIVMSG':
+    if self.cmd == 'PRIVMSG' or self.cmd == 'NOTICE':
       self.receivers = self.decode(self.params[0]).split(',')
 
       # If CTCP, remove 0x01
@@ -106,6 +106,11 @@ class Message:
 
   def parse_content(self):
       """Parse or reparse the message content"""
+      # Remove !
+      if self.text[0] == '!':
+          self.qual = "cmd"
+          self.text = self.text[1:].strip()
+
       # Split content by words
       try:
           self.cmds = shlex.split(self.text)

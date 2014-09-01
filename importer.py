@@ -159,15 +159,19 @@ class ModuleLoader(SourceLoader):
 
         def send_response(server, res):
             if server in self.context.servers:
-                return self.context.servers[server].send_response(res, None)
+                return self.context.servers[server].send_response(res)
             else:
                 module.logger.error("Try to send a message to the unknown server: %s", server)
                 return False
 
         def add_hook(store, hook):
-            return self.context.hooks.add_hook(store, hook, module)
+            store = convert_legacy_store(store)
+            module.REGISTERED_HOOKS.append((store, hook))
+            return self.context.hooks.add_hook(hook, store)
         def del_hook(store, hook):
-            return self.context.hooks.del_hook(store, hook)
+            store = convert_legacy_store(store)
+            module.REGISTERED_HOOKS.remove((store, hook))
+            return self.context.hooks.del_hook(hook, store)
         def add_event(evt, eid=None):
             return self.context.add_event(evt, eid, module_src=module)
         def add_event_eid(evt, eid):
@@ -236,6 +240,21 @@ class ModuleLoader(SourceLoader):
         return module
 
 
+def convert_legacy_store(old):
+    if old == "cmd_hook" or old == "cmd_rgxp" or old == "cmd_default":
+        return "in_PRIVMSG_cmd"
+    elif old == "ask_hook" or old == "ask_rgxp" or old == "ask_default":
+        return "in_PRIVMSG_ask"
+    elif old == "msg_hook" or old == "msg_rgxp" or old == "msg_default":
+        return "in_PRIVMSG_def"
+    elif old == "all_post":
+        return "post"
+    elif old == "all_pre":
+        return "pre"
+    else:
+        print("UNKNOWN store:", old)
+        return old
+
 def add_cap_hook(prompt, module, cmd):
     if hasattr(module, cmd["call"]):
         prompt.add_cap_hook(cmd["name"], getattr(module, cmd["call"]))
@@ -250,5 +269,7 @@ def register_hooks(module, context, prompt):
         if s == "prompt_cmd":
             prompt.add_cap_hook(h.name, h.call)
         else:
-            context.hooks.add_hook(s, h, module)
+            s = convert_legacy_store(s)
+            module.REGISTERED_HOOKS.append((s, h))
+            context.hooks.add_hook(h, s)
     hooks.last_registered = []

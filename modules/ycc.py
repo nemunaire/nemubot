@@ -66,9 +66,8 @@ def parselisten(msg):
               LAST_URLS[msg.channel].append(url)
     except:
         pass
-    return False
+    return msg
 
 @hook("all_post")
 def parseresponse(res):
-    parselisten(res)
-    return True
+    return parselisten(res)

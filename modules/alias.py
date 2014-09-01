@@ -148,28 +148,22 @@ def treat_variables(res):
             res.messages[i] = replace_variables(", ".join(res.messages[i]), res)
         else:
             res.messages[i] = replace_variables(res.messages[i], res)
-    return True
+    return res
 
-@hook("all_pre")
-def treat_alias(msg, hooks_cache):
-    if msg.cmd == "PRIVMSG":
-        if len(msg.cmds) > 0 and (len(msg.cmds[0]) > 0
-            and msg.cmds[0][0] == "!"
-            and msg.cmds[0][1:] in DATAS.getNode("aliases").index
-            and msg.cmds[0][1:] not in hooks_cache("cmd_hook")):
-            msg.text = msg.text.replace(msg.cmds[0],
-                      DATAS.getNode("aliases").index[msg.cmds[0][1:]]["origin"], 1)
+@hook("pre_PRIVMSG_cmd")
+def treat_alias(msg):
+    if msg.cmds[0] in DATAS.getNode("aliases").index:
+        msg.text = msg.text.replace(msg.cmds[0],
+                                    DATAS.getNode("aliases").index[msg.cmds[0]]["origin"], 1)
+        msg.qual = "def"
+        msg.parse_content()
 
-            msg.parse_content()
+        return treat_alias(msg)
 
-            treat_alias(msg, hooks_cache)
-            return True
-
-        else:
-            msg.text = replace_variables(msg.text, msg)
-            msg.parse_content()
-            return False
-    return False
+    else:
+        msg.text = replace_variables(msg.text, msg)
+        msg.parse_content()
+        return msg
 
 @hook("ask_default")
 def parseask(msg):
@@ -187,4 +181,4 @@ def parseask(msg):
             res = Response(msg.sender, "Nouvel alias %s défini avec succès." % result.group(1))
             save()
             return res
-    return False
+    return None

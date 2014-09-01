@@ -63,6 +63,10 @@ class AbstractServer(io.IOBase):
                 _xlist.remove(self)
 
 
+    def send_response(self, res):
+        return NotImplemented
+
+
     def write(self, message):
         """Send a message to the server using send_callback"""
         self._send_callback(message)

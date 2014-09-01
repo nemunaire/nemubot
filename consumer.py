@@ -42,26 +42,151 @@ class MessageConsumer:
         self.prvt = prvt
         self.data = data
 
+        self.msgs = list()
+        self.responses = None
 
-    def treat_in(self, context, msg):
-        """Treat the input message"""
-        if msg.cmd == "PING":
-            self.srv.write("%s :%s" % ("PONG", msg.params[0]))
-        elif hasattr(msg, "receivers"):
-            if msg.receivers:
-                # All messages
-                context.treat_pre(msg, self.srv)
 
-                return context.treat_irc(msg, self.srv)
+    def first_treat(self, msg):
+        """Qualify a new message/response
 
-    def treat_out(self, context, res):
-        """Treat the output message"""
-        if isinstance(res, list):
-            for r in res:
-                if r is not None: self.treat_out(context, r)
+        Argument:
+        msg -- The Message or Response to qualify
+        """
 
-        elif isinstance(res, response.Response):
-            # Define the destination server
+        if not hasattr(msg, "qual") or msg.qual is None:
+            # Assume this is a message with no particulariry
+            msg.qual = "def"
+
+        # Define the source server if not already done
+        if not hasattr(msg, "server") or msg.server is None:
+            msg.server = self.srv.id
+
+        if isinstance(msg, Message):
+            if msg.cmd == "PRIVMSG" or msg.cmd == "NOTICE":
+                msg.is_owner = (msg.nick == self.srv.owner)
+                msg.private = msg.private or (len(msg.receivers) == 1 and msg.receivers[0] == self.srv.nick)
+                if msg.private:
+                    msg.qual = "ask"
+
+                # Remove nemubot:
+                if msg.qual != "cmd" and msg.text.find(self.srv.nick) == 0 and len(msg.text) > len(self.srv.nick) + 2 and msg.text[len(self.srv.nick)] == ":":
+                    msg.text = msg.text[len(self.srv.nick) + 1:].strip()
+                    msg.qual = "ask"
+
+        return msg
+
+
+    def pre_treat(self, hm):
+        """Modify input Messages
+
+        Arguments:
+        hm -- Hooks manager
+        """
+
+        new_msg = list()
+        new_msg += self.msgs
+        self.msgs = list()
+
+        while len(new_msg) > 0:
+            msg = new_msg.pop(0)
+            for h in hm.get_hooks("pre", msg.cmd, msg.qual):
+                if h.match(message=msg, server=self.srv):
+                    res = h.run(msg)
+                    if isinstance(res, list):
+                        for i in xrange(len(res)):
+                            if res[i] == msg:
+                                res.pop(i)
+                                break
+                        new_msg += res
+                    elif res is not None and res != msg:
+                        new_msg.append(res)
+                        msg = None
+                        break
+                    elif res is None or res == False:
+                        msg = None
+                        break
+            if msg is not None:
+                self.msgs.append(msg)
+
+
+    def in_treat(self, hm):
+        """Treat Messages and store responses
+
+        Arguments:
+        hm -- Hooks manager
+        """
+
+        self.responses = list()
+        for msg in self.msgs:
+            for h in hm.get_hooks("in", msg.cmd, msg.qual):
+                if msg.cmd == "PING":
+                    self.srv.write("%s :%s" % ("PONG", msg.params[0]))
+
+                elif h.match(message=msg, server=self.srv):
+                    res = h.run(msg)
+                    if isinstance(res, list):
+                        self.responses += res
+                    elif res is not None:
+                        self.responses.append(res)
+
+
+    def post_treat(self, hm):
+        """Modify output Messages
+
+        Arguments:
+        hm -- Hooks manager
+        """
+
+        new_msg = list()
+        new_msg += self.responses
+        self.responses = list()
+
+        while len(new_msg) > 0:
+            msg = self.first_treat(new_msg.pop(0))
+            for h in hm.get_hooks("post"):
+                if h.match(message=msg, server=self.srv):
+                    res = h.run(msg)
+                    if isinstance(res, list):
+                        for i in xrange(len(res)):
+                            if res[i] == msg:
+                                res.pop(i)
+                                break
+                        new_msg += res
+                    elif res is not None and res != msg:
+                        new_msg.append(res)
+                        msg = None
+                        break
+                    elif res is None or res == False:
+                        msg = None
+                        break
+            if msg is not None:
+                self.responses.append(msg)
+
+
+    def run(self, context):
+        """Create, parse and treat the message"""
+        try:
+            # Parse and create the original message
+            msg = Message(self.raw, self.time, self.prvt)
+            self.first_treat(msg)
+            self.msgs.append(msg)
+
+            # Run pre-treatment: from Message to [ Message ]
+            self.pre_treat(context.hooks)
+
+            # Run in-treatment: from Message to [ Response ]
+            if len(self.msgs) > 0:
+                self.in_treat(context.hooks)
+
+            # Run post-treatment: from Response to [ Response ]
+            if self.responses is not None and len(self.responses) > 0:
+                self.post_treat(context.hooks)
+        except:
+            logger.exception("Error occurred during the processing of the message: %s", self.raw)
+            return
+
+        #return self.responses
+        for res in self.responses:
             to_server = None
             if res.server is None:
                 to_server = self.srv
@@ -75,39 +200,7 @@ class MessageConsumer:
                 return False
 
             # Sent the message only if treat_post authorize it
-            if context.treat_post(res):
-                if type(res.channel) != list:
-                    res.channel = [ res.channel ]
-                for channel in res.channel:
-                    if channel is not None and channel != to_server.nick:
-                        to_server.write("%s %s :%s" % ("PRIVMSG", channel, res.get_message()))
-                    else:
-                        channel = res.sender.split("!")[0]
-                        to_server.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
-
-        elif res is not None:
-            logger.error("Unrecognized response type: %s", res)
-
-    def run(self, context):
-        """Create, parse and treat the message"""
-        try:
-            msg = Message(self.raw, self.time, self.prvt)
-            msg.server = self.srv.id
-            if msg.cmd == "PRIVMSG":
-                msg.is_owner = (msg.nick == self.srv.owner)
-                msg.private = msg.private or (len(msg.receivers) == 1 and msg.receivers[0] == self.srv.nick)
-            res = self.treat_in(context, msg)
-        except:
-            logger.exception("Error occurred during the processing of the message: %s", self.raw)
-            return
-
-        # Send message
-        self.treat_out(context, res)
-
-        # Inform that the message has been treated
-        #self.srv.msg_treated(self.data)
-
-
+            to_server.send_response(res)
 
 class EventConsumer:
     """Store a event before treating"""

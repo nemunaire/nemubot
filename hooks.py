@@ -24,151 +24,6 @@ from exception import IRCException
 
 logger = logging.getLogger("nemubot.hooks")
 
-class MessagesHook:
-    def __init__(self, context, bot):
-        self.context = context
-        self.bot = bot
-
-        # Store specials hooks
-        self.all_pre  = list() # Treated before any parse
-        self.all_post = list() # Treated before send message to user
-
-        # Store IRC commands hooks
-        self.irc_hook = dict()
-
-        # Store direct hooks
-        self.cmd_hook = dict()
-        self.ask_hook = dict()
-        self.msg_hook = dict()
-
-        # Store regexp hooks
-        self.cmd_rgxp = list()
-        self.ask_rgxp = list()
-        self.msg_rgxp = list()
-
-        # Store default hooks (after other hooks if no match)
-        self.cmd_default = list()
-        self.ask_default = list()
-        self.msg_default = list()
-
-
-    def add_hook(self, store, hook, module_src=None):
-        """Insert in the right place a hook into the given store"""
-        logger.info("Adding hook '%s' to store '%s' from module '%s'", hook, store, module_src)
-        if module_src is None:
-            logger.warn("No source module was passed to add_hook function, "
-                        "please fix it in order to be compatible with unload "
-                        "feature")
-
-        if store in self.context.hooks_cache:
-            logger.debug("Cleaning hooks cache for %s", store)
-            del self.context.hooks_cache[store]
-
-        if not hasattr(self, store):
-            # TODO: raise custom exception, this is a user problem, not internal one!
-            logger.error("Unrecognized hook store: %s", store)
-            return
-        attr = getattr(self, store)
-
-        if isinstance(attr, dict) and hook.name is not None:
-            if hook.name not in attr:
-                attr[hook.name] = list()
-            attr[hook.name].append(hook)
-            if hook.end is not None:
-                if hook.end not in attr:
-                    attr[hook.end] = list()
-                attr[hook.end].append(hook)
-        elif isinstance(attr, list):
-            attr.append(hook)
-        else:
-            logger.critical("Unrecognized hook store type: %s", type(attr))
-            return
-        if module_src is not None and hasattr(module_src, "REGISTERED_HOOKS"):
-            module_src.REGISTERED_HOOKS.append((store, hook))
-
-    def register_hook_attributes(self, store, module, node):
-        if node.hasAttribute("data"):
-            data = node["data"]
-        else:
-            data = None
-        if node.hasAttribute("name"):
-            self.add_hook(store + "_hook", Hook(getattr(module, node["call"]),
-                                                node["name"], data=data),
-                          module)
-        elif node.hasAttribute("regexp"):
-            self.add_hook(store + "_rgxp", Hook(getattr(module, node["call"]),
-                                                regexp=node["regexp"], data=data),
-                          module)
-
-    def register_hook(self, module, node):
-        """Create a hook from configuration node"""
-        if node.name == "message" and node.hasAttribute("type"):
-            if node["type"] == "cmd" or node["type"] == "all":
-                self.register_hook_attributes("cmd", module, node)
-
-            if node["type"] == "ask" or node["type"] == "all":
-                self.register_hook_attributes("ask", module, node)
-
-            if (node["type"] == "msg" or node["type"] == "answer" or
-                node["type"] == "all"):
-                self.register_hook_attributes("answer", module, node)
-
-    def clear(self):
-        for h in self.all_pre:
-            self.del_hook("all_pre", h)
-        for h in self.all_post:
-            self.del_hook("all_post", h)
-
-        for l in self.irc_hook:
-            for h in self.irc_hook[l]:
-                self.del_hook("irc_hook", h)
-
-        for l in self.cmd_hook:
-            for h in self.cmd_hook[l]:
-                self.del_hook("cmd_hook", h)
-        for l in self.ask_hook:
-            for h in self.ask_hook[l]:
-                self.del_hook("ask_hook", h)
-        for l in self.msg_hook:
-            for h in self.msg_hook[l]:
-                self.del_hook("msg_hook", h)
-
-        for h in self.cmd_rgxp:
-            self.del_hook("cmd_rgxp", h)
-        for h in self.ask_rgxp:
-            self.del_hook("ask_rgxp", h)
-        for h in self.msg_rgxp:
-            self.del_hook("msg_rgxp", h)
-
-        for h in self.cmd_default:
-            self.del_hook("cmd_default", h)
-        for h in self.ask_default:
-            self.del_hook("ask_default", h)
-        for h in self.msg_default:
-            self.del_hook("msg_default", h)
-
-    def del_hook(self, store, hook, module_src=None):
-        """Remove a registered hook from a given store"""
-        if store in self.context.hooks_cache:
-            del self.context.hooks_cache[store]
-
-        if not hasattr(self, store):
-            logger.warn("unrecognized hook store type")
-            return
-        attr = getattr(self, store)
-
-        if isinstance(attr, dict) and hook.name is not None:
-            if hook.name in attr:
-                attr[hook.name].remove(hook)
-            if hook.end is not None and hook.end in attr:
-                attr[hook.end].remove(hook)
-        else:
-            attr.remove(hook)
-
-        if module_src is not None:
-            module_src.REGISTERED_HOOKS.remove((store, hook))
-
-
 class Hook:
     """Class storing hook informations"""
     def __init__(self, call, name=None, data=None, regexp=None, channels=list(), server=None, end=None, call_end=None, help=None):
@@ -185,6 +40,18 @@ class Hook:
         self.server = server
         self.channels = channels
         self.help = help
+
+    def match(self, message, channel=None, server=None):
+        if isinstance(message, Response):
+            return self.is_matching(None, channel, server)
+        elif message.qual == "cmd":
+            return self.is_matching(message.cmds[0], channel, server)
+        elif hasattr(message, "text"):
+            return self.is_matching(message.text, channel, server)
+        elif len(message.params) > 0:
+            return self.is_matching(message.params[0], channel, server)
+        else:
+            return self.is_matching(message.cmd, channel, server)
 
     def is_matching(self, strcmp, channel=None, server=None):
         """Test if the current hook correspond to the message"""
