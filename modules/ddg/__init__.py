@@ -11,7 +11,6 @@ nemubotversion = 3.4
 from . import DDGSearch
 from . import UrbanDictionnary
 from . import WFASearch
-from . import Wikipedia
 
 def load(context):
     global CONF
@@ -98,53 +97,3 @@ def calculate(msg):
         return res
     else:
         return Response(msg.sender, s.error, msg.channel)
-
-
-@hook("cmd_hook", "wikipedia")
-def wikipedia(msg):
-    return wiki("wikipedia.org", 0, msg)
-
-@hook("cmd_hook", "wiktionary")
-def wiktionary(msg):
-    return wiki("wiktionary.org", 1, msg)
-
-@hook("cmd_hook", "etymology")
-def wiktionary(msg):
-    return wiki("wiktionary.org", 0, msg)
-
-def wiki(site, section, msg):
-    if len(msg.cmds) <= 1:
-        return Response(msg.sender,
-                        "Indicate a term to search",
-                        msg.channel, nick=msg.nick)
-    if len(msg.cmds) > 2 and len(msg.cmds[1]) < 4:
-        lang = msg.cmds[1]
-        extract = 2
-    else:
-        lang = "fr"
-        extract = 1
-
-    s = Wikipedia.Wikipedia(' '.join(msg.cmds[extract:]), lang, site, section)
-
-    res = Response(msg.sender, channel=msg.channel, nomore="No more results")
-    if site == "wiktionary.org":
-        tout = [result for result in s.nextRes if result.find("\x03\x16 :\x03\x16 ") != 0]
-        if len(tout) > 0:
-            defI=1
-            for t in tout:
-                if t.find("# ") == 0:
-                    t = t.replace("# ", "%d. " % defI)
-                    defI += 1
-                elif t.find("#* ") == 0:
-                    t = t.replace("#* ", "  * ")
-                res.append_message(t)
-    else:
-        for result in s.nextRes:
-            res.append_message(result)
-
-    if len(res.messages) > 0:
-        return res
-    else:
-        return Response(msg.sender,
-                        "No information about " + " ".join(msg.cmds[extract:]),
-                        msg.channel)
