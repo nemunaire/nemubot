@@ -53,6 +53,11 @@ def cmd_ycc(msg):
 
 @hook("msg_default")
 def parselisten(msg):
+    parseresponse(msg)
+    return None
+
+@hook("all_post")
+def parseresponse(msg):
     global LAST_URLS
     try:
       urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
@@ -67,7 +72,3 @@ def parselisten(msg):
     except:
         pass
     return msg
-
-@hook("all_post")
-def parseresponse(res):
-    return parselisten(res)

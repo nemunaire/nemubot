@@ -56,6 +56,11 @@ def cmd_subreddit(msg):
 
 @hook("msg_default")
 def parselisten(msg):
+    parseresponse(msg)
+    return None
+
+@hook("all_post")
+def parseresponse(msg):
     global LAST_SUBS
 
     try:
@@ -68,7 +73,3 @@ def parselisten(msg):
         pass
 
     return msg
-
-@hook("all_post")
-def parseresponse(res):
-    return parselisten(res)
