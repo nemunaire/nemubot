@@ -119,7 +119,11 @@ class MessageConsumer:
         self.responses = list()
         for msg in self.msgs:
             # TODO: should be placed in server hooks
-            if msg.cmd == "PING":
+            if msg.cmd == "001":
+                if hasattr(self.srv, "_on_connect"):
+                    self.srv._on_connect()
+
+            elif msg.cmd == "PING":
                 self.srv.write("%s :%s" % ("PONG", msg.params[0]))
 
             else:

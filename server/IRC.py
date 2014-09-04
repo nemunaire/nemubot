@@ -33,6 +33,16 @@ class IRCServer(SocketServer):
         self.realname = realname
         self.id = "TODO"
 
+        def _on_connect():
+            # First, JOIN some channels
+            for chn in node.getNodes("channel"):
+                if chn["password"] is not None:
+                    self.write("JOIN %s %s" % (chn["name"], chn["password"]))
+                else:
+                    self.write("JOIN %s" % chn["name"])
+        self._on_connect = _on_connect
+
+
     def _open(self):
         if SocketServer._open(self):
             if self.password is not None:
