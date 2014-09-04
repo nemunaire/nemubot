@@ -118,16 +118,19 @@ class MessageConsumer:
 
         self.responses = list()
         for msg in self.msgs:
-            for h in hm.get_hooks("in", msg.cmd, msg.qual):
-                if msg.cmd == "PING":
-                    self.srv.write("%s :%s" % ("PONG", msg.params[0]))
+            # TODO: should be placed in server hooks
+            if msg.cmd == "PING":
+                self.srv.write("%s :%s" % ("PONG", msg.params[0]))
 
-                elif h.match(message=msg, server=self.srv):
-                    res = h.run(msg)
-                    if isinstance(res, list):
-                        self.responses += res
-                    elif res is not None:
-                        self.responses.append(res)
+            else:
+                for h in hm.get_hooks("in", msg.cmd, msg.qual):
+
+                    if h.match(message=msg, server=self.srv):
+                        res = h.run(msg)
+                        if isinstance(res, list):
+                            self.responses += res
+                        elif res is not None:
+                            self.responses.append(res)
 
 
     def post_treat(self, hm):
