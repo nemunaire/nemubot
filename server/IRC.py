@@ -31,6 +31,7 @@ class IRCServer(SocketServer):
         self.nick = nick
         self.owner = owner
         self.realname = realname
+        self.capabilities = list() if not node.hasAttribute("caps") or node["caps"].lower() != "no" else None
         self.id = "TODO"
 
         def _on_connect():
@@ -47,8 +48,12 @@ class IRCServer(SocketServer):
         if SocketServer._open(self):
             if self.password is not None:
                 self.write("PASS :" + self.password)
+            if self.capabilities is not None:
+                self.write("CAP LS")
             self.write("NICK :" + self.nick)
             self.write("USER %s %s bla :%s" % (self.nick, self.host, self.realname))
+            if self.capabilities is not None:
+                self.write("CAP END")
             return True
         return False
 
