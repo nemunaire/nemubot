@@ -24,7 +24,7 @@ from response import Response
 
 mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
                       (?::(?P<prefix>
-                         (?P<nick>[a-zA-Z][^!@ ]*)
+                         (?P<nick>[^!@ ]+)
                          (?: !(?P<user>[^@ ]+))?
                          (?:@(?P<host>[^ ]+))?
                       )\ )?
