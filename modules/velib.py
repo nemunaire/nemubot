@@ -4,6 +4,7 @@
 
 import re
 
+from hooks import hook
 from tools import web
 
 nemubotversion = 3.4
@@ -60,6 +61,7 @@ def print_station_status(msg, station):
                         channel=msg.channel, nick=msg.nick)
     raise IRCException("station %s inconnue." % station)
 
+@hook("cmd_hook", "velib")
 def ask_stations(msg):
     """Hook entry from !velib"""
     global DATAS
