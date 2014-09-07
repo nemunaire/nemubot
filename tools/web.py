@@ -125,7 +125,7 @@ def getXML(url, timeout=15):
     if cnt is None:
         return None
     else:
-        return xmlparser.parse_string(cnt)
+        return xmlparser.parse_string(cnt.encode())
 
 def getJSON(url, timeout=15):
     """Get content page and return JSON content"""
