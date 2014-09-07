@@ -124,7 +124,7 @@ class MessageConsumer:
                     self.srv._on_connect()
 
             elif msg.cmd == "PING":
-                self.srv.write("%s :%s" % ("PONG", msg.decode(msg.params[0])))
+                self.srv.write("%s :%s" % ("PONG", msg.params[0]))
 
             else:
                 for h in hm.get_hooks("in", msg.cmd, msg.qual):

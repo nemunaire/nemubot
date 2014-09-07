@@ -91,7 +91,7 @@ class Message:
       self.topic = self.decode(self.params[1]).split(" ")
 
     else:
-      for i in range(0, len(self.params)-1):
+      for i in range(0, len(self.params)):
         self.params[i] = self.decode(self.params[i])
 
 
