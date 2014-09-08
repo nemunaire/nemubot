@@ -126,6 +126,11 @@ class MessageConsumer:
             elif msg.cmd == "ERROR":
                 self.srv.close()
 
+            elif (msg.cmd == "CAP" and
+                  hasattr(self.srv, "_on_caps_ls") and
+                  self.srv._on_caps_ls(msg)):
+                pass
+
             elif msg.cmd == "PING":
                 self.srv.write("%s :%s" % ("PONG", msg.params[0]))
 

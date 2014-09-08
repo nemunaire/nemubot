@@ -31,8 +31,15 @@ class IRCServer(SocketServer):
         self.nick = nick
         self.owner = owner
         self.realname = realname
-        self.capabilities = list() if not node.hasAttribute("caps") or node["caps"].lower() != "no" else None
         self.id = "TODO"
+
+        if node.hasAttribute("caps"):
+            if node["caps"].lower() == "no":
+                self.capabilities = None
+            else:
+                self.capabilities = node["caps"].split(",")
+        else:
+            self.capabilities = list()
 
         def _on_connect():
             # First, JOIN some channels
@@ -43,6 +50,17 @@ class IRCServer(SocketServer):
                     self.write("JOIN %s" % chn["name"])
         self._on_connect = _on_connect
 
+        def _on_caps_ls(msg):
+            if len(msg.params) != 3 or msg.params[1] != "LS":
+                return False
+            server_caps = msg.params[2].split(" ")
+            for cap in self.capabilities:
+                if cap not in server_caps:
+                    self.capabilities.remove(cap)
+            self.write("CAP REQ :" + " ".join(self.capabilities))
+            self.write("CAP END")
+        self._on_caps_ls = _on_caps_ls
+
 
     def _open(self):
         if SocketServer._open(self):
@@ -52,8 +70,6 @@ class IRCServer(SocketServer):
                 self.write("CAP LS")
             self.write("NICK :" + self.nick)
             self.write("USER %s %s bla :%s" % (self.nick, self.host, self.realname))
-            if self.capabilities is not None:
-                self.write("CAP END")
             return True
         return False
 
