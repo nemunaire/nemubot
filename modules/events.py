@@ -72,7 +72,7 @@ def start_countdown(msg):
     strnd["channel"] = msg.channel
     strnd["proprio"] = msg.nick
     strnd["sender"] = msg.sender
-    strnd["start"] = datetime.now()
+    strnd["start"] = msg.tags["time"]
     strnd["name"] = msg.cmds[1]
     DATAS.addChild(strnd)
 
@@ -84,7 +84,7 @@ def start_countdown(msg):
         result3 = re.match("(.*[^0-9])?([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmds[2])
         if result2 is not None or result3 is not None:
             try:
-                now = datetime.now()
+                now = msg.tags["time"]
                 if result3 is None or result3.group(5) is None: sec = 0
                 else: sec = int(result3.group(5))
                 if result3 is None or result3.group(3) is None: minu = 0
@@ -109,7 +109,7 @@ def start_countdown(msg):
                 raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.cmds[1])
 
         elif result1 is not None and len(result1) > 0:
-            strnd["end"] = datetime.now()
+            strnd["end"] = msg.tags["time"]
             for (t, g) in result1:
                 if g is None or g == "" or g == "m" or g == "M":
                     strnd["end"] += timedelta(minutes=int(t))
@@ -129,11 +129,11 @@ def start_countdown(msg):
     save()
     if "end" in strnd:
         return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
-                        (msg.cmds[1], datetime.now().strftime("%A %d %B %Y à %H:%M:%S"),
+                        (msg.cmds[1], msg.tags["time"].strftime("%A %d %B %Y à %H:%M:%S"),
                          strnd.getDate("end").strftime("%A %d %B %Y à %H:%M:%S")))
     else:
         return Response(msg.sender, "%s commencé le %s"% (msg.cmds[1],
-                            datetime.now().strftime("%A %d %B %Y à %H:%M:%S")))
+                            msg.tags["time"].strftime("%A %d %B %Y à %H:%M:%S")))
 
 @hook("cmd_hook", "end")
 @hook("cmd_hook", "forceend")
@@ -143,7 +143,7 @@ def end_countdown(msg):
 
     if msg.cmds[1] in DATAS.index:
         if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.is_owner):
-            duration = countdown(datetime.now() - DATAS.index[msg.cmds[1]].getDate("start"))
+            duration = countdown(msg.tags["time"] - DATAS.index[msg.cmds[1]].getDate("start"))
             del_event(DATAS.index[msg.cmds[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])
             save()
@@ -179,9 +179,9 @@ def parseanswer(msg):
 
         if DATAS.index[msg.cmds[0]].name == "strend":
             if DATAS.index[msg.cmds[0]].hasAttribute("end"):
-                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start")), countdown(DATAS.index[msg.cmds[0]].getDate("end") - datetime.now())))
+                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(msg.tags["time"] - DATAS.index[msg.cmds[0]].getDate("start")), countdown(DATAS.index[msg.cmds[0]].getDate("end") - msg.tags["time"])))
             else:
-                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(datetime.now() - DATAS.index[msg.cmds[0]].getDate("start"))))
+                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(msg.tags["time"] - DATAS.index[msg.cmds[0]].getDate("start"))))
         else:
             res.append_message(countdown_format(DATAS.index[msg.cmds[0]].getDate("start"), DATAS.index[msg.cmds[0]]["msg_before"], DATAS.index[msg.cmds[0]]["msg_after"]))
         return res
