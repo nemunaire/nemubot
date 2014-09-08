@@ -9,6 +9,7 @@ from datetime import date
 
 from hooks import hook
 from tools.countdown import countdown_format
+from tools.date import extractDate
 from xmlparser.node import ModuleState
 
 nemubotversion = 3.4
@@ -88,7 +89,7 @@ def parseask(msg):
     res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.text, re.I)
     if res is not None:
         try:
-            extDate = msg.extractDate()
+            extDate = extractDate(msg.text)
             if extDate is None or extDate.year > datetime.now().year:
                 return Response(msg.sender,
                                 "la date de naissance ne paraît pas valide...",

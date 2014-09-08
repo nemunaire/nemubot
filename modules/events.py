@@ -15,6 +15,7 @@ nemubotversion = 3.4
 
 from event import ModuleEvent
 from hooks import Hook, hook
+from tools.date import extractDate
 from tools.countdown import countdown_format, countdown
 
 def help_full ():
@@ -198,7 +199,7 @@ def parseask(msg):
 
         texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
         if texts is not None and texts.group(3) is not None:
-            extDate = msg.extractDate()
+            extDate = extractDate(msg.text)
             if extDate is None or extDate == "":
                 raise IRCException("la date de l'événement est invalide !")
 
