@@ -118,6 +118,17 @@ class Message:
           self.cmds = self.text.split(' ')
 
 
+  def add_tag(self, key, value=None):
+    """Add an IRCv3.2 Message Tags"""
+    # Treat special tags
+    if key == "time":
+      # TODO: this is UTC timezone, nemubot works with local timezone
+      value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+    # Store tag
+    self.tags[key] = value
+
+
   def decode(self, s):
     """Decode the content string usign a specific encoding"""
     if isinstance(s, bytes):
