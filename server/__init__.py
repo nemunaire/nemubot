@@ -50,6 +50,7 @@ class AbstractServer(io.IOBase):
         """Generic open function that register the server un _rlist in case of successful _open"""
         if self._open():
             _rlist.append(self)
+            _xlist.append(self)
 
 
     def close(self):
@@ -88,3 +89,7 @@ class AbstractServer(io.IOBase):
         self.logger.debug("Message '%s' appended to Queue", message)
         if self not in _wlist:
             _wlist.append(self)
+
+    def exception(self):
+        """Exception occurs in fd"""
+        print("Unhandle file descriptor exception on server " + self.id)
