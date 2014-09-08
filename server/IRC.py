@@ -69,5 +69,5 @@ class IRCServer(SocketServer):
 
 
     def _close(self):
-        self.write("QUIT")
-        SocketServer._close(self)
+        if self.socket is not None: self.write("QUIT")
+        return SocketServer._close(self)

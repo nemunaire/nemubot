@@ -59,17 +59,23 @@ class SocketServer(AbstractServer):
     def _close(self):
         self._sending_queue.join()
         if self.socket is not None:
-            self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
+            try:
+                self.socket.shutdown(socket.SHUT_RDWR)
+                self.socket.close()
+            except socket.error:
+                pass
             self.socket = None
+        return True
 
     def _write(self, cnt):
+        if self.socket is None: return
         self.socket.send(cnt)
 
     def format(self, txt):
         return txt.encode() + b'\r\n'
 
     def read(self):
+        if self.socket is None: return
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
         self.readbuffer = temp.pop()

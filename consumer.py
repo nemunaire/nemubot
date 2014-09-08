@@ -123,6 +123,9 @@ class MessageConsumer:
                 if hasattr(self.srv, "_on_connect"):
                     self.srv._on_connect()
 
+            elif msg.cmd == "ERROR":
+                self.srv.close()
+
             elif msg.cmd == "PING":
                 self.srv.write("%s :%s" % ("PONG", msg.params[0]))
 
