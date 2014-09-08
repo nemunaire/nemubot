@@ -57,7 +57,8 @@ class IRCServer(SocketServer):
             for cap in self.capabilities:
                 if cap not in server_caps:
                     self.capabilities.remove(cap)
-            self.write("CAP REQ :" + " ".join(self.capabilities))
+            if len(self.capabilities) > 0:
+                self.write("CAP REQ :" + " ".join(self.capabilities))
             self.write("CAP END")
         self._on_caps_ls = _on_caps_ls
 
