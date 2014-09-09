@@ -451,6 +451,7 @@ def _ctcp_response(sndr, msg):
     return response.Response(sndr, msg, ctcp=True)
 
 def hotswap(bak):
+    bak.stop = True
     new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
     new.ctcp_capabilities = bak.ctcp_capabilities
     new.servers = bak.servers
@@ -470,14 +471,17 @@ def reload():
     import consumer
     imp.reload(consumer)
 
-    import DCC
-    imp.reload(DCC)
-
     import event
     imp.reload(event)
 
+    import exception
+    imp.reload(exception)
+
     import hooks
     imp.reload(hooks)
+
+    import hooksmanager
+    imp.reload(hooksmanager)
 
     import importer
     imp.reload(importer)
@@ -485,11 +489,33 @@ def reload():
     import message
     imp.reload(message)
 
+    import prompt
+    imp.reload(prompt)
     import prompt.builtins
     imp.reload(prompt.builtins)
 
+    import response
+    imp.reload(response)
+
     import server
+    rl,wl,xl = server._rlist,server._wlist,server._xlist
     imp.reload(server)
+    server._rlist,server._wlist,server._xlist = rl,wl,xl
+    import server.socket
+    imp.reload(server.socket)
+    import server.IRC
+    imp.reload(server.IRC)
+
+    import tools
+    imp.reload(tools)
+    import tools.countdown
+    imp.reload(tools.countdown)
+    import tools.date
+    imp.reload(tools.date)
+    import tools.web
+    imp.reload(tools.web)
+    import tools.wrapper
+    imp.reload(tools.wrapper)
 
     import xmlparser
     imp.reload(xmlparser)

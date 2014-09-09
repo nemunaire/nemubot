@@ -81,6 +81,7 @@ if __name__ == "__main__":
             bot.reload()
             print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
                   bot.__version__)
+            context.start()
         except:
             logger.exception("\033[1;31mUnable to reload the prompt due to errors.\033[0"
                              "m Fix them before trying to reload the prompt.")
