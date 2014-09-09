@@ -84,6 +84,43 @@ class Bot(threading.Thread):
                 return response.Response(msg.sender, message="pong", channel=msg.receivers, nick=msg.nick)
         self.hooks.add_hook(hooks.Hook(in_ping), "in", "PRIVMSG")
 
+        def _help_msg(msg):
+            """Parse and response to help messages"""
+            cmd = msg.cmds
+            sndr = msg.sender
+            res = response.Response(sndr)
+            if len(cmd) > 1:
+                if cmd[1] in self.modules:
+                    if len(cmd) > 2:
+                        if hasattr(self.modules[cmd[1]], "HELP_cmd"):
+                            res.append_message(self.modules[cmd[1]].HELP_cmd(cmd[2]))
+                        else:
+                            res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
+                    elif hasattr(self.modules[cmd[1]], "help_full"):
+                        res.append_message(self.modules[cmd[1]].help_full())
+                    else:
+                        res.append_message("No help for module %s" % cmd[1])
+                else:
+                    res.append_message("No module named %s" % cmd[1])
+            else:
+                res.append_message("Pour me demander quelque chose, commencez "
+                                   "votre message par mon nom ; je réagis "
+                                   "également à certaine commandes commençant par"
+                                   " !.  Pour plus d'informations, envoyez le "
+                                   "message \"!more\".")
+                res.append_message("Mon code source est libre, publié sous "
+                                   "licence AGPL (http://www.gnu.org/licenses/). "
+                                   "Vous pouvez le consulter, le dupliquer, "
+                                   "envoyer des rapports de bogues ou bien "
+                                   "contribuer au projet sur GitHub : "
+                                   "http://github.com/nemunaire/nemubot/")
+                res.append_message(title="Pour plus de détails sur un module, "
+                                   "envoyez \"!help nomdumodule\". Voici la liste"
+                                   " de tous les modules disponibles localement",
+                                   message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
+            return res
+        self.hooks.add_hook(hooks.Hook(_help_msg, "help"), "in", "PRIVMSG", "cmd")
+
         # Other known bots, making a bots network
         self.network     = dict()
         self.hooks_cache = dict()
@@ -410,97 +447,8 @@ class Bot(threading.Thread):
                 store.remove(hook)
 
 
-    def treat_prvmsg_ask(self, msg, srv):
-        # Treat ping
-        if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
-                    msg.text, re.I) is not None:
-            return response.Response(msg.sender, message="pong",
-                                     channel=msg.receivers, nick=msg.nick)
-
-        # Ask hooks
-        else:
-            return self.treat_ask(msg, srv)
-
-    def treat_prvmsg(self, msg, srv):
-        # First, treat CTCP
-        if msg.is_ctcp:
-            if msg.cmds[0] in self.ctcp_capabilities:
-                return self.ctcp_capabilities[msg.cmds[0]](srv, msg)
-            else:
-                return _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
-
-        # Owner commands
-        if len(msg.text) > 1 and msg.text[0] == '`' and msg.nick == srv.owner:
-            #TODO: owner commands
-            pass
-
-        elif len(msg.text) > 1 and msg.text[0] == '!':
-            # Remove the !
-            msg.cmds[0] = msg.cmds[0][1:]
-
-            if msg.cmds[0] == "help":
-                return _help_msg(msg.sender, self.modules, msg.cmds)
-
-            elif msg.cmds[0] == "dcc":
-                logger.debug("dcctest for %s", msg.sender)
-                srv.send_dcc("Hello %s!" % msg.nick, msg.sender)
-            elif msg.cmds[0] == "pvdcctest":
-                logger.debug("dcctest")
-                return Response(msg.sender, message="Test DCC")
-            elif msg.cmds[0] == "dccsendtest":
-                logger.debug("dccsendtest")
-                conn = DCC(srv, msg.sender)
-                conn.send_file("bot_sample.xml")
-
-            else:
-                return self.treat_cmd(msg, srv)
-
-        else:
-            res = self.treat_answer(msg, srv)
-
-            # Assume the message starts with nemubot:
-            if not res and msg.private:
-                return self.treat_prvmsg_ask(msg, srv)
-            return res
-
-
 def _ctcp_response(sndr, msg):
     return response.Response(sndr, msg, ctcp=True)
-
-
-def _help_msg(sndr, modules, cmd):
-    """Parse and response to help messages"""
-    res = response.Response(sndr)
-    if len(cmd) > 1:
-        if cmd[1] in modules:
-            if len(cmd) > 2:
-                if hasattr(modules[cmd[1]], "HELP_cmd"):
-                    res.append_message(modules[cmd[1]].HELP_cmd(cmd[2]))
-                else:
-                    res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
-            elif hasattr(modules[cmd[1]], "help_full"):
-                res.append_message(modules[cmd[1]].help_full())
-            else:
-                res.append_message("No help for module %s" % cmd[1])
-        else:
-            res.append_message("No module named %s" % cmd[1])
-    else:
-        res.append_message("Pour me demander quelque chose, commencez "
-                           "votre message par mon nom ; je réagis "
-                           "également à certaine commandes commençant par"
-                           " !.  Pour plus d'informations, envoyez le "
-                           "message \"!more\".")
-        res.append_message("Mon code source est libre, publié sous "
-                           "licence AGPL (http://www.gnu.org/licenses/). "
-                           "Vous pouvez le consulter, le dupliquer, "
-                           "envoyer des rapports de bogues ou bien "
-                           "contribuer au projet sur GitHub : "
-                           "http://github.com/nemunaire/nemubot/")
-        res.append_message(title="Pour plus de détails sur un module, "
-                           "envoyez \"!help nomdumodule\". Voici la liste"
-                           " de tous les modules disponibles localement",
-                           message=["\x03\x02%s\x03\x02 (%s)" % (im, modules[im].__doc__) for im in modules if modules[im].__doc__])
-    return res
 
 def hotswap(bak):
     new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
