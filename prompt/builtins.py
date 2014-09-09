@@ -66,15 +66,16 @@ def load_file(filename, context):
             or config.getName() == "nemubotconfig"):
             # Preset each server in this file
             for server in config.getNodes("server"):
+                ip = server["ip"] if server.hasAttribute("ip") else config["ip"]
                 nick = server["nick"] if server.hasAttribute("nick") else config["nick"]
                 owner = server["owner"] if server.hasAttribute("owner") else config["owner"]
                 realname = server["realname"] if server.hasAttribute("realname") else config["realname"]
                 if context.add_server(server, nick, owner, realname):
                     print("Server `%s:%s' successfully added." %
-                          (server["server"], server["port"]))
+                          (server["host"], server["port"]))
                 else:
                     print("Server `%s:%s' already added, skiped." %
-                          (server["server"], server["port"]))
+                          (server["host"], server["port"]))
 
             # Load module and their configuration
             for mod in config.getNodes("module"):

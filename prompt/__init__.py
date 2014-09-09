@@ -18,6 +18,7 @@
 
 import imp
 import os
+import readline
 import shlex
 import sys
 import traceback
@@ -81,14 +82,8 @@ class Prompt:
         """Launch the prompt"""
         ret = ""
         while ret != "quit" and ret != "reset" and ret != "refresh":
-            sys.stdout.write("\033[0;33m%s§\033[0m " % self.getPS1())
-            sys.stdout.flush()
-
             try:
-                line = sys.stdin.readline()
-                if len(line) <= 0:
-                    line = "quit"
-                    print("quit")
+                line = input("\033[0;33m%s§\033[0m " % self.getPS1())
                 cmds = self.lex_cmd(line.strip())
                 for toks in cmds:
                     try:
@@ -98,6 +93,9 @@ class Prompt:
                         traceback.print_exception(exc_type, exc_value, exc_traceback)
             except KeyboardInterrupt:
                 print("")
+            except EOFError:
+                ret = "quit"
+                print("quit")
         return ret != "quit"
 
 
