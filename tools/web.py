@@ -25,6 +25,7 @@ from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from exception import IRCException
 import xmlparser
 
 def isURL(url):
@@ -108,7 +109,7 @@ def getURLContent(url, timeout=15):
                     else:
                         charset = cha[0]
     except http.client.BadStatusLine:
-        return None
+        raise IRCException("Invalid HTTP response")
     finally:
         conn.close()
 
@@ -117,7 +118,7 @@ def getURLContent(url, timeout=15):
     elif (res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY) and res.getheader("Location") != url:
         return getURLContent(res.getheader("Location"), timeout)
     else:
-        return None
+        raise IRCException("A HTTP error occurs: %d - %s" % (res.status, http.client.responses[res.status]))
 
 def getXML(url, timeout=15):
     """Get content page and return XML parsed content"""
