@@ -37,58 +37,57 @@ def cmd_w3m(msg):
                 res.append_message(line.decode())
         return res
     else:
-        raise IRCException("Veuillez indiquer une URL à visiter.")
+        raise IRCException("Indicate the URL to visit.")
 
 @hook("cmd_hook", "curl")
 def cmd_curl(msg):
-    if len(msg.cmds) > 1:
-        try:
-            req = web.getURLContent(" ".join(msg.cmds[1:]))
-            if req is not None:
-                res = Response(msg.sender, channel=msg.channel)
-                for m in req.split("\n"):
-                    res.append_message(m)
-                return res
-            else:
-                return Response(msg.sender, "Une erreur est survenue lors de l'accès à cette URL", channel=msg.channel)
-        except socket.timeout:
-            return Response(msg.sender, "le délais d'attente a été dépassé durant l'accès à %s" % msg.cmds[1:], channel=msg.channel, nick=msg.nick)
-        except socket.error as e:
-            return Response(msg.sender, e.strerror, channel=msg.channel)
-    else:
-        return Response(msg.sender, "Veuillez indiquer une URL à visiter.",
-                        channel=msg.channel)
+    if len(msg.cmds) < 2:
+        raise IRCException("Indicate the URL to visit.")
+
+    try:
+        req = web.getURLContent(" ".join(msg.cmds[1:]))
+        if req is not None:
+            res = Response(msg.sender, channel=msg.channel)
+            for m in req.split("\n"):
+                res.append_message(m)
+            return res
+        else:
+            raise IRCException("An error occurs  when trying to access the page")
+    except socket.timeout:
+        raise IRCException("The request timeout when trying to access the page")
+    except socket.error as e:
+        raise IRCException(e.strerror)
 
 @hook("cmd_hook", "curly")
 def cmd_curly(msg):
-    if len(msg.cmds) > 1:
-        url = msg.cmds[1]
-        o = urllib.parse.urlparse(url, "http")
-        if o.netloc == "":
-            raise IRCException("URL invalide")
-        if o.scheme == "http":
-            conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=5)
-        else:
-            conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=5)
-        try:
-            conn.request("HEAD", o.path, None, {"User-agent": "Nemubot v3"})
-        except socket.timeout:
-            raise IRCException("Délais d'attente dépassé")
-        except socket.gaierror:
-            print ("<tools.web> Unable to receive page %s from %s on %d."
-                   % (o.path, o.netloc, o.port))
-            raise IRCException("Une erreur innatendue est survenue")
+    if len(msg.cmds) < 2:
+        raise IRCException("Indicate the URL to visit.")
 
-        try:
-            res = conn.getresponse()
-        except http.client.BadStatusLine:
-            raise IRCException("Une erreur est survenue")
-        finally:
-            conn.close()
-
-        return Response(msg.sender, "Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, res.version, res.status, res.reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in res.getheaders()])), channel=msg.channel)
+    url = msg.cmds[1]
+    o = urllib.parse.urlparse(url, "http")
+    if o.netloc == "":
+        raise IRCException("URL invalide")
+    if o.scheme == "http":
+        conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=5)
     else:
-        raise IRCException("Veuillez indiquer une URL à visiter.")
+        conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=5)
+    try:
+        conn.request("HEAD", o.path, None, {"User-agent": "Nemubot v3"})
+    except socket.timeout:
+        raise IRCException("Délais d'attente dépassé")
+    except socket.gaierror:
+        print ("<tools.web> Unable to receive page %s from %s on %d."
+               % (o.path, o.netloc, o.port))
+        raise IRCException("Une erreur innatendue est survenue")
+
+    try:
+        res = conn.getresponse()
+    except http.client.BadStatusLine:
+        raise IRCException("Une erreur est survenue")
+    finally:
+        conn.close()
+
+    return Response(msg.sender, "Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, res.version, res.status, res.reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in res.getheaders()])), channel=msg.channel)
 
 @hook("cmd_hook", "traceurl")
 def cmd_traceurl(msg):
@@ -99,7 +98,7 @@ def cmd_traceurl(msg):
             res.append(Response(msg.sender, trace, channel=msg.channel, title="TraceURL"))
         return res
     else:
-        return Response(msg.sender, "Indiquer une URL à tracer !", channel=msg.channel)
+        raise IRCException("Indiquer a URL to trace!")
 
 
 def extractdate(str):
