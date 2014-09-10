@@ -93,7 +93,7 @@ def add_site(msg, diffType="diff"):
     alert["sender"] = msg.sender
     alert["server"] = msg.server
     alert["channel"] = msg.channel
-    alert["message"] = "%s a changé !" % url
+    alert["message"] = "{url} a changé !"
 
     if url not in DATAS.index:
         watch = ModuleState("watch")
@@ -110,9 +110,9 @@ def add_site(msg, diffType="diff"):
     return Response(msg.sender, channel=msg.channel, nick=msg.nick,
                     message="ce site est maintenant sous ma surveillance.")
 
-def format_response(site, link='%s', title='%s', categ='%s'):
+def format_response(site, link='%s', title='%s', categ='%s', content='%s'):
     for a in site.getNodes("alert"):
-        send_response(a["server"], Response(a["sender"], a["message"].format(url=site["url"], link=link, title=title, categ=categ),
+        send_response(a["server"], Response(a["sender"], a["message"].format(url=site["url"], link=link, title=title, categ=categ, content=content),
                                      channel=a["channel"], server=a["server"]))
 
 def alert_change(content, site):
@@ -162,7 +162,7 @@ def alert_change(content, site):
             return #Stop here, no changes, so don't save
 
     else: # Just looking for any changes
-        format_response(site, link=site["url"])
+        format_response(site, link=site["url"], content=content)
     site["lastcontent"] = content
     start_watching(site)
     save()
