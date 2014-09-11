@@ -35,14 +35,10 @@ class MessageConsumer:
 
     """Store a message before treating"""
 
-    def __init__(self, srv, raw, time, prvt, data):
+    def __init__(self, srv, msg):
         self.srv = srv
-        self.raw = raw
-        self.time = time
-        self.prvt = prvt
-        self.data = data
 
-        self.msgs = list()
+        self.msgs = [ msg ]
         self.responses = None
 
 
@@ -181,10 +177,8 @@ class MessageConsumer:
     def run(self, context):
         """Create, parse and treat the message"""
         try:
-            # Parse and create the original message
-            msg = Message(self.raw, self.time, self.prvt)
-            self.first_treat(msg)
-            self.msgs.append(msg)
+            for msg in self.msgs:
+                self.first_treat(msg)
 
             # Run pre-treatment: from Message to [ Message ]
             self.pre_treat(context.hooks)
@@ -197,7 +191,7 @@ class MessageConsumer:
             if self.responses is not None and len(self.responses) > 0:
                 self.post_treat(context.hooks)
         except:
-            logger.exception("Error occurred during the processing of the message: %s", self.raw)
+            logger.exception("Error occurred during the processing of the message: %s", self.msgs[0].raw)
             return
 
         #return self.responses

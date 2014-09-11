@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
+
+from message import Message
 import server
 from server.socket import SocketServer
 
@@ -88,3 +91,7 @@ class IRCServer(SocketServer):
     def _close(self):
         if self.socket is not None: self.write("QUIT")
         return SocketServer._close(self)
+
+    def read(self):
+        for line in SocketServer.read(self):
+            yield Message(line, datetime.now())

@@ -394,10 +394,10 @@ class Bot(threading.Thread):
         return False
 
 
-    def receive_message(self, srv, raw_msg, private=False, data=None):
+    def receive_message(self, srv, msg, private=False, data=None):
         """Queued the message for treatment"""
         #print("READ", raw_msg)
-        self.cnsr_queue.put_nowait(MessageConsumer(srv, raw_msg, datetime.now(), private, data))
+        self.cnsr_queue.put_nowait(MessageConsumer(srv, msg))
 
         # Launch a new thread if necessary
         self._launch_consumers()
