@@ -28,8 +28,8 @@ def load(context):
     else:
         URL = URL % CONF.getNode("wrapi")["key"]
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_translate, "translate"))
+    from hooks.messagehook import MessageHook
+    add_hook("cmd_hook", MessageHook(cmd_translate, "translate"))
 
 
 def help_full():

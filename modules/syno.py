@@ -15,7 +15,7 @@ nemubotversion = 3.4
 def help_full():
     return "!syno <word>: give a list of synonyms for <word>."
 
-@hook("cmd_hook", "synonymes", help="!syno <word>: give a list of synonyms for <word>.")
+@hook("cmd_hook", "synonymes")
 def cmd_syno(msg):
     return go("synonymes", msg)
 

@@ -10,13 +10,11 @@ from urllib.request import urlopen
 
 nemubotversion = 3.4
 
+from hooks import hook
+
 API_URL="http://worldcup.sfg.io/%s"
 
 def load(context):
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_watch, "watch_worldcup"))
-    add_hook("cmd_hook", Hook(cmd_worldcup, "worldcup"))
-
     from event import ModuleEvent
     add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, intervalle=30))
 
@@ -37,6 +35,7 @@ def start_watch(msg):
     save()
     raise IRCException("This channel is now watching world cup events!")
 
+@hook("cmd_hook", "watch_worldcup")
 def cmd_watch(msg):
     global DATAS
 
@@ -178,6 +177,7 @@ def get_matches(url):
         if is_valid(match):
             yield match
 
+@hook("cmd_hook", "worldcup")
 def cmd_worldcup(msg):
     res = Response(msg.sender, channel=msg.channel, nomore="No more match to display", count=" (%d more matches)")
     nb = len(msg.cmds)

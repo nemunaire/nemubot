@@ -31,8 +31,8 @@ __author__  = 'nemunaire'
 
 from consumer import Consumer, EventConsumer, MessageConsumer
 from event import ModuleEvent
-import hooks
-from hooksmanager import HooksManager
+from hooks.messagehook import MessageHook
+from hooks.manager import HooksManager
 from networkbot import NetworkBot
 from server.IRC import IRCServer
 from server.DCC import DCC
@@ -82,7 +82,7 @@ class Bot(threading.Thread):
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.text, re.I) is not None:
                 return response.Response(msg.sender, message="pong", channel=msg.receivers, nick=msg.nick)
-        self.hooks.add_hook(hooks.Hook(in_ping), "in", "PRIVMSG")
+        self.hooks.add_hook(MessageHook(in_ping), "in", "PRIVMSG")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
@@ -119,7 +119,7 @@ class Bot(threading.Thread):
                                    " de tous les modules disponibles localement",
                                    message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
             return res
-        self.hooks.add_hook(hooks.Hook(_help_msg, "help"), "in", "PRIVMSG", "cmd")
+        self.hooks.add_hook(MessageHook(_help_msg, "help"), "in", "PRIVMSG", "cmd")
 
         # Other known bots, making a bots network
         self.network     = dict()
@@ -479,9 +479,10 @@ def reload():
 
     import hooks
     imp.reload(hooks)
-
-    import hooksmanager
-    imp.reload(hooksmanager)
+    import hooks.manager
+    imp.reload(hooks.manager)
+    import hooks.messagehook
+    imp.reload(hooks.messagehook)
 
     import importer
     imp.reload(importer)

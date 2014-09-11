@@ -15,8 +15,8 @@ def load(context):
                "http://developer.mapquest.com/")
         return None
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_geocode, "geocode"))
+    from hooks.messagehook import MessageHook
+    add_hook("cmd_hook", MessageHook(cmd_geocode, "geocode"))
 
 
 def help_tiny ():

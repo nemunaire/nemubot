@@ -9,7 +9,7 @@ import socket
 import subprocess
 import urllib
 
-from hooks import Hook, hook
+from hooks import hook
 from tools import web
 
 nemubotversion = 3.4
@@ -21,7 +21,8 @@ def load(context):
                "<whoisxmlapi username=\"XX\" password=\"XXX\" />\nRegister at "
                "http://www.whoisxmlapi.com/newaccount.php")
     else:
-        add_hook("cmd_hook", Hook(cmd_whois, "netwhois"))
+        from hooks.messagehook import MessageHook
+        add_hook("cmd_hook", MessageHook(cmd_whois, "netwhois"))
 
 def help_full():
     return "!traceurl /url/: Follow redirections from /url/."

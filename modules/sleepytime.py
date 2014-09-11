@@ -12,9 +12,9 @@ from hooks import hook
 nemubotversion = 3.4
 
 def help_full():
-  return "If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm"
+    return "If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm"
 
-@hook("cmd_hook", "sleepytime", help="If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm")
+@hook("cmd_hook", "sleepytime")
 def cmd_sleep(msg):
     if len (msg.cmds) > 1 and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
                                       msg.cmds[1]) is not None:

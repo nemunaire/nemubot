@@ -15,7 +15,7 @@ def help_full():
 
 LAST_SUBS = dict()
 
-@hook("cmd_hook", "subreddit", help="!subreddit /subreddit/: Display information on the subreddit.")
+@hook("cmd_hook", "subreddit")
 def cmd_subreddit(msg):
     global LAST_SUBS
     if len(msg.cmds) <= 1:

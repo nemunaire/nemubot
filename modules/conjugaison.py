@@ -34,7 +34,7 @@ def help_full():
   return "!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>."
 
 
-@hook("cmd_hook", "conjugaison", help="!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>.")
+@hook("cmd_hook", "conjugaison")
 def cmd_conjug(msg):
     if len(msg.cmds) < 3:
         raise IRCException("donne moi un temps et un verbe, et je te donnerai sa conjugaison!")

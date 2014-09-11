@@ -24,7 +24,7 @@ def gen_response(res, msg, srv):
     else:
         raise IRCException("mauvaise URL : %s" % srv)
 
-@hook("cmd_hook", "ycc", help="!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel.")
+@hook("cmd_hook", "ycc")
 def cmd_ycc(msg):
     if len(msg.cmds) == 1:
         global LAST_URLS

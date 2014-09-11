@@ -25,10 +25,10 @@ def load(context):
                "http://developer.forecast.io/")
         return None
 
-    from hooks import Hook
-    add_hook("cmd_hook", Hook(cmd_weather, "météo"))
-    add_hook("cmd_hook", Hook(cmd_alert, "alert"))
-    add_hook("cmd_hook", Hook(cmd_coordinates, "coordinates"))
+    from hooks.messagehook import MessageHook
+    add_hook("cmd_hook", MessageHook(cmd_weather, "météo"))
+    add_hook("cmd_hook", MessageHook(cmd_alert, "alert"))
+    add_hook("cmd_hook", MessageHook(cmd_coordinates, "coordinates"))
 
 
 def help_full ():

@@ -14,7 +14,7 @@ import traceback
 nemubotversion = 3.4
 
 from event import ModuleEvent
-from hooks import Hook, hook
+from hooks import hook
 from tools.date import extractDate
 from tools.countdown import countdown_format, countdown
 
@@ -60,8 +60,9 @@ def cmd_we(msg):
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
 
-@hook("cmd_hook", "start", help="!start /something/: launch a timer")
+@hook("cmd_hook", "start")
 def start_countdown(msg):
+    """!start /something/: launch a timer"""
     if len(msg.cmds) < 2:
         raise IRCException("indique le nom d'un événement à chronométrer")
     if msg.cmds[1] in DATAS.index:
@@ -154,8 +155,9 @@ def end_countdown(msg):
     else:
         return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
-@hook("cmd_hook", "eventslist", help="!eventslist: gets list of timer")
+@hook("cmd_hook", "eventslist")
 def liste(msg):
+    """!eventslist: gets list of timer"""
     if len(msg.cmds) > 1:
         res = list()
         for user in msg.cmds[1:]:
