@@ -64,10 +64,6 @@ class Bot(threading.Thread):
         self.modules_paths = modules_paths
         self.data_path = data_path
 
-        # Save various informations
-        self.ctcp_capabilities = dict()
-        self.init_ctcp_capabilities()
-
         # Keep global context: servers and modules
         self.servers = dict()
         self.modules = dict()
@@ -145,53 +141,6 @@ class Bot(threading.Thread):
             for r in rl:
                 for i in r.read():
                     self.receive_message(r, i)
-
-
-    def init_ctcp_capabilities(self):
-        """Reset existing CTCP capabilities to default one"""
-
-        def _ctcp_clientinfo(srv, msg):
-            """Response to CLIENTINFO CTCP message"""
-            return _ctcp_response(msg.sender,
-                                  " ".join(self.ctcp_capabilities.keys()))
-
-        def _ctcp_dcc(srv, msg):
-            """Response to DCC CTCP message"""
-            try:
-                ip = srv.toIP(int(msg.cmds[3]))
-                port = int(msg.cmds[4])
-                conn = DCC(srv, msg.sender)
-            except:
-                return _ctcp_response(msg.sender, "ERRMSG invalid parameters provided as DCC CTCP request")
-
-            logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
-
-            if conn.accept_user(ip, port):
-                srv.dcc_clients[conn.sender] = conn
-                conn.send_dcc("Hello %s!" % conn.nick)
-            else:
-                logger.error("DCC: unable to connect to %s:%d", ip, port)
-                return _ctcp_response(msg.sender, "ERRMSG unable to connect to %s:%d" % (ip, port))
-
-        self.ctcp_capabilities["ACTION"] = lambda srv, msg: print ("ACTION receive: %s" % msg.text)
-        self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
-        self.ctcp_capabilities["DCC"] = _ctcp_dcc
-        self.ctcp_capabilities["FINGER"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "VERSION nemubot v%s" % __version__)
-        self.ctcp_capabilities["NEMUBOT"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "NEMUBOT %s" % __version__)
-        self.ctcp_capabilities["PING"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "PING %s" % " ".join(msg.cmds[1:]))
-        self.ctcp_capabilities["SOURCE"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "SOURCE https://github.com/nemunaire/nemubot")
-        self.ctcp_capabilities["TIME"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "TIME %s" % (datetime.now()))
-        self.ctcp_capabilities["USERINFO"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "USERINFO %s" % srv.realname)
-        self.ctcp_capabilities["VERSION"] = lambda srv, msg: _ctcp_response(
-            msg.sender, "VERSION nemubot v%s" % __version__)
-
-        logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
 
     # Events methods
@@ -447,13 +396,9 @@ class Bot(threading.Thread):
                 store.remove(hook)
 
 
-def _ctcp_response(sndr, msg):
-    return response.Response(sndr, msg, ctcp=True)
-
 def hotswap(bak):
     bak.stop = True
     new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
-    new.ctcp_capabilities = bak.ctcp_capabilities
     new.servers = bak.servers
     new.modules = bak.modules
     new.modules_configuration = bak.modules_configuration

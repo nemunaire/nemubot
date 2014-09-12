@@ -114,31 +114,13 @@ class MessageConsumer:
 
         self.responses = list()
         for msg in self.msgs:
-            # TODO: should be placed in server hooks
-            if msg.cmd == "001":
-                if hasattr(self.srv, "_on_connect"):
-                    self.srv._on_connect()
-
-            elif msg.cmd == "ERROR":
-                self.srv.close()
-
-            elif (msg.cmd == "CAP" and
-                  hasattr(self.srv, "_on_caps_ls") and
-                  self.srv._on_caps_ls(msg)):
-                pass
-
-            elif msg.cmd == "PING":
-                self.srv.write("%s :%s" % ("PONG", msg.params[0]))
-
-            else:
-                for h in hm.get_hooks("in", msg.cmd, msg.qual):
-
-                    if h.match(message=msg, server=self.srv):
-                        res = h.run(msg)
-                        if isinstance(res, list):
-                            self.responses += res
-                        elif res is not None:
-                            self.responses.append(res)
+            for h in hm.get_hooks("in", msg.cmd, msg.qual):
+                if h.match(message=msg, server=self.srv):
+                    res = h.run(msg)
+                    if isinstance(res, list):
+                        self.responses += res
+                    elif res is not None:
+                        self.responses.append(res)
 
 
     def post_treat(self, hm):

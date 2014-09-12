@@ -18,6 +18,7 @@
 
 from datetime import datetime
 
+import bot
 from message import Message
 import server
 from server.socket import SocketServer
@@ -31,10 +32,11 @@ class IRCServer(SocketServer):
                               node["password"],
                               node.hasAttribute("ssl") and node["ssl"].lower() == "true")
 
-        self.nick = nick
-        self.owner = owner
+        self.nick     = nick
+        self.owner    = owner
         self.realname = realname
-        self.id = "TODO"
+        self.id       = nick + "@" + node["host"] + ":" + node["port"]
+
 
         if node.hasAttribute("caps"):
             if node["caps"].lower() == "no":
@@ -44,18 +46,75 @@ class IRCServer(SocketServer):
         else:
             self.capabilities = list()
 
-        def _on_connect():
+        # Register CTCP capabilities
+        self.ctcp_capabilities = dict()
+
+        def _ctcp_clientinfo(msg):
+            """Response to CLIENTINFO CTCP message"""
+            return _ctcp_response(msg.sender,
+                                  " ".join(self.ctcp_capabilities.keys()))
+
+        def _ctcp_dcc(msg):
+            """Response to DCC CTCP message"""
+            try:
+                ip = srv.toIP(int(msg.cmds[3]))
+                port = int(msg.cmds[4])
+                conn = DCC(srv, msg.sender)
+            except:
+                return _ctcp_response(msg.sender, "ERRMSG invalid parameters provided as DCC CTCP request")
+
+            self.logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
+
+            if conn.accept_user(ip, port):
+                srv.dcc_clients[conn.sender] = conn
+                conn.send_dcc("Hello %s!" % conn.nick)
+            else:
+                self.logger.error("DCC: unable to connect to %s:%d", ip, port)
+                return _ctcp_response(msg.sender, "ERRMSG unable to connect to %s:%d" % (ip, port))
+
+        self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive: %s" % msg.text)
+        self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
+        #self.ctcp_capabilities["DCC"] = _ctcp_dcc
+        self.ctcp_capabilities["FINGER"] = lambda msg: _ctcp_response(
+            msg.sender, "VERSION nemubot v%s" % bot.__version__)
+        self.ctcp_capabilities["NEMUBOT"] = lambda msg: _ctcp_response(
+            msg.sender, "NEMUBOT %s" % bot.__version__)
+        self.ctcp_capabilities["PING"] = lambda msg: _ctcp_response(
+            msg.sender, "PING %s" % " ".join(msg.cmds[1:]))
+        self.ctcp_capabilities["SOURCE"] = lambda msg: _ctcp_response(
+            msg.sender, "SOURCE https://github.com/nemunaire/nemubot")
+        self.ctcp_capabilities["TIME"] = lambda msg: _ctcp_response(
+            msg.sender, "TIME %s" % (datetime.now()))
+        self.ctcp_capabilities["USERINFO"] = lambda msg: _ctcp_response(
+            msg.sender, "USERINFO %s" % self.realname)
+        self.ctcp_capabilities["VERSION"] = lambda msg: _ctcp_response(
+            msg.sender, "VERSION nemubot v%s" % bot.__version__)
+
+        self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
+
+        # Register hooks on some IRC CMD
+        self.hookscmd = dict()
+
+        def _on_ping(msg):
+            self.write("%s :%s" % ("PONG", msg.params[0]))
+        self.hookscmd["PING"] = _on_ping
+
+        def _on_connect(msg):
             # First, JOIN some channels
             for chn in node.getNodes("channel"):
                 if chn["password"] is not None:
                     self.write("JOIN %s %s" % (chn["name"], chn["password"]))
                 else:
                     self.write("JOIN %s" % chn["name"])
-        self._on_connect = _on_connect
+        self.hookscmd["001"] = _on_connect
 
-        def _on_caps_ls(msg):
+        def _on_error(msg):
+            self.close()
+        self.hookscmd["ERROR"] = _on_error
+
+        def _on_cap(msg):
             if len(msg.params) != 3 or msg.params[1] != "LS":
-                return False
+                return
             server_caps = msg.params[2].split(" ")
             for cap in self.capabilities:
                 if cap not in server_caps:
@@ -63,7 +122,7 @@ class IRCServer(SocketServer):
             if len(self.capabilities) > 0:
                 self.write("CAP REQ :" + " ".join(self.capabilities))
             self.write("CAP END")
-        self._on_caps_ls = _on_caps_ls
+        self.hookscmd["CAP"] = _on_cap
 
 
     def _open(self):
@@ -94,4 +153,24 @@ class IRCServer(SocketServer):
 
     def read(self):
         for line in SocketServer.read(self):
-            yield Message(line, datetime.now())
+            msg = Message(line, datetime.now())
+
+            if msg.cmd in self.hookscmd:
+                self.hookscmd[msg.cmd](msg)
+
+            elif msg.cmd == "PRIVMSG" and msg.is_ctcp:
+                if msg.cmds[0] in self.ctcp_capabilities:
+                    res = self.ctcp_capabilities[msg.cmds[0]](msg)
+                else:
+                    res = _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
+                if res is not None:
+                    self.send_response(res)
+
+            else:
+                yield msg
+
+
+from response import Response
+
+def _ctcp_response(sndr, msg):
+    return Response(sndr, msg, ctcp=True)
