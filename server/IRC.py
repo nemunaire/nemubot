@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
+import re
+import shlex
 
 import bot
 from message import Message
@@ -96,7 +98,7 @@ class IRCServer(SocketServer):
         self.hookscmd = dict()
 
         def _on_ping(msg):
-            self.write("%s :%s" % ("PONG", msg.params[0]))
+            self.write(b"PONG :" + msg.params[0])
         self.hookscmd["PING"] = _on_ping
 
         def _on_connect(msg):
@@ -113,9 +115,9 @@ class IRCServer(SocketServer):
         self.hookscmd["ERROR"] = _on_error
 
         def _on_cap(msg):
-            if len(msg.params) != 3 or msg.params[1] != "LS":
+            if len(msg.params) != 3 or msg.params[1] != b"LS":
                 return
-            server_caps = msg.params[2].split(" ")
+            server_caps = msg.params[2].decode().split(" ")
             for cap in self.capabilities:
                 if cap not in server_caps:
                     self.capabilities.remove(cap)
@@ -153,24 +155,118 @@ class IRCServer(SocketServer):
 
     def read(self):
         for line in SocketServer.read(self):
-            msg = Message(line, datetime.now())
+            msg = IRCMessage(line, datetime.now())
 
             if msg.cmd in self.hookscmd:
                 self.hookscmd[msg.cmd](msg)
 
-            elif msg.cmd == "PRIVMSG" and msg.is_ctcp:
-                if msg.cmds[0] in self.ctcp_capabilities:
-                    res = self.ctcp_capabilities[msg.cmds[0]](msg)
-                else:
-                    res = _ctcp_response(msg.sender, "ERRMSG Unknown or unimplemented CTCP request")
-                if res is not None:
-                    self.send_response(res)
-
             else:
-                yield msg
+                mes = msg.to_message()
+                mes.raw = msg.raw
+
+                if mes.cmd == "PRIVMSG" and mes.is_ctcp:
+                    if mes.cmds[0] in self.ctcp_capabilities:
+                        res = self.ctcp_capabilities[mes.cmds[0]](mes)
+                    else:
+                        res = _ctcp_response(mes.sender, "ERRMSG Unknown or unimplemented CTCP request")
+                    if res is not None:
+                        self.send_response(res)
+
+                else:
+                    yield mes
 
 
 from response import Response
 
 def _ctcp_response(sndr, msg):
     return Response(sndr, msg, ctcp=True)
+
+
+mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
+                      (?::(?P<prefix>
+                         (?P<nick>[^!@ ]+)
+                         (?: !(?P<user>[^@ ]+))?
+                         (?:@(?P<host>[^ ]+))?
+                      )\ )?
+                      (?P<command>(?:[a-zA-Z]+|[0-9]{3}))
+                      (?P<params>(?:\ [^:][^ ]*)*)(?:\ :(?P<trailing>.*))?
+                 $''', re.X)
+
+class IRCMessage:
+
+    def __init__(self, raw, timestamp):
+        self.raw = raw
+        self.tags = { 'time': timestamp }
+        self.params = list()
+
+        p = mgx.match(raw.rstrip())
+
+        if p is None:
+            raise Exception("Not a valid IRC message: %s" % raw)
+
+        # Parse tags if exists: @aaa=bbb;ccc;example.com/ddd=eee
+        if p.group("tags"):
+            for tgs in self.decode(p.group("tags")).split(';'):
+                tag = tgs.split('=')
+                if len(tag) > 1:
+                    self.add_tag(tag[0], tag[1])
+                else:
+                    self.add_tag(tag[0])
+
+        # Parse prefix if exists: :nick!user@host.com
+        self.prefix = self.decode(p.group("prefix"))
+        self.nick   = self.decode(p.group("nick"))
+        self.user   = self.decode(p.group("user"))
+        self.host   = self.decode(p.group("host"))
+
+        # Parse command
+        self.cmd = self.decode(p.group("command"))
+
+        # Parse params
+        if p.group("params"):
+            for param in p.group("params").strip().split(b' '):
+                self.params.append(param)
+
+        if p.group("trailing"):
+            self.params.append(p.group("trailing"))
+
+
+    def add_tag(self, key, value=None):
+        """Add an IRCv3.2 Message Tags"""
+        # Treat special tags
+        if key == "time":
+            # TODO: this is UTC timezone, nemubot works with local timezone
+            value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        # Store tag
+        self.tags[key] = value
+
+
+    def decode(self, s):
+        """Decode the content string usign a specific encoding"""
+        if isinstance(s, bytes):
+            try:
+                s = s.decode()
+            except UnicodeDecodeError:
+                #TODO: use encoding from config file
+                s = s.decode('utf-8', 'replace')
+        return s
+
+
+    def to_message(self):
+        return Message(self)
+
+    def to_irc_string(self, client=True):
+        res = ";".join(["@%s=%s" % (k,v) for k, v in self.tags.items()])
+
+        if not client: res += " :%s!%s@%s" % (self.nick, self.user, self.host)
+
+        res += " " + self.cmd
+
+        if len(self.params) > 0:
+
+            if len(self.params) > 1:
+                res += " " + " ".join(self.params[:-1])
+            res += " :" + self.params[-1]
+
+        return res

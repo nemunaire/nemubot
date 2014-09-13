@@ -72,7 +72,10 @@ class SocketServer(AbstractServer):
         self.socket.send(cnt)
 
     def format(self, txt):
-        return txt.encode() + b'\r\n'
+        if isinstance(txt, bytes):
+            return txt + b'\r\n'
+        else:
+            return txt.encode() + b'\r\n'
 
     def read(self):
         if self.socket is None: return
