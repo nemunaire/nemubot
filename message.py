@@ -45,14 +45,6 @@ class Message:
       # Split content by words
       self.parse_content()
 
-    elif self.cmd == '353': # RPL_NAMREPLY
-      self.receivers = [ orig.decode(self.params[0]) ]
-      self.nicks = orig.decode(self.params[1]).split(" ")
-
-    elif self.cmd == '332':
-      self.receivers = [ orig.decode(self.params[0]) ]
-      self.topic = orig.decode(self.params[1]).split(" ")
-
     else:
       for i in range(0, len(self.params)):
         self.params[i] = orig.decode(self.params[i])

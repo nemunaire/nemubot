@@ -21,6 +21,7 @@ import re
 import shlex
 
 import bot
+from channel import Channel
 from message import Message
 import server
 from server.socket import SocketServer
@@ -39,6 +40,8 @@ class IRCServer(SocketServer):
         self.realname = realname
         self.id       = nick + "@" + node["host"] + ":" + node["port"]
 
+        #Keep a list of connected channels
+        self.channels = dict()
 
         if node.hasAttribute("caps"):
             if node["caps"].lower() == "no":
@@ -97,10 +100,12 @@ class IRCServer(SocketServer):
         # Register hooks on some IRC CMD
         self.hookscmd = dict()
 
+        # Respond to PING
         def _on_ping(msg):
             self.write(b"PONG :" + msg.params[0])
         self.hookscmd["PING"] = _on_ping
 
+        # Respond to 001
         def _on_connect(msg):
             # First, JOIN some channels
             for chn in node.getNodes("channel"):
@@ -110,10 +115,12 @@ class IRCServer(SocketServer):
                     self.write("JOIN %s" % chn["name"])
         self.hookscmd["001"] = _on_connect
 
+        # Respond to ERROR
         def _on_error(msg):
             self.close()
         self.hookscmd["ERROR"] = _on_error
 
+        # Respond to CAP
         def _on_cap(msg):
             if len(msg.params) != 3 or msg.params[1] != b"LS":
                 return
@@ -125,6 +132,36 @@ class IRCServer(SocketServer):
                 self.write("CAP REQ :" + " ".join(self.capabilities))
             self.write("CAP END")
         self.hookscmd["CAP"] = _on_cap
+
+        # Respond to JOIN
+        def _on_join(msg):
+            if len(msg.params) == 0: return
+
+            for chname in msg.params[0].split(b","):
+                # Register the channel
+                chan = Channel(msg.decode(chname))
+                self.channels[chname] = chan
+        self.hookscmd["JOIN"] = _on_join
+        # Respond to 331/RPL_NOTOPIC,332/RPL_TOPIC,TOPIC
+        def _on_topic(msg):
+            if len(msg.params) != 1 and len(msg.params) != 2: return
+            if msg.params[0] in self.channels:
+                if len(msg.params) == 1 or len(msg.params[1]) == 0:
+                    self.channels[msg.params[0]].topic = None
+                else:
+                    self.channels[msg.params[0]].topic = msg.decode(msg.params[1])
+        self.hookscmd["331"] = _on_topic
+        self.hookscmd["332"] = _on_topic
+        self.hookscmd["TOPIC"] = _on_topic
+        # Respond to 353/RPL_NAMREPLY
+        def _on_353(msg):
+            if len(msg.params) == 3: msg.params.pop(0) # 353: like RFC 1459
+            if len(msg.params) != 2: return
+            if msg.params[0] in self.channels:
+                for nk in msg.decode(msg.params[1]).split(" "):
+                    res = re.match("^(?P<level>[^a-zA-Z[\]\\`_^{|}])(?P<nickname>[a-zA-Z[\]\\`_^{|}][a-zA-Z0-9[\]\\`_^{|}-]*)$")
+                    self.channels[msg.params[0]].people[res.group("nickname")] = res.group("level")
+        self.hookscmd["353"] = _on_353
 
 
     def _open(self):
