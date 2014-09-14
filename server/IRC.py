@@ -142,6 +142,17 @@ class IRCServer(SocketServer):
                 chan = Channel(msg.decode(chname))
                 self.channels[chname] = chan
         self.hookscmd["JOIN"] = _on_join
+        # Respond to PART
+        def _on_part(msg):
+            if len(msg.params) != 1 and len(msg.params) != 2: return
+
+            for chname in msg.params[0].split(b","):
+                if chname in self.channels:
+                    if msg.nick == self.nick:
+                        del self.channels[chname]
+                    elif msg.nick in self.channels[chname].people:
+                        del self.channels[chname].people[msg.nick]
+        self.hookscmd["PART"] = _on_part
         # Respond to 331/RPL_NOTOPIC,332/RPL_TOPIC,TOPIC
         def _on_topic(msg):
             if len(msg.params) != 1 and len(msg.params) != 2: return
