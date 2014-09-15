@@ -153,12 +153,18 @@ def treat_variables(res):
 @hook("pre_PRIVMSG_cmd")
 def treat_alias(msg):
     if msg.cmds[0] in DATAS.getNode("aliases").index:
+        oldcmd = msg.cmds[0]
         msg.text = msg.text.replace(msg.cmds[0],
                                     DATAS.getNode("aliases").index[msg.cmds[0]]["origin"], 1)
+
         msg.qual = "def"
         msg.parse_content()
 
-        return treat_alias(msg)
+        # Avoid infinite recursion
+        if oldcmd == msg.cmds[0]:
+            return msg
+        else:
+            return treat_alias(msg)
 
     else:
         msg.text = replace_variables(msg.text, msg)
