@@ -17,23 +17,62 @@ def load(context):
                "https://www.goodreads.com/api/keys")
         return None
 
-def search_book(title):
+def get_book(title):
+    response = web.getXML("https://www.goodreads.com/book/title.xml?key=%s&title=%s" % (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
+    if response is not None and response.hasNode("book"):
+        return response.getNode("book")
+    else:
+        return None
+
+def search_books(title):
     response = web.getXML("https://www.goodreads.com/search.xml?key=%s&q=%s" % (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
-    if response is not None:
+    if response is not None and response.hasNode("search"):
         return response.getNode("search").getNode("results").getNodes("work")
     else:
         return []
+
+def search_author(name):
+    response = web.getXML("https://www.goodreads.com/api/author_url/%s?key=%s" % (urllib.parse.quote(name), CONF.getNode("goodreadsapi")["key"]))
+    if response is not None and response.hasNode("author") and response.getNode("author").hasAttribute("id"):
+        response = web.getXML("https://www.goodreads.com/author/show/%s.xml?key=%s" % (urllib.parse.quote(response.getNode("author")["id"]), CONF.getNode("goodreadsapi")["key"]))
+        if response is not None and response.hasNode("author"):
+            return response.getNode("author")
+    return None
+
 
 @hook("cmd_hook", "book")
 def cmd_book(msg):
     if len(msg.cmds) < 2:
         raise IRCException("please give me a title to search")
 
-    title = " ".join(msg.cmds)
+    book = get_book(" ".join(msg.cmds[1:]))
+    if book is None:
+        raise IRCException("unable to find book named like this")
+    res = Response(msg.sender, channel=msg.channel)
+    res.append_message("%s, writed by %s: %s" % (book.getNode("title").getContent(),
+                                                 book.getNode("authors").getNode("author").getNode("name").getContent(),
+                                                 web.striphtml(book.getNode("description").getContent())
+                                             ))
+    return res
+
+@hook("cmd_hook", "search_books")
+def cmd_books(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("please give me a title to search")
+
+    title = " ".join(msg.cmds[1:])
     res = Response(msg.sender, channel=msg.channel,
                    title="%s" % (title), count=" (%d more books)")
 
-    books = search_book(title)
+    books = search_books(title)
     for book in books:
         res.append_message("%s, writed by %s" % (book.getNode("best_book").getNode("title").getContent(), book.getNode("best_book").getNode("author").getNode("name").getContent()))
     return res
+
+@hook("cmd_hook", "author_books")
+def cmd_author(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("please give me an author to search")
+
+    ath = search_author(" ".join(msg.cmds[1:]))
+    return Response(msg.sender, [b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")], channel=msg.channel, title=ath.getNode("name").getContent())
