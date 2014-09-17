@@ -62,7 +62,7 @@ class Message:
   def parse_content(self):
       """Parse or reparse the message content"""
       # Remove !
-      if self.text[0] == '!':
+      if len(self.text) > 1 and self.text[0] == '!':
           self.qual = "cmd"
           self.text = self.text[1:].strip()
 

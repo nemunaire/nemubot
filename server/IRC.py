@@ -271,11 +271,11 @@ class IRCMessage:
         self.cmd = self.decode(p.group("command"))
 
         # Parse params
-        if p.group("params"):
+        if p.group("params") is not None:
             for param in p.group("params").strip().split(b' '):
                 self.params.append(param)
 
-        if p.group("trailing"):
+        if p.group("trailing") is not None:
             self.params.append(p.group("trailing"))
 
 
