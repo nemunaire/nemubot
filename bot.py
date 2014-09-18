@@ -255,7 +255,7 @@ class Bot(threading.Thread):
             self.events.remove(self.events[0])
             self._update_event_timer()
             if module_src is not None:
-                module_src.REGISTERED_EVENTS.remove(evt.id)
+                module_src.REGISTERED_EVENTS.remove(id)
             return True
 
         for evt in self.events:
