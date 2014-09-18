@@ -63,7 +63,7 @@ def parse_wikitext(site, cnt, ssl=False):
     return cnt
 
 def irc_format(cnt):
-    cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)\n+", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
+    cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)\n*", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
 
 def get_page(site, term, ssl=False):
@@ -85,7 +85,8 @@ def cmd_wikipedia(msg):
     if len(msg.cmds) < 3:
         raise IRCException("indicate a lang and a term to search")
 
-    return Response(irc_format(parse_wikitext(get_page(msg.cmds[1] + ".wikipedia.org", " ".join(msg.cmds[2:])))),
-#                    get_page(msg.cmds[1] + ".wikipedia.org", " ".join(msg.cmds[2:])),
-#                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ssl)),
+    site = msg.cmds[1] + ".wikipedia.org"
+
+    return Response(get_page(site, " ".join(msg.cmds[2:])),
+                    line_treat=lambda line: irc_format(parse_wikitext(site, line)),
                     channel=msg.receivers)

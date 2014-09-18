@@ -25,9 +25,11 @@ logger = logging.getLogger("nemubot.response")
 class Response:
     def __init__(self, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) ",
-                 count=None, ctcp=False, shown_first_count=-1):
+                 count=None, ctcp=False, shown_first_count=-1,
+                 line_treat=None):
         self.nomore = nomore
         self.more = more
+        self.line_treat = line_treat
         self.rawtitle = title
         self.server = server
         self.messages = list()
@@ -126,6 +128,9 @@ class Response:
 
         if self.empty:
             return self.treat_ctcp(self.nomore)
+
+        if self.line_treat is not None and self.elt == 0:
+            self.messages[0] = self.line_treat(self.messages[0])
 
         msg = ""
         if self.channel is not None and self.nick is not None:
