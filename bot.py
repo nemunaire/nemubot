@@ -132,15 +132,48 @@ class Bot(threading.Thread):
 
         self.stop = False
         while not self.stop:
-            rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
+            try:
+                rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
+            except:
+                logger.error("Something went wrong in select")
+                fnd_smth = False
+                # Looking for invalid server
+                for r in _rlist:
+                    if not hasattr(r, "fileno") or not isinstance(r.fileno(), int):
+                        _rlist.remove(r)
+                        logger.error("Found invalid object in _rlist: " + r)
+                        fnd_smth = True
+                for w in _wlist:
+                    if not hasattr(r, "fileno") or not isinstance(w.fileno(), int):
+                        _wlist.remove(w)
+                        logger.error("Found invalid object in _wlist: " + w)
+                        fnd_smth = True
+                for x in _xlist:
+                    if not hasattr(r, "fileno") or not isinstance(x.fileno(), int):
+                        _xlist.remove(x)
+                        logger.error("Found invalid object in _xlist: " + x)
+                        fnd_smth = True
+                if not fnd_smth:
+                    logger.exception("Can't continue, sorry")
+                    self.stop = True
+                continue
 
             for x in xl:
-                x.exception()
+                try:
+                    x.exception()
+                except:
+                    logger.exception("Uncatched exception on server exception")
             for w in wl:
-                w.write_select()
+                try:
+                    w.write_select()
+                except:
+                    logger.exception("Uncatched exception on server write")
             for r in rl:
                 for i in r.read():
-                    self.receive_message(r, i)
+                    try:
+                        self.receive_message(r, i)
+                    except:
+                        logger.exception("Uncatched exception on server read")
 
 
     # Events methods
