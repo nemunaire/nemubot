@@ -36,7 +36,7 @@ def load(context):
 
 
 def fini(d, strend):
-    send_response(strend["server"], Response(strend["sender"], "%s arrivé à échéance." % strend["name"], channel=strend["channel"], nick=strend["proprio"]))
+    send_response(strend["server"], Response("%s arrivé à échéance." % strend["name"], channel=strend["channel"], nick=strend["proprio"]))
     DATAS.delChild(DATAS.index[strend["name"]])
     save()
 
@@ -44,8 +44,7 @@ def fini(d, strend):
 def cmd_gouter(msg):
     ndate = datetime.today()
     ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42)
-    return Response(msg.sender,
-        countdown_format(ndate,
+    return Response(countdown_format(ndate,
                              "Le goûter aura lieu dans %s, préparez vos biscuits !",
                              "Nous avons %s de retard pour le goûter :("),
                     channel=msg.channel)
@@ -54,8 +53,7 @@ def cmd_gouter(msg):
 def cmd_we(msg):
     ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
-    return Response(msg.sender,
-        countdown_format(ndate,
+    return Response(countdown_format(ndate,
                              "Il reste %s avant le week-end, courage ;)",
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
@@ -129,11 +127,11 @@ def start_countdown(msg):
 
     save()
     if "end" in strnd:
-        return Response(msg.sender, "%s commencé le %s et se terminera le %s." %
+        return Response("%s commencé le %s et se terminera le %s." %
                         (msg.cmds[1], msg.tags["time"].strftime("%A %d %B %Y à %H:%M:%S"),
                          strnd.getDate("end").strftime("%A %d %B %Y à %H:%M:%S")))
     else:
-        return Response(msg.sender, "%s commencé le %s"% (msg.cmds[1],
+        return Response("%s commencé le %s"% (msg.cmds[1],
                             msg.tags["time"].strftime("%A %d %B %Y à %H:%M:%S")))
 
 @hook("cmd_hook", "end")
@@ -148,12 +146,12 @@ def end_countdown(msg):
             del_event(DATAS.index[msg.cmds[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])
             save()
-            return Response(msg.sender, "%s a duré %s." % (msg.cmds[1], duration),
+            return Response("%s a duré %s." % (msg.cmds[1], duration),
                             channel=msg.channel, nick=msg.nick)
         else:
             raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.cmds[1], DATAS.index[msg.cmds[1]]["proprio"]))
     else:
-        return Response(msg.sender, "%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
+        return Response("%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
 @hook("cmd_hook", "eventslist")
 def liste(msg):
@@ -166,14 +164,14 @@ def liste(msg):
                 res.append("Compteurs créés par %s : %s" % (user, ", ".join(cmptr)))
             else:
                 res.append("%s n'a pas créé de compteur" % user)
-        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+        return Response(" ; ".join(res), channel=msg.channel)
     else:
-        return Response(msg.sender, "Compteurs connus : %s." % ", ".join(DATAS.index.keys()), channel=msg.channel)
+        return Response("Compteurs connus : %s." % ", ".join(DATAS.index.keys()), channel=msg.channel)
 
 @hook("cmd_default")
 def parseanswer(msg):
     if msg.cmds[0] in DATAS.index:
-        res = Response(msg.sender, channel=msg.channel)
+        res = Response(channel=msg.channel)
 
         # Avoid message starting by ! which can be interpreted as command by other bots
         if msg.cmds[0][0] == "!":
@@ -228,8 +226,7 @@ def parseask(msg):
             evt["msg_before"] = msg_before
             DATAS.addChild(evt)
             save()
-            return Response(msg.sender,
-                            "Nouvel événement !%s ajouté avec succès." % name.group(1),
+            return Response("Nouvel événement !%s ajouté avec succès." % name.group(1),
                             channel=msg.channel)
 
         elif texts is not None and texts.group (2) is not None:
@@ -242,7 +239,7 @@ def parseask(msg):
             evt["msg_before"] = texts.group (2)
             DATAS.addChild(evt)
             save()
-            return Response(msg.sender, "Nouvelle commande !%s ajoutée avec succès." % name.group(1))
+            return Response("Nouvelle commande !%s ajoutée avec succès." % name.group(1))
 
         else:
             raise IRCException("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")

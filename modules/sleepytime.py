@@ -30,8 +30,7 @@ def cmd_sleep(msg):
         for i in range(0,6):
             f.append(f[i] - timedelta(hours=1,minutes=30))
             g.append(f[i+1].strftime("%H:%M"))
-        return Response(msg.sender,
-                        "You should try to fall asleep at one of the following"
+        return Response("You should try to fall asleep at one of the following"
                         " times: %s" % ', '.join(g), channel=msg.channel)
 
     # Just get awake times
@@ -41,7 +40,6 @@ def cmd_sleep(msg):
         for i in range(0,6):
             f.append(f[i] + timedelta(hours=1,minutes=30))
             g.append(f[i+1].strftime("%H:%M"))
-        return Response(msg.sender,
-                        "If you head to bed right now, you should try to wake"
+        return Response("If you head to bed right now, you should try to wake"
                         " up at one of the following times: %s" %
                         ', '.join(g), channel=msg.channel)

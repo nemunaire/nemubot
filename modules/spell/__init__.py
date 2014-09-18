@@ -33,7 +33,7 @@ def cmd_spell(msg):
             try:
                 r = check_spell(word, lang)
             except AspellError:
-                return Response(msg.sender, "Je n'ai pas le dictionnaire `%s' :(" % lang, msg.channel, msg.nick)
+                return Response("Je n'ai pas le dictionnaire `%s' :(" % lang, msg.channel, msg.nick)
             if r == True:
                 add_score(msg.nick, "correct")
                 strRes.append("l'orthographe de `%s' est correcte" % word)
@@ -43,7 +43,7 @@ def cmd_spell(msg):
             else:
                 add_score(msg.nick, "bad")
                 strRes.append("aucune suggestion pour `%s'" % word)
-    return Response(msg.sender, strRes, channel=msg.channel, nick=msg.nick)
+    return Response(strRes, channel=msg.channel, nick=msg.nick)
 
 def add_score(nick, t):
     global DATAS
@@ -66,13 +66,13 @@ def cmd_score(msg):
     if len(msg.cmds) > 1:
         for cmd in msg.cmds[1:]:
             if cmd in DATAS.index:
-                res.append(Response(msg.sender, "%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, DATAS.index[cmd].getInt(a)) for a in DATAS.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
+                res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, DATAS.index[cmd].getInt(a)) for a in DATAS.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
             else:
                 unknown.append(cmd)
     else:
-        return Response(msg.sender, "De qui veux-tu voir les scores ?", channel=msg.channel, nick=msg.nick)
+        return Response("De qui veux-tu voir les scores ?", channel=msg.channel, nick=msg.nick)
     if len(unknown) > 0:
-        res.append(Response(msg.sender, "%s inconnus" % ", ".join(unknown), channel=msg.channel))
+        res.append(Response("%s inconnus" % ", ".join(unknown), channel=msg.channel))
 
     return res
 

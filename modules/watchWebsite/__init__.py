@@ -70,8 +70,7 @@ def del_site(msg):
                     del_event(site["_evt_id"])
                     DATAS.delChild(site)
                 save()
-                return Response(msg.sender,
-                                "je ne surveille désormais plus cette URL.",
+                return Response("je ne surveille désormais plus cette URL.",
                                 channel=msg.channel, nick=msg.nick)
     raise IRCException("je ne surveillais pas cette URL !")
 
@@ -107,12 +106,12 @@ def add_site(msg, diffType="diff"):
         DATAS.index[url].addChild(alert)
 
     save()
-    return Response(msg.sender, channel=msg.channel, nick=msg.nick,
+    return Response(channel=msg.channel, nick=msg.nick,
                     message="ce site est maintenant sous ma surveillance.")
 
 def format_response(site, link='%s', title='%s', categ='%s', content='%s'):
     for a in site.getNodes("alert"):
-        send_response(a["server"], Response(a["sender"], a["message"].format(url=site["url"], link=link, title=title, categ=categ, content=content),
+        send_response(a["server"], Response(a["message"].format(url=site["url"], link=link, title=title, categ=categ, content=content),
                                      channel=a["channel"], server=a["server"]))
 
 def alert_change(content, site):

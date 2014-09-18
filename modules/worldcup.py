@@ -79,7 +79,7 @@ def current_match_new_action(match_str, osef):
                 msg += " ; à la " + txt_event(events[0])
 
             for n in DATAS.getChilds():
-                send_response(n["server"], Response(n["sender"], msg, channel=n["channel"]))
+                send_response(n["server"], Response(msg, channel=n["channel"]))
 
 def is_int(s):
     try:
@@ -179,7 +179,7 @@ def get_matches(url):
 
 @hook("cmd_hook", "worldcup")
 def cmd_worldcup(msg):
-    res = Response(msg.sender, channel=msg.channel, nomore="No more match to display", count=" (%d more matches)")
+    res = Response(channel=msg.channel, nomore="No more match to display", count=" (%d more matches)")
     nb = len(msg.cmds)
 
     url = None

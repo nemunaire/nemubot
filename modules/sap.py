@@ -23,7 +23,7 @@ def cmd_tcode(msg):
   url = "http://www.tcodesearch.com/tcodes/search?q=%s" % urllib.parse.quote(msg.cmds[1])
   page = web.getURLContent(url)
 
-  res =  Response(msg.sender, channel=msg.channel,
+  res =  Response(channel=msg.channel,
                   nomore="No more transaction code", count=" (%d more tcodes)")
 
   if page is not None:

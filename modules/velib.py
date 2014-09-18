@@ -55,8 +55,7 @@ def print_station_status(msg, station):
     """Send message with information about the given station"""
     (available, free) = station_status(station)
     if available is not None and free is not None:
-        return Response(msg.sender,
-                        "à la station %s : %d vélib et %d points d'attache"
+        return Response("à la station %s : %d vélib et %d points d'attache"
                         " disponibles." % (station, available, free),
                         channel=msg.channel, nick=msg.nick)
     raise IRCException("station %s inconnue." % station)

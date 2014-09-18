@@ -72,7 +72,7 @@ def cmd_github(msg):
 
     repos = info_repos(" ".join(msg.cmds[1:]))
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more repository", count=" (%d more repo)")
+    res = Response(channel=msg.channel, nomore="No more repository", count=" (%d more repo)")
 
     for repo in repos["items"]:
         homepage = ""
@@ -87,7 +87,7 @@ def cmd_github(msg):
     if len(msg.cmds) < 2:
         raise IRCException("indicate a user name to search")
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more user")
+    res = Response(channel=msg.channel, nomore="No more user")
 
     user = info_user(" ".join(msg.cmds[1:]))
 
@@ -126,7 +126,7 @@ def cmd_github(msg):
     repo = " ".join(msg.cmds[1:])
 
     count = " (%d more issues)" if issue is None else None
-    res = Response(msg.sender, channel=msg.channel, nomore="No more issue", count=count)
+    res = Response(channel=msg.channel, nomore="No more issue", count=count)
 
     issues = info_issue(repo, issue)
 
@@ -159,7 +159,7 @@ def cmd_github(msg):
     repo = " ".join(msg.cmds[1:])
 
     count = " (%d more commits)" if commit is None else None
-    res = Response(msg.sender, channel=msg.channel, nomore="No more commit", count=count)
+    res = Response(channel=msg.channel, nomore="No more commit", count=count)
 
     commits = info_commit(repo, commit)
 

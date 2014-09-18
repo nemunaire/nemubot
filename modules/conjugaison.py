@@ -47,7 +47,7 @@ def cmd_conjug(msg):
     conjug = get_conjug(verb, tens)
 
     if len(conjug) > 0:
-        return Response(msg.sender, conjug, channel=msg.channel,
+        return Response(conjug, channel=msg.channel,
                         title="Conjugaison de %s" % verb)
     else:
         raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)

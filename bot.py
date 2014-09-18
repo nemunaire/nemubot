@@ -77,14 +77,13 @@ class Bot(threading.Thread):
         self.hooks       = HooksManager()
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.text, re.I) is not None:
-                return response.Response(msg.sender, message="pong", channel=msg.receivers, nick=msg.nick)
+                return response.Response(message="pong", channel=msg.receivers, nick=msg.nick)
         self.hooks.add_hook(MessageHook(in_ping), "in", "PRIVMSG")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
             cmd = msg.cmds
-            sndr = msg.sender
-            res = response.Response(sndr)
+            res = response.Response()
             if len(cmd) > 1:
                 if cmd[1] in self.modules:
                     if len(cmd) > 2:

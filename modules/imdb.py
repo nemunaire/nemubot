@@ -84,7 +84,7 @@ def cmd_imdb(msg):
         else:
             data = get_movie(title=title)
 
-    res =  Response(msg.sender, channel=msg.channel,
+    res =  Response(channel=msg.channel,
                     title="%s (%s)" % (data['Title'], data['Year']),
                     nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
 
@@ -105,4 +105,4 @@ def cmd_search(msg):
     for m in data['Search']:
         movies.append("\x02%s\x0F (%s of %s)" % (m['Title'], m['Type'], m['Year']))
 
-    return Response(msg.sender, movies, title="Titles found", channel=msg.channel)
+    return Response(movies, title="Titles found", channel=msg.channel)

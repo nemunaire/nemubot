@@ -48,7 +48,7 @@ def cmd_book(msg):
     book = get_book(" ".join(msg.cmds[1:]))
     if book is None:
         raise IRCException("unable to find book named like this")
-    res = Response(msg.sender, channel=msg.channel)
+    res = Response(channel=msg.channel)
     res.append_message("%s, writed by %s: %s" % (book.getNode("title").getContent(),
                                                  book.getNode("authors").getNode("author").getNode("name").getContent(),
                                                  web.striphtml(book.getNode("description").getContent())
@@ -61,7 +61,7 @@ def cmd_books(msg):
         raise IRCException("please give me a title to search")
 
     title = " ".join(msg.cmds[1:])
-    res = Response(msg.sender, channel=msg.channel,
+    res = Response(channel=msg.channel,
                    title="%s" % (title), count=" (%d more books)")
 
     books = search_books(title)
@@ -75,4 +75,4 @@ def cmd_author(msg):
         raise IRCException("please give me an author to search")
 
     ath = search_author(" ".join(msg.cmds[1:]))
-    return Response(msg.sender, [b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")], channel=msg.channel, title=ath.getNode("name").getContent())
+    return Response([b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")], channel=msg.channel, title=ath.getNode("name").getContent())

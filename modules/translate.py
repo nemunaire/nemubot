@@ -68,7 +68,7 @@ def cmd_translate(msg):
         raise IRCException(wres["Note"])
 
     else:
-        res = Response(msg.sender, channel=msg.channel,
+        res = Response(channel=msg.channel,
                        count=" (%d more meanings)",
                        nomore="No more translation")
         for k in sorted(wres.keys()):

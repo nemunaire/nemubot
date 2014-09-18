@@ -50,7 +50,7 @@ def cmd_anniv(msg):
 
         if (tyd.day == datetime.today().day and
             tyd.month == datetime.today().month):
-            return Response(msg.sender, countdown_format(
+            return Response(countdown_format(
                     DATAS.index[name].getDate("born"), "",
                     "C'est aujourd'hui l'anniversaire de %s !"
                     " Il a %s. Joyeux anniversaire :)" % (name, "%s")),
@@ -59,12 +59,12 @@ def cmd_anniv(msg):
             if tyd < datetime.today():
                 tyd = datetime(date.today().year + 1, tyd.month, tyd.day)
 
-            return Response(msg.sender, countdown_format(tyd,
+            return Response(countdown_format(tyd,
                             "Il reste %s avant l'anniversaire de %s !" % ("%s",
                                                                     name), ""),
                             msg.channel)
     else:
-        return Response(msg.sender, "désolé, je ne connais pas la date d'anniversaire"
+        return Response("désolé, je ne connais pas la date d'anniversaire"
                         " de %s. Quand est-il né ?" % name,
                         msg.channel, msg.nick)
 
@@ -75,12 +75,12 @@ def cmd_age(msg):
         name = matches[0]
         d = DATAS.index[name].getDate("born")
 
-        return Response(msg.sender, countdown_format(d,
-                                        "%s va naître dans %s." % (name, "%s"),
-                                        "%s a %s." % (name, "%s")),
+        return Response(countdown_format(d,
+                                         "%s va naître dans %s." % (name, "%s"),
+                                         "%s a %s." % (name, "%s")),
                         msg.channel)
     else:
-        return Response(msg.sender, "désolé, je ne connais pas l'âge de %s."
+        return Response("désolé, je ne connais pas l'âge de %s."
                         " Quand est-il né ?" % name, msg.channel, msg.nick)
     return True
 
@@ -91,8 +91,7 @@ def parseask(msg):
         try:
             extDate = extractDate(msg.text)
             if extDate is None or extDate.year > datetime.now().year:
-                return Response(msg.sender,
-                                "la date de naissance ne paraît pas valide...",
+                return Response("la date de naissance ne paraît pas valide...",
                                 msg.channel,
                                 msg.nick)
             else:
@@ -107,8 +106,7 @@ def parseask(msg):
                     ms.setAttribute("born", extDate)
                     DATAS.addChild(ms)
                 save()
-                return Response(msg.sender,
-                                "ok, c'est noté, %s est né le %s"
+                return Response("ok, c'est noté, %s est né le %s"
                                 % (nick, extDate.strftime("%A %d %B %Y à %H:%M")),
                                 msg.channel,
                                 msg.nick)

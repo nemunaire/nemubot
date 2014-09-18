@@ -42,15 +42,15 @@ def cmd_subreddit(msg):
             sbr = json.loads(raw.read().decode())
 
             if "title" in sbr["data"]:
-                res = Response(msg.sender, channel=msg.channel, nomore="No more information")
+                res = Response(channel=msg.channel, nomore="No more information")
                 res.append_message(("[NSFW] " if sbr["data"]["over18"] else "") + sbr["data"]["url"] + " " + sbr["data"]["title"] + ": " + sbr["data"]["public_description" if sbr["data"]["public_description"] != "" else "description"].replace("\n", " ") + " %s subscriber(s)" % sbr["data"]["subscribers"])
                 if sbr["data"]["public_description"] != "":
                     res.append_message(sbr["data"]["description"].replace("\n", " "))
                 all_res.append(res)
             else:
-                all_res.append(Response(msg.sender, "/%s/%s doesn't exist" % (where, sub.group(2)), channel=msg.channel))
+                all_res.append(Response("/%s/%s doesn't exist" % (where, sub.group(2)), channel=msg.channel))
         else:
-            all_res.append(Response(msg.sender, "%s is not a valid subreddit" % osub, channel=msg.channel, nick=msg.nick))
+            all_res.append(Response("%s is not a valid subreddit" % osub, channel=msg.channel, nick=msg.nick))
 
     return all_res
 

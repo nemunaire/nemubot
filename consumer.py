@@ -26,7 +26,7 @@ import sys
 import bot
 from server.DCC import DCC
 from message import Message
-import response
+from response import Response
 import server
 
 logger = logging.getLogger("nemubot.consumer")
@@ -118,8 +118,13 @@ class MessageConsumer:
                 if h.match(message=msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
+                        for r in res:
+                            if isinstance(r, Response):
+                                r.set_sender(msg.sender)
                         self.responses += res
                     elif res is not None:
+                        if isinstance(res, Response):
+                            res.set_sender(msg.sender)
                         self.responses.append(res)
 
 
@@ -174,9 +179,7 @@ class MessageConsumer:
                 self.post_treat(context.hooks)
         except:
             logger.exception("Error occurred during the processing of the message: %s", self.msgs[0].raw)
-            return
 
-        #return self.responses
         for res in self.responses:
             to_server = None
             if res.server is None:
@@ -188,7 +191,7 @@ class MessageConsumer:
             if to_server is None:
                 logger.error("The server defined in this response doesn't "
                              "exist: %s", res.server)
-                return False
+                continue
 
             # Sent the message only if treat_post authorize it
             to_server.send_response(res)

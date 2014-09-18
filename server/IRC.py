@@ -56,8 +56,7 @@ class IRCServer(SocketServer):
 
         def _ctcp_clientinfo(msg):
             """Response to CLIENTINFO CTCP message"""
-            return _ctcp_response(msg.sender,
-                                  " ".join(self.ctcp_capabilities.keys()))
+            return _ctcp_response(" ".join(self.ctcp_capabilities.keys()))
 
         def _ctcp_dcc(msg):
             """Response to DCC CTCP message"""
@@ -66,7 +65,7 @@ class IRCServer(SocketServer):
                 port = int(msg.cmds[4])
                 conn = DCC(srv, msg.sender)
             except:
-                return _ctcp_response(msg.sender, "ERRMSG invalid parameters provided as DCC CTCP request")
+                return _ctcp_response("ERRMSG invalid parameters provided as DCC CTCP request")
 
             self.logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
 
@@ -75,25 +74,25 @@ class IRCServer(SocketServer):
                 conn.send_dcc("Hello %s!" % conn.nick)
             else:
                 self.logger.error("DCC: unable to connect to %s:%d", ip, port)
-                return _ctcp_response(msg.sender, "ERRMSG unable to connect to %s:%d" % (ip, port))
+                return _ctcp_response("ERRMSG unable to connect to %s:%d" % (ip, port))
 
         self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive: %s" % msg.text)
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
         #self.ctcp_capabilities["DCC"] = _ctcp_dcc
         self.ctcp_capabilities["FINGER"] = lambda msg: _ctcp_response(
-            msg.sender, "VERSION nemubot v%s" % bot.__version__)
+            "VERSION nemubot v%s" % bot.__version__)
         self.ctcp_capabilities["NEMUBOT"] = lambda msg: _ctcp_response(
-            msg.sender, "NEMUBOT %s" % bot.__version__)
+            "NEMUBOT %s" % bot.__version__)
         self.ctcp_capabilities["PING"] = lambda msg: _ctcp_response(
-            msg.sender, "PING %s" % " ".join(msg.cmds[1:]))
+            "PING %s" % " ".join(msg.cmds[1:]))
         self.ctcp_capabilities["SOURCE"] = lambda msg: _ctcp_response(
-            msg.sender, "SOURCE https://github.com/nemunaire/nemubot")
+            "SOURCE https://github.com/nemunaire/nemubot")
         self.ctcp_capabilities["TIME"] = lambda msg: _ctcp_response(
-            msg.sender, "TIME %s" % (datetime.now()))
+            "TIME %s" % (datetime.now()))
         self.ctcp_capabilities["USERINFO"] = lambda msg: _ctcp_response(
-            msg.sender, "USERINFO %s" % self.realname)
+            "USERINFO %s" % self.realname)
         self.ctcp_capabilities["VERSION"] = lambda msg: _ctcp_response(
-            msg.sender, "VERSION nemubot v%s" % bot.__version__)
+            "VERSION nemubot v%s" % bot.__version__)
 
         self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
@@ -187,15 +186,11 @@ class IRCServer(SocketServer):
         return False
 
     def send_response(self, res):
-        if type(res.channel) != list:
-            res.channel = [ res.channel ]
-        for channel in res.channel:
+        for channel in res.receivers:
             if channel is not None and channel != self.nick:
-                self.write("%s %s :%s" % ("PRIVMSG", channel, res.get_message()))
-            else:
-                channel = res.sender.split("!")[0]
                 self.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
-
+            else:
+                raise Exception("Trying to send a message to an undefined channel: %s" % channel)
 
     def _close(self):
         if self.socket is not None: self.write("QUIT")
@@ -212,12 +207,19 @@ class IRCServer(SocketServer):
                 mes = msg.to_message()
                 mes.raw = msg.raw
 
-                if mes.cmd == "PRIVMSG" and mes.is_ctcp:
+                if hasattr(mes, "receivers"):
+                    # Private message: prepare response
+                    for i in range(len(mes.receivers)):
+                        if mes.receivers[i] == self.nick:
+                            mes.receivers[i] = mes.nick
+
+                if (mes.cmd == "PRIVMSG" or mes.cmd == "NOTICE") and mes.is_ctcp:
                     if mes.cmds[0] in self.ctcp_capabilities:
                         res = self.ctcp_capabilities[mes.cmds[0]](mes)
                     else:
-                        res = _ctcp_response(mes.sender, "ERRMSG Unknown or unimplemented CTCP request")
+                        res = _ctcp_response("ERRMSG Unknown or unimplemented CTCP request")
                     if res is not None:
+                        res.set_sender(mes.sender)
                         self.send_response(res)
 
                 else:
@@ -226,8 +228,8 @@ class IRCServer(SocketServer):
 
 from response import Response
 
-def _ctcp_response(sndr, msg):
-    return Response(sndr, msg, ctcp=True)
+def _ctcp_response(msg):
+    return Response(msg, ctcp=True)
 
 
 mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?

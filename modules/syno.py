@@ -35,7 +35,7 @@ def go(what, msg):
 
     if what == "synonymes":
         if len(synos) > 0:
-            res = Response(msg.sender, best, channel=msg.channel,
+            res = Response(best, channel=msg.channel,
                             title="Synonymes de %s" % word)
             res.append_message(synos)
             return res
@@ -44,7 +44,7 @@ def go(what, msg):
 
     elif what == "antonymes":
         if len(anton) > 0:
-            res = Response(msg.sender, anton, channel=msg.channel,
+            res = Response(anton, channel=msg.channel,
                             title="Antonymes de %s" % word)
             return res
         else:

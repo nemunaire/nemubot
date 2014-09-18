@@ -26,4 +26,4 @@ class IRCException(Exception):
         self.personnal = personnal
 
     def fill_response(self, msg):
-        return Response(msg.sender, self.message, channel=msg.receivers, nick=(msg.nick if self.personnal else None))
+        return Response(self.message, channel=msg.receivers, nick=(msg.nick if self.personnal else None))

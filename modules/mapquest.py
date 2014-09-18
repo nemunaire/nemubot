@@ -43,7 +43,7 @@ def cmd_geocode(msg):
         raise IRCException("indicate a name")
 
     locname = ' '.join(msg.cmds[1:])
-    res = Response(msg.sender, channel=msg.channel, nick=msg.nick, nomore="No more geocode", count=" (%s more geocode)")
+    res = Response(channel=msg.channel, nick=msg.nick, nomore="No more geocode", count=" (%s more geocode)")
     for loc in geocode(locname):
         res.append_message("%s is at %s,%s (%s precision)" % (where(loc), loc["latLng"]["lat"], loc["latLng"]["lng"], loc["geocodeQuality"].lower()))
     return res

@@ -32,7 +32,7 @@ def cmd_w3m(msg):
     if len(msg.cmds) > 1:
         args = ["w3m", "-T", "text/html", "-dump"]
         args.append(msg.cmds[1])
-        res = Response(msg.sender, channel=msg.channel)
+        res = Response(channel=msg.channel)
         with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
             for line in proc.stdout.read().split(b"\n"):
                 res.append_message(line.decode())
@@ -48,7 +48,7 @@ def cmd_curl(msg):
     try:
         req = web.getURLContent(" ".join(msg.cmds[1:]))
         if req is not None:
-            res = Response(msg.sender, channel=msg.channel)
+            res = Response(channel=msg.channel)
             for m in req.split("\n"):
                 res.append_message(m)
             return res
@@ -88,7 +88,7 @@ def cmd_curly(msg):
     finally:
         conn.close()
 
-    return Response(msg.sender, "Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, res.version, res.status, res.reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in res.getheaders()])), channel=msg.channel)
+    return Response("Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, res.version, res.status, res.reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in res.getheaders()])), channel=msg.channel)
 
 @hook("cmd_hook", "traceurl")
 def cmd_traceurl(msg):
@@ -96,7 +96,7 @@ def cmd_traceurl(msg):
         res = list()
         for url in msg.cmds[1:]:
             trace = traceURL(url)
-            res.append(Response(msg.sender, trace, channel=msg.channel, title="TraceURL"))
+            res.append(Response(trace, channel=msg.channel, title="TraceURL"))
         return res
     else:
         raise IRCException("Indiquer a URL to trace!")
@@ -170,7 +170,7 @@ def cmd_whois(msg):
 
     whois = js["WhoisRecord"]
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more whois information")
+    res = Response(channel=msg.channel, nomore="No more whois information")
 
     res.append_message("%s: %s%s%s%s\x03\x02registered by\x03\x02 %s, \x03\x02administrated by\x03\x02 %s, \x03\x02managed by\x03\x02 %s" % (whois["domainName"],
                                                              whois["status"] + " " if "status" in whois else "",
@@ -196,14 +196,14 @@ def cmd_isup(msg):
                 raw = urllib.request.urlopen(req, timeout=10)
                 isup = json.loads(raw.read().decode())
                 if "status_code" in isup and isup["status_code"] == 1:
-                    res.append(Response(msg.sender, "%s est accessible (temps de reponse : %ss)" % (isup["domain"], isup["response_time"]), channel=msg.channel))
+                    res.append(Response("%s est accessible (temps de reponse : %ss)" % (isup["domain"], isup["response_time"]), channel=msg.channel))
                 else:
-                    res.append(Response(msg.sender, "%s n'est pas accessible :(" % (isup["domain"]), channel=msg.channel))
+                    res.append(Response("%s n'est pas accessible :(" % (isup["domain"]), channel=msg.channel))
             else:
-                res.append(Response(msg.sender, "%s n'est pas une URL valide" % url, channel=msg.channel))
+                res.append(Response("%s n'est pas une URL valide" % url, channel=msg.channel))
         return res
     else:
-        return Response(msg.sender, "Indiquer une URL à vérifier !", channel=msg.channel)
+        return Response("Indiquer une URL à vérifier !", channel=msg.channel)
 
 def traceURL(url, timeout=5, stack=None):
     """Follow redirections and return the redirections stack"""
@@ -277,7 +277,7 @@ def cmd_w3c(msg):
 
     validator = json.loads(raw.read().decode())
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more error")
+    res = Response(channel=msg.channel, nomore="No more error")
 
     res.append_message("%s: status: %s, %s warning(s), %s error(s)" % (validator["url"], headers["X-W3C-Validator-Status"], headers["X-W3C-Validator-Warnings"], headers["X-W3C-Validator-Errors"]))
 

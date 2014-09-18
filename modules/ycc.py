@@ -20,7 +20,7 @@ def gen_response(res, msg, srv):
     if res is None:
         raise IRCException("la situation est embarassante, il semblerait que YCC soit down :(")
     elif isinstance(res, str):
-        return Response(msg.sender, "URL pour %s : %s" % (srv, res), msg.channel)
+        return Response("URL pour %s : %s" % (srv, res), msg.channel)
     else:
         raise IRCException("mauvaise URL : %s" % srv)
 

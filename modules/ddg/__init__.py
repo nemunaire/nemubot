@@ -26,13 +26,12 @@ def reload():
 @hook("cmd_hook", "define")
 def define(msg):
     if len(msg.cmds) <= 1:
-        return Response(msg.sender,
-                        "Indicate a term to define",
+        return Response("Indicate a term to define",
                         msg.channel, nick=msg.nick)
 
     s = DDGSearch.DDGSearch(' '.join(msg.cmds[1:]))
 
-    res = Response(msg.sender, channel=msg.channel)
+    res = Response(channel=msg.channel)
 
     res.append_message(s.definition)
 
@@ -41,13 +40,12 @@ def define(msg):
 @hook("cmd_hook", "search")
 def search(msg):
     if len(msg.cmds) <= 1:
-        return Response(msg.sender,
-                        "Indicate a term to search",
+        return Response("Indicate a term to search",
                         msg.channel, nick=msg.nick)
 
     s = DDGSearch.DDGSearch(' '.join(msg.cmds[1:]))
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more results",
+    res = Response(channel=msg.channel, nomore="No more results",
                    count=" (%d more results)")
 
     res.append_message(s.redirect)
@@ -64,13 +62,12 @@ def search(msg):
 @hook("cmd_hook", "urbandictionnary")
 def udsearch(msg):
     if len(msg.cmds) <= 1:
-        return Response(msg.sender,
-                        "Indicate a term to search",
+        return Response("Indicate a term to search",
                         msg.channel, nick=msg.nick)
 
     s = UrbanDictionnary.UrbanDictionnary(' '.join(msg.cmds[1:]))
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more results",
+    res = Response(channel=msg.channel, nomore="No more results",
                    count=" (%d more definitions)")
 
     for d in s.definitions:
@@ -82,18 +79,17 @@ def udsearch(msg):
 @hook("cmd_hook", "calculate")
 def calculate(msg):
     if len(msg.cmds) <= 1:
-        return Response(msg.sender,
-                        "Indicate a calcul to compute",
+        return Response("Indicate a calcul to compute",
                         msg.channel, nick=msg.nick)
 
     s = WFASearch.WFASearch(' '.join(msg.cmds[1:]))
 
     if s.success:
-        res = Response(msg.sender, channel=msg.channel, nomore="No more results")
+        res = Response(channel=msg.channel, nomore="No more results")
         for result in s.nextRes:
             res.append_message(result)
         if (len(res.messages) > 0):
             res.messages.pop(0)
         return res
     else:
-        return Response(msg.sender, s.error, msg.channel)
+        return Response(s.error, msg.channel)

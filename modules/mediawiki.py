@@ -76,8 +76,7 @@ def cmd_mediawiki(msg):
     if len(msg.cmds) < 3:
         raise IRCException("indicate a domain and a term to search")
 
-    return Response(msg.sender,
-                    get_page(msg.cmds[1], " ".join(msg.cmds[2:])),
+    return Response(get_page(msg.cmds[1], " ".join(msg.cmds[2:])),
                     channel=msg.receivers)
 
 
@@ -86,7 +85,7 @@ def cmd_wikipedia(msg):
     if len(msg.cmds) < 3:
         raise IRCException("indicate a lang and a term to search")
 
-    return Response(msg.sender,
-                    get_page(msg.cmds[1] + ".wikipedia.org", " ".join(msg.cmds[2:])),
-                    channel=msg.receivers,
-                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ssl)))
+    return Response(irc_format(parse_wikitext(get_page(msg.cmds[1] + ".wikipedia.org", " ".join(msg.cmds[2:])))),
+#                    get_page(msg.cmds[1] + ".wikipedia.org", " ".join(msg.cmds[2:])),
+#                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ssl)),
+                    channel=msg.receivers)

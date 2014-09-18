@@ -51,10 +51,10 @@ def get_variable(name, msg=None):
 def cmd_set(msg):
     if len (msg.cmds) > 2:
         set_variable(msg.cmds[1], " ".join(msg.cmds[2:]), msg.nick)
-        res = Response(msg.sender, "Variable \$%s définie." % msg.cmds[1])
+        res = Response("Variable \$%s définie." % msg.cmds[1])
         save()
         return res
-    return Response(msg.sender, "!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
+    return Response("!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
 
 @hook("cmd_hook", "listalias")
 def cmd_listalias(msg):
@@ -66,9 +66,9 @@ def cmd_listalias(msg):
                 res.append("Alias créés par %s : %s" % (user, ", ".join(als)))
             else:
                 res.append("%s n'a pas encore créé d'alias" % user)
-        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+        return Response(" ; ".join(res), channel=msg.channel)
     else:
-        return Response(msg.sender, "Alias connus : %s." % ", ".join(DATAS.getNode("aliases").index.keys()), channel=msg.channel)
+        return Response("Alias connus : %s." % ", ".join(DATAS.getNode("aliases").index.keys()), channel=msg.channel)
 
 @hook("cmd_hook", "listvars")
 def cmd_listvars(msg):
@@ -80,9 +80,9 @@ def cmd_listvars(msg):
                 res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
             else:
                 res.append("%s n'a pas encore créé de variable" % user)
-        return Response(msg.sender, " ; ".join(res), channel=msg.channel)
+        return Response(" ; ".join(res), channel=msg.channel)
     else:
-        return Response(msg.sender, "Variables connues : %s." % ", ".join(DATAS.getNode("variables").index.keys()), channel=msg.channel)
+        return Response("Variables connues : %s." % ", ".join(DATAS.getNode("variables").index.keys()), channel=msg.channel)
 
 @hook("cmd_hook", "alias")
 def cmd_alias(msg):
@@ -92,15 +92,15 @@ def cmd_alias(msg):
             if alias[0] == "!":
                 alias = alias[1:]
             if alias in DATAS.getNode("aliases").index:
-                res.append(Response(msg.sender, "!%s correspond à %s" % (alias,
+                res.append(Response("!%s correspond à %s" % (alias,
                               DATAS.getNode("aliases").index[alias]["origin"]),
                                     channel=msg.channel))
             else:
-                res.append(Response(msg.sender, "!%s n'est pas un alias" % alias,
+                res.append(Response("!%s n'est pas un alias" % alias,
                                     channel=msg.channel))
         return res
     else:
-        return Response(msg.sender, "!alias prend en argument l'alias à étendre.",
+        return Response("!alias prend en argument l'alias à étendre.",
                         channel=msg.channel)
 
 @hook("cmd_hook", "unalias")
@@ -113,14 +113,14 @@ def cmd_unalias(msg):
             if alias in DATAS.getNode("aliases").index:
                 if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.is_owner:
                     DATAS.getNode("aliases").delChild(DATAS.getNode("aliases").index[alias])
-                    res.append(Response(msg.sender, "%s a bien été supprimé" % alias, channel=msg.channel))
+                    res.append(Response("%s a bien été supprimé" % alias, channel=msg.channel))
                 else:
-                    res.append(Response(msg.sender, "Vous n'êtes pas le createur de l'alias %s." % alias, channel=msg.channel))
+                    res.append(Response("Vous n'êtes pas le createur de l'alias %s." % alias, channel=msg.channel))
             else:
-                res.append(Response(msg.sender, "%s n'est pas un alias" % alias, channel=msg.channel))
+                res.append(Response("%s n'est pas un alias" % alias, channel=msg.channel))
         return res
     else:
-        return Response(msg.sender, "!unalias prend en argument l'alias à supprimer.", channel=msg.channel)
+        return Response("!unalias prend en argument l'alias à supprimer.", channel=msg.channel)
 
 def replace_variables(cnt, msg=None):
     cnt = cnt.split(' ')
@@ -177,14 +177,14 @@ def parseask(msg):
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
         if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
-            return Response(msg.sender, "Cet alias est déjà défini.")
+            raise IRCException("cet alias est déjà défini.")
         else:
             alias = ModuleState("alias")
             alias["alias"] = result.group(1)
             alias["origin"] = result.group(3)
             alias["creator"] = msg.nick
             DATAS.getNode("aliases").addChild(alias)
-            res = Response(msg.sender, "Nouvel alias %s défini avec succès." % result.group(1))
+            res = Response("Nouvel alias %s défini avec succès." % result.group(1))
             save()
             return res
     return None

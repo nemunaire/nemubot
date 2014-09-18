@@ -23,9 +23,9 @@ import sys
 logger = logging.getLogger("nemubot.response")
 
 class Response:
-    def __init__(self, sender, message=None, channel=None, nick=None, server=None,
-                 nomore="No more message", title=None, more="(suite) ", count=None,
-                 ctcp=False, shown_first_count=-1):
+    def __init__(self, message=None, channel=None, nick=None, server=None,
+                 nomore="No more message", title=None, more="(suite) ",
+                 count=None, ctcp=False, shown_first_count=-1):
         self.nomore = nomore
         self.more = more
         self.rawtitle = title
@@ -37,28 +37,21 @@ class Response:
             self.append_message(message, shown_first_count=shown_first_count)
         self.elt = 0 # Next element to display
 
+        self.sender = None
         self.channel = channel
         self.nick = nick
-        self.set_sender(sender)
         self.count = count
 
     @property
     def receivers(self):
-        if type(self.channel) is list:
+        if self.channel is None:
+            if self.nick is not None:
+                return [ self.nick ]
+            return [ self.sender.split("!")[0] ]
+        elif isinstance(self.channel, list):
             return self.channel
         else:
             return [ self.channel ]
-
-    @property
-    def content(self):
-        #FIXME: error when messages in self.messages are list!
-        try:
-            if self.title is not None:
-                return self.title + ", ".join(self.messages)
-            else:
-                return ", ".join(self.messages)
-        except:
-            return ""
 
     def set_sender(self, sender):
         if sender is None or sender.find("!") < 0:

@@ -32,7 +32,7 @@ def cmd_man(msg):
             args.append(msg.cmds[1])
 
     os.unsetenv("LANG")
-    res = Response(msg.sender, channel=msg.channel)
+    res = Response(channel=msg.channel)
     with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
         for line in proc.stdout.read().split(b"\n"):
             (line, n) = RGXP_s.subn(b'', line)
@@ -50,7 +50,7 @@ def cmd_man(msg):
 def cmd_whatis(msg):
     args = ["whatis", " ".join(msg.cmds[1:])]
 
-    res = Response(msg.sender, channel=msg.channel)
+    res = Response(channel=msg.channel)
     with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
         for line in proc.stdout.read().split(b"\n"):
             (line, n) = RGXP_s.subn(b'', line)

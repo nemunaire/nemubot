@@ -144,13 +144,13 @@ def cmd_coordinates(msg):
         raise IRCException("%s n'est pas une ville connue" % msg.cmds[1])
 
     coords = DATAS.index[j]
-    return Response(msg.sender, "Les coordonnées de %s sont %s,%s" % (msg.cmds[1], coords["lat"], coords["long"]), channel=msg.channel)
+    return Response("Les coordonnées de %s sont %s,%s" % (msg.cmds[1], coords["lat"], coords["long"]), channel=msg.channel)
 
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more weather alert", count=" (%d more alerts)")
+    res = Response(channel=msg.channel, nomore="No more weather alert", count=" (%d more alerts)")
 
     if "alerts" in wth:
         for alert in wth["alerts"]:
@@ -162,7 +162,7 @@ def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
 
-    res = Response(msg.sender, channel=msg.channel, nomore="No more weather information")
+    res = Response(channel=msg.channel, nomore="No more weather information")
 
     if "alerts" in wth:
         alert_msgs = list()
@@ -228,6 +228,5 @@ def parseask(msg):
             ms.setAttribute("long", gps_long)
             DATAS.addChild(ms)
         save()
-        return Response(msg.sender,
-                        "ok, j'ai bien noté les coordonnées de %s" % res.group("city"),
+        return Response("ok, j'ai bien noté les coordonnées de %s" % res.group("city"),
                         msg.channel, msg.nick)
