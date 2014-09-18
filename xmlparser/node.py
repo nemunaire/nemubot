@@ -124,7 +124,10 @@ class ModuleState:
 
   def setAttribute(self, name, value):
     """DOM like method"""
-    self.attributes[name] = value
+    if isinstance(value, datetime) or isinstance(value, str) or isinstance(value, int) or isinstance(value, float):
+      self.attributes[name] = value
+    else:
+      raise TypeError("attributes must be primary type or datetime")
 
   def getContent(self):
     return self.content
