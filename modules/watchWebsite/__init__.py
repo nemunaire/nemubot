@@ -12,10 +12,10 @@ import socket
 import sys
 import urllib.parse
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from hooks import hook
 
+from networking import w3m
 from .atom import Atom
 
 nemubotversion = 3.4
@@ -33,19 +33,10 @@ def load(context):
             print("No alert defined for this site: " + site["url"])
             #DATAS.delChild(site)
 
-def getPageContent(url):
-    """Returns the content of the given url"""
-    print_debug("Get page %s" % url)
-    try:
-        raw = urlopen(url, timeout=10)
-        return raw.read().decode()
-    except:
-        return None
-
 def start_watching(site, offset=0):
     o = urlparse(site["url"], "http")
     print_debug("Add event for site: %s" % o.netloc)
-    evt = ModuleEvent(func=getPageContent, cmp_data=site["lastcontent"],
+    evt = ModuleEvent(func=lambda url: w3m(url), cmp_data=site["lastcontent"],
                       func_data=site["url"], offset=offset,
                       intervalle=site.getInt("time"),
                       call=alert_change, call_data=site)
