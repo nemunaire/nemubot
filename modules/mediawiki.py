@@ -23,7 +23,10 @@ def get_raw_page(site, term, ssl=False):
     data = json.loads(raw.read().decode())
 
     for k in data["query"]["pages"]:
-        return data["query"]["pages"][k]["revisions"][0]["*"]
+        try:
+            return data["query"]["pages"][k]["revisions"][0]["*"]
+        except:
+            raise IRCException("article not found")
 
 def get_unwikitextified(site, wikitext, ssl=False):
     # Built IRL
