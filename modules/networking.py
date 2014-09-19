@@ -27,37 +27,43 @@ def load(context):
 def help_full():
     return "!traceurl /url/: Follow redirections from /url/."
 
+def w3m(url):
+    args = ["w3m", "-T", "text/html", "-dump"]
+    args.append(url)
+    with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+        return proc.stdout.read().decode()
+
 @hook("cmd_hook", "w3m")
 def cmd_w3m(msg):
     if len(msg.cmds) > 1:
-        args = ["w3m", "-T", "text/html", "-dump"]
-        args.append(msg.cmds[1])
         res = Response(channel=msg.channel)
-        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-            for line in proc.stdout.read().split(b"\n"):
-                res.append_message(line.decode())
+        for line in w3m(" ".join(msg.cmds[1:])).split("\n"):
+            res.append_message(line)
         return res
     else:
         raise IRCException("Indicate the URL to visit.")
 
-@hook("cmd_hook", "curl")
-def cmd_curl(msg):
-    if len(msg.cmds) < 2:
-        raise IRCException("Indicate the URL to visit.")
-
+def curl(url):
     try:
-        req = web.getURLContent(" ".join(msg.cmds[1:]))
+        req = web.getURLContent(url)
         if req is not None:
-            res = Response(channel=msg.channel)
-            for m in req.split("\n"):
-                res.append_message(m)
-            return res
+            return req
         else:
             raise IRCException("An error occurs  when trying to access the page")
     except socket.timeout:
         raise IRCException("The request timeout when trying to access the page")
     except socket.error as e:
         raise IRCException(e.strerror)
+
+@hook("cmd_hook", "curl")
+def cmd_curl(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("Indicate the URL to visit.")
+
+    res = Response(channel=msg.channel)
+    for m in curl(" ".join(msg.cmds[1:])).split("\n"):
+        res.append_message(m)
+    return res
 
 @hook("cmd_hook", "curly")
 def cmd_curly(msg):
