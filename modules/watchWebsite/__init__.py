@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import timedelta
 import http.client
 import hashlib
+from random import randint
 import re
 import socket
 import sys
@@ -27,7 +28,7 @@ def load(context):
     DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
         if site.hasNode("alert"):
-            start_watching(site)
+            start_watching(site, randint(-30, 30))
         else:
             print("No alert defined for this site: " + site["url"])
             #DATAS.delChild(site)
@@ -41,11 +42,11 @@ def getPageContent(url):
     except:
         return None
 
-def start_watching(site):
+def start_watching(site, offset=0):
     o = urlparse(site["url"], "http")
     print_debug("Add event for site: %s" % o.netloc)
     evt = ModuleEvent(func=getPageContent, cmp_data=site["lastcontent"],
-                      func_data=site["url"],
+                      func_data=site["url"], offset=offset,
                       intervalle=site.getInt("time"),
                       call=alert_change, call_data=site)
     site["_evt_id"] = add_event(evt)
