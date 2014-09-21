@@ -29,6 +29,7 @@ from server.socket import SocketServer
 class IRCServer(SocketServer):
 
     def __init__(self, node, nick, owner, realname):
+        self.id       = nick + "@" + node["host"] + ":" + node["port"]
         SocketServer.__init__(self,
                               node["host"],
                               node["port"],
@@ -38,7 +39,6 @@ class IRCServer(SocketServer):
         self.nick     = nick
         self.owner    = owner
         self.realname = realname
-        self.id       = nick + "@" + node["host"] + ":" + node["port"]
 
         #Keep a list of connected channels
         self.channels = dict()

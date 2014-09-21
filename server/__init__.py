@@ -38,7 +38,7 @@ class AbstractServer(io.IOBase):
         send_callback -- Callback when developper want to send a message
         """
 
-        self.logger = logging.getLogger("nemubot.server.TODO")
+        self.logger = logging.getLogger("nemubot.server." + self.id)
         self._sending_queue = queue.Queue()
         if send_callback is not None:
             self._send_callback = send_callback
