@@ -118,7 +118,6 @@ class Bot(threading.Thread):
 
         # Other known bots, making a bots network
         self.network     = dict()
-        self.hooks_cache = dict()
 
         # Messages to be treated
         self.cnsr_queue     = Queue()
@@ -318,7 +317,6 @@ class Bot(threading.Thread):
     def add_server(self, node, nick, owner, realname):
         """Add a new server to the context"""
         srv = IRCServer(node, nick, owner, realname)
-        #srv.register_hooks()
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
             srv.open()
@@ -492,8 +490,6 @@ def reload():
     imp.reload(tools.date)
     import tools.web
     imp.reload(tools.web)
-    import tools.wrapper
-    imp.reload(tools.wrapper)
 
     import xmlparser
     imp.reload(xmlparser)
