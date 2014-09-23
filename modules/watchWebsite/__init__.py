@@ -38,7 +38,7 @@ def start_watching(site, offset=0):
     print_debug("Add event for site: %s" % o.netloc)
     evt = ModuleEvent(func=lambda url: w3m(url), cmp_data=site["lastcontent"],
                       func_data=site["url"], offset=offset,
-                      intervalle=site.getInt("time"),
+                      interval=site.getInt("time"),
                       call=alert_change, call_data=site)
     site["_evt_id"] = add_event(evt)
 

@@ -205,11 +205,17 @@ class EventConsumer:
 
     def run(self, context):
         try:
-            self.evt.launch_check()
+            self.evt.check()
         except:
             logger.exception("Error during event end")
+
+        # Reappend the event in the queue if it has next iteration
         if self.evt.next is not None:
-            context.add_event(self.evt, self.evt.id)
+            context.add_event(self.evt, eid=self.evt.id)
+
+        # Or remove reference of this event
+        elif hasattr(self.evt, "module_src") and self.evt.module_src is not None:
+            self.evt.module_src.REGISTERED_EVENTS.remove(self.evt.id)
 
 
 

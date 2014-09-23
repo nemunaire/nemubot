@@ -14,7 +14,7 @@ yrn = datetime.today().year + 1
 
 def load(context):
     d = datetime(yrn, 1, 1, 0, 0, 0) - datetime.now()
-    add_event(ModuleEvent(intervalle=0, offset=d.total_seconds(), call=bonneannee))
+    add_event(ModuleEvent(interval=0, offset=d.total_seconds(), call=bonneannee))
 
 def bonneannee():
     txt = "Bonne année %d !" % datetime.today().year

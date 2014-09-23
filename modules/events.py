@@ -29,7 +29,7 @@ def load(context):
     for evt in DATAS.index.keys():
         if DATAS.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
-            event.end = DATAS.index[evt].getDate("end")
+            event._end = DATAS.index[evt].getDate("end")
             idt = context.add_event(event)
             if idt is not None:
                 DATAS.index[evt]["id"] = idt
@@ -101,7 +101,7 @@ def start_countdown(msg):
                     strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
                   else:
                     strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec)
-                evt.end = strnd.getDate("end")
+                evt._end = strnd.getDate("end")
                 strnd["id"] = add_event(evt)
             except:
                 DATAS.delChild(strnd)
@@ -122,8 +122,10 @@ def start_countdown(msg):
                     strnd["end"] += timedelta(days=int(t)*365)
                 else:
                     strnd["end"] += timedelta(seconds=int(t))
-            evt.end = strnd.getDate("end")
-            strnd["id"] = add_event(evt)
+            evt._end = strnd.getDate("end")
+            eid = add_event(evt)
+            if eid is not None:
+                strnd["id"] = eid
 
     save()
     if "end" in strnd:
