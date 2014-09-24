@@ -159,7 +159,7 @@ class Response:
             return self.treat_ctcp(msg[:len(msg)-2])
 
         else:
-            if len(elts) <= 432:
+            if len(elts.encode()) <= 432:
                 self.pop()
                 if self.count is not None:
                     return self.treat_ctcp(msg + elts + (self.count % len(self.messages)))
@@ -169,12 +169,12 @@ class Response:
             else:
                 words = elts.split(' ')
 
-                if len(words[0]) > 432 - len(msg):
-                    self.elt += 432 - len(msg)
+                if len(words[0].encode()) > 432 - len(msg.encode()):
+                    self.elt += 432 - len(msg.encode())
                     return self.treat_ctcp(msg + elts[:self.elt] + "[…]")
 
                 for w in words:
-                    if len(msg) + len(w) > 431:
+                    if len(msg.encode()) + len(w.encode()) > 431:
                         msg += "[…]"
                         self.alone = False
                         return self.treat_ctcp(msg)
