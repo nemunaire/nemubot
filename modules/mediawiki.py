@@ -80,6 +80,7 @@ def cmd_mediawiki(msg):
         raise IRCException("indicate a domain and a term to search")
 
     return Response(get_page(msg.cmds[1], " ".join(msg.cmds[2:])),
+                    line_treat=lambda line: irc_format(parse_wikitext(msg.cmds[1], line)),
                     channel=msg.receivers)
 
 

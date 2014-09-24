@@ -130,7 +130,7 @@ class Response:
             return self.treat_ctcp(self.nomore)
 
         if self.line_treat is not None and self.elt == 0:
-            self.messages[0] = self.line_treat(self.messages[0])
+            self.messages[0] = self.line_treat(self.messages[0]).replace("\n", " ").strip()
 
         msg = ""
         if self.channel is not None and self.nick is not None:
