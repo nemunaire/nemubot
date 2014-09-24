@@ -127,7 +127,7 @@ class ModuleState:
     if isinstance(value, datetime) or isinstance(value, str) or isinstance(value, int) or isinstance(value, float):
       self.attributes[name] = value
     else:
-      raise TypeError("attributes must be primary type or datetime")
+      raise TypeError("attributes must be primary type or datetime (here %s)" % type(value))
 
   def getContent(self):
     return self.content
