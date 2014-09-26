@@ -19,8 +19,6 @@
 from datetime import datetime
 import shlex
 
-from response import Response
-
 class Message:
   def __init__ (self, orig, private=False):
     self.cmd     = orig.cmd

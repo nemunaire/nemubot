@@ -28,7 +28,6 @@ from bot import __version__
 import event
 import exception
 import hooks
-import response
 import xmlparser
 
 logger = logging.getLogger("nemubot.importer")
@@ -159,7 +158,7 @@ class ModuleLoader(SourceLoader):
 
         def send_response(server, res):
             if server in self.context.servers:
-                return self.context.servers[server].send_response(res)
+                return self.context.servers[server].write("PRIVMSG %s :%s" % (",".join(res.receivers), res.get_message()))
             else:
                 module.logger.error("Try to send a message to the unknown server: %s", server)
                 return False
@@ -205,7 +204,6 @@ class ModuleLoader(SourceLoader):
 
         module.ModuleEvent = event.ModuleEvent
         module.ModuleState = xmlparser.module_state.ModuleState
-        module.Response = response.Response
         module.IRCException = exception.IRCException
 
         # Load dependancies

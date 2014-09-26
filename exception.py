@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from response import Response
-
 class IRCException(Exception):
 
     def __init__(self, message, personnal=True):
@@ -26,4 +24,6 @@ class IRCException(Exception):
         self.personnal = personnal
 
     def fill_response(self, msg):
+        # TODO: no more Response usable here
+        from more import Response
         return Response(self.message, channel=msg.receivers, nick=(msg.nick if self.personnal else None))

@@ -14,6 +14,8 @@ from xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     global DATAS
     DATAS.setIndex("name", "birthday")

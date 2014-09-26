@@ -36,7 +36,6 @@ from hooks.manager import HooksManager
 from networkbot import NetworkBot
 from server.IRC import IRCServer
 from server.DCC import DCC
-import response
 
 logger = logging.getLogger("nemubot.bot")
 
@@ -77,13 +76,14 @@ class Bot(threading.Thread):
         self.hooks       = HooksManager()
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.text, re.I) is not None:
-                return response.Response(message="pong", channel=msg.receivers, nick=msg.nick)
+                return "PRIVMSG %s :%s: pong" % (",".join(msg.receivers), msg.nick)
         self.hooks.add_hook(MessageHook(in_ping), "in", "PRIVMSG", "ask")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
             cmd = msg.cmds
-            res = response.Response()
+            from more import Response
+            res = Response()
             if len(cmd) > 1:
                 if cmd[1] in self.modules:
                     if len(cmd) > 2:
@@ -469,9 +469,6 @@ def reload():
     imp.reload(prompt)
     import prompt.builtins
     imp.reload(prompt.builtins)
-
-    import response
-    imp.reload(response)
 
     import server
     rl,wl,xl = server._rlist,server._wlist,server._xlist

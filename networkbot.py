@@ -24,7 +24,6 @@ import zlib
 
 from server.DCC import DCC
 import hooks
-from response import Response
 
 class NetworkBot:
     def __init__(self, context, srv, dest, dcc=None):

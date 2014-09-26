@@ -11,6 +11,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full():
     return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."
 

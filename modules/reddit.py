@@ -9,6 +9,7 @@ import urllib
 nemubotversion = 3.4
 
 from hooks import hook
+from more import Response
 
 def help_full():
     return "!subreddit /subreddit/: Display information on the subreddit."

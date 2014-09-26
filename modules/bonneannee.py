@@ -9,6 +9,8 @@ from tools.countdown import countdown_format
 
 nemubotversion = 3.4
 
+from more import Response
+
 yr = datetime.today().year
 yrn = datetime.today().year + 1
 

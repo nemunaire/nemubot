@@ -12,6 +12,8 @@ from tools.web import striphtml
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full ():
   return "!tcode <transaction code|keywords>"
 

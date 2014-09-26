@@ -14,6 +14,8 @@ from collections import defaultdict
 
 nemubotversion = 3.4
 
+from more import Response
+
 s = [('present', '0'), ('présent', '0'), ('pr', '0'),
      ('passé simple', '12'), ('passe simple', '12'), ('ps', '12'),
      ('passé antérieur', '112'), ('passe anterieur', '112'), ('pa', '112'),

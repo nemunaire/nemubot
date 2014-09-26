@@ -12,6 +12,8 @@ from tools import web
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full():
     return "!syno <word>: give a list of synonyms for <word>."
 

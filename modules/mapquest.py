@@ -7,6 +7,8 @@ from urllib.request import urlopen
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     if not CONF or not CONF.hasNode("mapquestapi") or not CONF.getNode("mapquestapi").hasAttribute("key"):
         print ("You need a MapQuest API key in order to use this "

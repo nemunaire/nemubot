@@ -12,6 +12,8 @@ from tools.web import striphtml
 
 nemubotversion = 3.4
 
+from more import Response
+
 def get_raw_page(site, term, ssl=False):
     # Built IRL
     url = "http%s://%s/w/api.php?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (

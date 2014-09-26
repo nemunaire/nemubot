@@ -10,6 +10,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full():
     return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"
 

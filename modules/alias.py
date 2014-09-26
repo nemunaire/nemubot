@@ -10,6 +10,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     """Load this module"""
     global DATAS

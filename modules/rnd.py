@@ -8,6 +8,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):
     if len(msg.cmds) > 1:

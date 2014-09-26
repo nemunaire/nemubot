@@ -14,6 +14,8 @@ from tools import web
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
         print ("You need a WhoisXML API account in order to use the "

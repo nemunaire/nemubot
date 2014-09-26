@@ -9,6 +9,8 @@ from tools import web
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     global DATAS
     DATAS.setIndex("name", "station")

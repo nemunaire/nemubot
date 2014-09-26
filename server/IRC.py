@@ -185,13 +185,6 @@ class IRCServer(SocketServer):
             return True
         return False
 
-    def send_response(self, res):
-        for channel in res.receivers:
-            if channel is not None and channel != self.nick:
-                self.write("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, res.get_message()))
-            else:
-                raise Exception("Trying to send a message to an undefined channel: %s" % channel)
-
     def _close(self):
         if self.socket is not None: self.write("QUIT")
         return SocketServer._close(self)
@@ -219,17 +212,15 @@ class IRCServer(SocketServer):
                     else:
                         res = _ctcp_response("ERRMSG Unknown or unimplemented CTCP request")
                     if res is not None:
-                        res.set_sender(mes.sender)
-                        self.send_response(res)
+                        res = res % mes.nick
+                        self.write(res)
 
                 else:
                     yield mes
 
 
-from response import Response
-
 def _ctcp_response(msg):
-    return Response(msg, ctcp=True)
+    return "NOTICE %%s :\x01%s\x01" % msg
 
 
 mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?

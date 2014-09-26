@@ -20,7 +20,8 @@ import re
 
 from exception import IRCException
 import hooks
-from response import Response
+
+from message import Message
 
 class MessageHook(hooks.AbstractHook):
 
@@ -39,8 +40,8 @@ class MessageHook(hooks.AbstractHook):
 
 
     def match(self, message, server=None):
-        if isinstance(message, Response):
-            return self.is_matching(None, message.channel, server)
+        if not isinstance(message, Message):
+            return True
 
         elif message.qual == "cmd":
             return self.is_matching(message.cmds[0], message.channel, server)

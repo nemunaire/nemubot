@@ -11,6 +11,8 @@ from urllib.request import urlopen
 
 nemubotversion = 3.4
 
+from more import Response
+
 import xmlparser
 
 LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",

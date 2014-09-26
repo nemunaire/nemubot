@@ -15,10 +15,11 @@ from urllib.parse import urlparse
 
 from hooks import hook
 
+nemubotversion = 3.4
+
 from networking import w3m
 from .atom import Atom
-
-nemubotversion = 3.4
+from more import Response
 
 def help_full ():
   return "This module is autonomous you can't interract with it."

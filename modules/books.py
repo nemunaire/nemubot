@@ -9,6 +9,8 @@ from tools import web
 
 nemubotversion = 3.4
 
+from more import Response
+
 def load(context):
     if not CONF or not CONF.hasNode("goodreadsapi") or not CONF.getNode("goodreadsapi").hasAttribute("key"):
         print ("You need a Goodreads API key in order to use this "

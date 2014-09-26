@@ -26,7 +26,6 @@ import sys
 import bot
 from server.DCC import DCC
 from message import Message
-from response import Response
 import server
 
 logger = logging.getLogger("nemubot.consumer")
@@ -89,7 +88,7 @@ class MessageConsumer:
                 if h.match(message=msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
-                        for i in xrange(len(res)):
+                        for i in range(len(res)):
                             if res[i] == msg:
                                 res.pop(i)
                                 break
@@ -119,11 +118,11 @@ class MessageConsumer:
                     res = h.run(msg)
                     if isinstance(res, list):
                         for r in res:
-                            if isinstance(r, Response):
+                            if hasattr(r, "set_sender"):
                                 r.set_sender(msg.sender)
                         self.responses += res
                     elif res is not None:
-                        if isinstance(res, Response):
+                        if hasattr(res, "set_sender"):
                             res.set_sender(msg.sender)
                         self.responses.append(res)
 
@@ -140,15 +139,20 @@ class MessageConsumer:
         self.responses = list()
 
         while len(new_msg) > 0:
-            msg = self.first_treat(new_msg.pop(0))
+            ff = new_msg.pop(0)
+            if isinstance(ff, str):
+                self.responses.append(ff)
+                continue
+            msg = self.first_treat(ff)
             for h in hm.get_hooks("post"):
                 if h.match(message=msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
-                        for i in xrange(len(res)):
-                            if res[i] == msg:
-                                res.pop(i)
+                        for i in range(len(res)):
+                            if isinstance(res[i], str):
+                                self.responses.append(res.pop(i))
                                 break
+                        msg = None
                         new_msg += res
                     elif res is not None and res != msg:
                         new_msg.append(res)
@@ -182,7 +186,9 @@ class MessageConsumer:
 
         for res in self.responses:
             to_server = None
-            if res.server is None:
+            if isinstance(res, str):
+                to_server = self.srv
+            elif res.server is None:
                 to_server = self.srv
                 res.server = self.srv.id
             elif isinstance(res.server, str) and res.server in context.servers:
@@ -194,7 +200,7 @@ class MessageConsumer:
                 continue
 
             # Sent the message only if treat_post authorize it
-            to_server.send_response(res)
+            to_server.write(res)
 
 class EventConsumer:
     """Store a event before treating"""

@@ -11,6 +11,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full():
     return "If you would like to sleep soon, use !sleepytime to know the best time to wake up; use !sleepytime hh:mm if you want to wake up at hh:mm"
 

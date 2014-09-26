@@ -8,6 +8,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_tiny():
     """Line inserted in the response to the command !help"""
     return "Read manual pages on IRC"

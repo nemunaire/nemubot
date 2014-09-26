@@ -12,6 +12,8 @@ from hooks import hook
 
 nemubotversion = 3.4
 
+from more import Response
+
 def help_full ():
     return "!github /repo/: Display information about /repo/.\n!github_user /user/: Display information about /user/."
 
