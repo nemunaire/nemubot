@@ -106,7 +106,10 @@ class IRCServer(SocketServer):
 
         # Respond to 001
         def _on_connect(msg):
-            # First, JOIN some channels
+            # First, send user defined command
+            if node.hasAttribute("on_connect"):
+                self.write(node["on_connect"])
+            # Then, JOIN some channels
             for chn in node.getNodes("channel"):
                 if chn["password"] is not None:
                     self.write("JOIN %s %s" % (chn["name"], chn["password"]))
