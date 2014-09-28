@@ -114,6 +114,8 @@ def hotswap(data, toks, context, prompt):
         print ("  Please SELECT a server or give its name in argument.")
 
 @hook("prompt_cmd", "join")
+@hook("prompt_cmd", "leave")
+@hook("prompt_cmd", "part")
 def join(data, toks, context, prompt):
     """Join or leave a channel"""
     rd = 1
@@ -136,11 +138,11 @@ def join(data, toks, context, prompt):
 
     if toks[0] == "join":
         if len(toks) > rd + 1:
-            srv.join(toks[rd], toks[rd + 1])
+            srv.write("JOIN %s %s" % (toks[rd], toks[rd + 1]))
         else:
-            srv.join(toks[rd])
+            srv.write("JOIN %s" % toks[rd])
     elif toks[0] == "leave" or toks[0] == "part":
-        srv.leave(toks[rd])
+        srv.write("PART %s" % toks[rd])
     return
 
 @hook("prompt_cmd", "save")
