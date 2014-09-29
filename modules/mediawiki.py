@@ -60,7 +60,7 @@ def parse_wikitext(site, cnt, ssl=False):
         cnt = cnt.replace(i, get_unwikitextified(site, i, ssl), 1)
 
     # Strip [[...]]
-    cnt, _ = re.subn(r"\[\[([^]]*\|)?([^]]*?)\]\]", r"\2", cnt)
+    cnt, _ = re.subn(r"\[\[:?([^]]*\|)?([^]]+?)\]\]", r"\2", cnt)
 
     # Strip HTML tags
     cnt = striphtml(cnt)
