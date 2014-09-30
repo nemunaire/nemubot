@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class ModuleEvent:
 
@@ -77,7 +77,7 @@ class ModuleEvent:
         """Return the date of the near check"""
         if self.times != 0:
             if self._end is None:
-                self._end = datetime.now() + self.offset + self.interval
+                self._end = datetime.now(timezone.utc) + self.offset + self.interval
             return self._end
         return None
 
@@ -88,7 +88,7 @@ class ModuleEvent:
         if self.times != 0:
             if self._end is None:
                 return self.current
-            elif self._end < datetime.now():
+            elif self._end < datetime.now(timezone.utc):
                 self._end += self.interval
             return self._end
         return None
@@ -98,7 +98,7 @@ class ModuleEvent:
     def time_left(self):
         """Return the time left before/after the near check"""
         if self.current is not None:
-            return self.current - datetime.now()
+            return self.current - datetime.now(timezone.utc)
         return 99999 #TODO: 99999 is not a valid time to return
 
 

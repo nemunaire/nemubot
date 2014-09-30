@@ -1,8 +1,7 @@
 # coding=utf-8
 
 import xml.sax
-from datetime import datetime
-from datetime import date
+from datetime import datetime, timezone
 import logging
 import sys
 import time
@@ -67,12 +66,12 @@ class ModuleState:
         return source
     else:
         try:
-            return datetime.fromtimestamp(float(source))
+            return datetime.fromtimestamp(float(source), timezone.utc)
         except ValueError:
             while True:
                 try:
                     return datetime.fromtimestamp(time.mktime(
-                        time.strptime(source[:19], "%Y-%m-%d %H:%M:%S")))
+                        time.strptime(source[:19], "%Y-%m-%d %H:%M:%S")), timezone.utc)
                 except ImportError:
                     pass
 

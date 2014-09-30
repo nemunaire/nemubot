@@ -4,8 +4,7 @@
 
 import re
 import imp
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from hooks import hook
 
@@ -22,9 +21,9 @@ def cmd_sleep(msg):
                                       msg.cmds[1]) is not None:
         # First, parse the hour
         p = re.match("([0-9]{1,2})[h':.,-]([0-9]{1,2})?[m':.,-]?", msg.cmds[1])
-        f = [datetime(datetime.today().year,
-                      datetime.today().month,
-                      datetime.today().day,
+        f = [datetime(datetime.now(timezone.utc).year,
+                      datetime.now(timezone.utc).month,
+                      datetime.now(timezone.utc).day,
                       hour=int(p.group(1)))]
         if p.group(2) is not None:
              f[0] += timedelta(minutes=int(p.group(2)))
@@ -37,7 +36,7 @@ def cmd_sleep(msg):
 
     # Just get awake times
     else:
-        f = [datetime.now() + timedelta(minutes=15)]
+        f = [datetime.now(timezone.utc) + timedelta(minutes=15)]
         g = list()
         for i in range(0,6):
             f.append(f[i] + timedelta(hours=1,minutes=30))

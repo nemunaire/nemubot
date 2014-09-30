@@ -4,7 +4,7 @@
 
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from hooks import hook
 
@@ -41,9 +41,7 @@ def get_variable(name, msg=None):
     elif name == "chan" or name == "channel":
         return msg.channel
     elif name == "date":
-        now = datetime.now()
-        return ("%d/%d/%d %d:%d:%d"%(now.day, now.month, now.year, now.hour,
-                                     now.minute, now.second))
+        return datetime.now(timezone.utc).strftime("%c")
     elif name in DATAS.getNode("variables").index:
         return DATAS.getNode("variables").index[name]["value"]
     else:

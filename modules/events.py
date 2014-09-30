@@ -5,8 +5,7 @@
 import imp
 import re
 import sys
-from datetime import timedelta
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import time
 import threading
 import traceback
@@ -32,7 +31,7 @@ def load(context):
         if DATAS.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
             event._end = DATAS.index[evt].getDate("end")
-            idt = context.add_event(event)
+            idt = add_event(event)
             if idt is not None:
                 DATAS.index[evt]["id"] = idt
 
@@ -44,8 +43,8 @@ def fini(d, strend):
 
 @hook("cmd_hook", "goûter")
 def cmd_gouter(msg):
-    ndate = datetime.today()
-    ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42)
+    ndate = datetime.now(timezone.utc)
+    ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42, 0, 0, timezone.utc)
     return Response(countdown_format(ndate,
                              "Le goûter aura lieu dans %s, préparez vos biscuits !",
                              "Nous avons %s de retard pour le goûter :("),
@@ -53,8 +52,8 @@ def cmd_gouter(msg):
 
 @hook("cmd_hook", "week-end")
 def cmd_we(msg):
-    ndate = datetime.today() + timedelta(5 - datetime.today().weekday())
-    ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1)
+    ndate = datetime.now(timezone.utc) + timedelta(5 - datetime.today().weekday())
+    ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1, 0, timezone.utc)
     return Response(countdown_format(ndate,
                              "Il reste %s avant le week-end, courage ;)",
                              "Youhou, on est en week-end depuis %s."),
@@ -95,14 +94,14 @@ def start_countdown(msg):
                 if result2 is None or result2.group(4) is None: yea = now.year
                 else: yea = int(result2.group(4))
                 if result2 is not None and result3 is not None:
-                    strnd["end"] = datetime(yea, int(result2.group(3)), int(result2.group(2)), hou, minu, sec)
+                    strnd["end"] = datetime(yea, int(result2.group(3)), int(result2.group(2)), hou, minu, sec, timezone.utc)
                 elif result2 is not None:
-                  strnd["end"] = datetime(int(result2.group(4)), int(result2.group(3)), int(result2.group(2)))
+                    strnd["end"] = datetime(int(result2.group(4)), int(result2.group(3)), int(result2.group(2)), 0, 0, 0, timezone.utc)
                 elif result3 is not None:
                   if hou * 3600 + minu * 60 + sec > now.hour * 3600 + now.minute * 60 + now.second:
-                    strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec)
+                    strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec, timezone.utc)
                   else:
-                    strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec)
+                    strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
                 evt._end = strnd.getDate("end")
                 strnd["id"] = add_event(evt)
             except:

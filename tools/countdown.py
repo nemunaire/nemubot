@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 def countdown(delta, resolution=5):
@@ -59,21 +59,22 @@ def countdown(delta, resolution=5):
         return sentence[1:]
 
 
-def countdown_format(date, msg_before, msg_after, timezone=None):
+def countdown_format(date, msg_before, msg_after, tz=None):
     """Replace in a text %s by a sentence incidated the remaining time before/after an event"""
-    if timezone != None:
-        os.environ['TZ'] = timezone
+    if tz != None:
+        oldtz = os.environ['TZ']
+        os.environ['TZ'] = tz
         time.tzset()
 
     #Calculate time before the date
-    if datetime.now() > date:
+    if datetime.now(timezone.utc) > date:
         sentence_c = msg_after
-        delta = datetime.now() - date
+        delta = datetime.now(timezone.utc) - date
     else:
         sentence_c = msg_before
-        delta = date - datetime.now()
+        delta = date - datetime.now(timezone.utc)
 
-    if timezone != None:
-        os.environ['TZ'] = "Europe/Paris"
+    if tz != None:
+        os.environ['TZ'] = oldtz
 
     return sentence_c % countdown(delta)

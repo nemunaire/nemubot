@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from queue import Queue
 import re
@@ -277,8 +276,8 @@ class Bot(threading.Thread):
         if len(self.events) > 0:
             logger.debug("Update timer: next event in %d seconds",
                          self.events[0].time_left.seconds)
-            if datetime.now() + timedelta(seconds=5) >= self.events[0].current:
-                while datetime.now() < self.events[0].current:
+            if datetime.now(timezone.utc) + timedelta(seconds=5) >= self.events[0].current:
+                while datetime.now(timezone.utc) < self.events[0].current:
                     time.sleep(0.6)
                 self._end_event_timer()
             else:
@@ -292,7 +291,7 @@ class Bot(threading.Thread):
     def _end_event_timer(self):
         """Function called at the end of the event timer"""
 
-        while len(self.events) > 0 and datetime.now() >= self.events[0].current:
+        while len(self.events) > 0 and datetime.now(timezone.utc) >= self.events[0].current:
             evt = self.events.pop(0)
             self.cnsr_queue.put_nowait(EventConsumer(evt))
             self._launch_consumers()

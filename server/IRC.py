@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
+import calendar
+from datetime import datetime, timezone
 import re
+import time
 import shlex
 
 import bot
@@ -194,7 +196,7 @@ class IRCServer(SocketServer):
 
     def read(self):
         for line in SocketServer.read(self):
-            msg = IRCMessage(line, datetime.now())
+            msg = IRCMessage(line, datetime.now(timezone.utc))
 
             if msg.cmd in self.hookscmd:
                 self.hookscmd[msg.cmd](msg)
@@ -279,8 +281,7 @@ class IRCMessage:
         """Add an IRCv3.2 Message Tags"""
         # Treat special tags
         if key == "time":
-            # TODO: this is UTC timezone, nemubot works with local timezone
-            value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+            value = datetime.fromtimestamp(calendar.timegm(time.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")), timezone.utc)
 
         # Store tag
         self.tags[key] = value

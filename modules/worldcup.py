@@ -2,7 +2,7 @@
 
 """The 2014 football worldcup module"""
 
-import datetime
+from datetime import datetime, timezone
 import json
 import re
 from urllib.parse import quote
@@ -32,7 +32,7 @@ def start_watch(msg):
     w["channel"] = msg.channel
     w["proprio"] = msg.nick
     w["sender"] = msg.sender
-    w["start"] = datetime.datetime.now()
+    w["start"] = datetime.now(timezone.utc)
     DATAS.addChild(w)
     save()
     raise IRCException("This channel is now watching world cup events!")
@@ -125,7 +125,7 @@ def txt_event(e):
     return "%se minutes : %s %s (%s)" % (e["time"], detail_event(e["type_of_event"]), e["player"], e["team"]["code"])
 
 def prettify(match):
-    matchdate_local = datetime.datetime.strptime(match["datetime"].replace(':', ''), "%Y-%m-%dT%H%M%S.%f%z")
+    matchdate_local = datetime.strptime(match["datetime"].replace(':', ''), "%Y-%m-%dT%H%M%S.%f%z")
     matchdate = matchdate_local - (matchdate_local.utcoffset() - datetime.timedelta(hours=2))
     if match["status"] == "future":
         return ["Match à venir (%s) le %s : %s vs. %s" % (match["match_number"], matchdate.strftime("%A %d à %H:%M"), match["home_team"]["country"], match["away_team"]["country"])]
@@ -135,7 +135,7 @@ def prettify(match):
         if match["status"] == "completed":
             msg += "Match (%s) du %s terminé : " % (match["match_number"], matchdate.strftime("%A %d à %H:%M"))
         else:
-            msg += "Match en cours (%s) depuis %d minutes : " % (match["match_number"], (datetime.datetime.now(matchdate.tzinfo) - matchdate_local).seconds / 60)
+            msg += "Match en cours (%s) depuis %d minutes : " % (match["match_number"], (datetime.now(matchdate.tzinfo) - matchdate_local).seconds / 60)
 
         msg += "%s %d - %d %s" % (match["home_team"]["country"], match["home_team"]["goals"], match["away_team"]["goals"], match["away_team"]["country"])
 
