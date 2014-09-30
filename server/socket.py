@@ -36,6 +36,10 @@ class SocketServer(AbstractServer):
     def fileno(self):
         return self.socket.fileno() if self.socket else None
 
+    @property
+    def connected(self):
+        return self.socket is not None
+
     def _open(self):
         # Create the socket
         self.socket = socket.socket()
@@ -58,7 +62,7 @@ class SocketServer(AbstractServer):
 
     def _close(self):
         self._sending_queue.join()
-        if self.socket is not None:
+        if self.connected:
             try:
                 self.socket.shutdown(socket.SHUT_RDWR)
                 self.socket.close()
@@ -68,7 +72,7 @@ class SocketServer(AbstractServer):
         return True
 
     def _write(self, cnt):
-        if self.socket is None: return
+        if not self.connected: return
         self.socket.send(cnt)
 
     def format(self, txt):
@@ -78,7 +82,7 @@ class SocketServer(AbstractServer):
             return txt.encode() + b'\r\n'
 
     def read(self):
-        if self.socket is None: return
+        if not self.connected: return
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
         self.readbuffer = temp.pop()

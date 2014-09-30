@@ -197,7 +197,7 @@ class IRCServer(SocketServer):
         return False
 
     def _close(self):
-        if self.socket is not None: self.write("QUIT")
+        if self.connected: self.write("QUIT")
         return SocketServer._close(self)
 
     def read(self):
