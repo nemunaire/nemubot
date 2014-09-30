@@ -178,6 +178,12 @@ class IRCServer(SocketServer):
                     self.channels[msg.params[0]].people[res.group("nickname")] = res.group("level")
         self.hookscmd["353"] = _on_353
 
+        # Respond to INVITE
+        def _on_invite(msg):
+            if len(msg.params) != 2: return
+            self.write("JOIN " + msg.decode(msg.params[1]))
+        self.hookscmd["INVITE"] = _on_invite
+
 
     def _open(self):
         if SocketServer._open(self):
