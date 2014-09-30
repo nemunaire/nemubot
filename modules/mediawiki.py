@@ -8,14 +8,14 @@ import urllib.parse
 import urllib.request
 
 from hooks import hook
-from tools.web import striphtml
+from tools import web
 
 nemubotversion = 3.4
 
 from more import Response
 
 def get_raw_page(site, term, ssl=False):
-    # Built IRL
+    # Built URL
     url = "http%s://%s/w/api.php?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(term))
     print_debug(url)
@@ -31,7 +31,7 @@ def get_raw_page(site, term, ssl=False):
             raise IRCException("article not found")
 
 def get_unwikitextified(site, wikitext, ssl=False):
-    # Built IRL
+    # Built URL
     url = "http%s://%s/w/api.php?format=json&action=expandtemplates&text=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(wikitext))
     print_debug(url)
@@ -63,7 +63,7 @@ def parse_wikitext(site, cnt, ssl=False):
     cnt, _ = re.subn(r"\[\[:?([^]]*\|)?([^]]+?)\]\]", r"\2", cnt)
 
     # Strip HTML tags
-    cnt = striphtml(cnt)
+    cnt = web.striphtml(cnt)
 
     return cnt
 
@@ -75,6 +75,38 @@ def get_page(site, term, ssl=False):
     return strip_model(get_raw_page(site, term, ssl))
 
 
+def opensearch(site, term, ssl=False):
+    # Built URL
+    url = "http%s://%s/w/api.php?format=xml&action=opensearch&search=%s" % (
+        "s" if ssl else "", site, urllib.parse.quote(term))
+    print_debug(url)
+
+    # Make the request
+    response = web.getXML(url)
+
+    if response is not None and response.hasNode("Section"):
+        for itm in response.getNode("Section").getNodes("Item"):
+            yield (itm.getNode("Text").getContent(),
+                   itm.getNode("Description").getContent(),
+                   itm.getNode("Url").getContent())
+
+
+def search(site, term, ssl=False):
+    # Built URL
+    url = "http%s://%s/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
+        "s" if ssl else "", site, urllib.parse.quote(term))
+    print_debug(url)
+
+    # Make the request
+    raw = urllib.request.urlopen(url)
+    data = json.loads(raw.read().decode())
+
+    if data is not None and "query" in data and "search" in data["query"]:
+        for itm in data["query"]["search"]:
+            yield (web.striphtml(itm["titlesnippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")),
+                   web.striphtml(itm["snippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")))
+
+
 @hook("in_PRIVMSG_cmd", "mediawiki")
 def cmd_mediawiki(msg):
     """Read an article on a MediaWiki"""
@@ -84,6 +116,20 @@ def cmd_mediawiki(msg):
     return Response(get_page(msg.cmds[1], " ".join(msg.cmds[2:])),
                     line_treat=lambda line: irc_format(parse_wikitext(msg.cmds[1], line)),
                     channel=msg.receivers)
+
+
+@hook("in_PRIVMSG_cmd", "search_mediawiki")
+def cmd_srchmediawiki(msg):
+    """Search an article on a MediaWiki"""
+    if len(msg.cmds) < 3:
+        raise IRCException("indicate a domain and a term to search")
+
+    res = Response(channel=msg.receivers, nomore="No more results", count=" (%d more results)")
+
+    for r in search(msg.cmds[1], " ".join(msg.cmds[2:])):
+        res.append_message("%s: %s" % r)
+
+    return res
 
 
 @hook("in_PRIVMSG_cmd", "wikipedia")
