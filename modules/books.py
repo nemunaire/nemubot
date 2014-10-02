@@ -66,8 +66,7 @@ def cmd_books(msg):
     res = Response(channel=msg.channel,
                    title="%s" % (title), count=" (%d more books)")
 
-    books = search_books(title)
-    for book in books:
+    for book in search_books(title):
         res.append_message("%s, writed by %s" % (book.getNode("best_book").getNode("title").getContent(), book.getNode("best_book").getNode("author").getNode("name").getContent()))
     return res
 

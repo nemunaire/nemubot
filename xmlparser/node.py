@@ -152,15 +152,12 @@ class ModuleState:
 
   def getNodes(self, tagname):
     """Get all direct childs that have the given tagname"""
-    ret = list()
     for child in self.childs:
       if tagname is None or tagname == child.name:
-        ret.append(child)
-    return ret
+        yield child
 
   def hasNode(self, tagname):
     """Return True if at least one node with the given tagname exists"""
-    ret = list()
     for child in self.childs:
       if tagname is None or tagname == child.name:
         return True
