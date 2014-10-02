@@ -131,7 +131,21 @@ class Response:
             self.alone = False
 
         if self.empty:
-            return self.treat_ctcp(self.nomore)
+            if hasattr(self.nomore, '__call__'):
+                res = self.nomore(self)
+                if res is None:
+                    return self.treat_ctcp("No more message")
+                elif isinstance(res, Response):
+                    self.__dict__ = res.__dict__
+                elif isinstance(res, list):
+                    self.messages = res
+                elif isinstance(res, str):
+                    self.messages.append(res)
+                else:
+                    raise Exception("Type returned by nomore (%s) is not handled here." % type(res))
+                return self.get_message()
+            else:
+                return self.treat_ctcp(self.nomore)
 
         if self.line_treat is not None and self.elt == 0:
             self.messages[0] = self.line_treat(self.messages[0]).replace("\n", " ").strip()
