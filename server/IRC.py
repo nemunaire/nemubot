@@ -22,7 +22,6 @@ import re
 import time
 import shlex
 
-import bot
 from channel import Channel
 from message import Message
 import server
@@ -82,6 +81,8 @@ class IRCServer(SocketServer):
             else:
                 self.logger.error("DCC: unable to connect to %s:%d", ip, port)
                 return _ctcp_response("ERRMSG unable to connect to %s:%d" % (ip, port))
+
+        import bot
 
         self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive: %s" % msg.text)
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
@@ -316,7 +317,13 @@ class IRCMessage:
         return Message(self)
 
     def to_irc_string(self, client=True):
-        res = ";".join(["@%s=%s" % (k,v) for k, v in self.tags.items()])
+        """Pretty print the message to close to original input string
+
+        Keyword argument:
+        client -- export as a client-side string if true
+        """
+
+        res = ";".join(["@%s=%s" % (k,v if not isinstance(v, datetime) else v.strftime("%Y-%m-%dT%H:%M:%S.%fZ")) for k, v in self.tags.items()])
 
         if not client: res += " :%s!%s@%s" % (self.nick, self.user, self.host)
 
@@ -325,7 +332,7 @@ class IRCMessage:
         if len(self.params) > 0:
 
             if len(self.params) > 1:
-                res += " " + " ".join(self.params[:-1])
-            res += " :" + self.params[-1]
+                res += " " + self.decode(b" ".join(self.params[:-1]))
+            res += " :" + self.decode(self.params[-1])
 
         return res
