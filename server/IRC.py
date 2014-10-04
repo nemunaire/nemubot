@@ -45,6 +45,11 @@ class IRCServer(SocketServer):
         #Keep a list of connected channels
         self.channels = dict()
 
+        if node.hasAttribute("encoding"):
+            self.encoding = node["encoding"]
+        else:
+            self.encoding = "utf-8"
+
         if node.hasAttribute("caps"):
             if node["caps"].lower() == "no":
                 self.capabilities = None
@@ -196,13 +201,15 @@ class IRCServer(SocketServer):
             return True
         return False
 
+
     def _close(self):
         if self.connected: self.write("QUIT")
         return SocketServer._close(self)
 
+
     def read(self):
         for line in SocketServer.read(self):
-            msg = IRCMessage(line, datetime.now(timezone.utc))
+            msg = IRCMessage(line, self.encoding)
 
             if msg.cmd in self.hookscmd:
                 self.hookscmd[msg.cmd](msg)
@@ -246,9 +253,11 @@ mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
 
 class IRCMessage:
 
-    def __init__(self, raw, timestamp):
-        self.raw = raw
-        self.tags = { 'time': timestamp }
+    """Class responsible for parsing IRC messages"""
+
+    def __init__(self, raw, encoding="utf-8"):
+        self.encoding = encoding
+        self.tags = { 'time': datetime.now(timezone.utc) }
         self.params = list()
 
         p = mgx.match(raw.rstrip())
@@ -299,8 +308,7 @@ class IRCMessage:
             try:
                 s = s.decode()
             except UnicodeDecodeError:
-                #TODO: use encoding from config file
-                s = s.decode('utf-8', 'replace')
+                s = s.decode(self.encoding, 'replace')
         return s
 
 
