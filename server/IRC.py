@@ -23,14 +23,15 @@ import time
 import shlex
 
 from channel import Channel
-from message import Message
-import server
+import message
+from message.printer.IRC import IRC as IRCPrinter
 from server.socket import SocketServer
 
-class IRCServer(SocketServer):
+class IRC(SocketServer):
 
     def __init__(self, node, nick, owner, realname):
         self.id       = nick + "@" + node["host"] + ":" + node["port"]
+        self.printer  = IRCPrinter
         SocketServer.__init__(self,
                               node["host"],
                               node["port"],
@@ -60,18 +61,18 @@ class IRCServer(SocketServer):
         # Register CTCP capabilities
         self.ctcp_capabilities = dict()
 
-        def _ctcp_clientinfo(msg):
+        def _ctcp_clientinfo(msg, cmds):
             """Response to CLIENTINFO CTCP message"""
-            return _ctcp_response(" ".join(self.ctcp_capabilities.keys()))
+            return " ".join(self.ctcp_capabilities.keys())
 
-        def _ctcp_dcc(msg):
+        def _ctcp_dcc(msg, cmds):
             """Response to DCC CTCP message"""
             try:
-                ip = srv.toIP(int(msg.cmds[3]))
-                port = int(msg.cmds[4])
+                ip = srv.toIP(int(cmds[3]))
+                port = int(cmds[4])
                 conn = DCC(srv, msg.sender)
             except:
-                return _ctcp_response("ERRMSG invalid parameters provided as DCC CTCP request")
+                return "ERRMSG invalid parameters provided as DCC CTCP request"
 
             self.logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
 
@@ -80,27 +81,20 @@ class IRCServer(SocketServer):
                 conn.send_dcc("Hello %s!" % conn.nick)
             else:
                 self.logger.error("DCC: unable to connect to %s:%d", ip, port)
-                return _ctcp_response("ERRMSG unable to connect to %s:%d" % (ip, port))
+                return "ERRMSG unable to connect to %s:%d" % (ip, port)
 
         import bot
 
-        self.ctcp_capabilities["ACTION"] = lambda msg: print ("ACTION receive: %s" % msg.text)
+        self.ctcp_capabilities["ACTION"] = lambda msg, cmds: print ("ACTION receive: %s" % cmds)
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
         #self.ctcp_capabilities["DCC"] = _ctcp_dcc
-        self.ctcp_capabilities["FINGER"] = lambda msg: _ctcp_response(
-            "VERSION nemubot v%s" % bot.__version__)
-        self.ctcp_capabilities["NEMUBOT"] = lambda msg: _ctcp_response(
-            "NEMUBOT %s" % bot.__version__)
-        self.ctcp_capabilities["PING"] = lambda msg: _ctcp_response(
-            "PING %s" % " ".join(msg.cmds[1:]))
-        self.ctcp_capabilities["SOURCE"] = lambda msg: _ctcp_response(
-            "SOURCE https://github.com/nemunaire/nemubot")
-        self.ctcp_capabilities["TIME"] = lambda msg: _ctcp_response(
-            "TIME %s" % (datetime.now()))
-        self.ctcp_capabilities["USERINFO"] = lambda msg: _ctcp_response(
-            "USERINFO %s" % self.realname)
-        self.ctcp_capabilities["VERSION"] = lambda msg: _ctcp_response(
-            "VERSION nemubot v%s" % bot.__version__)
+        self.ctcp_capabilities["FINGER"] = lambda msg, cmds: "VERSION nemubot v%s" % bot.__version__
+        self.ctcp_capabilities["NEMUBOT"] = lambda msg, cmds: "NEMUBOT %s" % bot.__version__
+        self.ctcp_capabilities["PING"] = lambda msg, cmds: "PING %s" % " ".join(cmds[1:])
+        self.ctcp_capabilities["SOURCE"] = lambda msg, cmds: "SOURCE https://github.com/nemunaire/nemubot"
+        self.ctcp_capabilities["TIME"] = lambda msg, cmds: "TIME %s" % (datetime.now())
+        self.ctcp_capabilities["USERINFO"] = lambda msg, cmds: "USERINFO %s" % self.realname
+        self.ctcp_capabilities["VERSION"] = lambda msg, cmds: "VERSION nemubot v%s" % bot.__version__
 
         self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
@@ -190,6 +184,18 @@ class IRCServer(SocketServer):
             self.write("JOIN " + msg.decode(msg.params[1]))
         self.hookscmd["INVITE"] = _on_invite
 
+        # Handle CTCP requests
+        def _on_ctcp(msg):
+            if len(msg.params) != 2 or not msg.is_ctcp: return
+            cmds = msg.decode(msg.params[1][1:len(msg.params[1])-1]).split(' ')
+            if cmds[0] in self.ctcp_capabilities:
+                res = self.ctcp_capabilities[cmds[0]](msg, cmds)
+            else:
+                res = "ERRMSG Unknown or unimplemented CTCP request"
+            if res is not None:
+                self.write("NOTICE %s :\x01%s\x01" % (msg.nick, res))
+        self.hookscmd["PRIVMSG"] = _on_ctcp
+
 
     def _open(self):
         if SocketServer._open(self):
@@ -215,31 +221,9 @@ class IRCServer(SocketServer):
             if msg.cmd in self.hookscmd:
                 self.hookscmd[msg.cmd](msg)
 
-            else:
-                mes = msg.to_message()
-                mes.raw = msg.raw
-
-                if hasattr(mes, "receivers"):
-                    # Private message: prepare response
-                    for i in range(len(mes.receivers)):
-                        if mes.receivers[i] == self.nick:
-                            mes.receivers[i] = mes.nick
-
-                if (mes.cmd == "PRIVMSG" or mes.cmd == "NOTICE") and mes.is_ctcp:
-                    if mes.cmds[0] in self.ctcp_capabilities:
-                        res = self.ctcp_capabilities[mes.cmds[0]](mes)
-                    else:
-                        res = _ctcp_response("ERRMSG Unknown or unimplemented CTCP request")
-                    if res is not None:
-                        res = res % mes.nick
-                        self.write(res)
-
-                else:
-                    yield mes
-
-
-def _ctcp_response(msg):
-    return "NOTICE %%s :\x01%s\x01" % msg
+            mes = msg.to_message(self)
+            if mes is not None:
+                yield mes
 
 
 mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
@@ -303,6 +287,11 @@ class IRCMessage:
         self.tags[key] = value
 
 
+    @property
+    def is_ctcp(self):
+        return self.cmd == "PRIVMSG" and len(self.params) == 2 and len(self.params[1]) > 1 and (self.params[1][0] == 0x01 or self.params[1][1] == 0x01)
+
+
     def decode(self, s):
         """Decode the content string usign a specific encoding"""
         if isinstance(s, bytes):
@@ -313,8 +302,6 @@ class IRCMessage:
         return s
 
 
-    def to_message(self):
-        return Message(self)
 
     def to_irc_string(self, client=True):
         """Pretty print the message to close to original input string
@@ -336,3 +323,43 @@ class IRCMessage:
             res += " :" + self.decode(self.params[-1])
 
         return res
+
+
+    def to_message(self, srv):
+        if self.cmd == "PRIVMSG" or self.cmd == "NOTICE":
+
+            receivers = self.decode(self.params[0]).split(',')
+
+            common_args = {
+                "server": srv.id,
+                "date": self.tags["time"],
+                "to": receivers,
+                "to_response": [r if r != srv.nick else self.nick for r in receivers],
+                "frm": self.nick
+            }
+
+            # If CTCP, remove 0x01
+            if self.is_ctcp:
+                text = self.decode(self.params[1][1:len(self.params[1])-1])
+            else:
+                text = self.decode(self.params[1])
+
+            if len(text) > 1 and text[0] == '!':
+                text = text[1:].strip()
+
+                # Split content by words
+                try:
+                    args = shlex.split(text)
+                except ValueError:
+                    args = text.split(' ')
+
+                return message.Command(cmd=args[0], args=args[1:], **common_args)
+
+            elif text.find(srv.nick) == 0 and len(text) > len(srv.nick) + 2 and text[len(srv.nick)] == ":":
+                text = text[len(srv.nick) + 1:].strip()
+                return message.DirectAsk(designated=srv.nick, message=text, **common_args)
+
+            else:
+                return message.TextMessage(message=text, **common_args)
+
+        return None

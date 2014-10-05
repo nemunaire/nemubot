@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import imp
 import logging
 import os
 import xmlparser
@@ -94,7 +95,8 @@ def load_file(filename, context):
 
     # Unexisting file, assume a name was passed, import the module!
     else:
-        __import__(filename)
+        tt = __import__(filename)
+        imp.reload(tt)
 
 
 def load(toks, context, prompt):

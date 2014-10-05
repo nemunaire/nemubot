@@ -25,7 +25,7 @@ import threading
 import time
 import uuid
 
-__version__ = '3.4.dev0'
+__version__ = '3.4.dev1'
 __author__  = 'nemunaire'
 
 from consumer import Consumer, EventConsumer, MessageConsumer
@@ -33,7 +33,7 @@ from event import ModuleEvent
 from hooks.messagehook import MessageHook
 from hooks.manager import HooksManager
 from networkbot import NetworkBot
-from server.IRC import IRCServer
+from server.IRC import IRC as IRCServer
 from server.DCC import DCC
 
 logger = logging.getLogger("nemubot.bot")
@@ -74,28 +74,27 @@ class Bot(threading.Thread):
         # Own hooks
         self.hooks       = HooksManager()
         def in_ping(msg):
-            if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.text, re.I) is not None:
-                return "PRIVMSG %s :%s: pong" % (",".join(msg.receivers), msg.nick)
-        self.hooks.add_hook(MessageHook(in_ping), "in", "PRIVMSG", "ask")
+            if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.message, re.I) is not None:
+                return msg.respond("pong")
+        self.hooks.add_hook(MessageHook(in_ping), "in", "DirectAsk")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
-            cmd = msg.cmds
             from more import Response
-            res = Response()
-            if len(cmd) > 1:
-                if cmd[1] in self.modules:
-                    if len(cmd) > 2:
-                        if hasattr(self.modules[cmd[1]], "HELP_cmd"):
-                            res.append_message(self.modules[cmd[1]].HELP_cmd(cmd[2]))
+            res = Response(channel=msg.frm)
+            if len(msg.args) > 1:
+                if msg.args[0] in self.modules:
+                    if len(msg.args) > 2:
+                        if hasattr(self.modules[msg.args[0]], "HELP_cmd"):
+                            res.append_message(self.modules[msg.args[0]].HELP_cmd(msg.args[1]))
                         else:
-                            res.append_message("No help for command %s in module %s" % (cmd[2], cmd[1]))
-                    elif hasattr(self.modules[cmd[1]], "help_full"):
-                        res.append_message(self.modules[cmd[1]].help_full())
+                            res.append_message("No help for command %s in module %s" % (msg.args[1], msg.args[0]))
+                    elif hasattr(self.modules[msg.args[0]], "help_full"):
+                        res.append_message(self.modules[msg.args[0]].help_full())
                     else:
-                        res.append_message("No help for module %s" % cmd[1])
+                        res.append_message("No help for module %s" % msg.args[0])
                 else:
-                    res.append_message("No module named %s" % cmd[1])
+                    res.append_message("No module named %s" % msg.args[0])
             else:
                 res.append_message("Pour me demander quelque chose, commencez "
                                    "votre message par mon nom ; je réagis "
@@ -113,7 +112,7 @@ class Bot(threading.Thread):
                                    " de tous les modules disponibles localement",
                                    message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
             return res
-        self.hooks.add_hook(MessageHook(_help_msg, "help"), "in", "PRIVMSG", "cmd")
+        self.hooks.add_hook(MessageHook(_help_msg, "help"), "in", "Command")
 
         # Other known bots, making a bots network
         self.network     = dict()
@@ -343,12 +342,10 @@ class Bot(threading.Thread):
         """Add a module to the context, if already exists, unload the
         old one before"""
         # Check if the module already exists
-        for mod in self.modules.keys():
-            if self.modules[mod].name == module.name:
-                self.unload_module(self.modules[mod].name)
-                break
+        if module.__name__ in self.modules:
+            self.unload_module(module.__name__)
 
-        self.modules[module.name] = module
+        self.modules[module.__name__] = module
         return True
 
 

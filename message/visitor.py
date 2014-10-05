@@ -1,7 +1,7 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2014  nemunaire
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -16,17 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from message import TextMessage, DirectAsk
+class AbstractVisitor:
 
-class IRCException(Exception):
-
-    def __init__(self, message, personnal=True):
-        super(IRCException, self).__init__(message)
-        self.message = message
-        self.personnal = personnal
-
-    def fill_response(self, msg):
-        if self.personnal:
-            return DirectAsk(msg.frm, self.message, server=msg.server, to=msg.to_response)
-        else:
-            return TextMessage(self.message, server=msg.server, to=msg.to_response)
+    def visit(self, obj):
+        """Visit a node"""
+        method_name = "visit_%s" % obj.__class__.__name__
+        method = getattr(self, method_name)
+        return method(obj)

@@ -5,8 +5,10 @@
 import re
 import sys
 from datetime import datetime, timezone
+import shlex
 
 from hooks import hook
+from message import TextMessage, Command
 
 nemubotversion = 3.4
 
@@ -34,10 +36,8 @@ def set_variable(name, value, creator):
     DATAS.getNode("variables").addChild(var)
 
 def get_variable(name, msg=None):
-    if name == "sender":
-        return msg.sender
-    elif name == "nick":
-        return msg.nick
+    if name == "sender" or name == "from" or name == "nick":
+        return msg.frm
     elif name == "chan" or name == "channel":
         return msg.channel
     elif name == "date":
@@ -141,35 +141,25 @@ def replace_variables(cnt, msg=None):
     return " ".join(cnt)
 
 
-@hook("all_post")
-def treat_variables(res):
-    for i in range(0, len(res.messages)):
-        if isinstance(res.messages[i], list):
-            res.messages[i] = replace_variables(", ".join(res.messages[i]), res)
-        else:
-            res.messages[i] = replace_variables(res.messages[i], res)
-    return res
-
-@hook("pre_PRIVMSG_cmd")
+@hook("pre_Command")
 def treat_alias(msg):
-    if msg.cmds[0] in DATAS.getNode("aliases").index:
-        oldcmd = msg.cmds[0]
-        msg.text = msg.text.replace(msg.cmds[0],
-                                    DATAS.getNode("aliases").index[msg.cmds[0]]["origin"], 1)
-
-        msg.qual = "def"
-        msg.parse_content()
+    if msg.cmd in DATAS.getNode("aliases").index:
+        txt = DATAS.getNode("aliases").index[msg.cmd]["origin"]
+        # TODO: for legacy compatibility
+        if txt[0] == "!":
+            txt = txt[1:]
+        try:
+            args = shlex.split(txt)
+        except ValueError:
+            args = txt.split(' ')
+        nmsg = Command(args[0], args[1:] + msg.args, **msg.export_args())
 
         # Avoid infinite recursion
-        if oldcmd == msg.cmds[0]:
-            return msg
-        else:
-            return treat_alias(msg)
+        if msg.cmd != nmsg.cmd:
+            return nmsg
 
-    else:
-        msg.text = replace_variables(msg.text, msg)
-        msg.parse_content()
-        return msg
+    return msg
+
 
 @hook("ask_default")
 def parseask(msg):

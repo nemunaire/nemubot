@@ -56,7 +56,7 @@ def del_site(msg):
         site = DATAS.index[url]
         for a in site.getNodes("alert"):
             if a["channel"] == msg.channel:
-                if not (msg.sender == a["sender"] or msg.is_owner):
+                if not (msg.frm == a["nick"] or msg.is_owner):
                     raise IRCException("vous ne pouvez pas supprimer cette URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
@@ -82,7 +82,7 @@ def add_site(msg, diffType="diff"):
         raise IRCException("je ne peux pas surveiller cette URL")
 
     alert = ModuleState("alert")
-    alert["sender"] = msg.sender
+    alert["nick"] = msg.nick
     alert["server"] = msg.server
     alert["channel"] = msg.channel
     alert["message"] = "{url} a changé !"

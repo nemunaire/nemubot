@@ -31,7 +31,6 @@ def start_watch(msg):
     w["server"] = msg.server
     w["channel"] = msg.channel
     w["proprio"] = msg.nick
-    w["sender"] = msg.sender
     w["start"] = datetime.now(timezone.utc)
     DATAS.addChild(w)
     save()

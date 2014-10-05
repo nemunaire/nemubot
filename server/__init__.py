@@ -89,3 +89,18 @@ class AbstractServer(io.IOBase):
     def exception(self):
         """Exception occurs in fd"""
         print("Unhandle file descriptor exception on server " + self.id)
+
+
+    def send_response(self, response):
+        """Send a formated Message class"""
+        if response is None:
+            return
+
+        elif isinstance(response, list):
+            for r in response:
+                self.send_response(r)
+
+        else:
+            vprnt = self.printer()
+            response.accept(vprnt)
+            self.write(vprnt.pp)

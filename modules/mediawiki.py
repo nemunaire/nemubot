@@ -107,7 +107,7 @@ def search(site, term, ssl=False):
                    web.striphtml(itm["snippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")))
 
 
-@hook("in_PRIVMSG_cmd", "mediawiki")
+@hook("cmd_hook", "mediawiki")
 def cmd_mediawiki(msg):
     """Read an article on a MediaWiki"""
     if len(msg.cmds) < 3:
@@ -118,7 +118,7 @@ def cmd_mediawiki(msg):
                     channel=msg.receivers)
 
 
-@hook("in_PRIVMSG_cmd", "search_mediawiki")
+@hook("cmd_hook", "search_mediawiki")
 def cmd_srchmediawiki(msg):
     """Search an article on a MediaWiki"""
     if len(msg.cmds) < 3:
@@ -132,7 +132,7 @@ def cmd_srchmediawiki(msg):
     return res
 
 
-@hook("in_PRIVMSG_cmd", "wikipedia")
+@hook("cmd_hook", "wikipedia")
 def cmd_wikipedia(msg):
     if len(msg.cmds) < 3:
         raise IRCException("indicate a lang and a term to search")

@@ -20,6 +20,7 @@
 
 import logging
 
+from message import TextMessage, DirectAsk
 from hooks import hook
 
 nemubotversion = 3.4
@@ -29,8 +30,7 @@ logger = logging.getLogger("nemubot.response")
 class Response:
     def __init__(self, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) ",
-                 count=None, ctcp=False, shown_first_count=-1,
-                 line_treat=None):
+                 count=None, shown_first_count=-1, line_treat=None):
         self.nomore = nomore
         self.more = more
         self.line_treat = line_treat
@@ -38,12 +38,10 @@ class Response:
         self.server = server
         self.messages = list()
         self.alone = True
-        self.is_ctcp = ctcp
         if message is not None:
             self.append_message(message, shown_first_count=shown_first_count)
         self.elt = 0 # Next element to display
 
-        self.sender = None
         self.channel = channel
         self.nick = nick
         self.count = count
@@ -58,14 +56,6 @@ class Response:
             return self.channel
         else:
             return [ self.channel ]
-
-    def set_sender(self, sender):
-        if sender is None or sender.find("!") < 0:
-            if sender is not None:
-                logger.warn("Bad sender provided in Response, it will be ignored.", stack_info=True)
-            self.sender = None
-        else:
-            self.sender = sender
 
     def append_message(self, message, title=None, shown_first_count=-1):
         if type(message) is str:
@@ -120,13 +110,19 @@ class Response:
             if len(self.rawtitle) <= 0:
                 self.rawtitle = None
 
-    def treat_ctcp(self, content):
-        if self.is_ctcp:
-            return "\x01" + content + "\x01"
-        else:
-            return content
 
-    def get_message(self):
+    def accept(self, visitor):
+        visitor.visit(self.next_response())
+
+
+    def next_response(self, maxlen=440):
+        if self.nick:
+            return DirectAsk(self.nick, self.get_message(maxlen - len(self.nick) - 2), server=None, to=self.receivers)
+        else:
+            return TextMessage(self.get_message(maxlen), server=None, to=self.receivers)
+
+
+    def get_message(self, maxlen):
         if self.alone and len(self.messages) > 1:
             self.alone = False
 
@@ -134,7 +130,7 @@ class Response:
             if hasattr(self.nomore, '__call__'):
                 res = self.nomore(self)
                 if res is None:
-                    return self.treat_ctcp("No more message")
+                    return "No more message"
                 elif isinstance(res, Response):
                     self.__dict__ = res.__dict__
                 elif isinstance(res, list):
@@ -145,62 +141,59 @@ class Response:
                     raise Exception("Type returned by nomore (%s) is not handled here." % type(res))
                 return self.get_message()
             else:
-                return self.treat_ctcp(self.nomore)
+                return self.nomore
 
         if self.line_treat is not None and self.elt == 0:
             self.messages[0] = self.line_treat(self.messages[0]).replace("\n", " ").strip()
 
         msg = ""
-        if self.channel is not None and self.nick is not None:
-            msg += self.nick + ": "
-
         if self.title is not None:
             if self.elt > 0:
                 msg += self.title + " " + self.more + ": "
             else:
                 msg += self.title + ": "
 
-        if self.elt > 0:
+        elif self.elt > 0:
             msg += "[…] "
 
         elts = self.messages[0][self.elt:]
         if isinstance(elts, list):
             for e in elts:
-                if len(msg) + len(e) > 430:
+                if len(msg) + len(e) > maxlen - 3:
                     msg += "[…]"
                     self.alone = False
-                    return self.treat_ctcp(msg)
+                    return msg
                 else:
                     msg += e + ", "
                     self.elt += 1
             self.pop()
-            return self.treat_ctcp(msg[:len(msg)-2])
+            return msg[:len(msg)-2]
 
         else:
-            if len(elts.encode()) <= 432:
+            if len(elts.encode()) <= maxlen:
                 self.pop()
                 if self.count is not None:
-                    return self.treat_ctcp(msg + elts + (self.count % len(self.messages)))
+                    return msg + elts + (self.count % len(self.messages))
                 else:
-                    return self.treat_ctcp(msg + elts)
+                    return msg + elts
 
             else:
                 words = elts.split(' ')
 
-                if len(words[0].encode()) > 432 - len(msg.encode()):
-                    self.elt += 432 - len(msg.encode())
-                    return self.treat_ctcp(msg + elts[:self.elt] + "[…]")
+                if len(words[0].encode()) > maxlen - len(msg.encode()):
+                    self.elt += maxlen - len(msg.encode())
+                    return msg + elts[:self.elt] + "[…]"
 
                 for w in words:
-                    if len(msg.encode()) + len(w.encode()) > 431:
+                    if len(msg.encode()) + len(w.encode()) >= maxlen:
                         msg += "[…]"
                         self.alone = False
-                        return self.treat_ctcp(msg)
+                        return msg
                     else:
                         msg += w + " "
                         self.elt += len(w) + 1
                 self.pop()
-                return self.treat_ctcp(msg)
+                return msg
 
 
 SERVERS = dict()
@@ -209,18 +202,17 @@ SERVERS = dict()
 def parseresponse(res):
     # TODO: handle inter-bot communication NOMORE
     # TODO: check that the response is not the one already saved
-    rstr = res.get_message()
-
-    if not res.alone:
+    if isinstance(res, Response):
         if res.server not in SERVERS:
             SERVERS[res.server] = dict()
         for receiver in res.receivers:
-            SERVERS[res.server][receiver] = res
-
-    ret = list()
-    for channel in res.receivers:
-        ret.append("%s %s :%s" % ("NOTICE" if res.is_ctcp else "PRIVMSG", channel, rstr))
-    return ret
+            if receiver in SERVERS[res.server]:
+                nw, bk = SERVERS[res.server][receiver]
+            else:
+                nw, bk = None, None
+            if nw != res:
+                SERVERS[res.server][receiver] = (res, bk)
+    return res
 
 
 @hook("cmd_hook", "more")
@@ -228,9 +220,13 @@ def cmd_more(msg):
     """Display next chunck of the message"""
     res = list()
     if msg.server in SERVERS:
-        for receiver in msg.receivers:
+        for receiver in msg.to_response:
             if receiver in SERVERS[msg.server]:
-                res.append(SERVERS[msg.server][receiver])
+                nw, bk = SERVERS[msg.server][receiver]
+                if nw is not None and not nw.alone:
+                    bk = nw
+                    SERVERS[msg.server][receiver] = None, bk
+                res.append(bk)
     return res
 
 
@@ -239,8 +235,12 @@ def cmd_next(msg):
     """Display the next information include in the message"""
     res = list()
     if msg.server in SERVERS:
-        for receiver in msg.receivers:
+        for receiver in msg.to_response:
             if receiver in SERVERS[msg.server]:
-                SERVERS[msg.server][receiver].pop()
-                res.append(SERVERS[msg.server][receiver])
+                nw, bk = SERVERS[msg.server][receiver]
+                if nw is not None and not nw.alone:
+                    bk = nw
+                    SERVERS[msg.server][receiver] = None, bk
+                bk.pop()
+                res.append(bk)
     return res

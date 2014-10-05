@@ -20,13 +20,6 @@ import logging
 import queue
 import re
 import threading
-import traceback
-import sys
-
-import bot
-from server.DCC import DCC
-from message import Message
-import server
 
 logger = logging.getLogger("nemubot.consumer")
 
@@ -48,25 +41,9 @@ class MessageConsumer:
         msg -- The Message or Response to qualify
         """
 
-        if not hasattr(msg, "qual") or msg.qual is None:
-            # Assume this is a message with no particulariry
-            msg.qual = "def"
-
         # Define the source server if not already done
         if not hasattr(msg, "server") or msg.server is None:
             msg.server = self.srv.id
-
-        if isinstance(msg, Message):
-            if msg.cmd == "PRIVMSG" or msg.cmd == "NOTICE":
-                msg.is_owner = (msg.nick == self.srv.owner)
-                msg.private = msg.private or (len(msg.receivers) == 1 and msg.receivers[0] == self.srv.nick)
-                if msg.private:
-                    msg.qual = "ask"
-
-                # Remove nemubot:
-                if msg.qual != "cmd" and msg.text.find(self.srv.nick) == 0 and len(msg.text) > len(self.srv.nick) + 2 and msg.text[len(self.srv.nick)] == ":":
-                    msg.text = msg.text[len(self.srv.nick) + 1:].strip()
-                    msg.qual = "ask"
 
         return msg
 
@@ -84,8 +61,8 @@ class MessageConsumer:
 
         while len(new_msg) > 0:
             msg = new_msg.pop(0)
-            for h in hm.get_hooks("pre", msg.cmd, msg.qual):
-                if h.match(message=msg, server=self.srv):
+            for h in hm.get_hooks("pre", type(msg).__name__):
+                if h.match(msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
                         for i in range(len(res)):
@@ -113,17 +90,12 @@ class MessageConsumer:
 
         self.responses = list()
         for msg in self.msgs:
-            for h in hm.get_hooks("in", msg.cmd, msg.qual):
-                if h.match(message=msg, server=self.srv):
+            for h in hm.get_hooks("in", type(msg).__name__):
+                if h.match(msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
-                        for r in res:
-                            if hasattr(r, "set_sender"):
-                                r.set_sender(msg.sender)
                         self.responses += res
                     elif res is not None:
-                        if hasattr(res, "set_sender"):
-                            res.set_sender(msg.sender)
                         self.responses.append(res)
 
 
@@ -145,7 +117,7 @@ class MessageConsumer:
                 continue
             msg = self.first_treat(ff)
             for h in hm.get_hooks("post"):
-                if h.match(message=msg, server=self.srv):
+                if h.match(msg, server=self.srv):
                     res = h.run(msg)
                     if isinstance(res, list):
                         for i in range(len(res)):
@@ -154,6 +126,7 @@ class MessageConsumer:
                                 break
                         msg = None
                         new_msg += res
+                        break
                     elif res is not None and res != msg:
                         new_msg.append(res)
                         msg = None
@@ -161,6 +134,8 @@ class MessageConsumer:
                     elif res is None or res == False:
                         msg = None
                         break
+                    else:
+                        msg = res
             if msg is not None:
                 self.responses.append(msg)
 
@@ -182,7 +157,7 @@ class MessageConsumer:
             if self.responses is not None and len(self.responses) > 0:
                 self.post_treat(context.hooks)
         except:
-            logger.exception("Error occurred during the processing of the message: %s", self.msgs[0].raw)
+            logger.exception("Error occurred during the processing of the %s: %s", type(self.msgs[0]).__name__, self.msgs[0])
 
         for res in self.responses:
             to_server = None
@@ -200,7 +175,7 @@ class MessageConsumer:
                 continue
 
             # Sent the message only if treat_post authorize it
-            to_server.write(res)
+            to_server.send_response(res)
 
 class EventConsumer:
     """Store a event before treating"""

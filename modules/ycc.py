@@ -8,10 +8,9 @@ from urllib.parse import quote
 from urllib.request import urlopen
 
 from hooks import hook
+from message import TextMessage
 
 nemubotversion = 3.4
-
-from more import Response
 
 def help_full():
     return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."
@@ -22,24 +21,28 @@ def gen_response(res, msg, srv):
     if res is None:
         raise IRCException("la situation est embarassante, il semblerait que YCC soit down :(")
     elif isinstance(res, str):
-        return Response("URL pour %s : %s" % (srv, res), msg.channel)
+        return TextMessage("URL pour %s : %s" % (srv, res), server=None, to=msg.to_response)
     else:
         raise IRCException("mauvaise URL : %s" % srv)
 
 @hook("cmd_hook", "ycc")
 def cmd_ycc(msg):
+    minify = list()
+
     if len(msg.cmds) == 1:
         global LAST_URLS
         if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
-            msg.cmds.append(LAST_URLS[msg.channel].pop())
+            minify.append(LAST_URLS[msg.channel].pop())
         else:
             raise IRCException("je n'ai pas d'autre URL à réduire.")
 
     if len(msg.cmds) > 5:
         raise IRCException("je ne peux pas réduire autant d'URL d'un seul coup.")
+    else:
+        minify += msg.cmds[1:]
 
     res = list()
-    for url in msg.cmds[1:]:
+    for url in minify:
         o = urlparse(url, "http")
         if o.scheme != "":
             snd_url = "http://ycc.fr/redirection/create/" + quote(url, "/:%@&=?")

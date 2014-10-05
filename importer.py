@@ -28,6 +28,7 @@ from bot import __version__
 import event
 import exception
 import hooks
+from message import TextMessage
 import xmlparser
 
 logger = logging.getLogger("nemubot.importer")
@@ -124,13 +125,6 @@ class ModuleLoader(SourceLoader):
     def load_module(self, fullname):
         module = self._load_module(fullname, sourceless=True)
 
-        # Remove the module from sys list
-        del sys.modules[fullname]
-
-        # If the module was already loaded, then reload it
-        if hasattr(module, '__LOADED__'):
-            reload(module)
-
         # Check that is a valid nemubot module
         if not hasattr(module, "nemubotversion"):
             raise ImportError("Module `%s' is not a nemubot module."%self.name)
@@ -144,21 +138,25 @@ class ModuleLoader(SourceLoader):
         module.logger = logging.getLogger("nemubot.module." + fullname)
 
         def prnt(*args):
-            print("[%s]" % module.name, *args)
+            print("[%s]" % module.__name__, *args)
             module.logger.info(*args)
         def prnt_dbg(*args):
             if module.DEBUG:
-                print("{%s}" % module.name, *args)
+                print("{%s}" % module.__name__, *args)
             module.logger.debug(*args)
 
         def mod_save():
-            fpath = self.context.data_path + "/" + module.name + ".xml"
+            fpath = self.context.data_path + "/" + module.__name__ + ".xml"
             module.print_debug("Saving DATAS to " + fpath)
             module.DATAS.save(fpath)
 
         def send_response(server, res):
             if server in self.context.servers:
-                return self.context.servers[server].write("PRIVMSG %s :%s" % (",".join(res.receivers), res.get_message()))
+                r = res.next_response()
+                if r.server is not None:
+                    return self.context.servers[r.server].send_response(r)
+                else:
+                    return self.context.servers[server].send_response(r)
             else:
                 module.logger.error("Try to send a message to the unknown server: %s", server)
                 return False
@@ -183,7 +181,6 @@ class ModuleLoader(SourceLoader):
         module.REGISTERED_EVENTS = list()
         module.DEBUG = False
         module.DIR = self.mpath
-        module.name = fullname
         module.print = prnt
         module.print_debug = prnt_dbg
         module.send_response = send_response
@@ -195,7 +192,7 @@ class ModuleLoader(SourceLoader):
 
         if not hasattr(module, "NODATA"):
             module.DATAS = xmlparser.parse_file(self.context.data_path
-                                                + module.name + ".xml")
+                                                + module.__name__ + ".xml")
             module.save = mod_save
         else:
             module.DATAS = None
@@ -216,7 +213,7 @@ class ModuleLoader(SourceLoader):
                         break
                 if depend["name"] not in module.MODS:
                     logger.error("In module `%s', module `%s' require by this "
-                                 "module but is not loaded.", module.name,
+                                 "module but is not loaded.", module.__name__,
                                                               depend["name"])
                     return
 
@@ -230,21 +227,21 @@ class ModuleLoader(SourceLoader):
             # Register hooks
             register_hooks(module, self.context, self.prompt)
 
-            logger.info("Module '%s' successfully loaded.", module.name)
+            logger.info("Module '%s' successfully loaded.", module.__name__)
         else:
-            logger.error("An error occurs while importing `%s'.", module.name)
+            logger.error("An error occurs while importing `%s'.", module.__name__)
             raise ImportError("An error occurs while importing `%s'."
-                              % module.name)
+                              % module.__name__)
         return module
 
 
 def convert_legacy_store(old):
     if old == "cmd_hook" or old == "cmd_rgxp" or old == "cmd_default":
-        return "in_PRIVMSG_cmd"
+        return "in_Command"
     elif old == "ask_hook" or old == "ask_rgxp" or old == "ask_default":
-        return "in_PRIVMSG_ask"
+        return "in_DirectAsk"
     elif old == "msg_hook" or old == "msg_rgxp" or old == "msg_default":
-        return "in_PRIVMSG_def"
+        return "in_TextMessage"
     elif old == "all_post":
         return "post"
     elif old == "all_pre":
@@ -258,7 +255,7 @@ def add_cap_hook(prompt, module, cmd):
         prompt.add_cap_hook(cmd["name"], getattr(module, cmd["call"]))
     else:
         logger.warn("In module `%s', no function `%s' defined for `%s' "
-               "command hook.", module.name, cmd["call"], cmd["name"])
+               "command hook.", module.__name__, cmd["call"], cmd["name"])
 
 def register_hooks(module, context, prompt):
     """Register all available hooks"""

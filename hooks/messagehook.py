@@ -20,8 +20,7 @@ import re
 
 from exception import IRCException
 import hooks
-
-from message import Message
+import message
 
 class MessageHook(hooks.AbstractHook):
 
@@ -39,24 +38,28 @@ class MessageHook(hooks.AbstractHook):
         self.channels = channels
 
 
-    def match(self, message, server=None):
-        if not isinstance(message, Message):
+    def match(self, msg, server=None):
+        if not isinstance(msg, message.AbstractMessage):
             return True
 
-        elif message.qual == "cmd":
-            return self.is_matching(message.cmds[0], message.channel, server)
-        elif hasattr(message, "text"):
-            return self.is_matching(message.text, message.channel, server)
-        elif len(message.params) > 0:
-            return self.is_matching(message.params[0], message.channel, server)
+        elif isinstance(msg, message.Command):
+            return self.is_matching(msg.cmd, msg.to, server)
+        elif isinstance(msg, message.TextMessage):
+            return self.is_matching(msg.message, msg.to, server)
         else:
-            return self.is_matching(message.cmd, message.channel, server)
+            return False
 
 
-    def is_matching(self, strcmp, channel=None, server=None):
+    def is_matching(self, strcmp, receivers=list(), server=None):
         """Test if the current hook correspond to the message"""
-        return (channel is None or len(self.channels) <= 0 or
-                channel in self.channels) and (server is None or
-             self.server is None or self.server == server) and (
-            (self.name is None or strcmp == self.name) and (
-            self.regexp is None or re.match(self.regexp, strcmp)))
+        if (server is None or self.server is None or self.server == server
+            ) and ((self.name is None or strcmp == self.name) and (
+            self.regexp is None or re.match(self.regexp, strcmp))):
+
+            if receivers and self.channels:
+                for receiver in receivers:
+                    if receiver in self.channels:
+                        return True
+            else:
+                return True
+        return False
