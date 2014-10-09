@@ -25,7 +25,7 @@ import threading
 import time
 import uuid
 
-__version__ = '3.4.dev1'
+__version__ = '3.4.dev2'
 __author__  = 'nemunaire'
 
 from consumer import Consumer, EventConsumer, MessageConsumer
@@ -33,8 +33,6 @@ from event import ModuleEvent
 from hooks.messagehook import MessageHook
 from hooks.manager import HooksManager
 from networkbot import NetworkBot
-from server.IRC import IRC as IRCServer
-from server.DCC import DCC
 
 logger = logging.getLogger("nemubot.bot")
 
@@ -312,13 +310,20 @@ class Bot(threading.Thread):
             c.start()
 
 
-    def add_server(self, node, nick, owner, realname):
-        """Add a new server to the context"""
-        srv = IRCServer(node, nick, owner, realname)
+    def add_server(self, srv, autoconnect=False):
+        """Add a new server to the context
+
+        Arguments:
+        srv -- a concrete AbstractServer instance
+        autoconnect -- connect after add?
+        """
+
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
-            srv.open()
+            if autoconnect:
+                srv.open()
             return True
+
         else:
             return False
 

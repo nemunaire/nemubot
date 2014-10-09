@@ -19,8 +19,9 @@
 import traceback
 import sys
 
-from networkbot import NetworkBot
 from hooks import hook
+from message import TextMessage
+from networkbot import NetworkBot
 
 nemubotversion = 3.4
 NODATA = True
@@ -198,7 +199,7 @@ def send(data, toks, context, prompt):
         print ("send: not enough arguments.")
         return
 
-    srv.send_msg_final(chan, toks[rd])
+    srv.send_response(TextMessage(" ".join(toks[rd:]), server=None, to=[chan]))
     return "done"
 
 @hook("prompt_cmd", "zap")

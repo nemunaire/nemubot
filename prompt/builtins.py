@@ -19,9 +19,11 @@
 import imp
 import logging
 import os
-import xmlparser
 
 logger = logging.getLogger("nemubot.prompt.builtins")
+
+from server.IRC import IRC as IRCServer
+import xmlparser
 
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
@@ -67,16 +69,58 @@ def load_file(filename, context):
             or config.getName() == "nemubotconfig"):
             # Preset each server in this file
             for server in config.getNodes("server"):
-                ip = server["ip"] if server.hasAttribute("ip") else config["ip"]
-                nick = server["nick"] if server.hasAttribute("nick") else config["nick"]
-                owner = server["owner"] if server.hasAttribute("owner") else config["owner"]
-                realname = server["realname"] if server.hasAttribute("realname") else config["realname"]
-                if context.add_server(server, nick, owner, realname):
-                    print("Server `%s:%s' successfully added." %
-                          (server["host"], server["port"]))
+                opts = {
+                    "host": server["host"],
+                    "ssl": server.hasAttribute("ssl") and server["ssl"].lower() == "true",
+
+                    "nick": server["nick"] if server.hasAttribute("nick") else config["nick"],
+                    "owner": server["owner"] if server.hasAttribute("owner") else config["owner"],
+                }
+
+                # Optional keyword arguments
+                for optional_opt in [ "port", "realname", "password", "encoding", "caps" ]:
+                    if server.hasAttribute(optional_opt):
+                        opts[optional_opt] = server[optional_opt]
+                    elif optional_opt in config:
+                        opts[optional_opt] = config[optional_opt]
+
+                # Command to send on connection
+                if "on_connect" in server:
+                    def on_connect():
+                        yield server["on_connect"]
+                    opts["on_connect"] = on_connect
+
+                # Channels to autojoin on connection
+                if server.hasNode("channel"):
+                    opts["channels"] = list()
+                for chn in server.getNodes("channel"):
+                    opts["channels"].append((chn["name"], chn["password"]) if chn["password"] is not None else chn["name"])
+
+                # Server/client capabilities
+                if "caps" in server or "caps" in config:
+                    capsl = (server["caps"] if server.hasAttribute("caps") else config["caps"]).lower()
+                    if capsl == "no" or capsl == "off" or capsl == "false":
+                        opts["caps"] = None
+                    else:
+                        opts["caps"] = capsl.split(',')
                 else:
-                    print("Server `%s:%s' already added, skiped." %
-                          (server["host"], server["port"]))
+                    opts["caps"] = list()
+
+                # Bind the protocol asked to the corresponding implementation
+                if "protocol" not in server or server["protocol"] == "irc":
+                    srvcls = IRCServer
+                else:
+                    raise Exception("Unhandled protocol '%s'" % server["protocol"])
+
+                # Initialize the server
+                srv = srvcls(**opts)
+
+                # Add the server in the context
+                if context.add_server(srv,
+                                      "autoconnect" in server and server["autoconnect"].lower() != "false"):
+                    print("Server '%s' successfully added." % srv.id)
+                else:
+                    print("Can't add server '%s'." % srv.id)
 
             # Load module and their configuration
             for mod in config.getNodes("module"):

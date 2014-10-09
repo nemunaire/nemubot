@@ -23,22 +23,27 @@ from server import AbstractServer
 
 class SocketServer(AbstractServer):
 
-    def __init__(self, host, port=6667, password=None, ssl=False):
+    def __init__(self, host, port, ssl=False):
         AbstractServer.__init__(self)
         self.host = host
         self.port = int(port)
-        self.password = password
         self.ssl = ssl
 
         self.socket = None
         self.readbuffer = b''
 
+
     def fileno(self):
         return self.socket.fileno() if self.socket else None
 
+
     @property
     def connected(self):
+        """Indicator of the connection aliveness"""
         return self.socket is not None
+
+
+    # Open/close
 
     def _open(self):
         # Create the socket
@@ -60,6 +65,7 @@ class SocketServer(AbstractServer):
 
         return True
 
+
     def _close(self):
         self._sending_queue.join()
         if self.connected:
@@ -71,9 +77,14 @@ class SocketServer(AbstractServer):
             self.socket = None
         return True
 
+
+    # Write
+
     def _write(self, cnt):
         if not self.connected: return
+
         self.socket.send(cnt)
+
 
     def format(self, txt):
         if isinstance(txt, bytes):
@@ -81,8 +92,12 @@ class SocketServer(AbstractServer):
         else:
             return txt.encode() + b'\r\n'
 
+
+    # Read
+
     def read(self):
         if not self.connected: return
+
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
         self.readbuffer = temp.pop()

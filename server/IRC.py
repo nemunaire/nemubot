@@ -26,37 +26,46 @@ from channel import Channel
 import message
 from message.printer.IRC import IRC as IRCPrinter
 from server.socket import SocketServer
+import tools
 
 class IRC(SocketServer):
 
-    def __init__(self, node, nick, owner, realname):
-        self.id       = nick + "@" + node["host"] + ":" + node["port"]
-        self.printer  = IRCPrinter
-        SocketServer.__init__(self,
-                              node["host"],
-                              node["port"],
-                              node["password"],
-                              node.hasAttribute("ssl") and node["ssl"].lower() == "true")
+    def __init__(self, owner, nick="nemubot", host="localhost", port=6667,
+                 ssl=False, password=None, realname="Nemubot",
+                 encoding="utf-8", caps=None, channels=list(),
+                 on_connect=None):
+        """Prepare a connection with an IRC server
 
+        Keyword arguments:
+        owner -- bot's owner
+        nick -- bot's nick
+        host -- host to join
+        port -- port on the host to reach
+        ssl -- is this server using a TLS socket
+        password -- if a password is required to connect to the server
+        realname -- the bot's realname
+        encoding -- the encoding used on the whole server
+        caps -- client capabilities to register on the server
+        channels -- list of channels to join on connection (if a channel is password protected, give a tuple: (channel_name, password))
+        on_connect -- generator to call when connection is done
+        """
+
+        self.id       = nick + "@" + host + ":" + port
+        self.printer  = IRCPrinter
+        SocketServer.__init__(self, host=host, port=port, ssl=ssl)
+
+        self.password = password
         self.nick     = nick
         self.owner    = owner
         self.realname = realname
 
-        #Keep a list of connected channels
+        self.encoding = encoding
+
+        # Keep a list of joined channels
         self.channels = dict()
 
-        if node.hasAttribute("encoding"):
-            self.encoding = node["encoding"]
-        else:
-            self.encoding = "utf-8"
-
-        if node.hasAttribute("caps"):
-            if node["caps"].lower() == "no":
-                self.capabilities = None
-            else:
-                self.capabilities = node["caps"].split(",")
-        else:
-            self.capabilities = list()
+        # Server/client capabilities
+        self.capabilities = caps
 
         # Register CTCP capabilities
         self.ctcp_capabilities = dict()
@@ -68,7 +77,7 @@ class IRC(SocketServer):
         def _ctcp_dcc(msg, cmds):
             """Response to DCC CTCP message"""
             try:
-                ip = srv.toIP(int(cmds[3]))
+                ip = tools.toIP(int(cmds[3]))
                 port = int(cmds[4])
                 conn = DCC(srv, msg.sender)
             except:
@@ -98,6 +107,7 @@ class IRC(SocketServer):
 
         self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
+
         # Register hooks on some IRC CMD
         self.hookscmd = dict()
 
@@ -109,14 +119,15 @@ class IRC(SocketServer):
         # Respond to 001
         def _on_connect(msg):
             # First, send user defined command
-            if node.hasAttribute("on_connect"):
-                self.write(node["on_connect"])
+            if on_connect is not None:
+                for oc in on_connect():
+                    self.write(oc)
             # Then, JOIN some channels
-            for chn in node.getNodes("channel"):
-                if chn["password"] is not None:
-                    self.write("JOIN %s %s" % (chn["name"], chn["password"]))
+            for chn in channels:
+                if isinstance(chn, tuple):
+                    self.write("JOIN %s %s" % chn)
                 else:
-                    self.write("JOIN %s" % chn["name"])
+                    self.write("JOIN %s" % chn)
         self.hookscmd["001"] = _on_connect
 
         # Respond to ERROR
@@ -141,9 +152,9 @@ class IRC(SocketServer):
         def _on_join(msg):
             if len(msg.params) == 0: return
 
-            for chname in msg.params[0].split(b","):
+            for chname in msg.decode(msg.params[0]).split(","):
                 # Register the channel
-                chan = Channel(msg.decode(chname))
+                chan = Channel(chname)
                 self.channels[chname] = chan
         self.hookscmd["JOIN"] = _on_join
         # Respond to PART
@@ -197,6 +208,8 @@ class IRC(SocketServer):
         self.hookscmd["PRIVMSG"] = _on_ctcp
 
 
+    # Open/close
+
     def _open(self):
         if SocketServer._open(self):
             if self.password is not None:
@@ -214,6 +227,10 @@ class IRC(SocketServer):
         return SocketServer._close(self)
 
 
+    # Writes: as inherited
+
+    # Read
+
     def read(self):
         for line in SocketServer.read(self):
             msg = IRCMessage(line, self.encoding)
@@ -225,6 +242,8 @@ class IRC(SocketServer):
             if mes is not None:
                 yield mes
 
+
+# Parsing stuff
 
 mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
                       (?::(?P<prefix>
@@ -269,7 +288,7 @@ class IRCMessage:
         self.cmd = self.decode(p.group("command"))
 
         # Parse params
-        if p.group("params") is not None:
+        if p.group("params") is not None and p.group("params") != b'':
             for param in p.group("params").strip().split(b' '):
                 self.params.append(param)
 
@@ -278,7 +297,13 @@ class IRCMessage:
 
 
     def add_tag(self, key, value=None):
-        """Add an IRCv3.2 Message Tags"""
+        """Add an IRCv3.2 Message Tags
+
+        Arguments:
+        key -- tag identifier (unique for the message)
+        value -- optional value for the tag
+        """
+
         # Treat special tags
         if key == "time":
             value = datetime.fromtimestamp(calendar.timegm(time.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")), timezone.utc)
@@ -289,11 +314,17 @@ class IRCMessage:
 
     @property
     def is_ctcp(self):
+        """Analyze a message, to determine if this is a CTCP one"""
         return self.cmd == "PRIVMSG" and len(self.params) == 2 and len(self.params[1]) > 1 and (self.params[1][0] == 0x01 or self.params[1][1] == 0x01)
 
 
     def decode(self, s):
-        """Decode the content string usign a specific encoding"""
+        """Decode the content string usign a specific encoding
+
+        Argument:
+        s -- string to decode
+        """
+
         if isinstance(s, bytes):
             try:
                 s = s.decode()
@@ -326,6 +357,12 @@ class IRCMessage:
 
 
     def to_message(self, srv):
+        """Convert to one of concrete implementation of AbstractMessage
+
+        Argument:
+        srv -- the server from the message was received
+        """
+
         if self.cmd == "PRIVMSG" or self.cmd == "NOTICE":
 
             receivers = self.decode(self.params[0]).split(',')
@@ -344,6 +381,13 @@ class IRCMessage:
             else:
                 text = self.decode(self.params[1])
 
+            if text.find(srv.nick) == 0 and len(text) > len(srv.nick) + 2 and text[len(srv.nick)] == ":":
+                designated = srv.nick
+                text = text[len(srv.nick) + 1:].strip()
+            else:
+                designated = None
+
+            # Is this a command?
             if len(text) > 1 and text[0] == '!':
                 text = text[1:].strip()
 
@@ -355,10 +399,11 @@ class IRCMessage:
 
                 return message.Command(cmd=args[0], args=args[1:], **common_args)
 
-            elif text.find(srv.nick) == 0 and len(text) > len(srv.nick) + 2 and text[len(srv.nick)] == ":":
-                text = text[len(srv.nick) + 1:].strip()
-                return message.DirectAsk(designated=srv.nick, message=text, **common_args)
+            # Is this an ask for this bot?
+            elif designated is not None:
+                return message.DirectAsk(designated=designated, message=text, **common_args)
 
+            # Normal message
             else:
                 return message.TextMessage(message=text, **common_args)
 

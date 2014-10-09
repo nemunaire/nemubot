@@ -38,6 +38,9 @@ class AbstractServer(io.IOBase):
         send_callback -- Callback when developper want to send a message
         """
 
+        if not hasattr(self, "id"):
+            raise Exception("No id defined for this server. Please set one!")
+
         self.logger = logging.getLogger("nemubot.server." + self.id)
         self._sending_queue = queue.Queue()
         if send_callback is not None:
@@ -46,8 +49,20 @@ class AbstractServer(io.IOBase):
             self._send_callback = self._write_select
 
 
+    # Open/close
+
+    def __enter__(self):
+        self.open()
+        return self
+
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+
     def open(self):
         """Generic open function that register the server un _rlist in case of successful _open"""
+        self.logger.info("Opening connection to %s", self.id)
         if self._open():
             _rlist.append(self)
             _xlist.append(self)
@@ -55,6 +70,7 @@ class AbstractServer(io.IOBase):
 
     def close(self):
         """Generic close function that register the server un _{r,w,x}list in case of successful _close"""
+        self.logger.info("Closing connection to %s", self.id)
         if self._close():
             if self in _rlist:
                 _rlist.remove(self)
@@ -64,9 +80,17 @@ class AbstractServer(io.IOBase):
                 _xlist.remove(self)
 
 
+    # Writes
+
     def write(self, message):
-        """Send a message to the server using send_callback"""
+        """Asynchronymously send a message to the server using send_callback
+
+        Argument:
+        message -- message to send
+        """
+
         self._send_callback(message)
+
 
     def write_select(self):
         """Internal function used by the select function"""
@@ -79,20 +103,27 @@ class AbstractServer(io.IOBase):
         except queue.Empty:
             pass
 
+
     def _write_select(self, message):
-        """Send a message to the server safely through select"""
+        """Send a message to the server safely through select
+
+        Argument:
+        message -- message to send
+        """
+
         self._sending_queue.put(self.format(message))
         self.logger.debug("Message '%s' appended to Queue", message)
         if self not in _wlist:
             _wlist.append(self)
 
-    def exception(self):
-        """Exception occurs in fd"""
-        print("Unhandle file descriptor exception on server " + self.id)
-
 
     def send_response(self, response):
-        """Send a formated Message class"""
+        """Send a formated Message class
+
+        Argument:
+        response -- message to send
+        """
+
         if response is None:
             return
 
@@ -104,3 +135,11 @@ class AbstractServer(io.IOBase):
             vprnt = self.printer()
             response.accept(vprnt)
             self.write(vprnt.pp)
+
+
+    # Exceptions
+
+    def exception(self):
+        """Exception occurs in fd"""
+        self.logger.warning("Unhandle file descriptor exception on server %s",
+                            self.id)
