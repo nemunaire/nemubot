@@ -4,8 +4,7 @@
 
 import re
 import sys
-from datetime import datetime
-from datetime import date
+from datetime import date, datetime
 
 from hooks import hook
 from tools.countdown import countdown_format

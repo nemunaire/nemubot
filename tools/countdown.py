@@ -67,12 +67,21 @@ def countdown_format(date, msg_before, msg_after, tz=None):
         time.tzset()
 
     #Calculate time before the date
-    if datetime.now(timezone.utc) > date:
-        sentence_c = msg_after
-        delta = datetime.now(timezone.utc) - date
-    else:
-        sentence_c = msg_before
-        delta = date - datetime.now(timezone.utc)
+    try:
+        if datetime.now(timezone.utc) > date:
+            sentence_c = msg_after
+            delta = datetime.now(timezone.utc) - date
+        else:
+            sentence_c = msg_before
+            delta = date - datetime.now(timezone.utc)
+    except TypeError:
+        if datetime.now() > date:
+            sentence_c = msg_after
+            delta = datetime.now() - date
+        else:
+            sentence_c = msg_before
+            delta = date - datetime.now()
+
 
     if tz != None:
         os.environ['TZ'] = oldtz
