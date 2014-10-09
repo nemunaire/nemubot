@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
+import imp
 import logging
 import socket
 import queue
@@ -143,3 +144,11 @@ class AbstractServer(io.IOBase):
         """Exception occurs in fd"""
         self.logger.warning("Unhandle file descriptor exception on server %s",
                             self.id)
+
+
+def reload():
+    import server.socket
+    imp.reload(server.socket)
+
+    import server.IRC
+    imp.reload(server.IRC)

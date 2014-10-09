@@ -101,3 +101,7 @@ class Prompt:
 
 def hotswap(prompt):
     return Prompt(prompt.HOOKS_CAPS, prompt.HOOKS_LIST)
+
+def reload():
+    import prompt.builtins
+    imp.reload(prompt.builtins)

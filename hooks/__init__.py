@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import imp
+
 from exception import IRCException
 
 def call_game(call, *args, **kargs):
@@ -74,3 +76,11 @@ def hook(store, *args, **kargs):
         last_registered.append((store, MessageHook(call, *args, **kargs)))
         return call
     return sec
+
+
+def reload():
+    import hooks.manager
+    imp.reload(hooks.manager)
+
+    import hooks.messagehook
+    imp.reload(hooks.messagehook)

@@ -31,3 +31,14 @@ def ipToInt(ip):
     for b in ip.split("."):
         sum = 256 * sum + int(b)
     return sum
+
+
+def reload():
+    import tools.countdown
+    imp.reload(tools.countdown)
+
+    import tools.date
+    imp.reload(tools.date)
+
+    import tools.web
+    imp.reload(tools.web)

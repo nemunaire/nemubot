@@ -429,6 +429,9 @@ class Bot(threading.Thread):
 
 def hotswap(bak):
     bak.stop = True
+    if bak.event_timer is not None:
+        bak.event_timer.cancel()
+
     new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
     new.servers = bak.servers
     new.modules = bak.modules
@@ -436,6 +439,8 @@ def hotswap(bak):
     new.events = bak.events
     new.hooks = bak.hooks
     new.network = bak.network
+
+    new._update_event_timer()
     return new
 
 def reload():
@@ -455,10 +460,8 @@ def reload():
 
     import hooks
     imp.reload(hooks)
-    import hooks.manager
-    imp.reload(hooks.manager)
-    import hooks.messagehook
-    imp.reload(hooks.messagehook)
+
+    hooks.reload()
 
     import importer
     imp.reload(importer)
@@ -466,28 +469,24 @@ def reload():
     import message
     imp.reload(message)
 
+    message.reload()
+
     import prompt
     imp.reload(prompt)
-    import prompt.builtins
-    imp.reload(prompt.builtins)
+
+    prompt.reload()
 
     import server
     rl,wl,xl = server._rlist,server._wlist,server._xlist
     imp.reload(server)
     server._rlist,server._wlist,server._xlist = rl,wl,xl
-    import server.socket
-    imp.reload(server.socket)
-    import server.IRC
-    imp.reload(server.IRC)
+
+    server.reload()
 
     import tools
     imp.reload(tools)
-    import tools.countdown
-    imp.reload(tools.countdown)
-    import tools.date
-    imp.reload(tools.date)
-    import tools.web
-    imp.reload(tools.web)
+
+    tools.reload()
 
     import xmlparser
     imp.reload(xmlparser)

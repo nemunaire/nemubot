@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime, timezone
+import imp
 
 class AbstractMessage:
 
@@ -158,3 +159,13 @@ class OwnerCommand(Command):
     """This class represents a special command incomming from the owner"""
 
     pass
+
+
+def reload():
+    import message.visitor
+    imp.reload(message.visitor)
+
+    import message.printer
+    imp.reload(message.printer)
+
+    message.printer.reload()
