@@ -226,7 +226,8 @@ def cmd_more(msg):
                 if nw is not None and not nw.alone:
                     bk = nw
                     SERVERS[msg.server][receiver] = None, bk
-                res.append(bk)
+                if bk is not None:
+                    res.append(bk)
     return res
 
 
@@ -242,5 +243,6 @@ def cmd_next(msg):
                     bk = nw
                     SERVERS[msg.server][receiver] = None, bk
                 bk.pop()
-                res.append(bk)
+                if bk is not None:
+                    res.append(bk)
     return res
