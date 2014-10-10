@@ -195,6 +195,13 @@ class IRC(SocketServer):
             self.write("JOIN " + msg.decode(msg.params[1]))
         self.hookscmd["INVITE"] = _on_invite
 
+        # Respond to ERR_NICKCOLLISION
+        def _on_nickcollision(msg):
+            self.nick += "_"
+            self.write("NICK " + self.nick)
+        self.hookscmd["433"] = _on_nickcollision
+        self.hookscmd["436"] = _on_nickcollision
+
         # Handle CTCP requests
         def _on_ctcp(msg):
             if len(msg.params) != 2 or not msg.is_ctcp: return
