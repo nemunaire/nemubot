@@ -1,11 +1,11 @@
 <nemubotconfig nick="nemubot" realname="nemubot clone" owner="someone">
 
-  <server server="irc.rezosup.org" port="6667" autoconnect="true" caps="znc.in/server-time-iso">
+  <server host="irc.rezosup.org" port="6667" autoconnect="true" caps="znc.in/server-time-iso">
     <channel name="#nemutest" />
   </server>
 
   <!--
-  <server server="my_host.local" port="6667" password="secret" autoconnect="true" ip="10.69.42.23" ssl="on">
+  <server host="my_host.local" port="6667" password="secret" autoconnect="true" ip="10.69.42.23" ssl="on">
     <channel name="#nemutest" />
   </server>
   -->
