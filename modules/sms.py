@@ -62,10 +62,10 @@ def cmd_sms(msg):
     fails = list()
     for u in msg.cmds[1].split(","):
         DATAS.index[u]["lastuse"] = cur_epoch
-        if msg.private:
-            frm = msg.nick
+        if msg.to_response[0] == msg.frm:
+            frm = msg.frm
         else:
-            frm = msg.nick + "@" + msg.channel
+            frm = msg.frm + "@" + msg.to[0]
         test = send_sms(frm, DATAS.index[u]["user"], DATAS.index[u]["key"], " ".join(msg.cmds[2:]))
         if test is not None:
             fails.append( "%s: %s" % (u, test) )
