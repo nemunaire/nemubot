@@ -84,21 +84,20 @@ def format_timestamp(timestamp, tzname, tzoffset, format="%c"):
 
 
 def treat_coord(msg):
-    if len(msg.cmds) > 1:
+    if len(msg.args) > 0:
 
         # catch dans X[jh]$
-        if len(msg.cmds) > 3 and msg.cmds[len(msg.cmds) - 2] == "dans" or msg.cmds[len(msg.cmds) - 2] == "in" or msg.cmds[len(msg.cmds) - 2] == "next":
-            specific = msg.cmds[len(msg.cmds) - 1]
-            msg.cmds = msg.cmds[:len(msg.cmds) - 2]
+        if len(msg.args) > 2 and (msg.args[-2] == "dans" or msg.args[-2] == "in" or msg.args[-2] == "next"):
+            specific = msg.args[-1]
+            city = " ".join(msg.args[:-2]).lower()
         else:
             specific = None
+            city = " ".join(msg.args).lower()
 
-        j = " ".join(msg.cmds[1:]).lower()
-
-        if len(msg.cmds) == 3:
-            coords = msg.cmds[1:3]
+        if len(msg.args) == 2:
+            coords = msg.args
         else:
-            coords = msg.cmds[1].split(",")
+            coords = msg.args[0].split(",")
 
         try:
             if len(coords) == 2 and str(float(coords[0])) == coords[0] and str(float(coords[1])) == coords[1]:
@@ -106,21 +105,21 @@ def treat_coord(msg):
         except ValueError:
             pass
 
-        if j in DATAS.index:
+        if city in DATAS.index:
             coords = list()
-            coords.append(DATAS.index[j]["lat"])
-            coords.append(DATAS.index[j]["long"])
-            return j, coords, specific
+            coords.append(DATAS.index[city]["lat"])
+            coords.append(DATAS.index[city]["long"])
+            return city, coords, specific
 
         else:
-            geocode = [x for x in mapquest.geocode(j)]
+            geocode = [x for x in mapquest.geocode(city)]
             if len(geocode):
                 coords = list()
                 coords.append(geocode[0]["latLng"]["lat"])
                 coords.append(geocode[0]["latLng"]["lng"])
                 return mapquest.where(geocode[0]), coords, specific
 
-        raise IRCException("Je ne sais pas où se trouve %s." % " ".join(msg.cmds[1:]))
+        raise IRCException("Je ne sais pas où se trouve %s." % city)
 
     else:
         raise IRCException("indique-moi un nom de ville ou des coordonnées.")
@@ -138,15 +137,15 @@ def get_json_weather(coords):
 
 
 def cmd_coordinates(msg):
-    if len(msg.cmds) <= 1:
+    if len(msg.args) < 1:
         raise IRCException("indique-moi un nom de ville.")
 
-    j = msg.cmds[1].lower()
+    j = msg.args[0].lower()
     if j not in DATAS.index:
-        raise IRCException("%s n'est pas une ville connue" % msg.cmds[1])
+        raise IRCException("%s n'est pas une ville connue" % msg.args[0])
 
     coords = DATAS.index[j]
-    return Response("Les coordonnées de %s sont %s,%s" % (msg.cmds[1], coords["lat"], coords["long"]), channel=msg.channel)
+    return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
