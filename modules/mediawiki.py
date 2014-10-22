@@ -14,6 +14,21 @@ nemubotversion = 3.4
 
 from more import Response
 
+def get_namespaces(site, ssl=False):
+    # Built URL
+    url = "http%s://%s/w/api.php?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
+        "s" if ssl else "", site)
+    print_debug(url)
+
+    # Make the request
+    raw = urllib.request.urlopen(url)
+    data = json.loads(raw.read().decode())
+
+    namespaces = dict()
+    for ns in data["query"]["namespaces"]:
+        namespaces[data["query"]["namespaces"][ns]["*"]] = data["query"]["namespaces"][ns]
+    return namespaces
+
 def get_raw_page(site, term, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (
@@ -55,12 +70,23 @@ def strip_model(cnt):
     cnt = re.sub(r"<ref.*?/ref>", "", cnt)
     return cnt
 
-def parse_wikitext(site, cnt, ssl=False):
+def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
     for i,_,_,_ in re.findall(r"({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}})", cnt):
         cnt = cnt.replace(i, get_unwikitextified(site, i, ssl), 1)
 
     # Strip [[...]]
-    cnt, _ = re.subn(r"\[\[:?([^]]*\|)?([^]]+?)\]\]", r"\2", cnt)
+    for full,args,lnk in re.findall(r"(\[\[(.*?|)?([^|]*?)\]\])", cnt):
+        ns = lnk.find(":")
+        if lnk == "":
+            cnt = cnt.replace(full, args[:-1], 1)
+        elif ns > 0:
+            namespace = lnk[:ns]
+            if namespace in namespaces and namespaces[namespace]["canonical"] == "Category":
+                cnt = cnt.replace(full, "", 1)
+                continue
+            cnt = cnt.replace(full, lnk, 1)
+        else:
+            cnt = cnt.replace(full, lnk, 1)
 
     # Strip HTML tags
     cnt = web.striphtml(cnt)
@@ -113,8 +139,12 @@ def cmd_mediawiki(msg):
     if len(msg.cmds) < 3:
         raise IRCException("indicate a domain and a term to search")
 
-    return Response(get_page(msg.cmds[1], " ".join(msg.cmds[2:])),
-                    line_treat=lambda line: irc_format(parse_wikitext(msg.cmds[1], line)),
+    site = msg.cmds[1]
+
+    ns = get_namespaces(site)
+
+    return Response(get_page(site, " ".join(msg.cmds[2:])),
+                    line_treat=lambda line: irc_format(parse_wikitext(msg.cmds[1], line, ns)),
                     channel=msg.receivers)
 
 
@@ -139,6 +169,8 @@ def cmd_wikipedia(msg):
 
     site = msg.cmds[1] + ".wikipedia.org"
 
+    ns = get_namespaces(site)
+
     return Response(get_page(site, " ".join(msg.cmds[2:])),
-                    line_treat=lambda line: irc_format(parse_wikitext(site, line)),
+                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
                     channel=msg.receivers)
