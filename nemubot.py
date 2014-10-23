@@ -85,6 +85,7 @@ if __name__ == "__main__":
             logger.exception("\033[1;31mUnable to reload the prompt due to errors.\033[0"
                              "m Fix them before trying to reload the prompt.")
 
-    print ("\nWaiting for other threads shuts down...")
+    context.quit()
+    print("\nWaiting for other threads shuts down...")
 
     sys.exit(0)
