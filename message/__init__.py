@@ -40,6 +40,8 @@ class AbstractMessage:
         self._to_response = to_response if to_response is None or isinstance(to_response, list) else [ to_response ]
         self.frm = frm # None allowed when it designate this bot
 
+        self.frm_owner = False # Filled later, in consumer
+
 
     @property
     def to_response(self):
