@@ -1,33 +1,35 @@
-<config nick="nemubot" realname="nemubot speaker" owner="someone">
+<nemubotconfig nick="nemubot" realname="nemubot speaker" owner="someone">
 
   <!-- Bitlbee/Minbif -->
-  <server server="nemunai.re" port="6666" password="bitlbee" allowall="true" />
+  <server host="nemunai.re" port="6666" password="bitlbee" autoconnect="true" caps="znc.in/server-time-iso" />
 
   <!-- Rezosup -->
   <server server="nemunai.re" port="6667">
     <channel name="#epita" />
   </server>
 
-  <correction bad="ca" good="ça" />
+  <module name="speak">
+    <correction bad="ca" good="ça" />
 
-  <smiley txt=":p" mood="tire la langue" />
-  <smiley txt=":P" mood="tire la langue" />
-  <smiley txt=":)" mood="sourit" />
-  <smiley txt=":(" mood="est triste" />
-  <smiley txt=";)" mood="fait un clin d'oeil" />
-  <smiley txt="&lt;3" mood="aime" />
-  <smiley txt=":'(" mood="pleure" />
-  <smiley txt=";(" mood="pleure" />
-  <smiley txt=":D" mood="rit" />
-  <smiley txt=":d" mood="rit" />
-  <smiley txt="xd" mood="se marre" />
-  <smiley txt="xD" mood="se marre" />
-  <smiley txt="XD" mood="se marre" />
-  <smiley txt="Xd" mood="se marre" />
-  <smiley txt="x)" mood="se marre" />
-  <smiley txt="X)" mood="se marre" />
-  <smiley txt="/o/" mood="danse" />
-  <smiley txt="\\o\\" mood="danse" />
-  <smiley txt="\\o/" mood="fait une accolade" />
+    <smiley txt=":p" mood="tire la langue" />
+    <smiley txt=":P" mood="tire la langue" />
+    <smiley txt=":)" mood="sourit" />
+    <smiley txt=":(" mood="est triste" />
+    <smiley txt=";)" mood="fait un clin d'oeil" />
+    <smiley txt="&lt;3" mood="aime" />
+    <smiley txt=":'(" mood="pleure" />
+    <smiley txt=";(" mood="pleure" />
+    <smiley txt=":D" mood="rit" />
+    <smiley txt=":d" mood="rit" />
+    <smiley txt="xd" mood="se marre" />
+    <smiley txt="xD" mood="se marre" />
+    <smiley txt="XD" mood="se marre" />
+    <smiley txt="Xd" mood="se marre" />
+    <smiley txt="x)" mood="se marre" />
+    <smiley txt="X)" mood="se marre" />
+    <smiley txt="/o/" mood="danse" />
+    <smiley txt="\\o\\" mood="danse" />
+    <smiley txt="\\o/" mood="fait une accolade" />
+  </module>
 
-</config>
+</nemubotconfig>

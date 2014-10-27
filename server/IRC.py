@@ -105,6 +105,9 @@ class IRC(SocketServer):
         self.ctcp_capabilities["USERINFO"] = lambda msg, cmds: "USERINFO %s" % self.realname
         self.ctcp_capabilities["VERSION"] = lambda msg, cmds: "VERSION nemubot v%s" % bot.__version__
 
+        # TODO: Temporary fix, waiting for hook based CTCP management
+        self.ctcp_capabilities["TYPING"] = lambda msg, cmds: None
+
         self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
 
