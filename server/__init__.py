@@ -64,7 +64,7 @@ class AbstractServer(io.IOBase):
     def open(self):
         """Generic open function that register the server un _rlist in case of successful _open"""
         self.logger.info("Opening connection to %s", self.id)
-        if self._open():
+        if not hasattr(self, "_open") or self._open():
             _rlist.append(self)
             _xlist.append(self)
 
@@ -72,7 +72,7 @@ class AbstractServer(io.IOBase):
     def close(self):
         """Generic close function that register the server un _{r,w,x}list in case of successful _close"""
         self.logger.info("Closing connection to %s", self.id)
-        if self._close():
+        if not hasattr(self, "_close") or self._close():
             if self in _rlist:
                 _rlist.remove(self)
             if self in _wlist:
