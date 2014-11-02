@@ -78,7 +78,7 @@ def load_file(filename, context):
                 }
 
                 # Optional keyword arguments
-                for optional_opt in [ "port", "realname", "password", "encoding", "caps" ]:
+                for optional_opt in [ "port", "username", "realname", "password", "encoding", "caps" ]:
                     if server.hasAttribute(optional_opt):
                         opts[optional_opt] = server[optional_opt]
                     elif optional_opt in config:

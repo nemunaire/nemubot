@@ -31,7 +31,7 @@ import tools
 class IRC(SocketServer):
 
     def __init__(self, owner, nick="nemubot", host="localhost", port=6667,
-                 ssl=False, password=None, realname="Nemubot",
+                 ssl=False, username=None, password=None, realname="Nemubot",
                  encoding="utf-8", caps=None, channels=list(),
                  on_connect=None):
         """Prepare a connection with an IRC server
@@ -42,6 +42,7 @@ class IRC(SocketServer):
         host -- host to join
         port -- port on the host to reach
         ssl -- is this server using a TLS socket
+        username -- the username as sent to server
         password -- if a password is required to connect to the server
         realname -- the bot's realname
         encoding -- the encoding used on the whole server
@@ -50,14 +51,15 @@ class IRC(SocketServer):
         on_connect -- generator to call when connection is done
         """
 
-        self.id       = nick + "@" + host + ":" + port
-        self.printer  = IRCPrinter
-        SocketServer.__init__(self, host=host, port=port, ssl=ssl)
-
+        self.username = username if username is not None else nick
         self.password = password
         self.nick     = nick
         self.owner    = owner
         self.realname = realname
+
+        self.id       = self.username + "@" + host + ":" + port
+        self.printer  = IRCPrinter
+        SocketServer.__init__(self, host=host, port=port, ssl=ssl)
 
         self.encoding = encoding
 
@@ -227,7 +229,7 @@ class IRC(SocketServer):
             if self.capabilities is not None:
                 self.write("CAP LS")
             self.write("NICK :" + self.nick)
-            self.write("USER %s %s bla :%s" % (self.nick, self.host, self.realname))
+            self.write("USER %s %s bla :%s" % (self.username, self.host, self.realname))
             return True
         return False
 
