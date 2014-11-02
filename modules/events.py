@@ -145,7 +145,7 @@ def end_countdown(msg):
         raise IRCException("quel événement terminer ?")
 
     if msg.cmds[1] in DATAS.index:
-        if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.is_owner):
+        if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.frm_owner):
             duration = countdown(msg.date - DATAS.index[msg.cmds[1]].getDate("start"))
             del_event(DATAS.index[msg.cmds[1]]["id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])

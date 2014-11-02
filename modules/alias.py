@@ -111,7 +111,7 @@ def cmd_unalias(msg):
             if alias[0] == "!" and len(alias) > 1:
                 alias = alias[1:]
             if alias in DATAS.getNode("aliases").index:
-                if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.is_owner:
+                if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.frm_owner:
                     DATAS.getNode("aliases").delChild(DATAS.getNode("aliases").index[alias])
                     res.append(Response("%s a bien été supprimé" % alias, channel=msg.channel))
                 else:

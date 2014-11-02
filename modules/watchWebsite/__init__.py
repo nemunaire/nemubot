@@ -56,7 +56,7 @@ def del_site(msg):
         site = DATAS.index[url]
         for a in site.getNodes("alert"):
             if a["channel"] == msg.channel:
-                if not (msg.frm == a["nick"] or msg.is_owner):
+                if not (msg.frm == a["nick"] or msg.frm_owner):
                     raise IRCException("vous ne pouvez pas supprimer cette URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
