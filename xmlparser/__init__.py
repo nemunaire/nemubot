@@ -18,9 +18,12 @@
 
 import os
 import imp
+import logging
 import xml.sax
 
 from . import node as module_state
+
+logger = logging.getLogger("nemubot.xmlparser")
 
 class ModuleStatesFile(xml.sax.ContentHandler):
   def startDocument(self):
@@ -55,8 +58,10 @@ def parse_file(filename):
     parser.parse(open(filename, "r"))
     return mod.root
   except IOError:
+    logger.exception("error occurs during XML parsing of %s", filename)
     return module_state.ModuleState("nemubotstate")
   except:
+    logger.exception("error occurs during XML parsing of %s", filename)
     if mod.root is None:
       return module_state.ModuleState("nemubotstate")
     else:
@@ -68,6 +73,7 @@ def parse_string(string):
     xml.sax.parseString(string, mod)
     return mod.root
   except:
+    logger.exception("error occurs during XML parsing")
     if mod.root is None:
       return module_state.ModuleState("nemubotstate")
     else:
