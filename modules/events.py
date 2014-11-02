@@ -30,6 +30,8 @@ def load(context):
     for evt in DATAS.index.keys():
         if DATAS.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
+            if DATAS.index[evt]["server"] not in context.servers:
+                print("WARNING: registering event for a unexistant server: %s, please connect to it." % DATAS.index[evt]["server"])
             event._end = DATAS.index[evt].getDate("end")
             idt = add_event(event)
             if idt is not None:
