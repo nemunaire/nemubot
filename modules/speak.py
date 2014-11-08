@@ -119,7 +119,7 @@ def treat_for_speak(msg):
 def append_message(msg):
     global last, spk_th
 
-    if msg.message.find("TYPING ") == 0:
+    if hasattr(msg, "message") and msg.message.find("TYPING ") == 0:
         return
 
     vprnt = SpeakerVisitor(last)
