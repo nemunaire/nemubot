@@ -27,6 +27,7 @@ _rlist = []
 _wlist = []
 _xlist = []
 
+
 # Extends from IOBase in order to be compatible with select function
 class AbstractServer(io.IOBase):
 
@@ -62,7 +63,8 @@ class AbstractServer(io.IOBase):
 
 
     def open(self):
-        """Generic open function that register the server un _rlist in case of successful _open"""
+        """Generic open function that register the server un _rlist in case
+        of successful _open"""
         self.logger.info("Opening connection to %s", self.id)
         if not hasattr(self, "_open") or self._open():
             _rlist.append(self)
@@ -70,7 +72,8 @@ class AbstractServer(io.IOBase):
 
 
     def close(self):
-        """Generic close function that register the server un _{r,w,x}list in case of successful _close"""
+        """Generic close function that register the server un _{r,w,x}list in
+        case of successful _close"""
         self.logger.info("Closing connection to %s", self.id)
         if not hasattr(self, "_close") or self._close():
             if self in _rlist:

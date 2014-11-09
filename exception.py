@@ -18,6 +18,7 @@
 
 from message import TextMessage, DirectAsk
 
+
 class IRCException(Exception):
 
     def __init__(self, message, personnal=True):
@@ -27,6 +28,8 @@ class IRCException(Exception):
 
     def fill_response(self, msg):
         if self.personnal:
-            return DirectAsk(msg.frm, self.message, server=msg.server, to=msg.to_response)
+            return DirectAsk(msg.frm, self.message,
+                             server=msg.server, to=msg.to_response)
         else:
-            return TextMessage(self.message, server=msg.server, to=msg.to_response)
+            return TextMessage(self.message,
+                               server=msg.server, to=msg.to_response)

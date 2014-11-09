@@ -19,6 +19,7 @@
 from datetime import datetime, timezone
 import imp
 
+
 class AbstractMessage:
 
     """This class represents an abstract message"""
@@ -37,10 +38,12 @@ class AbstractMessage:
         self.server = server
         self.date = datetime.now(timezone.utc) if date is None else date
         self.to = to if to is not None else list()
-        self._to_response = to_response if to_response is None or isinstance(to_response, list) else [ to_response ]
-        self.frm = frm # None allowed when it designate this bot
+        self._to_response = (to_response if (to_response is None or
+                                             isinstance(to_response, list))
+                             else [ to_response ])
+        self.frm = frm  # None allowed when it designate this bot
 
-        self.frm_owner = False # Filled later, in consumer
+        self.frm_owner = False  # Filled later, in consumer
 
 
     @property
@@ -128,7 +131,6 @@ class DirectAsk(TextMessage):
         TextMessage.__init__(self, *args, **kargs)
 
         self.designated = designated
-
 
     def respond(self, message):
         return DirectAsk(self.frm,

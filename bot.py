@@ -36,11 +36,13 @@ from networkbot import NetworkBot
 
 logger = logging.getLogger("nemubot.bot")
 
+
 class Bot(threading.Thread):
 
     """Class containing the bot context and ensuring key goals"""
 
-    def __init__(self, ip="127.0.0.1", modules_paths=list(), data_path="./datas/"):
+    def __init__(self, ip="127.0.0.1", modules_paths=list(),
+                 data_path="./datas/"):
         """Initialize the bot context
 
         Keyword arguments:
@@ -71,6 +73,7 @@ class Bot(threading.Thread):
 
         # Own hooks
         self.hooks       = HooksManager()
+
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.message, re.I) is not None:
                 return msg.respond("pong")
@@ -477,9 +480,9 @@ def reload():
     prompt.reload()
 
     import server
-    rl,wl,xl = server._rlist,server._wlist,server._xlist
+    rl, wl, xl = server._rlist, server._wlist, server._xlist
     imp.reload(server)
-    server._rlist,server._wlist,server._xlist = rl,wl,xl
+    server._rlist, server._wlist, server._xlist = rl, wl, xl
 
     server.reload()
 

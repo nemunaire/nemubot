@@ -18,8 +18,19 @@
 
 import logging
 
+
 class Channel:
+
+    """A chat room"""
+
     def __init__(self, name, password=None):
+        """Initialize the channel
+
+        Arguments:
+        name -- the channel name
+        password -- the optional password use to join it
+        """
+
         self.name = name
         self.password = password
         self.people = dict()
@@ -27,6 +38,13 @@ class Channel:
         self.logger = logging.getLogger("nemubot.channel." + name)
 
     def treat(self, cmd, msg):
+        """Treat a incoming IRC command
+
+        Arguments:
+        cmd -- the command
+        msg -- the whole message
+        """
+
         if cmd == "353":
             self.parse353(msg)
         elif cmd == "332":
@@ -42,18 +60,35 @@ class Channel:
         elif cmd == "TOPIC":
             self.topic = self.text
 
-    def join(self, nick, level = 0):
-        """Someone join the channel"""
+    def join(self, nick, level=0):
+        """Someone join the channel
+
+        Argument:
+        nick -- nickname of the user joining the channel
+        level -- authorization level of the user
+        """
+
         self.logger.debug("%s join", nick)
         self.people[nick] = level
 
     def chtopic(self, newtopic):
-        """Send command to change the topic"""
+        """Send command to change the topic
+
+        Arguments:
+        newtopic -- the new topic of the channel
+        """
+
         self.srv.send_msg(self.name, newtopic, "TOPIC")
         self.topic = newtopic
 
     def nick(self, oldnick, newnick):
-        """Someone change his nick"""
+        """Someone change his nick
+
+        Arguments:
+        oldnick -- the previous nick of the user
+        newnick -- the new nick of the user
+        """
+
         if oldnick in self.people:
             self.logger.debug("%s switch nick to %s on", oldnick, newnick)
             lvl = self.people[oldnick]
@@ -61,12 +96,22 @@ class Channel:
             self.people[newnick] = lvl
 
     def part(self, nick):
-        """Someone leave the channel"""
+        """Someone leave the channel
+
+        Argument:
+        nick -- name of the user that leave
+        """
+
         if nick in self.people:
             self.logger.debug("%s has left", nick)
             del self.people[nick]
 
     def mode(self, msg):
+        """Channel or user mode change
+
+        Argument:
+        msg -- the whole message
+        """
         if msg.text[0] == "-k":
             self.password = ""
         elif msg.text[0] == "+k":
@@ -88,9 +133,21 @@ class Channel:
             self.people[msg.nick] &= ~1
 
     def parse332(self, msg):
+        """Parse RPL_TOPIC message
+
+        Argument:
+        msg -- the whole message
+        """
+
         self.topic = msg.text
 
     def parse353(self, msg):
+        """Parse RPL_ENDOFWHO message
+
+        Argument:
+        msg -- the whole message
+        """
+
         for p in msg.text:
             p = p.decode()
             if p[0] == "@":

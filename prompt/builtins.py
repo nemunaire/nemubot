@@ -25,6 +25,13 @@ logger = logging.getLogger("nemubot.prompt.builtins")
 from server.IRC import IRC as IRCServer
 import xmlparser
 
+
+def get_boolean(d, k):
+    return (k in d and
+            mod["autoload"].lower() != "false" and
+            mod["autoload"].lower() != "off")
+
+
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
     if toks[0] == "refresh":
@@ -52,7 +59,7 @@ def liste(toks, context, prompt):
                 if len(context.modules) == 0:
                     print ("  > No module loaded")
             elif l in prompt.HOOKS_LIST:
-                (f,d) = prompt.HOOKS_LIST[l]
+                f, d = prompt.HOOKS_LIST[l]
                 f(d, context, prompt)
             else:
                 print ("  Unknown list `%s'" % l)
@@ -65,8 +72,7 @@ def load_file(filename, context):
         config = xmlparser.parse_file(filename)
 
         # This is a true nemubot configuration file, load it!
-        if (config.getName() == "botconfig"
-            or config.getName() == "nemubotconfig"):
+        if config.getName() == "nemubotconfig":
             # Preset each server in this file
             for server in config.getNodes("server"):
                 opts = {
@@ -78,7 +84,8 @@ def load_file(filename, context):
                 }
 
                 # Optional keyword arguments
-                for optional_opt in [ "port", "username", "realname", "password", "encoding", "caps" ]:
+                for optional_opt in [ "port", "username", "realname",
+                                      "password", "encoding", "caps" ]:
                     if server.hasAttribute(optional_opt):
                         opts[optional_opt] = server[optional_opt]
                     elif optional_opt in config:
@@ -94,11 +101,14 @@ def load_file(filename, context):
                 if server.hasNode("channel"):
                     opts["channels"] = list()
                 for chn in server.getNodes("channel"):
-                    opts["channels"].append((chn["name"], chn["password"]) if chn["password"] is not None else chn["name"])
+                    opts["channels"].append((chn["name"], chn["password"])
+                                            if chn["password"] is not None
+                                            else chn["name"])
 
                 # Server/client capabilities
                 if "caps" in server or "caps" in config:
-                    capsl = (server["caps"] if server.hasAttribute("caps") else config["caps"]).lower()
+                    capsl = (server["caps"] if server.hasAttribute("caps")
+                             else config["caps"]).lower()
                     if capsl == "no" or capsl == "off" or capsl == "false":
                         opts["caps"] = None
                     else:
@@ -110,14 +120,14 @@ def load_file(filename, context):
                 if "protocol" not in server or server["protocol"] == "irc":
                     srvcls = IRCServer
                 else:
-                    raise Exception("Unhandled protocol '%s'" % server["protocol"])
+                    raise Exception("Unhandled protocol '%s'" %
+                                    server["protocol"])
 
                 # Initialize the server
                 srv = srvcls(**opts)
 
                 # Add the server in the context
-                if context.add_server(srv,
-                                      "autoconnect" in server and server["autoconnect"].lower() != "false"):
+                if context.add_server(srv, get_boolean(server, "autoconnect")):
                     print("Server '%s' successfully added." % srv.id)
                 else:
                     print("Can't add server '%s'." % srv.id)
@@ -125,7 +135,7 @@ def load_file(filename, context):
             # Load module and their configuration
             for mod in config.getNodes("module"):
                 context.modules_configuration[mod["name"]] = mod
-                if not mod.hasAttribute("autoload") or (mod["autoload"].lower() != "false" and mod["autoload"].lower() != "off"):
+                if get_boolean(mod, "autoload"):
                     __import__(mod["name"])
 
             # Load files asked by the configuration file
@@ -155,8 +165,8 @@ def load(toks, context, prompt):
 
 def select(toks, context, prompt):
     """Select the current server"""
-    if (len(toks) == 2 and toks[1] != "None"
-        and toks[1] != "nemubot" and toks[1] != "none"):
+    if (len(toks) == 2 and toks[1] != "None" and
+        toks[1] != "nemubot" and toks[1] != "none"):
         if toks[1] in context.servers:
             prompt.selectedServer = context.servers[toks[1]]
         else:
@@ -197,15 +207,15 @@ def debug(toks, context, prompt):
         print ("Not enough arguments. `debug' takes a module name.")
 
 
-#Register build-ins
+# Register build-ins
 CAPS = {
-  'quit': end, #Disconnect all server and quit
-  'exit': end, #Alias for quit
-  'reset': end, #Reload the prompt
-  'refresh': end, #Reload the prompt but save modules
-  'load': load, #Load a servers or module configuration file
-  'unload': unload, #Unload a module and remove it from the list
-  'select': select, #Select a server
-  'list': liste, #Show lists
-  'debug': debug, #Pass a module in debug mode
+    'quit': end,       # Disconnect all server and quit
+    'exit': end,       # Alias for quit
+    'reset': end,      # Reload the prompt
+    'refresh': end,    # Reload the prompt but save modules
+    'load': load,      # Load a servers or module configuration file
+    'unload': unload,  # Unload a module and remove it from the list
+    'select': select,  # Select a server
+    'list': liste,     # Show lists
+    'debug': debug,    # Pass a module in debug mode
 }

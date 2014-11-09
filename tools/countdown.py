@@ -19,6 +19,7 @@
 from datetime import datetime, timezone
 import time
 
+
 def countdown(delta, resolution=5):
     sec = delta.seconds
     hours, remainder = divmod(sec, 3600)
@@ -31,7 +32,7 @@ def countdown(delta, resolution=5):
 
     if resolution > 0 and (force or an > 0):
         force = True
-        sentence += " %i an"%(an)
+        sentence += " %i an" % an
 
         if an > 1:
             sentence += "s"
@@ -42,7 +43,7 @@ def countdown(delta, resolution=5):
 
     if resolution > 1 and (force or days > 0):
         force = True
-        sentence += " %i jour"%(days)
+        sentence += " %i jour" % days
 
         if days > 1:
             sentence += "s"
@@ -53,7 +54,7 @@ def countdown(delta, resolution=5):
 
     if resolution > 2 and (force or hours > 0):
         force = True
-        sentence += " %i heure"%(hours)
+        sentence += " %i heure" % hours
         if hours > 1:
             sentence += "s"
         if resolution > 4:
@@ -63,7 +64,7 @@ def countdown(delta, resolution=5):
 
     if resolution > 3 and (force or minutes > 0):
         force = True
-        sentence += " %i minute"%(minutes)
+        sentence += " %i minute" % minutes
         if minutes > 1:
             sentence += "s"
         if resolution > 4:
@@ -71,20 +72,21 @@ def countdown(delta, resolution=5):
 
     if resolution > 4 and (force or seconds > 0):
         force = True
-        sentence += " %i seconde"%(seconds)
+        sentence += " %i seconde" % seconds
         if seconds > 1:
             sentence += "s"
         return sentence[1:]
 
 
 def countdown_format(date, msg_before, msg_after, tz=None):
-    """Replace in a text %s by a sentence incidated the remaining time before/after an event"""
-    if tz != None:
+    """Replace in a text %s by a sentence incidated the remaining time
+    before/after an event"""
+    if tz is not None:
         oldtz = os.environ['TZ']
         os.environ['TZ'] = tz
         time.tzset()
 
-    #Calculate time before the date
+    # Calculate time before the date
     try:
         if datetime.now(timezone.utc) > date:
             sentence_c = msg_after
@@ -100,8 +102,7 @@ def countdown_format(date, msg_before, msg_after, tz=None):
             sentence_c = msg_before
             delta = date - datetime.now()
 
-
-    if tz != None:
+    if tz is not None:
         os.environ['TZ'] = oldtz
 
     return sentence_c % countdown(delta)

@@ -22,6 +22,7 @@ from exception import IRCException
 import hooks
 import message
 
+
 class MessageHook(hooks.AbstractHook):
 
     """Class storing hook information, specialized for a generic Message"""
@@ -52,9 +53,9 @@ class MessageHook(hooks.AbstractHook):
 
     def is_matching(self, strcmp, receivers=list(), server=None):
         """Test if the current hook correspond to the message"""
-        if (server is None or self.server is None or self.server == server
-            ) and ((self.name is None or strcmp == self.name) and (
-            self.regexp is None or re.match(self.regexp, strcmp))):
+        if ((server is None or self.server is None or self.server == server)
+            and ((self.name is None or strcmp == self.name) and (
+                self.regexp is None or re.match(self.regexp, strcmp)))):
 
             if receivers and self.channels:
                 for receiver in receivers:

@@ -25,7 +25,9 @@ import traceback
 
 from . import builtins
 
+
 class Prompt:
+
     def __init__(self, hc=dict(), hl=dict()):
         self.selectedServer = None
 
@@ -56,8 +58,8 @@ class Prompt:
             return ret
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            sys.stderr.write (traceback.format_exception_only(
-                    exc_type, exc_value)[0])
+            sys.stderr.write(traceback.format_exception_only(exc_type,
+                                                             exc_value)[0])
         return ret
 
     def exec_cmd(self, toks, context):
@@ -65,7 +67,7 @@ class Prompt:
         if toks[0] in builtins.CAPS:
             return builtins.CAPS[toks[0]](toks, context, self)
         elif toks[0] in self.HOOKS_CAPS:
-            (f,d) = self.HOOKS_CAPS[toks[0]]
+            f, d = self.HOOKS_CAPS[toks[0]]
             return f(d, toks, context, self)
         else:
             print("Unknown command: `%s'" % toks[0])
@@ -90,7 +92,8 @@ class Prompt:
                         ret = self.exec_cmd(toks, context)
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
-                        traceback.print_exception(exc_type, exc_value, exc_traceback)
+                        traceback.print_exception(exc_type, exc_value,
+                                                  exc_traceback)
             except KeyboardInterrupt:
                 print("")
             except EOFError:
@@ -101,6 +104,7 @@ class Prompt:
 
 def hotswap(prompt):
     return Prompt(prompt.HOOKS_CAPS, prompt.HOOKS_LIST)
+
 
 def reload():
     import prompt.builtins

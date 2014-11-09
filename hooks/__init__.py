@@ -20,6 +20,7 @@ import imp
 
 from exception import IRCException
 
+
 def call_game(call, *args, **kargs):
     """TODO"""
     l = list()
@@ -69,6 +70,7 @@ class AbstractHook:
 from hooks.messagehook import MessageHook
 
 last_registered = []
+
 
 def hook(store, *args, **kargs):
     """Function used as a decorator for module loading"""

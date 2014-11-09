@@ -28,31 +28,39 @@ from urllib.request import urlopen
 from exception import IRCException
 import xmlparser
 
+
 def isURL(url):
     """Return True if the URL can be parsed"""
     o = urlparse(url)
     return o.scheme == "" and o.netloc == "" and o.path == ""
+
 
 def getScheme(url):
     """Return the protocol of a given URL"""
     o = urlparse(url)
     return o.scheme
 
+
 def getHost(url):
     """Return the domain of a given URL"""
     return urlparse(url).netloc
+
 
 def getPort(url):
     """Return the port of a given URL"""
     return urlparse(url).port
 
+
 def getPath(url):
     """Return the page request of a given URL"""
     return urlparse(url).path
 
+
 def getUser(url):
     """Return the page request of a given URL"""
     return urlparse(url).username
+
+
 def getPassword(url):
     """Return the page request of a given URL"""
     return urlparse(url).password
@@ -67,16 +75,19 @@ def getURLContent(url, timeout=15):
         o = urlparse("http://" + url)
 
     if o.scheme == "http":
-        conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=timeout)
+        conn = http.client.HTTPConnection(o.netloc, port=o.port,
+                                          timeout=timeout)
     elif o.scheme == "https":
-        conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=timeout)
+        conn = http.client.HTTPSConnection(o.netloc, port=o.port,
+                                           timeout=timeout)
     elif o.scheme is None or o.scheme == "":
         conn = http.client.HTTPConnection(o.netloc, port=80, timeout=timeout)
     else:
         return None
     try:
         if o.query != '':
-            conn.request("GET", o.path + "?" + o.query, None, {"User-agent": "Nemubot v3"})
+            conn.request("GET", o.path + "?" + o.query,
+                         None, {"User-agent": "Nemubot v3"})
         else:
             conn.request("GET", o.path, None, {"User-agent": "Nemubot v3"})
     except socket.timeout:
@@ -115,10 +126,14 @@ def getURLContent(url, timeout=15):
 
     if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
         return data.decode(charset)
-    elif (res.status == http.client.FOUND or res.status == http.client.MOVED_PERMANENTLY) and res.getheader("Location") != url:
+    elif ((res.status == http.client.FOUND or
+           res.status == http.client.MOVED_PERMANENTLY) and
+          res.getheader("Location") != url):
         return getURLContent(res.getheader("Location"), timeout)
     else:
-        raise IRCException("A HTTP error occurs: %d - %s" % (res.status, http.client.responses[res.status]))
+        raise IRCException("A HTTP error occurs: %d - %s" %
+                           (res.status, http.client.responses[res.status]))
+
 
 def getXML(url, timeout=15):
     """Get content page and return XML parsed content"""
@@ -128,6 +143,7 @@ def getXML(url, timeout=15):
     else:
         return xmlparser.parse_string(cnt.encode())
 
+
 def getJSON(url, timeout=15):
     """Get content page and return JSON content"""
     cnt = getURLContent(url, timeout)
@@ -136,6 +152,7 @@ def getJSON(url, timeout=15):
     else:
         return json.loads(cnt.decode())
 
+
 # Other utils
 
 def htmlentitydecode(s):
@@ -143,7 +160,11 @@ def htmlentitydecode(s):
     return re.sub('&(%s);' % '|'.join(name2codepoint),
                   lambda m: chr(name2codepoint[m.group(1)]), s)
 
+
 def striphtml(data):
     """Remove HTML tags from text"""
     p = re.compile(r'<.*?>')
-    return htmlentitydecode(p.sub('', data).replace("&#x28;", "/(").replace("&#x29;", ")/").replace("&#x22;", "\""))
+    return htmlentitydecode(p.sub('', data)
+                            .replace("&#x28;", "/(")
+                            .replace("&#x29;", ")/")
+                            .replace("&#x22;", "\""))

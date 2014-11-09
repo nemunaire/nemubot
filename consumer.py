@@ -23,6 +23,7 @@ import threading
 
 logger = logging.getLogger("nemubot.consumer")
 
+
 class MessageConsumer:
 
     """Store a message before treating"""
@@ -77,7 +78,7 @@ class MessageConsumer:
                         new_msg.append(res)
                         msg = None
                         break
-                    elif res is None or res == False:
+                    elif res is None or res is False:
                         msg = None
                         break
             if msg is not None:
@@ -134,7 +135,7 @@ class MessageConsumer:
                         new_msg.append(res)
                         msg = None
                         break
-                    elif res is None or res == False:
+                    elif res is None or res is False:
                         msg = None
                         break
                     else:
@@ -160,7 +161,8 @@ class MessageConsumer:
             if self.responses is not None and len(self.responses) > 0:
                 self.post_treat(context.hooks)
         except:
-            logger.exception("Error occurred during the processing of the %s: %s", type(self.msgs[0]).__name__, self.msgs[0])
+            logger.exception("Error occurred during the processing of the %s: "
+                             "%s", type(self.msgs[0]).__name__, self.msgs[0])
 
         for res in self.responses:
             to_server = None
@@ -180,6 +182,7 @@ class MessageConsumer:
             # Sent the message only if treat_post authorize it
             to_server.send_response(res)
 
+
 class EventConsumer:
     """Store a event before treating"""
     def __init__(self, evt, timeout=20):
@@ -198,7 +201,8 @@ class EventConsumer:
             context.add_event(self.evt, eid=self.evt.id)
 
         # Or remove reference of this event
-        elif hasattr(self.evt, "module_src") and self.evt.module_src is not None:
+        elif (hasattr(self.evt, "module_src") and
+              self.evt.module_src is not None):
             self.evt.module_src.REGISTERED_EVENTS.remove(self.evt.id)
 
 

@@ -19,6 +19,7 @@
 from message import TextMessage
 from message.visitor import AbstractVisitor
 
+
 class IRC(AbstractVisitor):
 
     def __init__(self):

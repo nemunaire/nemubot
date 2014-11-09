@@ -31,7 +31,8 @@ if __name__ == "__main__":
     # Setup loggin interface
     logger = logging.getLogger("nemubot")
 
-    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s %(name)s %(levelname)s %(message)s')
 
     ch = logging.StreamHandler()
     ch.setFormatter(formatter)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     # Register the hook for futur import
     sys.meta_path.append(importer.ModuleFinder(context, prmpt))
 
-    #Add modules dir path
+    # Add modules dir path
     if os.path.isdir("./modules/"):
         context.add_modules_path(
             os.path.realpath(os.path.abspath("./modules/")))
@@ -82,8 +83,9 @@ if __name__ == "__main__":
                   bot.__version__)
             context.start()
         except:
-            logger.exception("\033[1;31mUnable to reload the prompt due to errors.\033[0"
-                             "m Fix them before trying to reload the prompt.")
+            logger.exception("\033[1;31mUnable to reload the prompt due to "
+                             "errors.\033[0m Fix them before trying to reload "
+                             "the prompt.")
 
     context.quit()
     print("\nWaiting for other threads shuts down...")

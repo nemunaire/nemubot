@@ -28,7 +28,10 @@ from message.printer.IRC import IRC as IRCPrinter
 from server.socket import SocketServer
 import tools
 
+
 class IRC(SocketServer):
+
+    """Concrete implementation of a connexion to an IRC server"""
 
     def __init__(self, owner, nick="nemubot", host="localhost", port=6667,
                  ssl=False, username=None, password=None, realname="Nemubot",
@@ -155,7 +158,8 @@ class IRC(SocketServer):
 
         # Respond to JOIN
         def _on_join(msg):
-            if len(msg.params) == 0: return
+            if len(msg.params) == 0:
+                return
 
             for chname in msg.decode(msg.params[0]).split(","):
                 # Register the channel
@@ -164,7 +168,8 @@ class IRC(SocketServer):
         self.hookscmd["JOIN"] = _on_join
         # Respond to PART
         def _on_part(msg):
-            if len(msg.params) != 1 and len(msg.params) != 2: return
+            if len(msg.params) != 1 and len(msg.params) != 2:
+                return
 
             for chname in msg.params[0].split(b","):
                 if chname in self.channels:
@@ -175,7 +180,8 @@ class IRC(SocketServer):
         self.hookscmd["PART"] = _on_part
         # Respond to 331/RPL_NOTOPIC,332/RPL_TOPIC,TOPIC
         def _on_topic(msg):
-            if len(msg.params) != 1 and len(msg.params) != 2: return
+            if len(msg.params) != 1 and len(msg.params) != 2:
+                return
             if msg.params[0] in self.channels:
                 if len(msg.params) == 1 or len(msg.params[1]) == 0:
                     self.channels[msg.params[0]].topic = None
@@ -186,8 +192,10 @@ class IRC(SocketServer):
         self.hookscmd["TOPIC"] = _on_topic
         # Respond to 353/RPL_NAMREPLY
         def _on_353(msg):
-            if len(msg.params) == 3: msg.params.pop(0) # 353: like RFC 1459
-            if len(msg.params) != 2: return
+            if len(msg.params) == 3:
+                msg.params.pop(0)  # 353: like RFC 1459
+            if len(msg.params) != 2:
+                return
             if msg.params[0] in self.channels:
                 for nk in msg.decode(msg.params[1]).split(" "):
                     res = re.match("^(?P<level>[^a-zA-Z[\]\\`_^{|}])(?P<nickname>[a-zA-Z[\]\\`_^{|}][a-zA-Z0-9[\]\\`_^{|}-]*)$")
@@ -196,7 +204,8 @@ class IRC(SocketServer):
 
         # Respond to INVITE
         def _on_invite(msg):
-            if len(msg.params) != 2: return
+            if len(msg.params) != 2:
+                return
             self.write("JOIN " + msg.decode(msg.params[1]))
         self.hookscmd["INVITE"] = _on_invite
 
@@ -209,7 +218,8 @@ class IRC(SocketServer):
 
         # Handle CTCP requests
         def _on_ctcp(msg):
-            if len(msg.params) != 2 or not msg.is_ctcp: return
+            if len(msg.params) != 2 or not msg.is_ctcp:
+                return
             cmds = msg.decode(msg.params[1][1:len(msg.params[1])-1]).split(' ')
             if cmds[0] in self.ctcp_capabilities:
                 res = self.ctcp_capabilities[cmds[0]](msg, cmds)
@@ -353,9 +363,10 @@ class IRCMessage:
         client -- export as a client-side string if true
         """
 
-        res = ";".join(["@%s=%s" % (k,v if not isinstance(v, datetime) else v.strftime("%Y-%m-%dT%H:%M:%S.%fZ")) for k, v in self.tags.items()])
+        res = ";".join(["@%s=%s" % (k, v if not isinstance(v, datetime) else v.strftime("%Y-%m-%dT%H:%M:%S.%fZ")) for k, v in self.tags.items()])
 
-        if not client: res += " :%s!%s@%s" % (self.nick, self.user, self.host)
+        if not client:
+            res += " :%s!%s@%s" % (self.nick, self.user, self.host)
 
         res += " " + self.cmd
 

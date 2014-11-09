@@ -18,6 +18,7 @@
 
 import imp
 
+
 def reload():
     import message.printer.IRC
     imp.reload(message.printer.IRC)

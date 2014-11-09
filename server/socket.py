@@ -21,7 +21,10 @@ import socket
 
 from server import AbstractServer
 
+
 class SocketServer(AbstractServer):
+
+    """Concrete implementation of a socket connexion (can be wrapped with TLS)"""
 
     def __init__(self, host, port, ssl=False):
         AbstractServer.__init__(self)
@@ -55,12 +58,13 @@ class SocketServer(AbstractServer):
             self.socket = ctx.wrap_socket(self.socket)
 
         try:
-            self.socket.connect((self.host, self.port)) #Connect to server
+            self.socket.connect((self.host, self.port))  # Connect to server
             self.logger.info("Connected to %s:%d", self.host, self.port)
         except socket.error as e:
             self.socket = None
             self.logger.critical("Unable to connect to %s:%d: %s",
-                   self.host, self.port, os.strerror(e.errno))
+                                 self.host, self.port,
+                                 os.strerror(e.errno))
             return False
 
         return True
@@ -81,7 +85,8 @@ class SocketServer(AbstractServer):
     # Write
 
     def _write(self, cnt):
-        if not self.connected: return
+        if not self.connected:
+            return
 
         self.socket.send(cnt)
 
@@ -96,7 +101,8 @@ class SocketServer(AbstractServer):
     # Read
 
     def read(self):
-        if not self.connected: return
+        if not self.connected:
+            return
 
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
