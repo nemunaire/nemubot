@@ -20,16 +20,9 @@ import imp
 import logging
 import os
 
+from tools.config import load_file
+
 logger = logging.getLogger("nemubot.prompt.builtins")
-
-from server.IRC import IRC as IRCServer
-import xmlparser
-
-
-def get_boolean(d, k):
-    return (k in d and
-            mod["autoload"].lower() != "false" and
-            mod["autoload"].lower() != "off")
 
 
 def end(toks, context, prompt):
@@ -65,92 +58,6 @@ def liste(toks, context, prompt):
                 print ("  Unknown list `%s'" % l)
     else:
         print ("  Please give a list to show: servers, ...")
-
-
-def load_file(filename, context):
-    if os.path.isfile(filename):
-        config = xmlparser.parse_file(filename)
-
-        # This is a true nemubot configuration file, load it!
-        if config.getName() == "nemubotconfig":
-            # Preset each server in this file
-            for server in config.getNodes("server"):
-                opts = {
-                    "host": server["host"],
-                    "ssl": server.hasAttribute("ssl") and server["ssl"].lower() == "true",
-
-                    "nick": server["nick"] if server.hasAttribute("nick") else config["nick"],
-                    "owner": server["owner"] if server.hasAttribute("owner") else config["owner"],
-                }
-
-                # Optional keyword arguments
-                for optional_opt in [ "port", "username", "realname",
-                                      "password", "encoding", "caps" ]:
-                    if server.hasAttribute(optional_opt):
-                        opts[optional_opt] = server[optional_opt]
-                    elif optional_opt in config:
-                        opts[optional_opt] = config[optional_opt]
-
-                # Command to send on connection
-                if "on_connect" in server:
-                    def on_connect():
-                        yield server["on_connect"]
-                    opts["on_connect"] = on_connect
-
-                # Channels to autojoin on connection
-                if server.hasNode("channel"):
-                    opts["channels"] = list()
-                for chn in server.getNodes("channel"):
-                    opts["channels"].append((chn["name"], chn["password"])
-                                            if chn["password"] is not None
-                                            else chn["name"])
-
-                # Server/client capabilities
-                if "caps" in server or "caps" in config:
-                    capsl = (server["caps"] if server.hasAttribute("caps")
-                             else config["caps"]).lower()
-                    if capsl == "no" or capsl == "off" or capsl == "false":
-                        opts["caps"] = None
-                    else:
-                        opts["caps"] = capsl.split(',')
-                else:
-                    opts["caps"] = list()
-
-                # Bind the protocol asked to the corresponding implementation
-                if "protocol" not in server or server["protocol"] == "irc":
-                    srvcls = IRCServer
-                else:
-                    raise Exception("Unhandled protocol '%s'" %
-                                    server["protocol"])
-
-                # Initialize the server
-                srv = srvcls(**opts)
-
-                # Add the server in the context
-                if context.add_server(srv, get_boolean(server, "autoconnect")):
-                    print("Server '%s' successfully added." % srv.id)
-                else:
-                    print("Can't add server '%s'." % srv.id)
-
-            # Load module and their configuration
-            for mod in config.getNodes("module"):
-                context.modules_configuration[mod["name"]] = mod
-                if get_boolean(mod, "autoload"):
-                    __import__(mod["name"])
-
-            # Load files asked by the configuration file
-            for load in config.getNodes("include"):
-                load_file(load["path"], context)
-
-        # Other formats
-        else:
-            print ("  Can't load `%s'; this is not a valid nemubot "
-                   "configuration file." % filename)
-
-    # Unexisting file, assume a name was passed, import the module!
-    else:
-        tt = __import__(filename)
-        imp.reload(tt)
 
 
 def load(toks, context, prompt):
