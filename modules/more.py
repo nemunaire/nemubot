@@ -51,7 +51,7 @@ class Response:
         if self.channel is None:
             if self.nick is not None:
                 return [ self.nick ]
-            return [ self.sender.split("!")[0] ]
+            return list()
         elif isinstance(self.channel, list):
             return self.channel
         else:

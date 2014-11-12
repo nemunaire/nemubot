@@ -51,10 +51,10 @@ def get_variable(name, msg=None):
 def cmd_set(msg):
     if len (msg.cmds) > 2:
         set_variable(msg.cmds[1], " ".join(msg.cmds[2:]), msg.nick)
-        res = Response("Variable \$%s définie." % msg.cmds[1])
+        res = Response("Variable \$%s définie." % msg.cmds[1], channel=msg.channel)
         save()
         return res
-    return Response("!set prend au minimum deux arguments : le nom de la variable et sa valeur.")
+    return Response("!set prend au minimum deux arguments : le nom de la variable et sa valeur.", channel=msg.channel)
 
 @hook("cmd_hook", "listalias")
 def cmd_listalias(msg):
@@ -174,7 +174,7 @@ def parseask(msg):
             alias["origin"] = result.group(3)
             alias["creator"] = msg.nick
             DATAS.getNode("aliases").addChild(alias)
-            res = Response("Nouvel alias %s défini avec succès." % result.group(1))
+            res = Response("Nouvel alias %s défini avec succès." % result.group(1), channel=msg.channel)
             save()
             return res
     return None
