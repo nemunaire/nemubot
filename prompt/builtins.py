@@ -41,17 +41,21 @@ def liste(toks, context, prompt):
             l = l.lower()
             if l == "server" or l == "servers":
                 for srv in context.servers.keys():
-                    print ("  - %s ;" % srv)
+                    print ("  - %s (state: %s) ;" % (srv,
+                                                     "connected" if context.servers[srv].connected else "disconnected"))
                 if len(context.servers) == 0:
                     print ("  > No server loaded")
+
             elif l == "mod" or l == "mods" or l == "module" or l == "modules":
                 for mod in context.modules.keys():
                     print ("  - %s ;" % mod)
                 if len(context.modules) == 0:
                     print ("  > No module loaded")
+
             elif l in prompt.HOOKS_LIST:
                 f, d = prompt.HOOKS_LIST[l]
                 f(d, context, prompt)
+
             else:
                 print ("  Unknown list `%s'" % l)
     else:
