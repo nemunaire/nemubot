@@ -12,18 +12,24 @@ from message import TextMessage
 
 nemubotversion = 3.4
 
+
 def help_full():
-    return "!ycc [<url>]: with an argument, reduce the given <url> thanks to ycc.fr; without argument, reduce the last URL said on the current channel."
+    return ("!ycc [<url>]: with an argument, reduce the given <url> thanks to "
+            "ycc.fr; without argument, reduce the last URL said on the current"
+            " channel.")
 
 LAST_URLS = dict()
+
 
 def gen_response(res, msg, srv):
     if res is None:
         raise IRCException("la situation est embarassante, il semblerait que YCC soit down :(")
     elif isinstance(res, str):
-        return TextMessage("URL pour %s : %s" % (srv, res), server=None, to=msg.to_response)
+        return TextMessage("URL pour %s : %s" % (srv, res), server=None,
+                           to=msg.to_response)
     else:
         raise IRCException("mauvaise URL : %s" % srv)
+
 
 @hook("cmd_hook", "ycc")
 def cmd_ycc(msg):
@@ -45,7 +51,8 @@ def cmd_ycc(msg):
     for url in minify:
         o = urlparse(url, "http")
         if o.scheme != "":
-            snd_url = "http://ycc.fr/redirection/create/" + quote(url, "/:%@&=?")
+            snd_url = "http://ycc.fr/redirection/create/" + quote(url,
+                                                                  "/:%@&=?")
             print_debug(snd_url)
             raw = urlopen(snd_url, timeout=10)
             if o.netloc == "":
@@ -56,24 +63,27 @@ def cmd_ycc(msg):
             res.append(gen_response(False, msg, url))
     return res
 
+
 @hook("msg_default")
 def parselisten(msg):
     parseresponse(msg)
     return None
 
+
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
     try:
-      urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
-      for url in urls:
-          o = urlparse(url)
-          if o.scheme != "":
-              if o.netloc == "ycc.fr" or (o.netloc == "" and len(o.path) < 10):
-                  continue
-              if msg.channel not in LAST_URLS:
-                  LAST_URLS[msg.channel] = list()
-              LAST_URLS[msg.channel].append(url)
+        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
+        for url in urls:
+            o = urlparse(url)
+            if o.scheme != "":
+                if o.netloc == "ycc.fr" or (o.netloc == "" and
+                                            len(o.path) < 10):
+                    continue
+                if msg.channel not in LAST_URLS:
+                    LAST_URLS[msg.channel] = list()
+                LAST_URLS[msg.channel].append(url)
     except:
         pass
     return msg

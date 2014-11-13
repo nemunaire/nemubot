@@ -30,16 +30,19 @@ s = [('present', '0'), ('présent', '0'), ('pr', '0'),
 d = defaultdict(list)
 
 for k, v in s:
-  d[k].append(v)
+    d[k].append(v)
+
 
 def help_full():
-  return "!conjugaison <tens> <verb>: give the conjugaison for <verb> in <tens>."
+    return ("!conjugaison <tens> <verb>: give the conjugaison for <verb> in "
+            "<tens>.")
 
 
 @hook("cmd_hook", "conjugaison")
 def cmd_conjug(msg):
     if len(msg.cmds) < 3:
-        raise IRCException("donne moi un temps et un verbe, et je te donnerai sa conjugaison!")
+        raise IRCException("donne moi un temps et un verbe, et je te donnerai "
+                           "sa conjugaison!")
 
     tens = ' '.join(msg.cmds[1:-1])
     print_debug(tens)
@@ -58,31 +61,34 @@ def cmd_conjug(msg):
 def get_conjug(verb, stringTens):
     url = ("http://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
            quote(verb.encode("ISO-8859-1")))
-    print_debug (url)
+    print_debug(url)
     page = web.getURLContent(url)
 
     if page is not None:
         for line in page.split("\n"):
             if re.search('<div class="modeBloc">', line) is not None:
-              return compute_line(line, stringTens)
+                return compute_line(line, stringTens)
     return list()
 
+
 def compute_line(line, stringTens):
-  try:
-      idTemps = d[stringTens]
-  except:
-      raise IRCException("le temps demandé n'existe pas")
+    try:
+        idTemps = d[stringTens]
+    except:
+        raise IRCException("le temps demandé n'existe pas")
 
-  if len(idTemps) == 0:
-      raise IRCException("le temps demandé n'existe pas")
+    if len(idTemps) == 0:
+        raise IRCException("le temps demandé n'existe pas")
 
-  index = line.index('<div id="temps' + idTemps[0] + '\"')
-  endIndex = line[index:].index('<div class=\"conjugBloc\"')
+    index = line.index('<div id="temps' + idTemps[0] + '\"')
+    endIndex = line[index:].index('<div class=\"conjugBloc\"')
 
-  endIndex += index
-  newLine = line[index:endIndex]
+    endIndex += index
+    newLine = line[index:endIndex]
 
-  res = list()
-  for elt in re.finditer("[p|/]>([^/]*/b>)", newLine):
-      res.append(striphtml(elt.group(1).replace("<b>", "\x02").replace("</b>", "\x0F")))
-  return res
+    res = list()
+    for elt in re.finditer("[p|/]>([^/]*/b>)", newLine):
+        res.append(striphtml(elt.group(1)
+                             .replace("<b>", "\x02")
+                             .replace("</b>", "\x0F")))
+    return res

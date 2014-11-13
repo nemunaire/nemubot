@@ -14,6 +14,7 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 def get_namespaces(site, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
@@ -28,6 +29,7 @@ def get_namespaces(site, ssl=False):
     for ns in data["query"]["namespaces"]:
         namespaces[data["query"]["namespaces"][ns]["*"]] = data["query"]["namespaces"][ns]
     return namespaces
+
 
 def get_raw_page(site, term, ssl=False):
     # Built URL
@@ -45,6 +47,7 @@ def get_raw_page(site, term, ssl=False):
         except:
             raise IRCException("article not found")
 
+
 def get_unwikitextified(site, wikitext, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=expandtemplates&text=%s" % (
@@ -61,7 +64,6 @@ def get_unwikitextified(site, wikitext, ssl=False):
 def strip_model(cnt):
     # Strip models at begin and end: mostly useless
     cnt = re.sub(r"^(({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}}|\[\[(.|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt)
-    #cnt = re.sub(r"({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}}\s?)+$", "", cnt)
 
     # Strip HTML comments
     cnt = re.sub(r"<!--.*?-->", "", cnt)
@@ -70,12 +72,13 @@ def strip_model(cnt):
     cnt = re.sub(r"<ref.*?/ref>", "", cnt)
     return cnt
 
+
 def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
-    for i,_,_,_ in re.findall(r"({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}})", cnt):
+    for i, _, _, _ in re.findall(r"({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}})", cnt):
         cnt = cnt.replace(i, get_unwikitextified(site, i, ssl), 1)
 
     # Strip [[...]]
-    for full,args,lnk in re.findall(r"(\[\[(.*?|)?([^|]*?)\]\])", cnt):
+    for full, args, lnk in re.findall(r"(\[\[(.*?|)?([^|]*?)\]\])", cnt):
         ns = lnk.find(":")
         if lnk == "":
             cnt = cnt.replace(full, args[:-1], 1)
@@ -93,9 +96,11 @@ def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
 
     return cnt
 
+
 def irc_format(cnt):
     cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)\n*", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
+
 
 def get_page(site, term, ssl=False):
     return strip_model(get_raw_page(site, term, ssl))

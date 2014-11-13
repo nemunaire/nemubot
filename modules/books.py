@@ -11,6 +11,7 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 def load(context):
     if not CONF or not CONF.hasNode("goodreadsapi") or not CONF.getNode("goodreadsapi").hasAttribute("key"):
         print ("You need a Goodreads API key in order to use this "
@@ -19,24 +20,34 @@ def load(context):
                "https://www.goodreads.com/api/keys")
         return None
 
+
 def get_book(title):
-    response = web.getXML("https://www.goodreads.com/book/title.xml?key=%s&title=%s" % (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
+    """Retrieve a book from its title"""
+    response = web.getXML("https://www.goodreads.com/book/title.xml?key=%s&title=%s" %
+                          (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
     if response is not None and response.hasNode("book"):
         return response.getNode("book")
     else:
         return None
 
+
 def search_books(title):
-    response = web.getXML("https://www.goodreads.com/search.xml?key=%s&q=%s" % (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
+    """Get a list of book matching given title"""
+    response = web.getXML("https://www.goodreads.com/search.xml?key=%s&q=%s" %
+                          (CONF.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
     if response is not None and response.hasNode("search"):
         return response.getNode("search").getNode("results").getNodes("work")
     else:
         return []
 
+
 def search_author(name):
-    response = web.getXML("https://www.goodreads.com/api/author_url/%s?key=%s" % (urllib.parse.quote(name), CONF.getNode("goodreadsapi")["key"]))
+    """Looking for an author"""
+    response = web.getXML("https://www.goodreads.com/api/author_url/%s?key=%s" %
+                          (urllib.parse.quote(name), CONF.getNode("goodreadsapi")["key"]))
     if response is not None and response.hasNode("author") and response.getNode("author").hasAttribute("id"):
-        response = web.getXML("https://www.goodreads.com/author/show/%s.xml?key=%s" % (urllib.parse.quote(response.getNode("author")["id"]), CONF.getNode("goodreadsapi")["key"]))
+        response = web.getXML("https://www.goodreads.com/author/show/%s.xml?key=%s" %
+                              (urllib.parse.quote(response.getNode("author")["id"]), CONF.getNode("goodreadsapi")["key"]))
         if response is not None and response.hasNode("author"):
             return response.getNode("author")
     return None
@@ -53,9 +64,9 @@ def cmd_book(msg):
     res = Response(channel=msg.channel)
     res.append_message("%s, writed by %s: %s" % (book.getNode("title").getContent(),
                                                  book.getNode("authors").getNode("author").getNode("name").getContent(),
-                                                 web.striphtml(book.getNode("description").getContent())
-                                             ))
+                                                 web.striphtml(book.getNode("description").getContent())))
     return res
+
 
 @hook("cmd_hook", "search_books")
 def cmd_books(msg):
@@ -64,11 +75,14 @@ def cmd_books(msg):
 
     title = " ".join(msg.cmds[1:])
     res = Response(channel=msg.channel,
-                   title="%s" % (title), count=" (%d more books)")
+                   title="%s" % (title),
+                   count=" (%d more books)")
 
     for book in search_books(title):
-        res.append_message("%s, writed by %s" % (book.getNode("best_book").getNode("title").getContent(), book.getNode("best_book").getNode("author").getNode("name").getContent()))
+        res.append_message("%s, writed by %s" % (book.getNode("best_book").getNode("title").getContent(),
+                                                 book.getNode("best_book").getNode("author").getNode("name").getContent()))
     return res
+
 
 @hook("cmd_hook", "author_books")
 def cmd_author(msg):
@@ -76,4 +90,6 @@ def cmd_author(msg):
         raise IRCException("please give me an author to search")
 
     ath = search_author(" ".join(msg.cmds[1:]))
-    return Response([b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")], channel=msg.channel, title=ath.getNode("name").getContent())
+    return Response([b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")],
+                    channel=msg.channel,
+                    title=ath.getNode("name").getContent())

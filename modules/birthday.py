@@ -15,17 +15,22 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 def load(context):
     global DATAS
     DATAS.setIndex("name", "birthday")
 
 
 def help_full():
-    return "!anniv /who/: gives the remaining time before the anniversary of /who/\n!age /who/: gives the age of /who/\nIf /who/ is not given, gives the remaining time before your anniversary.\n\n To set yout birthday, say it to nemubot :)"
+    return ("!anniv /who/: gives the remaining time before the anniversary of "
+            "/who/\n!age /who/: gives the age of /who/\nIf /who/ is not given,"
+            " gives the remaining time before your anniversary.\n\n To set you"
+            "r birthday, say it to nemubot :)")
 
 
 def findName(msg):
-    if len(msg.cmds) < 2 or msg.cmds[1].lower() == "moi" or msg.cmds[1].lower() == "me":
+    if (len(msg.cmds) < 2 or msg.cmds[1].lower() == "moi" or
+        msg.cmds[1].lower() == "me"):
         name = msg.nick.lower()
     else:
         name = msg.cmds[1].lower()
@@ -35,9 +40,9 @@ def findName(msg):
     if name in DATAS.index:
         matches.append(name)
     else:
-        for k in DATAS.index.keys ():
-            if k.find (name) == 0:
-                matches.append (k)
+        for k in DATAS.index.keys():
+            if k.find(name) == 0:
+                matches.append(k)
     return (matches, name)
 
 
@@ -52,9 +57,9 @@ def cmd_anniv(msg):
         if (tyd.day == datetime.today().day and
             tyd.month == datetime.today().month):
             return Response(countdown_format(
-                    DATAS.index[name].getDate("born"), "",
-                    "C'est aujourd'hui l'anniversaire de %s !"
-                    " Il a %s. Joyeux anniversaire :)" % (name, "%s")),
+                DATAS.index[name].getDate("born"), "",
+                "C'est aujourd'hui l'anniversaire de %s !"
+                " Il a %s. Joyeux anniversaire :)" % (name, "%s")),
                             msg.channel)
         else:
             if tyd < datetime.today():
@@ -68,6 +73,7 @@ def cmd_anniv(msg):
         return Response("désolé, je ne connais pas la date d'anniversaire"
                         " de %s. Quand est-il né ?" % name,
                         msg.channel, msg.nick)
+
 
 @hook("cmd_hook", "age")
 def cmd_age(msg):
@@ -84,6 +90,7 @@ def cmd_age(msg):
         return Response("désolé, je ne connais pas l'âge de %s."
                         " Quand est-il né ?" % name, msg.channel, msg.nick)
     return True
+
 
 @hook("ask_default")
 def parseask(msg):

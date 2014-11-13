@@ -26,6 +26,7 @@ from networkbot import NetworkBot
 nemubotversion = 3.4
 NODATA = True
 
+
 def getserver(toks, context, prompt):
     """Choose the server in toks or prompt"""
     if len(toks) > 1 and toks[0] in context.servers:
@@ -34,6 +35,7 @@ def getserver(toks, context, prompt):
         return (prompt.selectedServer, toks)
     else:
         return (None, toks)
+
 
 @hook("prompt_cmd", "close")
 def close(data, toks, context, prompt):
@@ -51,6 +53,7 @@ def close(data, toks, context, prompt):
         prompt.selectedServer = None
     return
 
+
 @hook("prompt_cmd", "connect")
 def connect(data, toks, context, prompt):
     """Make the connexion to a server"""
@@ -65,6 +68,7 @@ def connect(data, toks, context, prompt):
         prompt.selectedServer.launch(context.receive_message)
     else:
         print ("  Please SELECT a server or give its name in argument.")
+
 
 @hook("prompt_cmd", "disconnect")
 def disconnect(data, toks, context, prompt):
@@ -83,6 +87,7 @@ def disconnect(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+
 @hook("prompt_cmd", "discover")
 def discover(data, toks, context, prompt):
     """Discover a new bot on a server"""
@@ -93,9 +98,11 @@ def discover(data, toks, context, prompt):
                 bot = context.add_networkbot(srv, name)
                 bot.connect()
             else:
-                print ("  %s is not a valid fullname, for example: nemubot!nemubotV3@bot.nemunai.re")
+                print ("  %s is not a valid fullname, for example: "
+                       "nemubot!nemubotV3@bot.nemunai.re")
     else:
         print ("  Please SELECT a server or give its name in first argument.")
+
 
 @hook("prompt_cmd", "hotswap")
 def hotswap(data, toks, context, prompt):
@@ -113,6 +120,7 @@ def hotswap(data, toks, context, prompt):
         prompt.selectedServer.start()
     else:
         print ("  Please SELECT a server or give its name in argument.")
+
 
 @hook("prompt_cmd", "join")
 @hook("prompt_cmd", "leave")
@@ -134,7 +142,7 @@ def join(data, toks, context, prompt):
         return
 
     if len(toks) <= rd:
-        print ("%s: not enough arguments."  % toks[0])
+        print("%s: not enough arguments." % toks[0])
         return
 
     if toks[0] == "join":
@@ -145,6 +153,7 @@ def join(data, toks, context, prompt):
     elif toks[0] == "leave" or toks[0] == "part":
         srv.write("PART %s" % toks[rd])
     return
+
 
 @hook("prompt_cmd", "save")
 def save_mod(data, toks, context, prompt):
@@ -160,6 +169,7 @@ def save_mod(data, toks, context, prompt):
         else:
             print ("save: no module named `%s´" % mod)
     return
+
 
 @hook("prompt_cmd", "send")
 def send(data, toks, context, prompt):
@@ -182,7 +192,7 @@ def send(data, toks, context, prompt):
         print ("send: not enough arguments.")
         return
 
-    #Check the server is connected
+    # Check the server is connected
     if not srv.connected:
         print ("send: server `%s' not connected." % srv.id)
         return
@@ -202,6 +212,7 @@ def send(data, toks, context, prompt):
     srv.send_response(TextMessage(" ".join(toks[rd:]), server=None, to=[chan]))
     return "done"
 
+
 @hook("prompt_cmd", "zap")
 def zap(data, toks, context, prompt):
     """Hard change connexion state"""
@@ -216,19 +227,27 @@ def zap(data, toks, context, prompt):
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
+
 @hook("prompt_cmd", "top")
 def top(data, toks, context, prompt):
     """Display consumers load information"""
-    print("Queue size: %d, %d thread(s) running (counter: %d)" % (context.cnsr_queue.qsize(), len(context.cnsr_thrd), context.cnsr_thrd_size))
+    print("Queue size: %d, %d thread(s) running (counter: %d)" %
+          (context.cnsr_queue.qsize(),
+           len(context.cnsr_thrd),
+           context.cnsr_thrd_size))
     if len(context.events) > 0:
-        print("Events registered: %d, next in %d seconds" % (len(context.events), context.events[0].time_left.seconds))
+        print("Events registered: %d, next in %d seconds" %
+              (len(context.events),
+               context.events[0].time_left.seconds))
     else:
         print("No events registered")
 
     for th in context.cnsr_thrd:
         if th.is_alive():
-            print("################ Stack trace for thread %u ################" % th.ident)
+            print(("#" * 15 + " Stack trace for thread %u " + "#" * 15) %
+                  th.ident)
             traceback.print_stack(sys._current_frames()[th.ident])
+
 
 @hook("prompt_cmd", "netstat")
 def netstat(data, toks, context, prompt):
@@ -241,10 +260,14 @@ def netstat(data, toks, context, prompt):
             lvl = 0
             for hlvl in bot.hooks:
                 lvl += 1
-                for hook in hlvl.all_pre + hlvl.all_post + hlvl.cmd_rgxp + hlvl.cmd_default + hlvl.ask_rgxp + hlvl.ask_default + hlvl.msg_rgxp + hlvl.msg_default:
+                for hook in (hlvl.all_pre + hlvl.all_post + hlvl.cmd_rgxp +
+                             hlvl.cmd_default + hlvl.ask_rgxp +
+                             hlvl.ask_default + hlvl.msg_rgxp +
+                             hlvl.msg_default):
                     print("  %s- %s" % (' ' * lvl * 2, hook))
-                for kind in [ "irc_hook", "cmd_hook", "ask_hook", "msg_hook" ]:
-                    print("  %s- <%s> %s" % (' ' * lvl * 2, kind, ", ".join(hlvl.__dict__[kind].keys())))
+                for kind in ["irc_hook", "cmd_hook", "ask_hook", "msg_hook"]:
+                    print("  %s- <%s> %s" % (' ' * lvl * 2, kind,
+                                             ", ".join(hlvl.__dict__[kind].keys())))
             print("  * My tag: %d" % bot.my_tag)
             print("  * Tags in use (%d):" % bot.inc_tag)
             for tag, (cmd, data) in bot.tags.items():

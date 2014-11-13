@@ -10,9 +10,12 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):
     if len(msg.cmds) > 1:
-        return Response(random.choice(msg.cmds[1:]), channel=msg.channel, nick=msg.nick)
+        return Response(random.choice(msg.cmds[1:]),
+                        channel=msg.channel,
+                        nick=msg.nick)
     else:
         raise IRCException("indicate some terms to pick!")

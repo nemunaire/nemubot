@@ -11,6 +11,7 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 def load(context):
     global DATAS
     DATAS.setIndex("name", "station")
@@ -20,8 +21,10 @@ def load(context):
 #                    station_status)
 #  context.add_event(evt)
 
-def help_full ():
-    return "!velib /number/ ...: gives available bikes and slots at the station /number/."
+
+def help_full():
+    return ("!velib /number/ ...: gives available bikes and slots at "
+            "the station /number/.")
 
 
 def station_status(station):
@@ -42,10 +45,12 @@ def station_status(station):
     else:
         return (None, None)
 
+
 def station_available(station):
     """Gets available velib at a given velib station"""
     (a, f) = station_status(station)
     return a
+
 
 def station_free(station):
     """Gets free slots at a given velib station"""
@@ -62,6 +67,7 @@ def print_station_status(msg, station):
                         channel=msg.channel, nick=msg.nick)
     raise IRCException("station %s inconnue." % station)
 
+
 @hook("cmd_hook", "velib")
 def ask_stations(msg):
     """Hook entry from !velib"""
@@ -74,7 +80,8 @@ def ask_stations(msg):
             if re.match("^[0-9]{4,5}$", station):
                 return print_station_status(msg, station)
             elif station in DATAS.index:
-                return print_station_status(msg, DATAS.index[station]["number"])
+                return print_station_status(msg,
+                                            DATAS.index[station]["number"])
             else:
                 raise IRCException("numéro de station invalide.")
 

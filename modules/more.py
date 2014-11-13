@@ -27,6 +27,7 @@ nemubotversion = 3.4
 
 logger = logging.getLogger("nemubot.response")
 
+
 class Response:
     def __init__(self, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) ",
@@ -40,7 +41,7 @@ class Response:
         self.alone = True
         if message is not None:
             self.append_message(message, shown_first_count=shown_first_count)
-        self.elt = 0 # Next element to display
+        self.elt = 0  # Next element to display
 
         self.channel = channel
         self.nick = nick
@@ -50,12 +51,12 @@ class Response:
     def receivers(self):
         if self.channel is None:
             if self.nick is not None:
-                return [ self.nick ]
+                return [self.nick]
             return list()
         elif isinstance(self.channel, list):
             return self.channel
         else:
-            return [ self.channel ]
+            return [self.channel]
 
     def append_message(self, message, title=None, shown_first_count=-1):
         if type(message) is str:
@@ -110,17 +111,17 @@ class Response:
             if len(self.rawtitle) <= 0:
                 self.rawtitle = None
 
-
     def accept(self, visitor):
         visitor.visit(self.next_response())
 
-
     def next_response(self, maxlen=440):
         if self.nick:
-            return DirectAsk(self.nick, self.get_message(maxlen - len(self.nick) - 2), server=None, to=self.receivers)
+            return DirectAsk(self.nick,
+                             self.get_message(maxlen - len(self.nick) - 2),
+                             server=None, to=self.receivers)
         else:
-            return TextMessage(self.get_message(maxlen), server=None, to=self.receivers)
-
+            return TextMessage(self.get_message(maxlen),
+                               server=None, to=self.receivers)
 
     def get_message(self, maxlen):
         if self.alone and len(self.messages) > 1:
@@ -138,13 +139,15 @@ class Response:
                 elif isinstance(res, str):
                     self.messages.append(res)
                 else:
-                    raise Exception("Type returned by nomore (%s) is not handled here." % type(res))
+                    raise Exception("Type returned by nomore (%s) is not "
+                                    "handled here." % type(res))
                 return self.get_message()
             else:
                 return self.nomore
 
         if self.line_treat is not None and self.elt == 0:
-            self.messages[0] = self.line_treat(self.messages[0]).replace("\n", " ").strip()
+            self.messages[0] = (self.line_treat(self.messages[0])
+                                .replace("\n", " ").strip())
 
         msg = ""
         if self.title is not None:
@@ -197,6 +200,7 @@ class Response:
 
 
 SERVERS = dict()
+
 
 @hook("all_post")
 def parseresponse(res):
