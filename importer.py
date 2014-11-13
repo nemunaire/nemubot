@@ -250,15 +250,16 @@ def convert_legacy_store(old):
         print("UNKNOWN store:", old)
         return old
 
-def add_cap_hook(prompt, module, cmd):
-    if hasattr(module, cmd["call"]):
-        prompt.add_cap_hook(cmd["name"], getattr(module, cmd["call"]))
-    else:
-        logger.warn("In module `%s', no function `%s' defined for `%s' "
-               "command hook.", module.__name__, cmd["call"], cmd["name"])
 
 def register_hooks(module, context, prompt):
-    """Register all available hooks"""
+    """Register all available hooks
+
+    Arguments:
+    module -- the loaded Python module
+    context -- bot context
+    prompt -- the current Prompt instance
+    """
+
     # Register decorated functions
     for s, h in hooks.last_registered:
         if s == "prompt_cmd":
