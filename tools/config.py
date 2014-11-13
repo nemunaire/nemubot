@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp
 import logging
 import os
 
@@ -130,5 +129,4 @@ def load_file(filename, context):
 
     # Unexisting file, assume a name was passed, import the module!
     else:
-        tt = __import__(filename)
-        imp.reload(tt)
+        context.import_module(filename)

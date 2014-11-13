@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime, timedelta, timezone
+import imp
 import logging
 from queue import Queue
 import re
@@ -346,6 +347,21 @@ class Bot(threading.Thread):
         return False
 
 
+    def import_module(self, name):
+        """Load a module
+
+        Argument:
+        name -- name of the module to load
+        """
+
+        if name in self.modules:
+            self.unload_module(name)
+            tt = __import__(name)
+            imp.reload(tt)
+        else:
+            __import__(name)
+
+
     def add_module(self, module):
         """Add a module to the context, if already exists, unload the
         old one before"""
@@ -447,8 +463,6 @@ def hotswap(bak):
     return new
 
 def reload():
-    import imp
-
     import channel
     imp.reload(channel)
 

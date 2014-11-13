@@ -62,9 +62,9 @@ class HooksManager:
         if trigger in self.hooks:
             if hook is None:
                 del self.hooks[trigger]
-                return True
             else:
-                return self.hooks[trigger].remove(hook)
+                self.hooks[trigger].remove(hook)
+            return True
         return False
 
 
