@@ -43,12 +43,12 @@ def close(data, toks, context, prompt):
     if len(toks) > 1:
         for s in toks[1:]:
             if s in servers:
-                context.servers[s].disconnect()
+                context.servers[s].close()
                 del context.servers[s]
             else:
                 print ("close: server `%s' not found." % s)
     elif prompt.selectedServer is not None:
-        prompt.selectedServer.disconnect()
+        prompt.selectedServer.close()
         del prompt.servers[selectedServer.id]
         prompt.selectedServer = None
     return
@@ -60,12 +60,12 @@ def connect(data, toks, context, prompt):
     if len(toks) > 1:
         for s in toks[1:]:
             if s in context.servers:
-                context.servers[s].launch(context.receive_message)
+                context.servers[s].open()
             else:
                 print ("connect: server `%s' not found." % s)
 
     elif prompt.selectedServer is not None:
-        prompt.selectedServer.launch(context.receive_message)
+        prompt.selectedServer.open()
     else:
         print ("  Please SELECT a server or give its name in argument.")
 
@@ -76,12 +76,12 @@ def disconnect(data, toks, context, prompt):
     if len(toks) > 1:
         for s in toks[1:]:
             if s in context.servers:
-                if not context.servers[s].disconnect():
+                if not context.servers[s].close():
                     print ("disconnect: server `%s' already disconnected." % s)
             else:
                 print ("disconnect: server `%s' not found." % s)
     elif prompt.selectedServer is not None:
-        if not prompt.selectedServer.disconnect():
+        if not prompt.selectedServer.close():
             print ("disconnect: server `%s' already disconnected."
                    % prompt.selectedServer.id)
     else:
