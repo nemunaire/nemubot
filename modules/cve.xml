@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<nemubotmodule name="cve">
+  <message type="cmd" name="cve" call="get_cve_desc" />
+</nemubotmodule>
