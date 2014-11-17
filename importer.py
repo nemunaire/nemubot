@@ -264,6 +264,8 @@ def register_hooks(module, context, prompt):
     for s, h in hooks.last_registered:
         if s == "prompt_cmd":
             prompt.add_cap_hook(h.name, h.call)
+        elif s == "prompt_list":
+            prompt.add_list_hook(h.name, h.call)
         else:
             s = convert_legacy_store(s)
             module.REGISTERED_HOOKS.append((s, h))

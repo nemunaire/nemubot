@@ -28,42 +28,54 @@ from . import builtins
 
 class Prompt:
 
-    def __init__(self, hc=dict(), hl=dict()):
+    def __init__(self):
         self.selectedServer = None
 
-        self.HOOKS_CAPS = hc
-        self.HOOKS_LIST = hl
+        self.HOOKS_CAPS = dict()
+        self.HOOKS_LIST = dict()
 
     def add_cap_hook(self, name, call, data=None):
         self.HOOKS_CAPS[name] = (lambda d, t, c, p: call(d, t, c, p), data)
 
+    def add_list_hook(self, name, call):
+        self.HOOKS_LIST[name] = call
 
     def lex_cmd(self, line):
-        """Return an array of tokens"""
-        ret = list()
+        """Return an array of tokens
+
+        Argument:
+        line -- the line to lex
+        """
+
         try:
             cmds = shlex.split(line)
-            bgn = 0
-            for i in range(0, len(cmds)):
-                if cmds[i] == ';':
-                    if i != bgn:
-                        cmds[bgn] = cmds[bgn].lower()
-                        ret.append(cmds[bgn:i])
-                    bgn = i + 1
-
-            if bgn != len(cmds):
-                cmds[bgn] = cmds[bgn].lower()
-                ret.append(cmds[bgn:len(cmds)])
-
-            return ret
         except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exc_type, exc_value, _ = sys.exc_info()
             sys.stderr.write(traceback.format_exception_only(exc_type,
                                                              exc_value)[0])
-        return ret
+            return
+
+        bgn = 0
+
+        # Separate commands (command separator: ;)
+        for i in range(0, len(cmds)):
+            if cmds[i][-1] == ';':
+                if i != bgn:
+                    yield cmds[bgn:i]
+                bgn = i + 1
+
+        # Return rest of the command (that not end with a ;)
+        if bgn != len(cmds):
+            yield cmds[bgn:]
 
     def exec_cmd(self, toks, context):
-        """Execute the command"""
+        """Execute the command
+
+        Arguments:
+        toks -- lexed tokens to executes
+        context -- current bot context
+        """
+
         if toks[0] in builtins.CAPS:
             return builtins.CAPS[toks[0]](toks, context, self)
         elif toks[0] in self.HOOKS_CAPS:
@@ -81,7 +93,12 @@ class Prompt:
             return self.selectedServer.id
 
     def run(self, context):
-        """Launch the prompt"""
+        """Launch the prompt
+
+        Argument:
+        context -- current bot context
+        """
+
         ret = ""
         while ret != "quit" and ret != "reset" and ret != "refresh":
             try:
@@ -102,8 +119,11 @@ class Prompt:
         return ret != "quit"
 
 
-def hotswap(prompt):
-    return Prompt(prompt.HOOKS_CAPS, prompt.HOOKS_LIST)
+def hotswap(bak):
+    p = Prompt()
+    p.HOOKS_CAPS = bak.HOOKS_CAPS
+    p.HOOKS_LIST = bak.HOOKS_LIST
+    return p
 
 
 def reload():
