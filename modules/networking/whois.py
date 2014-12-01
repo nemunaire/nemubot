@@ -24,12 +24,16 @@ def load(CONF, add_hook):
 
 def extractdate(str):
     tries = [
+        "%Y-%m-%dT%H:%M:%S.0%Z",
         "%Y-%m-%dT%H:%M:%S%Z",
         "%Y-%m-%dT%H:%M:%S%z",
         "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S.0Z",
         "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S.0%Z",
         "%Y-%m-%d %H:%M:%S%Z",
         "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S.0Z",
         "%Y-%m-%d %H:%M:%SZ",
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d",
@@ -95,7 +99,7 @@ def cmd_whois(msg):
     res = Response(channel=msg.channel, nomore="No more whois information")
 
     res.append_message("%s: %s%s%s%s\x03\x02registered by\x03\x02 %s, \x03\x02administrated by\x03\x02 %s, \x03\x02managed by\x03\x02 %s" % (whois["domainName"],
-                                                             whois["status"] + " " if "status" in whois else "",
+                                                             whois["status"].replace("\n", ", ") + " " if "status" in whois else "",
                                                              "\x03\x02created on\x03\x02 " + extractdate(whois["createdDate"]).strftime("%c") + ", " if "createdDate" in whois else "",
                                                              "\x03\x02updated on\x03\x02 " + extractdate(whois["updatedDate"]).strftime("%c") + ", " if "updatedDate" in whois else "",
                                                              "\x03\x02expires on\x03\x02 " + extractdate(whois["expiresDate"]).strftime("%c") + ", " if "expiresDate" in whois else "",
