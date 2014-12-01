@@ -17,11 +17,11 @@ from hooks import hook
 
 nemubotversion = 3.4
 
-from networking import w3m
+from networking import page
 from .atom import Atom
 from more import Response
 
-def help_full ():
+def help_full():
   return "This module is autonomous you can't interract with it."
 
 def load(context):
@@ -37,7 +37,8 @@ def load(context):
 def start_watching(site, offset=0):
     o = urlparse(site["url"], "http")
     print_debug("Add event for site: %s" % o.netloc)
-    evt = ModuleEvent(func=lambda url: w3m(url), cmp_data=site["lastcontent"],
+    evt = ModuleEvent(func=lambda url: page.render(url, None),
+                      cmp_data=site["lastcontent"],
                       func_data=site["url"], offset=offset,
                       interval=site.getInt("time"),
                       call=alert_change, call_data=site)
