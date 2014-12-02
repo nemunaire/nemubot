@@ -23,10 +23,10 @@ import re
 
 xtrdt = re.compile(r'''^.*? (?P<day>[0-9]{1,4}) .+?
                             (?P<month>[0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|octobre|oktober|novembre|november|decembre|décembre|december)
-                            (?:.+?(?P<year>[0-9]{1,4}))? [^0-9]+
+                            (?:.+?(?P<year>[0-9]{1,4}))? (?:[^0-9]+
                             (?:(?P<hour>[0-9]{1,2})[^0-9]*[h':]
                             (?:[^0-9]*(?P<minute>[0-9]{1,2})
-                            (?:[^0-9]*[m\":][^0-9]*(?P<second>[0-9]{1,2}))?)?)?.*?
+                            (?:[^0-9]*[m\":][^0-9]*(?P<second>[0-9]{1,2}))?)?)?.*?)?
                     $''', re.X)
 
 
