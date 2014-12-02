@@ -18,7 +18,7 @@
 
 # Extraction/Format text
 
-from datetime import datetime
+from datetime import datetime, date
 import re
 
 xtrdt = re.compile(r'''^.*? (?P<day>[0-9]{1,4}) .+?
