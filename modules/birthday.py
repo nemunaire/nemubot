@@ -107,7 +107,7 @@ def parseask(msg):
                 if nick == "my" or nick == "I" or nick == "i" or nick == "je" or nick == "mon" or nick == "ma":
                     nick = msg.nick
                 if nick.lower() in DATAS.index:
-                    DATAS.index[msg.nick.lower()]["born"] = extDate
+                    DATAS.index[nick.lower()]["born"] = extDate
                 else:
                     ms = ModuleState("birthday")
                     ms.setAttribute("name", nick.lower())
