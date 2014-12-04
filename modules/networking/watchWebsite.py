@@ -1,31 +1,20 @@
-# coding=utf-8
-
 """Alert on changes on websites"""
 
-from datetime import datetime
-from datetime import timedelta
-import http.client
-import hashlib
 from random import randint
-import re
-import socket
-import sys
 import urllib.parse
 from urllib.parse import urlparse
 
 from hooks import hook
+from more import Response
 
 nemubotversion = 3.4
 
-from networking import page
 from .atom import Atom
-from more import Response
+from . import page
 
-def help_full():
-  return "This module is autonomous you can't interract with it."
 
-def load(context):
-    """Register watched website"""
+def load(DATAS):
+    """Register events on watched website"""
     DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
         if site.hasNode("alert"):
@@ -34,23 +23,13 @@ def load(context):
             print("No alert defined for this site: " + site["url"])
             #DATAS.delChild(site)
 
-def start_watching(site, offset=0):
-    o = urlparse(site["url"], "http")
-    print_debug("Add event for site: %s" % o.netloc)
-    evt = ModuleEvent(func=lambda url: page.render(url, None),
-                      cmp_data=site["lastcontent"],
-                      func_data=site["url"], offset=offset,
-                      interval=site.getInt("time"),
-                      call=alert_change, call_data=site)
-    site["_evt_id"] = add_event(evt)
 
+def del_site(url):
+    """Remove a site from watching list
 
-@hook("cmd_hook", "unwatch")
-def del_site(msg):
-    if len(msg.cmds) <= 1:
-        raise IRCException("quel site dois-je arrêter de surveiller ?")
-
-    url = msg.cmds[1]
+    Argument:
+    url -- URL to unwatch
+    """
 
     o = urlparse(url, "http")
     if o.scheme != "" and url in DATAS.index:
@@ -58,35 +37,33 @@ def del_site(msg):
         for a in site.getNodes("alert"):
             if a["channel"] == msg.channel:
                 if not (msg.frm == a["nick"] or msg.frm_owner):
-                    raise IRCException("vous ne pouvez pas supprimer cette URL.")
+                    raise IRCException("you cannot unwatch this URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
                     del_event(site["_evt_id"])
                     DATAS.delChild(site)
                 save()
-                return Response("je ne surveille désormais plus cette URL.",
+                return Response("I don't watch this URL anymore.",
                                 channel=msg.channel, nick=msg.nick)
-    raise IRCException("je ne surveillais pas cette URL !")
+    raise IRCException("I didn't watch this URL!")
 
 
-@hook("cmd_hook", "watch", data="diff")
-@hook("cmd_hook", "updown", data="updown")
-def add_site(msg, diffType="diff"):
-    print (diffType)
-    if len(msg.cmds) <= 1:
-        raise IRCException("quel site dois-je surveiller ?")
+def add_site(url):
+    """Add a site to watching list
 
-    url = msg.cmds[1]
+    Argument:
+    url -- URL to watch
+    """
 
     o = urlparse(url, "http")
     if o.netloc == "":
-        raise IRCException("je ne peux pas surveiller cette URL")
+        raise IRCException("sorry, I can't watch this URL :(")
 
     alert = ModuleState("alert")
     alert["nick"] = msg.nick
     alert["server"] = msg.server
     alert["channel"] = msg.channel
-    alert["message"] = "{url} a changé !"
+    alert["message"] = "{url} just changed!"
 
     if url not in DATAS.index:
         watch = ModuleState("watch")
@@ -101,15 +78,41 @@ def add_site(msg, diffType="diff"):
 
     save()
     return Response(channel=msg.channel, nick=msg.nick,
-                    message="ce site est maintenant sous ma surveillance.")
+                    message="this site is now under my supervision.")
+
 
 def format_response(site, link='%s', title='%s', categ='%s', content='%s'):
+    """Format and send response for given site
+
+    Argument:
+    site -- DATAS structure representing a site to watch
+
+    Keyword arguments:
+    link -- link to the content
+    title -- for ATOM feed: title of the new article
+    categ -- for ATOM feed: category of the new article
+    content -- content of the page/new article
+    """
+
     for a in site.getNodes("alert"):
-        send_response(a["server"], Response(a["message"].format(url=site["url"], link=link, title=title, categ=categ, content=content),
-                                     channel=a["channel"], server=a["server"]))
+        send_response(a["server"],
+                      Response(a["message"].format(url=site["url"],
+                                                   link=link,
+                                                   title=title,
+                                                   categ=categ,
+                                                   content=content),
+                               channel=a["channel"],
+                               server=a["server"]))
+
 
 def alert_change(content, site):
-    """Alert when a change is detected"""
+    """Function called when a change is detected on a given site
+
+    Arguments:
+    content -- The new content
+    site -- DATAS structure representing a site to watch
+    """
+
     if site["type"] == "updown":
         if site["lastcontent"] is None:
             site["lastcontent"] = content is not None
@@ -132,7 +135,7 @@ def alert_change(content, site):
         try:
             page = Atom(content)
         except:
-            print ("An error occurs during Atom parsing. Restart event...")
+            print("An error occurs during Atom parsing. Restart event...")
             start_watching(site)
             return
         diff = site["_lastpage"].diff(page)
@@ -152,10 +155,31 @@ def alert_change(content, site):
                     format_response(site, link=d.link, title=urllib.parse.unquote(d.title))
         else:
             start_watching(site)
-            return #Stop here, no changes, so don't save
+            return  # Stop here, no changes, so don't save
 
-    else: # Just looking for any changes
+    else:  # Just looking for any changes
         format_response(site, link=site["url"], content=content)
     site["lastcontent"] = content
     start_watching(site)
     save()
+
+
+def start_watching(site, offset=0):
+    """Launch the event watching given site
+
+    Argument:
+    site -- DATAS structure representing a site to watch
+
+    Keyword argument:
+    offset -- offset time to delay the launch of the first check
+    """
+
+    o = urlparse(site["url"], "http")
+    print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
+
+    evt = ModuleEvent(func=lambda url: page.render(url, None),
+                      cmp_data=site["lastcontent"],
+                      func_data=site["url"], offset=offset,
+                      interval=site.getInt("time"),
+                      call=alert_change, call_data=site)
+    site["_evt_id"] = add_event(evt)

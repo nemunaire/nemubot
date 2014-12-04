@@ -11,17 +11,20 @@ from more import Response
 from . import isup
 from . import page
 from . import w3c
+from . import watchWebsite
 from . import whois
 
 def load(context):
-    for mod in [isup, page, w3c, whois]:
+    for mod in [isup, page, w3c, watchWebsite, whois]:
         mod.IRCException = IRCException
         mod.ModuleEvent = ModuleEvent
         mod.add_event = add_event
         mod.save = save
         mod.print = print
         mod.print_debug = print_debug
+        mod.send_response = send_response
     page.load(CONF, add_hook)
+    watchWebsite.load(DATAS)
     whois.load(CONF, add_hook)
 
 
@@ -107,3 +110,21 @@ def cmd_w3c(msg):
             res.append_message("%s%s on line %s, col %s: %s" % (m["type"][0].upper(), m["type"][1:], m["lastLine"], m["lastColumn"], m["message"]))
 
     return res
+
+
+
+@hook("cmd_hook", "watch", data="diff")
+@hook("cmd_hook", "updown", data="updown")
+def cmd_watch(msg, diffType="diff"):
+    if len(msg.cmds) <= 1:
+        raise IRCException("indicate an URL to watch!")
+
+    return watchWebsite.add_site(msg.cmds[1])
+
+
+@hook("cmd_hook", "unwatch")
+def cmd_unwatch(msg):
+    if len(msg.cmds) <= 1:
+        raise IRCException("which URL should I stop watching?")
+
+    return watchWebsite.add_site(msg.cmds[1])
