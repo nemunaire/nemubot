@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 from exception import IRCException
-import xmlparser
+from tools.xmlparser import parse_string
 
 
 def isURL(url):
@@ -141,7 +141,7 @@ def getXML(url, timeout=15):
     if cnt is None:
         return None
     else:
-        return xmlparser.parse_string(cnt.encode())
+        return parse_string(cnt.encode())
 
 
 def getJSON(url, timeout=15):

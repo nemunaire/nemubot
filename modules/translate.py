@@ -13,7 +13,6 @@ nemubotversion = 3.4
 
 from more import Response
 
-import xmlparser
 
 LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
         "ja", "ko", "pl", "pt", "ro", "es", "tr"]

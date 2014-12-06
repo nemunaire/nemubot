@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import imp
 import logging
 import xml.sax
 
 from . import node as module_state
 
-logger = logging.getLogger("nemubot.xmlparser")
+logger = logging.getLogger("nemubot.tools.xmlparser")
 
 
 class ModuleStatesFile(xml.sax.ContentHandler):

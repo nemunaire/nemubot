@@ -44,3 +44,8 @@ def reload():
 
     import tools.web
     imp.reload(tools.web)
+
+    import tools.xmlparser
+    imp.reload(tools.xmlparser)
+    import tools.xmlparser.node
+    imp.reload(tools.xmlparser.node)

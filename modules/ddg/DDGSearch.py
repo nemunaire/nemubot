@@ -3,15 +3,15 @@
 from urllib.parse import quote
 from urllib.request import urlopen
 
-import xmlparser
 from tools import web
+from tools.xmlparser import parse_string
 
 class DDGSearch:
     def __init__(self, terms):
         self.terms = terms
 
         raw = urlopen("https://api.duckduckgo.com/?q=%s&format=xml&no_redirect=1" % quote(terms), timeout=10)
-        self.ddgres = xmlparser.parse_string(raw.read())
+        self.ddgres = parse_string(raw.read())
 
     @property
     def type(self):

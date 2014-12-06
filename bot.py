@@ -26,7 +26,7 @@ import threading
 import time
 import uuid
 
-__version__ = '3.4.dev2'
+__version__ = '3.4.dev3'
 __author__  = 'nemunaire'
 
 from consumer import Consumer, EventConsumer, MessageConsumer
@@ -504,8 +504,3 @@ def reload():
     imp.reload(tools)
 
     tools.reload()
-
-    import xmlparser
-    imp.reload(xmlparser)
-    import xmlparser.node
-    imp.reload(xmlparser.node)

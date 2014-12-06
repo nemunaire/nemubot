@@ -9,7 +9,7 @@ from datetime import date, datetime
 from hooks import hook
 from tools.countdown import countdown_format
 from tools.date import extractDate
-from xmlparser.node import ModuleState
+from tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 

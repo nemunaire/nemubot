@@ -3,11 +3,9 @@
 import xml.sax
 from datetime import datetime, timezone
 import logging
-import sys
 import time
-import traceback
 
-logger = logging.getLogger("nemubot.xmlparser.node")
+logger = logging.getLogger("nemubot.tools.xmlparser.node")
 
 
 class ModuleState:

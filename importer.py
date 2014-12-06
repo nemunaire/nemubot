@@ -29,7 +29,7 @@ import event
 import exception
 import hooks
 from message import TextMessage
-import xmlparser
+from tools.xmlparser import parse_file, module_state
 
 logger = logging.getLogger("nemubot.importer")
 
@@ -191,7 +191,7 @@ class ModuleLoader(SourceLoader):
         module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
-            module.DATAS = xmlparser.parse_file(self.context.data_path
+            module.DATAS = parse_file(self.context.data_path
                                                 + module.__name__ + ".xml")
             module.save = mod_save
         else:
@@ -200,7 +200,7 @@ class ModuleLoader(SourceLoader):
         module.CONF = self.config
 
         module.ModuleEvent = event.ModuleEvent
-        module.ModuleState = xmlparser.module_state.ModuleState
+        module.ModuleState = module_state.ModuleState
         module.IRCException = exception.IRCException
 
         # Load dependancies

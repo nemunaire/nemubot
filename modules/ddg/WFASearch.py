@@ -3,7 +3,7 @@
 from urllib.parse import quote
 from urllib.request import urlopen
 
-import xmlparser
+from tools.xmlparser import parse_string
 
 class WFASearch:
     def __init__(self, terms):
@@ -13,7 +13,7 @@ class WFASearch:
                                      "input=%s&appid=%s"
                                      % (quote(terms),
                                     CONF.getNode("wfaapi")["key"]), timeout=15)
-            self.wfares = xmlparser.parse_string(raw.read())
+            self.wfares = parse_string(raw.read())
         except (TypeError, KeyError):
             print ("You need a Wolfram|Alpha API key in order to use this "
                    "module. Add it to the module configuration file:\n<wfaapi"

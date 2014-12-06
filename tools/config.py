@@ -19,7 +19,7 @@
 import logging
 import os
 
-import xmlparser
+from tools.xmlparser import parse_file
 
 logger = logging.getLogger("nemubot.tools.config")
 
@@ -98,7 +98,7 @@ def load_file(filename, context):
     """
 
     if os.path.isfile(filename):
-        config = xmlparser.parse_file(filename)
+        config = parse_file(filename)
 
         # This is a true nemubot configuration file, load it!
         if config.getName() == "nemubotconfig":
