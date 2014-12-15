@@ -46,6 +46,9 @@ if __name__ == "__main__":
                         default=["./modules/"],
                         help="directory to use as modules store")
 
+    parser.add_argument("-m", "--module", nargs='*',
+                        help="load given modules")
+
     parser.add_argument("-D", "--data-path", default="./datas/",
                         help="path to use to save bot data")
 
@@ -105,6 +108,10 @@ if __name__ == "__main__":
             load_file(path, context)
         else:
             logger.error("%s is not a readable file", path)
+
+    if args.module:
+        for module in args.module:
+            __import__(module)
 
     print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
                                                  os.getpid()))
