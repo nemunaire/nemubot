@@ -150,7 +150,7 @@ def getJSON(url, timeout=15):
     if cnt is None:
         return None
     else:
-        return json.loads(cnt.decode())
+        return json.loads(cnt)
 
 
 # Other utils
