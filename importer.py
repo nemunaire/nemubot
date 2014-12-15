@@ -39,16 +39,16 @@ class ModuleFinder(Finder):
         self.prompt = prompt
 
     def find_module(self, fullname, path=None):
-        #print ("looking for", fullname, "in", path)
+        # print ("looking for", fullname, "in", path)
         # Search only for new nemubot modules (packages init)
         if path is None:
             for mpath in self.context.modules_paths:
-                #print ("looking for", fullname, "in", mpath)
-                if (os.path.isfile(mpath + fullname + ".py") or
-                    os.path.isfile(mpath + fullname + "/__init__.py")):
+                # print ("looking for", fullname, "in", mpath)
+                if (os.path.isfile(os.path.join(mpath, fullname + ".py")) or
+                    os.path.isfile(os.path.join(os.path.join(mpath, fullname), "__init__.py"))):
                     return ModuleLoader(self.context, self.prompt,
                                         fullname, mpath)
-        #print ("not found")
+        # print ("not found")
         return None
 
 
@@ -63,14 +63,14 @@ class ModuleLoader(SourceLoader):
         else:
             self.config = None
 
-        if os.path.isfile(path + fullname + ".py"):
-            self.source_path = path + self.name + ".py"
+        if os.path.isfile(os.path.join(path, fullname + ".py")):
+            self.source_path = os.path.join(path, self.name + ".py")
             self.package = False
             self.mpath = path
-        elif os.path.isfile(path + fullname + "/__init__.py"):
-            self.source_path = path + self.name + "/__init__.py"
+        elif os.path.isfile(os.path.join(os.path.join(path, fullname), "__init__.py")):
+            self.source_path = os.path.join(os.path.join(path, self.name), "__init__.py")
             self.package = True
-            self.mpath = path + self.name + "/"
+            self.mpath = path + self.name + os.sep
         else:
             raise ImportError
 
@@ -146,7 +146,7 @@ class ModuleLoader(SourceLoader):
             module.logger.debug(*args)
 
         def mod_save():
-            fpath = self.context.data_path + "/" + module.__name__ + ".xml"
+            fpath = os.path.join(self.context.data_path, module.__name__ + ".xml")
             module.print_debug("Saving DATAS to " + fpath)
             module.DATAS.save(fpath)
 
@@ -191,8 +191,8 @@ class ModuleLoader(SourceLoader):
         module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
-            module.DATAS = parse_file(self.context.data_path
-                                                + module.__name__ + ".xml")
+            module.DATAS = parse_file(os.path.join(self.context.data_path,
+                                                module.__name__ + ".xml"))
             module.save = mod_save
         else:
             module.DATAS = None

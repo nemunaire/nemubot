@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
 import imp
 import logging
 import os
@@ -44,8 +45,33 @@ if __name__ == "__main__":
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-M", "--modules-path", nargs='*',
+                        default=["./modules/"],
+                        help="Directory to use as modules store")
+
+    parser.add_argument("-D", "--data-path", default="./datas/",
+                        help="Path to use to save bot data")
+
+    parser.add_argument('files', metavar='FILE', nargs='*',
+                        help="Configuration files to load")
+
+
+    args = parser.parse_args()
+
+    # Add modules dir paths
+    modules_paths = list()
+    for path in args.modules_path:
+        if os.path.isdir(path):
+            modules_paths.append(
+                os.path.realpath(os.path.abspath(path)))
+        else:
+            logger.error("%s is not a directory", path)
+
     # Create bot context
-    context = bot.Bot()
+    context = bot.Bot(modules_paths=modules_paths, data_path=args.data_path)
 
     # Load the prompt
     prmpt = prompt.Prompt()
@@ -53,18 +79,12 @@ if __name__ == "__main__":
     # Register the hook for futur import
     sys.meta_path.append(importer.ModuleFinder(context, prmpt))
 
-    # Add modules dir path
-    if os.path.isdir("./modules/"):
-        context.add_modules_path(
-            os.path.realpath(os.path.abspath("./modules/")))
-
-    # Parse command line arguments
-    if len(sys.argv) >= 2:
-        for arg in sys.argv[1:]:
-            if os.path.isdir(arg):
-                context.add_modules_path(arg)
-            else:
-                load_file(arg, context)
+    # Load requested configuration files
+    for path in args.files:
+        if os.path.isfile(path):
+            load_file(path, context)
+        else:
+            logger.error("%s is not a readable file", path)
 
     print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
                                                  os.getpid()))

@@ -334,19 +334,6 @@ class Bot(threading.Thread):
 
     # Modules methods
 
-    def add_modules_path(self, path):
-        """Add a path to the modules_path array, used by module loader"""
-        # The path must end by / char
-        if path[-1] != "/":
-            path += "/"
-
-        if path not in self.modules_paths:
-            self.modules_paths.append(path)
-            return True
-
-        return False
-
-
     def import_module(self, name):
         """Load a module
 
