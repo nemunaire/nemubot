@@ -326,7 +326,7 @@ class Bot(threading.Thread):
 
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
-            if autoconnect:
+            if autoconnect and not hasattr(self, "noautoconnect"):
                 srv.open()
             return True
 

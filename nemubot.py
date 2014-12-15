@@ -32,6 +32,9 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-a", "--no-connect", action="store_true",
+                        help="disable auto-connect to servers at startup")
+
     parser.add_argument("-v", "--verbose", action="count",
                         default=0,
                         help="verbosity level")
@@ -86,6 +89,9 @@ if __name__ == "__main__":
     # Create bot context
     context = bot.Bot(modules_paths=modules_paths, data_path=args.data_path,
                       verbosity=args.verbose)
+
+    if args.no_connect:
+        context.noautoconnect = True
 
     # Load the prompt
     prmpt = prompt.Prompt()
