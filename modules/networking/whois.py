@@ -1,9 +1,8 @@
 import datetime
-import json
-import socket
 import urllib
 
 from more import Response
+from tools.web import getJSON
 
 URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainName=%%s&outputFormat=json&userName=%s&password=%s"
 
@@ -80,15 +79,7 @@ def cmd_whois(msg):
 
     dom = msg.cmds[1]
 
-    try:
-        req = urllib.request.Request(URL_WHOIS % urllib.parse.quote(dom), headers={ 'User-Agent' : "nemubot v3" })
-        raw = urllib.request.urlopen(req, timeout=10)
-    except socket.timeout:
-        raise IRCException("Sorry, the request has timed out.")
-    except urllib.error.HTTPError as e:
-        raise IRCException("HTTP error occurs: %s %s" % (e.code, e.reason))
-
-    js = json.loads(raw.read().decode())
+    js = getJSON(URL_WHOIS % urllib.parse.quote(dom))
 
     if "ErrorMessage" in js:
         err = js["ErrorMessage"]
