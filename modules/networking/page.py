@@ -23,16 +23,16 @@ def headers(url):
     if o.netloc == "":
         raise IRCException("invalid URL")
     if o.scheme == "http":
-        conn = http.client.HTTPConnection(o.netloc, port=o.port, timeout=5)
+        conn = http.client.HTTPConnection(o.hostname, port=o.port, timeout=5)
     else:
-        conn = http.client.HTTPSConnection(o.netloc, port=o.port, timeout=5)
+        conn = http.client.HTTPSConnection(o.hostname, port=o.port, timeout=5)
     try:
         conn.request("HEAD", o.path, None, {"User-agent": "Nemubot v3"})
     except socket.timeout:
         raise IRCException("request timeout")
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s from %s on %d."
-               % (o.path, o.netloc, o.port))
+               % (o.path, o.hostname, o.port))
         raise IRCException("an unexpected error occurs")
 
     try:

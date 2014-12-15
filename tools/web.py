@@ -43,7 +43,7 @@ def getScheme(url):
 
 def getHost(url):
     """Return the domain of a given URL"""
-    return urlparse(url).netloc
+    return urlparse(url).hostname
 
 
 def getPort(url):
@@ -75,13 +75,13 @@ def getURLContent(url, timeout=15):
         o = urlparse("http://" + url)
 
     if o.scheme == "http":
-        conn = http.client.HTTPConnection(o.netloc, port=o.port,
+        conn = http.client.HTTPConnection(o.hostname, port=o.port,
                                           timeout=timeout)
     elif o.scheme == "https":
-        conn = http.client.HTTPSConnection(o.netloc, port=o.port,
+        conn = http.client.HTTPSConnection(o.hostname, port=o.port,
                                            timeout=timeout)
     elif o.scheme is None or o.scheme == "":
-        conn = http.client.HTTPConnection(o.netloc, port=80, timeout=timeout)
+        conn = http.client.HTTPConnection(o.hostname, port=80, timeout=timeout)
     else:
         return None
     try:
