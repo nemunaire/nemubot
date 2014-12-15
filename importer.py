@@ -191,8 +191,12 @@ class ModuleLoader(SourceLoader):
         module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
-            module.DATAS = parse_file(os.path.join(self.context.data_path,
-                                                module.__name__ + ".xml"))
+            data_file = os.path.join(self.context.data_path,
+                                     module.__name__ + ".xml")
+            if os.path.isfile(data_file):
+                module.DATAS = parse_file(data_file)
+            else:
+                module.DATAS = module_state.ModuleState("nemubotstate")
             module.save = mod_save
         else:
             module.DATAS = None

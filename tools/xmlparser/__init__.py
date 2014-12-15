@@ -54,28 +54,11 @@ def parse_file(filename):
     parser = xml.sax.make_parser()
     mod = ModuleStatesFile()
     parser.setContentHandler(mod)
-    try:
-        parser.parse(open(filename, "r"))
-        return mod.root
-    except IOError:
-        logger.exception("error occurs during XML parsing of %s", filename)
-        return module_state.ModuleState("nemubotstate")
-    except:
-        logger.exception("error occurs during XML parsing of %s", filename)
-        if mod.root is None:
-            return module_state.ModuleState("nemubotstate")
-        else:
-            return mod.root
+    parser.parse(open(filename, "r"))
+    return mod.root
 
 
 def parse_string(string):
     mod = ModuleStatesFile()
-    try:
-        xml.sax.parseString(string, mod)
-        return mod.root
-    except:
-        logger.exception("error occurs during XML parsing")
-        if mod.root is None:
-            return module_state.ModuleState("nemubotstate")
-        else:
-            return mod.root
+    xml.sax.parseString(string, mod)
+    return mod.root
