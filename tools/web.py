@@ -102,23 +102,24 @@ def getURLContent(url, timeout=15):
         size = int(res.getheader("Content-Length", 200000))
         cntype = res.getheader("Content-Type")
 
-        if size > 200000 or (cntype[:4] != "text" and cntype[:4] != "appl"):
+        if size > 200000 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
             return None
 
         data = res.read(size)
 
         # Decode content
         charset = "utf-8"
-        lcharset = res.getheader("Content-Type").split(";")
-        if len(lcharset) > 1:
-            for c in charset:
-                ch = c.split("=")
-                if ch[0].strip().lower() == "charset" and len(ch) > 1:
-                    cha = ch[1].split(".")
-                    if len(cha) > 1:
-                        charset = cha[1]
-                    else:
-                        charset = cha[0]
+        if cntype is not None:
+            lcharset = res.getheader("Content-Type").split(";")
+            if len(lcharset) > 1:
+                for c in charset:
+                    ch = c.split("=")
+                    if ch[0].strip().lower() == "charset" and len(ch) > 1:
+                        cha = ch[1].split(".")
+                        if len(cha) > 1:
+                            charset = cha[1]
+                        else:
+                            charset = cha[0]
     except http.client.BadStatusLine:
         raise IRCException("Invalid HTTP response")
     finally:
