@@ -29,24 +29,12 @@ from prompt.builtins import load_file
 import importer
 
 if __name__ == "__main__":
-    # Setup loggin interface
-    logger = logging.getLogger("nemubot")
-
-    formatter = logging.Formatter(
-        '%(asctime)s %(name)s %(levelname)s %(message)s')
-
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    ch.setLevel(logging.INFO)
-    logger.addHandler(ch)
-
-    fh = logging.FileHandler('./nemubot.log')
-    fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
-
     # Parse command line arguments
     parser = argparse.ArgumentParser()
+
+    parser.add_argument("-v", "--verbose", action="count",
+                        default=0,
+                        help="Verbosity level")
 
     parser.add_argument("-M", "--modules-path", nargs='*',
                         default=["./modules/"],
@@ -58,8 +46,26 @@ if __name__ == "__main__":
     parser.add_argument('files', metavar='FILE', nargs='*',
                         help="Configuration files to load")
 
-
     args = parser.parse_args()
+
+    # Setup loggin interface
+    logger = logging.getLogger("nemubot")
+
+    formatter = logging.Formatter(
+        '%(asctime)s %(name)s %(levelname)s %(message)s')
+
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    if args.verbose > 1:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+
+    fh = logging.FileHandler('./nemubot.log')
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     # Add modules dir paths
     modules_paths = list()
@@ -71,7 +77,8 @@ if __name__ == "__main__":
             logger.error("%s is not a directory", path)
 
     # Create bot context
-    context = bot.Bot(modules_paths=modules_paths, data_path=args.data_path)
+    context = bot.Bot(modules_paths=modules_paths, data_path=args.data_path,
+                      verbosity=args.verbose)
 
     # Load the prompt
     prmpt = prompt.Prompt()

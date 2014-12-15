@@ -179,7 +179,7 @@ class ModuleLoader(SourceLoader):
         # Set module common functions and datas
         module.REGISTERED_HOOKS = list()
         module.REGISTERED_EVENTS = list()
-        module.DEBUG = False
+        module.DEBUG = self.context.verbosity > 0
         module.DIR = self.mpath
         module.print = prnt
         module.print_debug = prnt_dbg

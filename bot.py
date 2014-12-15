@@ -43,7 +43,7 @@ class Bot(threading.Thread):
     """Class containing the bot context and ensuring key goals"""
 
     def __init__(self, ip="127.0.0.1", modules_paths=list(),
-                 data_path="./datas/"):
+                 data_path="./datas/", verbosity=0):
         """Initialize the bot context
 
         Keyword arguments:
@@ -55,6 +55,8 @@ class Bot(threading.Thread):
         threading.Thread.__init__(self)
 
         logger.info("Initiate nemubot v%s", __version__)
+
+        self.verbosity = verbosity
 
         # External IP for accessing this bot
         self.ip = ip
