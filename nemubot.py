@@ -34,19 +34,26 @@ if __name__ == "__main__":
 
     parser.add_argument("-v", "--verbose", action="count",
                         default=0,
-                        help="Verbosity level")
+                        help="verbosity level")
+
+    parser.add_argument("-V", "--version", action="store_true",
+                        help="display nemubot version and exit")
 
     parser.add_argument("-M", "--modules-path", nargs='*',
                         default=["./modules/"],
-                        help="Directory to use as modules store")
+                        help="directory to use as modules store")
 
     parser.add_argument("-D", "--data-path", default="./datas/",
-                        help="Path to use to save bot data")
+                        help="path to use to save bot data")
 
     parser.add_argument('files', metavar='FILE', nargs='*',
-                        help="Configuration files to load")
+                        help="configuration files to load")
 
     args = parser.parse_args()
+
+    if args.version:
+        print(bot.__version__)
+        sys.exit(0)
 
     # Setup loggin interface
     logger = logging.getLogger("nemubot")
