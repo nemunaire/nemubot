@@ -3,18 +3,18 @@
 """The weather module"""
 
 import datetime
-import json
 import re
 from urllib.parse import quote
-from urllib.request import urlopen
 
 from hooks import hook
+from tools import web
 
 import mapquest
 
 nemubotversion = 3.4
 
 from more import Response
+
 
 def load(context):
     global DATAS
@@ -40,8 +40,10 @@ def help_full ():
 def fahrenheit2celsius(temp):
     return int((temp - 32) * 50/9)/10
 
+
 def mph2kmph(speed):
     return int(speed * 160.9344)/100
+
 
 def inh2mmh(size):
     return int(size * 254)/10
@@ -62,6 +64,7 @@ def format_wth(wth):
                int(wth["ozone"])
            ))
 
+
 def format_forecast_daily(wth):
     return ("%s; between %s-%s °C; precipitation (%s %% chance) intensity: maximum %s mm/h; relative humidity: %s %%; wind speed: %s km/h %s°; cloud coverage: %s %%; pressure: %s hPa; ozone: %s DU" %
            (
@@ -76,6 +79,7 @@ def format_forecast_daily(wth):
                int(wth["pressure"]),
                int(wth["ozone"])
            ))
+
 
 def format_timestamp(timestamp, tzname, tzoffset, format="%c"):
     tz = datetime.timezone(datetime.timedelta(hours=tzoffset), tzname)
@@ -126,8 +130,7 @@ def treat_coord(msg):
 
 
 def get_json_weather(coords):
-    raw = urlopen("https://api.forecast.io/forecast/%s/%s,%s" % (CONF.getNode("darkskyapi")["key"], float(coords[0]), float(coords[1])), timeout=10)
-    wth = json.loads(raw.read().decode())
+    wth = web.getJSON("https://api.forecast.io/forecast/%s/%s,%s" % (CONF.getNode("darkskyapi")["key"], float(coords[0]), float(coords[1])))
 
     # First read flags
     if "darksky-unavailable" in wth["flags"]:
@@ -147,6 +150,7 @@ def cmd_coordinates(msg):
     coords = DATAS.index[j]
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
+
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
@@ -158,6 +162,7 @@ def cmd_alert(msg):
             res.append_message("\x03\x02%s\x03\x02 (see %s expire on %s): %s" % (alert["title"], alert["uri"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"]), alert["description"].replace("\n", " ")))
 
     return res
+
 
 def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
@@ -210,6 +215,7 @@ def cmd_weather(msg):
 
 
 gps_ask = re.compile(r"^\s*(?P<city>.*\w)\s*(?:(?:se|est)\s+(?:trouve|situ[ée]*)\s+[aà])\s*(?P<lat>-?[0-9]+(?:[,.][0-9]+))[^0-9.](?P<long>-?[0-9]+(?:[,.][0-9]+))\s*$", re.IGNORECASE)
+
 
 @hook("ask_default")
 def parseask(msg):

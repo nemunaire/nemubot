@@ -5,7 +5,6 @@
 import json
 import re
 import urllib.parse
-import urllib.request
 
 from hooks import hook
 from tools import web
@@ -22,8 +21,7 @@ def get_namespaces(site, ssl=False):
     print_debug(url)
 
     # Make the request
-    raw = urllib.request.urlopen(url)
-    data = json.loads(raw.read().decode())
+    data = web.getJSON(url)
 
     namespaces = dict()
     for ns in data["query"]["namespaces"]:
@@ -38,8 +36,7 @@ def get_raw_page(site, term, ssl=False):
     print_debug(url)
 
     # Make the request
-    raw = urllib.request.urlopen(url)
-    data = json.loads(raw.read().decode())
+    data = web.getJSON(url)
 
     for k in data["query"]["pages"]:
         try:
@@ -55,8 +52,7 @@ def get_unwikitextified(site, wikitext, ssl=False):
     print_debug(url)
 
     # Make the request
-    raw = urllib.request.urlopen(url)
-    data = json.loads(raw.read().decode())
+    data = web.getJSON(url)
 
     return data["expandtemplates"]["*"]
 
@@ -129,8 +125,7 @@ def search(site, term, ssl=False):
     print_debug(url)
 
     # Make the request
-    raw = urllib.request.urlopen(url)
-    data = json.loads(raw.read().decode())
+    data = web.getJSON(url)
 
     if data is not None and "query" in data and "search" in data["query"]:
         for itm in data["query"]["search"]:

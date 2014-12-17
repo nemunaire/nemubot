@@ -1,15 +1,18 @@
 # coding=utf-8
 
-import json
 from urllib.parse import quote
-from urllib.request import urlopen
+
+from tools import web
+
 
 class UrbanDictionnary:
+
     def __init__(self, terms):
         self.terms = terms
 
-        raw = urlopen("http://api.urbandictionary.com/v0/define?term=%s" % quote(terms), timeout=10)
-        self.udres = json.loads(raw.read().decode())
+        self.udres = web.getJSON(
+            "http://api.urbandictionary.com/v0/define?term=%s" % quote(terms),
+            timeout=10)
 
     @property
     def result_type(self):

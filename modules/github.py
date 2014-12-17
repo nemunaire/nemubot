@@ -2,13 +2,11 @@
 
 """Repositories, users or issues on GitHub"""
 
-import json
 import re
-import urllib.error
 from urllib.parse import quote
-from urllib.request import urlopen
 
 from hooks import hook
+from tools import web
 
 nemubotversion = 3.4
 
@@ -21,19 +19,17 @@ def help_full():
 
 
 def info_repos(repo):
-    raw = urlopen("https://api.github.com/search/repositories?q=%s" %
-                  quote(repo), timeout=10)
-    return json.loads(raw.read().decode())
+    return web.getJSON("https://api.github.com/search/repositories?q=%s" %
+                       quote(repo), timeout=10)
 
 
 def info_user(username):
-    raw = urlopen("https://api.github.com/users/%s" % quote(username),
-                  timeout=10)
-    user = json.loads(raw.read().decode())
+    user = web.getJSON("https://api.github.com/users/%s" % quote(username),
+                       timeout=10)
 
-    raw = urlopen("https://api.github.com/users/%s/repos?sort=updated" %
-                  quote(username), timeout=10)
-    user["repos"] = json.loads(raw.read().decode())
+    user["repos"] = web.getJSON("https://api.github.com/users/%s/"
+                                "repos?sort=updated" % quote(username),
+                                timeout=10)
 
     return user
 
@@ -45,17 +41,12 @@ def info_issue(repo, issue=None):
     else:
         fullname = repo
 
-    try:
-        if issue is not None:
-            raw = urlopen("https://api.github.com/repos/%s/issues/%s" %
-                          (quote(fullname), quote(issue)), timeout=10)
-            return [json.loads(raw.read().decode())]
-        else:
-            raw = urlopen("https://api.github.com/repos/%s/issues?sort=updated"
-                          % quote(fullname), timeout=10)
-            return json.loads(raw.read().decode())
-    except urllib.error.HTTPError:
-        raise IRCException("Repository not found")
+    if issue is not None:
+        return [web.getJSON("https://api.github.com/repos/%s/issues/%s" %
+                            (quote(fullname), quote(issue)))]
+    else:
+        return web.getJSON("https://api.github.com/repos/%s/issues?"
+                           "sort=updated" % quote(fullname))
 
 
 def info_commit(repo, commit=None):
@@ -65,17 +56,12 @@ def info_commit(repo, commit=None):
     else:
         fullname = repo
 
-    try:
-        if commit is not None:
-            raw = urlopen("https://api.github.com/repos/%s/commits/%s" %
-                          (quote(fullname), quote(commit)), timeout=10)
-            return [json.loads(raw.read().decode())]
-        else:
-            raw = urlopen("https://api.github.com/repos/%s/commits" %
-                          quote(fullname), timeout=10)
-            return json.loads(raw.read().decode())
-    except urllib.error.HTTPError:
-        raise IRCException("Repository not found")
+    if commit is not None:
+        return [web.getJSON("https://api.github.com/repos/%s/commits/%s" %
+                            (quote(fullname), quote(commit)))]
+    else:
+        return web.getJSON("https://api.github.com/repos/%s/commits" %
+                           quote(fullname))
 
 
 @hook("cmd_hook", "github")
@@ -162,6 +148,9 @@ def cmd_github(msg):
 
     issues = info_issue(repo, issue)
 
+    if issues is None:
+        raise IRCException("Repository not found")
+
     for issue in issues:
         res.append_message("%s%s issue #%d: \x03\x02%s\x03\x02 opened by %s on %s: %s" %
                            (issue["state"][0].upper(),
@@ -194,6 +183,9 @@ def cmd_github(msg):
     res = Response(channel=msg.channel, nomore="No more commit", count=count)
 
     commits = info_commit(repo, commit)
+
+    if commits is None:
+        raise IRCException("Repository not found")
 
     for commit in commits:
         res.append_message("Commit %s by %s on %s: %s" %

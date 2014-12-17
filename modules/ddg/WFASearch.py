@@ -1,19 +1,17 @@
 # coding=utf-8
 
 from urllib.parse import quote
-from urllib.request import urlopen
 
-from tools.xmlparser import parse_string
+from tools import web
+
 
 class WFASearch:
     def __init__(self, terms):
         self.terms = terms
         try:
-            raw = urlopen("http://api.wolframalpha.com/v2/query?"
-                                     "input=%s&appid=%s"
-                                     % (quote(terms),
-                                    CONF.getNode("wfaapi")["key"]), timeout=15)
-            self.wfares = parse_string(raw.read())
+            url = ("http://api.wolframalpha.com/v2/query?input=%s&appid=%s" %
+                   (quote(terms), CONF.getNode("wfaapi")["key"]))
+            self.wfares = web.getXML(url)
         except (TypeError, KeyError):
             print ("You need a Wolfram|Alpha API key in order to use this "
                    "module. Add it to the module configuration file:\n<wfaapi"
@@ -33,7 +31,8 @@ class WFASearch:
         if self.wfares is None:
             return "An error occurs during computation."
         elif self.wfares["error"] == "true":
-            return "An error occurs during computation: " + self.wfares.getNode("error").getNode("msg").getContent()
+            return ("An error occurs during computation: " +
+                    self.wfares.getNode("error").getNode("msg").getContent())
         elif self.wfares.hasNode("didyoumeans"):
             start = "Did you mean: "
             tag = "didyoumean"
@@ -66,6 +65,7 @@ class WFASearch:
             for node in self.wfares.getNodes("pod"):
                 for subnode in node.getNodes("subpod"):
                     if subnode.getFirstNode("plaintext").getContent() != "":
-                        yield node["title"] + " " + subnode["title"] + ": " + subnode.getFirstNode("plaintext").getContent()
+                        yield (node["title"] + " " + subnode["title"] + ": " +
+                               subnode.getFirstNode("plaintext").getContent())
         except IndexError:
             pass

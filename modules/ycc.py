@@ -5,10 +5,10 @@
 import re
 from urllib.parse import urlparse
 from urllib.parse import quote
-from urllib.request import urlopen
 
 from hooks import hook
 from message import TextMessage
+from tools import web
 
 nemubotversion = 3.4
 
@@ -54,11 +54,11 @@ def cmd_ycc(msg):
             snd_url = "http://ycc.fr/redirection/create/" + quote(url,
                                                                   "/:%@&=?")
             print_debug(snd_url)
-            raw = urlopen(snd_url, timeout=10)
+            page = web.getURLContent(snd_url)
             if o.netloc == "":
-                res.append(gen_response(raw.read().decode(), msg, o.scheme))
+                res.append(gen_response(page, msg, o.scheme))
             else:
-                res.append(gen_response(raw.read().decode(), msg, o.netloc))
+                res.append(gen_response(page, msg, o.netloc))
         else:
             res.append(gen_response(False, msg, url))
     return res

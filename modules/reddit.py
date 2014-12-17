@@ -2,9 +2,9 @@
 
 """Get information about subreddit"""
 
-import json
 import re
-import urllib
+
+from tools import web
 
 nemubotversion = 3.4
 
@@ -38,16 +38,12 @@ def cmd_subreddit(msg):
                 where = sub.group(1)
             else:
                 where = "r"
-            try:
-                req = urllib.request.Request(
-                    "http://www.reddit.com/%s/%s/about.json" %
-                    (where, sub.group(2)),
-                    headers={'User-Agent': "nemubot v3"})
-                raw = urllib.request.urlopen(req, timeout=10)
-            except urllib.error.HTTPError as e:
-                raise IRCException("HTTP error occurs: %s %s" %
-                                   (e.code, e.reason))
-            sbr = json.loads(raw.read().decode())
+
+            sbr = web.getJSON("http://www.reddit.com/%s/%s/about.json" %
+                              (where, sub.group(2)))
+
+            if sbr is None:
+                raise IRCException("subreddit not found")
 
             if "title" in sbr["data"]:
                 res = Response(channel=msg.channel,

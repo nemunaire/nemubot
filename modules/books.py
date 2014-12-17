@@ -2,7 +2,7 @@
 
 """Looking for books"""
 
-import urllib.request
+import urllib
 
 from hooks import hook
 from tools import web

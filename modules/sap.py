@@ -2,9 +2,8 @@
 
 """Find information about an SAP transaction codes"""
 
-import urllib.request
-import json
 import re
+import urllib.parse
 
 from hooks import hook
 from tools import web

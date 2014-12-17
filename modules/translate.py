@@ -2,12 +2,10 @@
 
 """Translation module"""
 
-import http.client
 import re
-import socket
-import json
 from urllib.parse import quote
-from urllib.request import urlopen
+
+from tools import web
 
 nemubotversion = 3.4
 
@@ -59,11 +57,7 @@ def cmd_translate(msg):
         langTo = "fr"
         term = ' '.join(msg.cmds[1:])
 
-    try:
-        raw = urlopen(URL % (langFrom, langTo, quote(term)))
-    except:
-        raise IRCException("invalid request")
-    wres = json.loads(raw.read().decode())
+    wres = web.getJSON(URL % (langFrom, langTo, quote(term)))
 
     if "Error" in wres:
         raise IRCException(wres["Note"])
@@ -87,6 +81,7 @@ def cmd_translate(msg):
                         extract_traslation(ent[i])))
         return res
 
+
 def meaning(entry):
     ret = list()
     if "sense" in entry and len(entry["sense"]) > 0:
@@ -97,6 +92,7 @@ def meaning(entry):
         return " as " + "/".join(ret)
     else:
         return ""
+
 
 def extract_traslation(entry):
     ret = list()

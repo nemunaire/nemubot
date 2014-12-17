@@ -2,18 +2,20 @@
 
 """Show many information about a movie or serie"""
 
-import json
 import re
-import urllib.request
+import urllib.parse
 
 from hooks import hook
+from tools import web
 
 nemubotversion = 3.4
 
 from more import Response
 
+
 def help_full():
     return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"
+
 
 def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False):
     """Returns the information about the matching movie"""
@@ -34,8 +36,7 @@ def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False)
     print_debug(url)
 
     # Make the request
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read().decode())
+    data = web.getJSON(url)
 
     # Return data
     if "Error" in data:
@@ -47,6 +48,7 @@ def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False)
     else:
         raise IRCException("An error occurs during movie search")
 
+
 def find_movies(title):
     """Find existing movies matching a approximate title"""
 
@@ -55,8 +57,7 @@ def find_movies(title):
     print_debug(url)
 
     # Make the request
-    raw = urllib.request.urlopen(url)
-    data = json.loads(raw.read().decode())
+    data = web.getJSON(url)
 
     # Return data
     if "Error" in data:
@@ -86,9 +87,9 @@ def cmd_imdb(msg):
         else:
             data = get_movie(title=title)
 
-    res =  Response(channel=msg.channel,
-                    title="%s (%s)" % (data['Title'], data['Year']),
-                    nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
+    res = Response(channel=msg.channel,
+                   title="%s (%s)" % (data['Title'], data['Year']),
+                   nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
 
     res.append_message("\x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
                        (data['imdbRating'], data['imdbVotes'], data['Plot']))
@@ -96,6 +97,7 @@ def cmd_imdb(msg):
     res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02genre:\x0F %s; \x02directed by:\x0F %s; \x02writed by:\x0F %s; \x02main actors:\x0F %s"
                        % (data['Type'], data['Country'], data['Released'], data['Genre'], data['Director'], data['Writer'], data['Actors']))
     return res
+
 
 @hook("cmd_hook", "imdbs")
 def cmd_search(msg):

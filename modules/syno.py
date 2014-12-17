@@ -2,10 +2,8 @@
 
 """Find synonyms"""
 
-import json
 import re
 from urllib.parse import quote
-from urllib.request import urlopen
 
 from hooks import hook
 from tools import web
@@ -14,8 +12,10 @@ nemubotversion = 3.4
 
 from more import Response
 
+
 def help_full():
     return "!syno [LANG] <word>: give a list of synonyms for <word>."
+
 
 def load(context):
     global lang_binding
@@ -55,8 +55,8 @@ def get_french_synos(word):
 
 
 def get_english_synos(key, word):
-    raw = urlopen("http://words.bighugelabs.com/api/2/%s/%s/json" % (quote(key), quote(word.encode("ISO-8859-1"))))
-    cnt = json.loads(raw.read().decode())
+    cnt = web.getJSON("http://words.bighugelabs.com/api/2/%s/%s/json" %
+                      (quote(key), quote(word.encode("ISO-8859-1"))))
 
     best = list(); synos = list(); anton = list()
 
