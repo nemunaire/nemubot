@@ -1,5 +1,7 @@
+from datetime import datetime
 import urllib
 
+from tools import human
 from tools.web import getJSON
 
 nemubotversion = 3.4
@@ -34,6 +36,8 @@ def cmd_tpb(msg):
 
     if torrents:
         for t in torrents:
-            res.append_message("\x03\x02{title}\x03\x02 in {category}, {size}B; id: {id}; magnet: {magnet}".format(**t))
+            t["sizeH"] = human.size(t["size"])
+            t["dateH"] = datetime.fromtimestamp(t["date"]).strftime('%Y-%m-%d %H:%M:%S')
+            res.append_message("\x03\x02{title}\x03\x02 in {category}, {sizeH}; added at {dateH}; magnet: {magnet}; id: {id}".format(**t))
 
     return res
