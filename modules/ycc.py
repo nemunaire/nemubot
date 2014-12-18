@@ -21,14 +21,24 @@ def help_full():
 LAST_URLS = dict()
 
 
+def reduce(url):
+    """Ask YCC website to reduce given URL
+
+    Argument:
+    url -- the URL to reduce
+    """
+
+    snd_url = "http://ycc.fr/redirection/create/" + quote(url, "/:%@&=?")
+    print_debug(snd_url)
+    return web.getURLContent(snd_url)
+
+
 def gen_response(res, msg, srv):
     if res is None:
-        raise IRCException("la situation est embarassante, il semblerait que YCC soit down :(")
-    elif isinstance(res, str):
+        raise IRCException("mauvaise URL : %s" % srv)
+    else:
         return TextMessage("URL pour %s : %s" % (srv, res), server=None,
                            to=msg.to_response)
-    else:
-        raise IRCException("mauvaise URL : %s" % srv)
 
 
 @hook("cmd_hook", "ycc")
@@ -51,16 +61,13 @@ def cmd_ycc(msg):
     for url in minify:
         o = urlparse(url, "http")
         if o.scheme != "":
-            snd_url = "http://ycc.fr/redirection/create/" + quote(url,
-                                                                  "/:%@&=?")
-            print_debug(snd_url)
-            page = web.getURLContent(snd_url)
+            minief_url = reduce(url)
             if o.netloc == "":
-                res.append(gen_response(page, msg, o.scheme))
+                res.append(gen_response(minief_url, msg, o.scheme))
             else:
-                res.append(gen_response(page, msg, o.netloc))
+                res.append(gen_response(minief_url, msg, o.netloc))
         else:
-            res.append(gen_response(False, msg, url))
+            res.append(gen_response(None, msg, url))
     return res
 
 
