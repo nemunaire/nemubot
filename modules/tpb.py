@@ -38,6 +38,6 @@ def cmd_tpb(msg):
         for t in torrents:
             t["sizeH"] = human.size(t["size"])
             t["dateH"] = datetime.fromtimestamp(t["date"]).strftime('%Y-%m-%d %H:%M:%S')
-            res.append_message("\x03\x02{title}\x03\x02 in {category}, {sizeH}; added at {dateH}; magnet: {magnet}; id: {id}".format(**t))
+            res.append_message("\x03\x02{title}\x03\x02 in {category}, {sizeH}; added at {dateH}; id: {id}; magnet:?xt=urn:btih:{magnet}&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80&tr=udp%3A%2F%2Ftracker.istole.it%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337".format(**t))
 
     return res
