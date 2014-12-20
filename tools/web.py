@@ -99,10 +99,10 @@ def getURLContent(url, timeout=15):
 
     try:
         res = conn.getresponse()
-        size = int(res.getheader("Content-Length", 200000))
+        size = int(res.getheader("Content-Length", 524288))
         cntype = res.getheader("Content-Type")
 
-        if size > 200000 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
+        if size > 524288 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
             return None
 
         data = res.read(size)
