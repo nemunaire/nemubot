@@ -18,7 +18,7 @@
 
 from distutils.version import LooseVersion
 from importlib.abc import Finder
-from importlib.abc import SourceLoader
+from importlib.machinery import SourceFileLoader
 import imp
 import logging
 import os
@@ -44,94 +44,43 @@ class ModuleFinder(Finder):
         if path is None:
             for mpath in self.context.modules_paths:
                 # print ("looking for", fullname, "in", mpath)
-                if (os.path.isfile(os.path.join(mpath, fullname + ".py")) or
-                    os.path.isfile(os.path.join(os.path.join(mpath, fullname), "__init__.py"))):
-                    return ModuleLoader(self.context, self.prompt,
-                                        fullname, mpath)
+                if os.path.isfile(os.path.join(mpath, fullname + ".py")):
+                    return ModuleLoader(self.context, self.prompt, fullname,
+                                        os.path.join(mpath, fullname + ".py"))
+                elif os.path.isfile(os.path.join(os.path.join(mpath, fullname), "__init__.py")):
+                    return ModuleLoader(self.context, self.prompt, fullname,
+                                        os.path.join(
+                                            os.path.join(mpath, fullname),
+                                            "__init__.py"))
         # print ("not found")
         return None
 
 
-class ModuleLoader(SourceLoader):
+class ModuleLoader(SourceFileLoader):
+
     def __init__(self, context, prompt, fullname, path):
         self.context = context
         self.prompt = prompt
-        self.name = fullname
 
-        if self.name in self.context.modules_configuration:
-            self.config = self.context.modules_configuration[self.name]
+        if fullname in self.context.modules_configuration:
+            self.config = self.context.modules_configuration[fullname]
         else:
             self.config = None
 
-        if os.path.isfile(os.path.join(path, fullname + ".py")):
-            self.source_path = os.path.join(path, self.name + ".py")
-            self.package = False
-            self.mpath = path
-        elif os.path.isfile(os.path.join(os.path.join(path, fullname), "__init__.py")):
-            self.source_path = os.path.join(os.path.join(path, self.name), "__init__.py")
-            self.package = True
-            self.mpath = path + self.name + os.sep
-        else:
-            raise ImportError
+        SourceFileLoader.__init__(self, fullname, path)
 
-    def get_filename(self, fullname):
-        """Return the path to the source file as found by the finder."""
-        return self.source_path
-
-    def get_data(self, path):
-        """Return the data from path as raw bytes."""
-        with open(path, 'rb') as file:
-            return file.read()
-
-    def path_mtime(self, path):
-        st = os.stat(path)
-        return int(st.st_mtime)
-
-    def set_data(self, path, data):
-        """Write bytes data to a file."""
-        parent, filename = os.path.split(path)
-        path_parts = []
-        # Figure out what directories are missing.
-        while parent and not os.path.isdir(parent):
-            parent, part = os.path.split(parent)
-            path_parts.append(part)
-        # Create needed directories.
-        for part in reversed(path_parts):
-            parent = os.path.join(parent, part)
-            try:
-                os.mkdir(parent)
-            except FileExistsError:
-                # Probably another Python process already created the dir.
-                continue
-            except PermissionError:
-                # If can't get proper access, then just forget about writing
-                # the data.
-                return
-        try:
-            with open(path, 'wb') as file:
-                file.write(data)
-        except (PermissionError, FileExistsError):
-            pass
-
-    def get_code(self, fullname):
-        return SourceLoader.get_code(self, fullname)
-
-    def get_source(self, fullname):
-        return SourceLoader.get_source(self, fullname)
-
-    def is_package(self, fullname):
-        return self.package
 
     def load_module(self, fullname):
-        module = self._load_module(fullname, sourceless=True)
+        module = SourceFileLoader.load_module(self, fullname)
 
         # Check that is a valid nemubot module
         if not hasattr(module, "nemubotversion"):
-            raise ImportError("Module `%s' is not a nemubot module."%self.name)
+            raise ImportError("Module `%s' is not a nemubot module." %
+                              fullname)
         # Check module version
         if LooseVersion(__version__) < LooseVersion(str(module.nemubotversion)):
             raise ImportError("Module `%s' is not compatible with this "
-                              "version." % self.name)
+                              "version." % fullname)
 
         # Set module common functions and data
         module.__LOADED__ = True
@@ -180,7 +129,6 @@ class ModuleLoader(SourceLoader):
         module.REGISTERED_HOOKS = list()
         module.REGISTERED_EVENTS = list()
         module.DEBUG = self.context.verbosity > 0
-        module.DIR = self.mpath
         module.print = prnt
         module.print_debug = prnt_dbg
         module.send_response = send_response

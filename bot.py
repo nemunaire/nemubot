@@ -26,7 +26,7 @@ import threading
 import time
 import uuid
 
-__version__ = '3.4.dev3'
+__version__ = '3.4.dev4'
 __author__  = 'nemunaire'
 
 from consumer import Consumer, EventConsumer, MessageConsumer
