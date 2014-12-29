@@ -19,6 +19,7 @@ def load(context):
         mod.IRCException = IRCException
         mod.ModuleEvent = ModuleEvent
         mod.add_event = add_event
+        mod.del_event = del_event
         mod.save = save
         mod.print = print
         mod.print_debug = print_debug
@@ -119,7 +120,7 @@ def cmd_watch(msg, diffType="diff"):
     if len(msg.cmds) <= 1:
         raise IRCException("indicate an URL to watch!")
 
-    return watchWebsite.add_site(msg.cmds[1])
+    return watchWebsite.add_site(msg.cmds[1], msg.frm, msg.channel, msg.server, diffType)
 
 
 @hook("cmd_hook", "unwatch")
@@ -127,4 +128,4 @@ def cmd_unwatch(msg):
     if len(msg.cmds) <= 1:
         raise IRCException("which URL should I stop watching?")
 
-    return watchWebsite.add_site(msg.cmds[1])
+    return watchWebsite.del_site(msg.cmds[1], msg.frm, msg.channel, msg.frm_owner)

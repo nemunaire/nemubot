@@ -6,15 +6,22 @@ from urllib.parse import urlparse
 
 from hooks import hook
 from more import Response
+from tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 
 from .atom import Atom
 from . import page
 
+DATAS = None
 
-def load(DATAS):
+
+def load(datas):
     """Register events on watched website"""
+
+    global DATAS
+    DATAS = datas
+
     DATAS.setIndex("url", "watch")
     for site in DATAS.getNodes("watch"):
         if site.hasNode("alert"):
@@ -24,7 +31,7 @@ def load(DATAS):
             #DATAS.delChild(site)
 
 
-def del_site(url):
+def del_site(url, nick, channel, frm_owner):
     """Remove a site from watching list
 
     Argument:
@@ -35,8 +42,8 @@ def del_site(url):
     if o.scheme != "" and url in DATAS.index:
         site = DATAS.index[url]
         for a in site.getNodes("alert"):
-            if a["channel"] == msg.channel:
-                if not (msg.frm == a["nick"] or msg.frm_owner):
+            if a["channel"] == channel:
+                if not (nick == a["nick"] or frm_owner):
                     raise IRCException("you cannot unwatch this URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
@@ -44,11 +51,11 @@ def del_site(url):
                     DATAS.delChild(site)
                 save()
                 return Response("I don't watch this URL anymore.",
-                                channel=msg.channel, nick=msg.nick)
+                                channel=channel, nick=nick)
     raise IRCException("I didn't watch this URL!")
 
 
-def add_site(url):
+def add_site(url, nick, channel, server, diffType="diff"):
     """Add a site to watching list
 
     Argument:
@@ -60,9 +67,9 @@ def add_site(url):
         raise IRCException("sorry, I can't watch this URL :(")
 
     alert = ModuleState("alert")
-    alert["nick"] = msg.nick
-    alert["server"] = msg.server
-    alert["channel"] = msg.channel
+    alert["nick"] = nick
+    alert["server"] = server
+    alert["channel"] = channel
     alert["message"] = "{url} just changed!"
 
     if url not in DATAS.index:
@@ -77,7 +84,7 @@ def add_site(url):
         DATAS.index[url].addChild(alert)
 
     save()
-    return Response(channel=msg.channel, nick=msg.nick,
+    return Response(channel=channel, nick=nick,
                     message="this site is now under my supervision.")
 
 
