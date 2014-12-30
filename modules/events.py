@@ -35,7 +35,7 @@ def load(context):
             event._end = DATAS.index[evt].getDate("end")
             idt = add_event(event)
             if idt is not None:
-                DATAS.index[evt]["id"] = idt
+                DATAS.index[evt]["_id"] = idt
 
 
 def fini(d, strend):
@@ -104,7 +104,7 @@ def start_countdown(msg):
                   else:
                     strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
                 evt._end = strnd.getDate("end")
-                strnd["id"] = add_event(evt)
+                strnd["_id"] = add_event(evt)
             except:
                 DATAS.delChild(strnd)
                 raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.cmds[1])
@@ -127,7 +127,7 @@ def start_countdown(msg):
             evt._end = strnd.getDate("end")
             eid = add_event(evt)
             if eid is not None:
-                strnd["id"] = eid
+                strnd["_id"] = eid
 
     save()
     if "end" in strnd:
@@ -149,7 +149,7 @@ def end_countdown(msg):
     if msg.cmds[1] in DATAS.index:
         if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.frm_owner):
             duration = countdown(msg.date - DATAS.index[msg.cmds[1]].getDate("start"))
-            del_event(DATAS.index[msg.cmds[1]]["id"])
+            del_event(DATAS.index[msg.cmds[1]]["_id"])
             DATAS.delChild(DATAS.index[msg.cmds[1]])
             save()
             return Response("%s a duré %s." % (msg.cmds[1], duration),
