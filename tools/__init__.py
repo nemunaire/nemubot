@@ -19,22 +19,6 @@
 import imp
 
 
-def intToIP(n):
-    ip = ""
-    for i in range(0, 4):
-        mod = n % 256
-        ip = "%d.%s" % (mod, ip)
-        n = (n - mod) / 256
-    return ip[:len(ip) - 1]
-
-
-def ipToInt(ip):
-    sum = 0
-    for b in ip.split("."):
-        sum = 256 * sum + int(b)
-    return sum
-
-
 def reload():
     import tools.countdown
     imp.reload(tools.countdown)

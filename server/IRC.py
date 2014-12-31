@@ -18,6 +18,7 @@
 
 import calendar
 from datetime import datetime, timezone
+import ipaddress
 import re
 import time
 import shlex
@@ -26,7 +27,6 @@ from channel import Channel
 import message
 from message.printer.IRC import IRC as IRCPrinter
 from server.socket import SocketServer
-import tools
 
 
 class IRC(SocketServer):
@@ -82,7 +82,7 @@ class IRC(SocketServer):
         def _ctcp_dcc(msg, cmds):
             """Response to DCC CTCP message"""
             try:
-                ip = tools.toIP(int(cmds[3]))
+                ip = ipaddress.ip_address(int(cmds[3]))
                 port = int(cmds[4])
                 conn = DCC(srv, msg.sender)
             except:

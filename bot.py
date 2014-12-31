@@ -18,6 +18,7 @@
 
 from datetime import datetime, timedelta, timezone
 import imp
+import ipaddress
 import logging
 from queue import Queue
 import re
@@ -59,7 +60,7 @@ class Bot(threading.Thread):
         self.verbosity = verbosity
 
         # External IP for accessing this bot
-        self.ip = ip
+        self.ip = ipaddress.ip_address(ip)
 
         # Context paths
         self.modules_paths = modules_paths
