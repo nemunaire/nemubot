@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import urllib
 
+from bot import __version__
 from tools import web
 
 
@@ -27,7 +28,8 @@ def headers(url):
     else:
         conn = http.client.HTTPSConnection(o.hostname, port=o.port, timeout=5)
     try:
-        conn.request("HEAD", o.path, None, {"User-agent": "Nemubot v3"})
+        conn.request("HEAD", o.path, None, {"User-agent":
+                                            "Nemubot v%s" % __version__})
     except socket.timeout:
         raise IRCException("request timeout")
     except socket.gaierror:

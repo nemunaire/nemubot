@@ -25,6 +25,7 @@ from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+from bot import __version__
 from exception import IRCException
 from tools.xmlparser import parse_string
 
@@ -87,9 +88,10 @@ def getURLContent(url, timeout=15):
     try:
         if o.query != '':
             conn.request("GET", o.path + "?" + o.query,
-                         None, {"User-agent": "Nemubot v3"})
+                         None, {"User-agent": "Nemubot v%s" % __version__})
         else:
-            conn.request("GET", o.path, None, {"User-agent": "Nemubot v3"})
+            conn.request("GET", o.path, None, {"User-agent":
+                                               "Nemubot v%s" % __version__})
     except socket.timeout:
         return None
     except OSError: # [Errno 113] No route to host
