@@ -26,6 +26,7 @@ import sys
 import bot
 import prompt
 from prompt.builtins import load_file
+from prompt.reset import PromptReset
 import importer
 
 if __name__ == "__main__":
@@ -116,7 +117,13 @@ if __name__ == "__main__":
     print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
                                                  os.getpid()))
     context.start()
-    while prmpt.run(context):
+    while True:
+        try:
+            prmpt.run(context)
+        except PromptReset as e:
+            if e.type == "quit":
+                break
+
         try:
             # Reload context
             imp.reload(bot)

@@ -18,6 +18,7 @@
 
 import logging
 
+from .reset import PromptReset
 from tools.config import load_file
 
 logger = logging.getLogger("nemubot.prompt.builtins")
@@ -26,12 +27,10 @@ logger = logging.getLogger("nemubot.prompt.builtins")
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
     if toks[0] == "refresh":
-        return "refresh"
+        raise PromptReset("refresh")
     elif toks[0] == "reset":
-        return "reset"
-    else:
-        context.quit()
-    return "quit"
+        raise PromptReset("reset")
+    raise PromptReset("quit")
 
 
 def liste(toks, context, prompt):
@@ -58,8 +57,11 @@ def liste(toks, context, prompt):
 
             else:
                 print ("  Unknown list `%s'" % l)
+                return 2
+        return 0
     else:
         print ("  Please give a list to show: servers, ...")
+        return 1
 
 
 def load(toks, context, prompt):
@@ -69,7 +71,7 @@ def load(toks, context, prompt):
             load_file(filename, context)
     else:
         print ("Not enough arguments. `load' takes a filename.")
-    return
+        return 1
 
 
 def select(toks, context, prompt):
@@ -80,9 +82,9 @@ def select(toks, context, prompt):
             prompt.selectedServer = context.servers[toks[1]]
         else:
             print ("select: server `%s' not found." % toks[1])
+            return 1
     else:
         prompt.selectedServer = None
-    return
 
 
 def unload(toks, context, prompt):
@@ -96,8 +98,10 @@ def unload(toks, context, prompt):
                 print ("  Module `%s' successfully unloaded." % name)
             else:
                 print ("  No module `%s' loaded, can't unload!" % name)
+                return 2
     else:
         print ("Not enough arguments. `unload' takes a module name.")
+        return 1
 
 
 def debug(toks, context, prompt):
@@ -112,8 +116,10 @@ def debug(toks, context, prompt):
                     print ("  Debug for module module `%s' disabled." % name)
             else:
                 print ("  No module `%s' loaded, can't debug!" % name)
+                return 2
     else:
         print ("Not enough arguments. `debug' takes a module name.")
+        return 1
 
 
 # Register build-ins

@@ -23,6 +23,8 @@ import shlex
 import sys
 import traceback
 
+from .error import PromptError
+from .reset import PromptReset
 from . import builtins
 
 
@@ -30,12 +32,14 @@ class Prompt:
 
     def __init__(self):
         self.selectedServer = None
+        self.lastretcode = 0
 
         self.HOOKS_CAPS = dict()
         self.HOOKS_LIST = dict()
 
     def add_cap_hook(self, name, call, data=None):
-        self.HOOKS_CAPS[name] = (lambda d, t, c, p: call(d, t, c, p), data)
+        self.HOOKS_CAPS[name] = lambda t, c: call(t, data=data,
+                                                  context=c, prompt=self)
 
     def add_list_hook(self, name, call):
         self.HOOKS_LIST[name] = call
@@ -77,13 +81,12 @@ class Prompt:
         """
 
         if toks[0] in builtins.CAPS:
-            return builtins.CAPS[toks[0]](toks, context, self)
+            self.lastretcode = builtins.CAPS[toks[0]](toks, context, self)
         elif toks[0] in self.HOOKS_CAPS:
-            f, d = self.HOOKS_CAPS[toks[0]]
-            return f(d, toks, context, self)
+            self.lastretcode = self.HOOKS_CAPS[toks[0]](toks, context)
         else:
             print("Unknown command: `%s'" % toks[0])
-            return ""
+            self.lastretcode = 127
 
     def getPS1(self):
         """Get the PS1 associated to the selected server"""
@@ -99,14 +102,19 @@ class Prompt:
         context -- current bot context
         """
 
-        ret = ""
-        while ret != "quit" and ret != "reset" and ret != "refresh":
+        while True:  # Stopped by exception
             try:
-                line = input("\033[0;33m%s§\033[0m " % self.getPS1())
+                line = input("\033[0;33m%s\033[0;%dm§\033[0m " %
+                             (self.getPS1(), 31 if self.lastretcode else 32))
                 cmds = self.lex_cmd(line.strip())
                 for toks in cmds:
                     try:
-                        ret = self.exec_cmd(toks, context)
+                        self.exec_cmd(toks, context)
+                    except PromptReset:
+                        raise
+                    except PromptError as e:
+                        print(e.message)
+                        self.lastretcode = 128
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value,
@@ -114,9 +122,8 @@ class Prompt:
             except KeyboardInterrupt:
                 print("")
             except EOFError:
-                ret = "quit"
                 print("quit")
-        return ret != "quit"
+                raise PromptReset("quit")
 
 
 def hotswap(bak):

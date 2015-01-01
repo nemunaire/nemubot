@@ -69,6 +69,8 @@ class AbstractServer(io.IOBase):
         if not hasattr(self, "_open") or self._open():
             _rlist.append(self)
             _xlist.append(self)
+            return True
+        return False
 
 
     def close(self):
@@ -82,6 +84,8 @@ class AbstractServer(io.IOBase):
                 _wlist.remove(self)
             if self in _xlist:
                 _xlist.remove(self)
+            return True
+        return False
 
 
     # Writes
