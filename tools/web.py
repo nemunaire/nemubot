@@ -92,6 +92,8 @@ def getURLContent(url, timeout=15):
             conn.request("GET", o.path, None, {"User-agent": "Nemubot v3"})
     except socket.timeout:
         return None
+    except OSError: # [Errno 113] No route to host
+        return None
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s on %s from %s."
                % (o.path, o.netloc, url))
