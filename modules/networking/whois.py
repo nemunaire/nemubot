@@ -1,8 +1,9 @@
 import datetime
 import urllib
 
+from nemubot.tools.web import getJSON
+
 from more import Response
-from tools.web import getJSON
 
 URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainName=%%s&outputFormat=json&userName=%s&password=%s"
 
@@ -17,7 +18,7 @@ def load(CONF, add_hook):
     else:
         URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
 
-        from hooks.messagehook import MessageHook
+        from nemubot.hooks.messagehook import MessageHook
         add_hook("cmd_hook", MessageHook(cmd_whois, "netwhois"))
 
 

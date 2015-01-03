@@ -2,7 +2,7 @@
 
 """Various network tools (w3m, w3c validator, curl, traceurl, ...)"""
 
-from hooks import hook
+from nemubot.hooks import hook
 
 nemubotversion = 3.4
 

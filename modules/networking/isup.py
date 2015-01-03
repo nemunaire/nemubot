@@ -1,6 +1,6 @@
 import urllib
 
-from tools.web import getJSON
+from nemubot.tools.web import getJSON
 
 def isup(url):
     """Determine if the given URL is up or not

@@ -6,10 +6,10 @@ import re
 import sys
 from datetime import date, datetime
 
-from hooks import hook
-from tools.countdown import countdown_format
-from tools.date import extractDate
-from tools.xmlparser.node import ModuleState
+from nemubot.hooks import hook
+from nemubot.tools.countdown import countdown_format
+from nemubot.tools.date import extractDate
+from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 

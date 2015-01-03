@@ -4,11 +4,12 @@ from random import randint
 import urllib.parse
 from urllib.parse import urlparse
 
-from hooks import hook
-from more import Response
-from tools.xmlparser.node import ModuleState
+from nemubot.hooks import hook
+from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
+
+from more import Response
 
 from .atom import Atom
 from . import page

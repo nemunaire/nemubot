@@ -2,7 +2,7 @@
 
 """Informe les usagers des prochains passages des transports en communs de la RATP"""
 
-from hooks import hook
+from nemubot.hooks import hook
 from more import Response
 
 nemubotversion = 3.4

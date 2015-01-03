@@ -1,7 +1,7 @@
 import urllib.request
 from bs4 import BeautifulSoup
 import pprint
-from hooks import hook
+from nemubot.hooks import hook
 from more import Response
 
 nemubotversion = 3.4
@@ -34,4 +34,3 @@ def get_cve_desc(msg):
   desc = soup.body.findAll('td')
 
   return Response(desc[DESC_INDEX].text, msg.channel)
-

@@ -5,9 +5,9 @@
 import re
 import urllib.parse
 
-from hooks import hook
-from tools import web
-from tools.web import striphtml
+from nemubot.hooks import hook
+from nemubot.tools import web
+from nemubot.tools.web import striphtml
 
 nemubotversion = 3.4
 

@@ -1,12 +1,12 @@
 from datetime import datetime
 import urllib
 
-from tools import human
-from tools.web import getJSON
+from nemubot.hooks import hook
+from nemubot.tools import human
+from nemubot.tools.web import getJSON
 
 nemubotversion = 3.4
 
-from hooks import hook
 from more import Response
 
 URL_TPBAPI = None
@@ -22,7 +22,7 @@ def load(context):
     else:
         URL_TPBAPI = CONF.getNode("tpbapi")["url"]
 
-        from hooks.messagehook import MessageHook
+        from nemubot.hooks.messagehook import MessageHook
         add_hook("cmd_hook", MessageHook(cmd_tpb, "tpb"))
 
 

@@ -4,11 +4,11 @@
 
 import re
 
-from tools import web
+from nemubot.hooks import hook
+from nemubot.tools import web
 
 nemubotversion = 3.4
 
-from hooks import hook
 from more import Response
 
 

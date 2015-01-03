@@ -6,8 +6,8 @@ import json
 import re
 import urllib.parse
 
-from hooks import hook
-from tools import web
+from nemubot.hooks import hook
+from nemubot.tools import web
 
 nemubotversion = 3.4
 

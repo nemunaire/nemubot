@@ -6,7 +6,7 @@ import re
 import imp
 from datetime import datetime, timedelta, timezone
 
-from hooks import hook
+from nemubot.hooks import hook
 
 nemubotversion = 3.4
 

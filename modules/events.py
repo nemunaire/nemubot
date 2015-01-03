@@ -10,10 +10,10 @@ import time
 import threading
 import traceback
 
-from event import ModuleEvent
-from hooks import hook
-from tools.date import extractDate
-from tools.countdown import countdown_format, countdown
+from nemubot.event import ModuleEvent
+from nemubot.hooks import hook
+from nemubot.tools.date import extractDate
+from nemubot.tools.countdown import countdown_format, countdown
 
 nemubotversion = 3.4
 

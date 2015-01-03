@@ -2,7 +2,7 @@
 
 from urllib.parse import quote
 
-from tools import web
+from nemubot.tools import web
 
 
 class UrbanDictionnary:

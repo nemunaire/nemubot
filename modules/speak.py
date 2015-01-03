@@ -6,9 +6,9 @@ import re
 import subprocess
 from threading import Thread
 
-from hooks import hook
-from message import TextMessage
-from message.visitor import AbstractVisitor
+from nemubot.hooks import hook
+from nemubot.message import TextMessage
+from nemubot.message.visitor import AbstractVisitor
 
 nemubotversion = 3.4
 

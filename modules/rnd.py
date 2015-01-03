@@ -4,7 +4,7 @@
 
 import random
 
-from hooks import hook
+from nemubot.hooks import hook
 
 nemubotversion = 3.4
 

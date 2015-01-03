@@ -7,8 +7,8 @@ import sys
 from datetime import datetime, timezone
 import shlex
 
-from hooks import hook
-from message import TextMessage, Command
+from nemubot.hooks import hook
+from nemubot.message import TextMessage, Command
 
 nemubotversion = 3.4
 

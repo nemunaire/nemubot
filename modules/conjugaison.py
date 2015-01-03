@@ -2,15 +2,13 @@
 
 """Find french conjugaison"""
 
+from collections import defaultdict
 import re
-import traceback
-import sys
 from urllib.parse import quote
 
-from hooks import hook
-from tools import web
-from tools.web import striphtml
-from collections import defaultdict
+from nemubot.hooks import hook
+from nemubot.tools import web
+from nemubot.tools.web import striphtml
 
 nemubotversion = 3.4
 

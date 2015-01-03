@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from tools import web
+from nemubot.tools import web
 
 nemubotversion = 3.4
 
@@ -27,7 +27,7 @@ def load(context):
     else:
         URL = URL % CONF.getNode("wrapi")["key"]
 
-    from hooks.messagehook import MessageHook
+    from nemubot.hooks.messagehook import MessageHook
     add_hook("cmd_hook", MessageHook(cmd_translate, "translate"))
 
 

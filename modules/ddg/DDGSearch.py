@@ -2,8 +2,8 @@
 
 from urllib.parse import quote
 
-from tools import web
-from tools.xmlparser import parse_string
+from nemubot.tools import web
+from nemubot.tools.xmlparser import parse_string
 
 
 class DDGSearch:

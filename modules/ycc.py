@@ -6,9 +6,9 @@ import re
 from urllib.parse import urlparse
 from urllib.parse import quote
 
-from hooks import hook
-from message import TextMessage
-from tools import web
+from nemubot.hooks import hook
+from nemubot.message import TextMessage
+from nemubot.tools import web
 
 nemubotversion = 3.4
 

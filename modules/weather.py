@@ -6,8 +6,8 @@ import datetime
 import re
 from urllib.parse import quote
 
-from hooks import hook
-from tools import web
+from nemubot.hooks import hook
+from nemubot.tools import web
 
 import mapquest
 
@@ -27,7 +27,7 @@ def load(context):
                "http://developer.forecast.io/")
         return None
 
-    from hooks.messagehook import MessageHook
+    from nemubot.hooks.messagehook import MessageHook
     add_hook("cmd_hook", MessageHook(cmd_weather, "météo"))
     add_hook("cmd_hook", MessageHook(cmd_alert, "alert"))
     add_hook("cmd_hook", MessageHook(cmd_coordinates, "coordinates"))

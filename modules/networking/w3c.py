@@ -1,6 +1,8 @@
 import json
 import urllib
 
+from nemubot import __version__
+
 def validator(url):
     """Run the w3c validator on the given URL
 
@@ -15,7 +17,7 @@ def validator(url):
         raise IRCException("Indiquer une URL valide !")
 
     try:
-        req = urllib.request.Request("http://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "nemubot v3" })
+        req = urllib.request.Request("http://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "Nemubot v%s" % __version__})
         raw = urllib.request.urlopen(req, timeout=10)
     except urllib.error.HTTPError as e:
         raise IRCException("HTTP error occurs: %s %s" % (e.code, e.reason))

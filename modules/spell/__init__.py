@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from hooks import hook
+from nemubot.hooks import hook
 
 from .pyaspell import Aspell
 from .pyaspell import AspellError

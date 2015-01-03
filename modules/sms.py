@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 import urllib.parse
 
-from hooks import hook
+from nemubot.hooks import hook
 
 nemubotversion = 3.4
 

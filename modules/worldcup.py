@@ -8,11 +8,11 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
+from nemubot.hooks import hook
+
 nemubotversion = 3.4
 
 from more import Response
-
-from hooks import hook
 
 API_URL="http://worldcup.sfg.io/%s"
 

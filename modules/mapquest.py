@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from tools import web
+from nemubot.tools import web
 
 nemubotversion = 3.4
 
@@ -20,7 +20,7 @@ def load(context):
                "http://developer.mapquest.com/")
         return None
 
-    from hooks.messagehook import MessageHook
+    from nemubot.hooks.messagehook import MessageHook
     add_hook("cmd_hook", MessageHook(cmd_geocode, "geocode"))
 
 
