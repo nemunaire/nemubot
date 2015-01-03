@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -23,10 +23,10 @@ import re
 import time
 import shlex
 
-from channel import Channel
-import message
-from message.printer.IRC import IRC as IRCPrinter
-from server.socket import SocketServer
+from nemubot.channel import Channel
+import nemubot.message as message
+from nemubot.message.printer.IRC import IRC as IRCPrinter
+from nemubot.server.socket import SocketServer
 
 
 class IRC(SocketServer):
@@ -97,18 +97,18 @@ class IRC(SocketServer):
                 self.logger.error("DCC: unable to connect to %s:%d", ip, port)
                 return "ERRMSG unable to connect to %s:%d" % (ip, port)
 
-        import bot
+        import nemubot
 
         self.ctcp_capabilities["ACTION"] = lambda msg, cmds: print ("ACTION receive: %s" % cmds)
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
         #self.ctcp_capabilities["DCC"] = _ctcp_dcc
-        self.ctcp_capabilities["FINGER"] = lambda msg, cmds: "VERSION nemubot v%s" % bot.__version__
-        self.ctcp_capabilities["NEMUBOT"] = lambda msg, cmds: "NEMUBOT %s" % bot.__version__
+        self.ctcp_capabilities["FINGER"] = lambda msg, cmds: "VERSION nemubot v%s" % nemubot.__version__
+        self.ctcp_capabilities["NEMUBOT"] = lambda msg, cmds: "NEMUBOT %s" % nemubot.__version__
         self.ctcp_capabilities["PING"] = lambda msg, cmds: "PING %s" % " ".join(cmds[1:])
         self.ctcp_capabilities["SOURCE"] = lambda msg, cmds: "SOURCE https://github.com/nemunaire/nemubot"
         self.ctcp_capabilities["TIME"] = lambda msg, cmds: "TIME %s" % (datetime.now())
         self.ctcp_capabilities["USERINFO"] = lambda msg, cmds: "USERINFO %s" % self.realname
-        self.ctcp_capabilities["VERSION"] = lambda msg, cmds: "VERSION nemubot v%s" % bot.__version__
+        self.ctcp_capabilities["VERSION"] = lambda msg, cmds: "VERSION nemubot v%s" % nemubot.__version__
 
         # TODO: Temporary fix, waiting for hook based CTCP management
         self.ctcp_capabilities["TYPING"] = lambda msg, cmds: None

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,16 +20,22 @@ import imp
 
 
 def reload():
-    import tools.countdown
-    imp.reload(tools.countdown)
+    import nemubot.tools.config
+    imp.reload(nemubot.tools.config)
 
-    import tools.date
-    imp.reload(tools.date)
+    import nemubot.tools.countdown
+    imp.reload(nemubot.tools.countdown)
 
-    import tools.web
-    imp.reload(tools.web)
+    import nemubot.tools.date
+    imp.reload(nemubot.tools.date)
 
-    import tools.xmlparser
-    imp.reload(tools.xmlparser)
-    import tools.xmlparser.node
-    imp.reload(tools.xmlparser.node)
+    import nemubot.tools.human
+    imp.reload(nemubot.tools.human)
+
+    import nemubot.tools.web
+    imp.reload(nemubot.tools.web)
+
+    import nemubot.tools.xmlparser
+    imp.reload(nemubot.tools.xmlparser)
+    import nemubot.tools.xmlparser.node
+    imp.reload(nemubot.tools.xmlparser.node)

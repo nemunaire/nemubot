@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,19 +18,19 @@
 
 import re
 
-from exception import IRCException
-import hooks
-import message
+from nemubot.exception import IRCException
+from nemubot.hooks import AbstractHook
+import nemubot.message
 
 
-class MessageHook(hooks.AbstractHook):
+class MessageHook(AbstractHook):
 
     """Class storing hook information, specialized for a generic Message"""
 
     def __init__(self, call, name=None, data=None, regexp=None,
                  channels=list(), server=None, mtimes=-1, end_call=None):
 
-        hooks.AbstractHook.__init__(self, call=call, data=data,
+        AbstractHook.__init__(self, call=call, data=data,
                                     end_call=end_call, mtimes=mtimes)
 
         self.name = name
@@ -40,12 +40,12 @@ class MessageHook(hooks.AbstractHook):
 
 
     def match(self, msg, server=None):
-        if not isinstance(msg, message.AbstractMessage):
+        if not isinstance(msg, nemubot.message.AbstractMessage):
             return True
 
-        elif isinstance(msg, message.Command):
+        elif isinstance(msg, nemubot.message.Command):
             return self.is_matching(msg.cmd, msg.to, server)
-        elif isinstance(msg, message.TextMessage):
+        elif isinstance(msg, nemubot.message.TextMessage):
             return self.is_matching(msg.message, msg.to, server)
         else:
             return False

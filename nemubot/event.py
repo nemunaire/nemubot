@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime, timedelta, timezone
+
 
 class ModuleEvent:
 
@@ -64,13 +65,12 @@ class ModuleEvent:
             self.call_data = func_data
 
         # Store times
-        self.offset = timedelta(seconds=offset) # Time to wait before the first check
+        self.offset = timedelta(seconds=offset)  # Time to wait before the first check
         self.interval = timedelta(seconds=interval)
-        self._end = None # Cache
+        self._end = None  # Cache
 
         # How many times do this event?
         self.times = times
-
 
     @property
     def current(self):
@@ -80,7 +80,6 @@ class ModuleEvent:
                 self._end = datetime.now(timezone.utc) + self.offset + self.interval
             return self._end
         return None
-
 
     @property
     def next(self):
@@ -93,14 +92,12 @@ class ModuleEvent:
             return self._end
         return None
 
-
     @property
     def time_left(self):
         """Return the time left before/after the near check"""
         if self.current is not None:
             return self.current - datetime.now(timezone.utc)
-        return 99999 #TODO: 99999 is not a valid time to return
-
+        return 99999  # TODO: 99999 is not a valid time to return
 
     def check(self):
         """Run a check and realized the event if this is time"""

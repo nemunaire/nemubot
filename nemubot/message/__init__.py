@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -166,10 +166,10 @@ class OwnerCommand(Command):
 
 
 def reload():
-    import message.visitor
-    imp.reload(message.visitor)
+    import nemubot.message.visitor
+    imp.reload(nemubot.message.visitor)
 
-    import message.printer
-    imp.reload(message.printer)
+    import nemubot.message.printer
+    imp.reload(nemubot.message.printer)
 
-    message.printer.reload()
+    nemubot.message.printer.reload()

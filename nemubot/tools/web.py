@@ -1,7 +1,7 @@
 # coding=utf-8
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -25,9 +25,9 @@ from urllib.parse import quote
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
-from bot import __version__
-from exception import IRCException
-from tools.xmlparser import parse_string
+from nemubot import __version__
+from nemubot.exception import IRCException
+from nemubot.tools.xmlparser import parse_string
 
 
 def isURL(url):

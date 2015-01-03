@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,16 +24,18 @@ import logging
 import os
 import sys
 
-from bot import __version__
-import event
-import exception
-import hooks
-from message import TextMessage
-from tools.xmlparser import parse_file, module_state
+from nemubot import __version__
+from nemubot.event import ModuleEvent
+from nemubot.exception import IRCException
+import nemubot.hooks
+from nemubot.message import TextMessage
+from nemubot.tools.xmlparser import parse_file, module_state
 
 logger = logging.getLogger("nemubot.importer")
 
+
 class ModuleFinder(Finder):
+
     def __init__(self, context, prompt):
         self.context = context
         self.prompt = prompt
@@ -151,9 +153,9 @@ class ModuleLoader(SourceFileLoader):
             module.save = lambda: False
         module.CONF = self.config
 
-        module.ModuleEvent = event.ModuleEvent
+        module.ModuleEvent = ModuleEvent
         module.ModuleState = module_state.ModuleState
-        module.IRCException = exception.IRCException
+        module.IRCException = IRCException
 
         # Load dependancies
         if module.CONF is not None and module.CONF.hasNode("dependson"):
@@ -213,7 +215,7 @@ def register_hooks(module, context, prompt):
     """
 
     # Register decorated functions
-    for s, h in hooks.last_registered:
+    for s, h in nemubot.hooks.last_registered:
         if s == "prompt_cmd":
             prompt.add_cap_hook(h.name, h.call)
         elif s == "prompt_list":
@@ -222,4 +224,4 @@ def register_hooks(module, context, prompt):
             s = convert_legacy_store(s)
             module.REGISTERED_HOOKS.append((s, h))
             context.hooks.add_hook(h, s)
-    hooks.last_registered = []
+    nemubot.hooks.last_registered = []

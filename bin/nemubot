@@ -1,8 +1,8 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3.3
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  Mercier Pierre-Olivier
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -23,11 +23,11 @@ import logging
 import os
 import sys
 
-import bot
-import prompt
-from prompt.builtins import load_file
-from prompt.reset import PromptReset
-import importer
+import nemubot
+import nemubot.prompt as prompt
+from nemubot.prompt.builtins import load_file
+from nemubot.prompt.reset import PromptReset
+from nemubot.importer import ModuleFinder
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.version:
-        print(bot.__version__)
+        print(nemubot.__version__)
         sys.exit(0)
 
     # Setup loggin interface
@@ -91,7 +91,7 @@ if __name__ == "__main__":
             logger.error("%s is not a directory", path)
 
     # Create bot context
-    context = bot.Bot(modules_paths=modules_paths, data_path=args.data_path,
+    context = nemubot.Bot(modules_paths=modules_paths, data_path=args.data_path,
                       verbosity=args.verbose)
 
     if args.no_connect:
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     prmpt = prompt.Prompt()
 
     # Register the hook for futur import
-    sys.meta_path.append(importer.ModuleFinder(context, prmpt))
+    sys.meta_path.append(ModuleFinder(context, prmpt))
 
     # Load requested configuration files
     for path in args.files:
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         for module in args.module:
             __import__(module)
 
-    print ("Nemubot v%s ready, my PID is %i!" % (bot.__version__,
+    print ("Nemubot v%s ready, my PID is %i!" % (nemubot.__version__,
                                                  os.getpid()))
     context.start()
     while True:
@@ -127,14 +127,14 @@ if __name__ == "__main__":
         try:
             # Reload context
             imp.reload(bot)
-            context = bot.hotswap(context)
+            context = nemubot.hotswap(context)
             # Reload prompt
             imp.reload(prompt)
             prmpt = prompt.hotswap(prmpt)
             # Reload all other modules
-            bot.reload()
+            nemubot.reload()
             print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
-                  bot.__version__)
+                  nemubot.__version__)
             context.start()
         except:
             logger.exception("\033[1;31mUnable to reload the prompt due to "

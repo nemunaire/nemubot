@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,16 +27,16 @@ import threading
 import time
 import uuid
 
-__version__ = '3.4.dev4'
+__version__ = '4.0.dev0'
 __author__  = 'nemunaire'
 
-from consumer import Consumer, EventConsumer, MessageConsumer
-from event import ModuleEvent
-from hooks.messagehook import MessageHook
-from hooks.manager import HooksManager
-from networkbot import NetworkBot
+from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
+from nemubot.event import ModuleEvent
+from nemubot.hooks.messagehook import MessageHook
+from nemubot.hooks.manager import HooksManager
+from nemubot.networkbot import NetworkBot
 
-logger = logging.getLogger("nemubot.bot")
+logger = logging.getLogger("nemubot")
 
 
 class Bot(threading.Thread):
@@ -129,7 +129,7 @@ class Bot(threading.Thread):
 
 
     def run(self):
-        from server import _rlist, _wlist, _xlist
+        from nemubot.server import _rlist, _wlist, _xlist
 
         self.stop = False
         while not self.stop:
@@ -453,44 +453,44 @@ def hotswap(bak):
     return new
 
 def reload():
-    import channel
-    imp.reload(channel)
+    import nemubot.channel
+    imp.reload(nemubot.channel)
 
-    import consumer
-    imp.reload(consumer)
+    import nemubot.consumer
+    imp.reload(nemubot.consumer)
 
-    import event
-    imp.reload(event)
+    import nemubot.event
+    imp.reload(nemubot.event)
 
-    import exception
-    imp.reload(exception)
+    import nemubot.exception
+    imp.reload(nemubot.exception)
 
-    import hooks
-    imp.reload(hooks)
+    import nemubot.hooks
+    imp.reload(nemubot.hooks)
 
-    hooks.reload()
+    nemubot.hooks.reload()
 
-    import importer
-    imp.reload(importer)
+    import nemubot.importer
+    imp.reload(nemubot.importer)
 
-    import message
-    imp.reload(message)
+    import nemubot.message
+    imp.reload(nemubot.message)
 
-    message.reload()
+    nemubot.message.reload()
 
-    import prompt
-    imp.reload(prompt)
+    import nemubot.prompt
+    imp.reload(nemubot.prompt)
 
-    prompt.reload()
+    nemubot.prompt.reload()
 
-    import server
-    rl, wl, xl = server._rlist, server._wlist, server._xlist
-    imp.reload(server)
-    server._rlist, server._wlist, server._xlist = rl, wl, xl
+    import nemubot.server
+    rl, wl, xl = nemubot.server._rlist, nemubot.server._wlist, nemubot.server._xlist
+    imp.reload(nemubot.server)
+    nemubot.server._rlist, nemubot.server._wlist, nemubot.server._xlist = rl, wl, xl
 
-    server.reload()
+    nemubot.server.reload()
 
-    import tools
-    imp.reload(tools)
+    import nemubot.tools
+    imp.reload(nemubot.tools)
 
-    tools.reload()
+    nemubot.tools.reload()

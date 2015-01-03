@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,7 +19,7 @@
 import logging
 import os
 
-from tools.xmlparser import parse_file
+from nemubot.tools.xmlparser import parse_file
 
 logger = logging.getLogger("nemubot.tools.config")
 
@@ -80,7 +80,7 @@ def _load_server(config, xmlnode):
 
     # Bind the protocol asked to the corresponding implementation
     if "protocol" not in xmlnode or xmlnode["protocol"] == "irc":
-        from server.IRC import IRC as IRCServer
+        from nemubot.server.IRC import IRC as IRCServer
         srvcls = IRCServer
     else:
         raise Exception("Unhandled protocol '%s'" %

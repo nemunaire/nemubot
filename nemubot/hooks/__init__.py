@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,7 +18,7 @@
 
 import imp
 
-from exception import IRCException
+from nemubot.exception import IRCException
 
 
 def call_game(call, *args, **kargs):
@@ -67,7 +67,7 @@ class AbstractHook:
         return ret
 
 
-from hooks.messagehook import MessageHook
+from nemubot.hooks.messagehook import MessageHook
 
 last_registered = []
 
@@ -81,8 +81,8 @@ def hook(store, *args, **kargs):
 
 
 def reload():
-    import hooks.manager
-    imp.reload(hooks.manager)
+    import nemubot.hooks.manager
+    imp.reload(nemubot.hooks.manager)
 
-    import hooks.messagehook
-    imp.reload(hooks.messagehook)
+    import nemubot.hooks.messagehook
+    imp.reload(nemubot.hooks.messagehook)

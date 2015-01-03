@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2014  nemunaire
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,7 +19,7 @@
 import ssl
 import socket
 
-from server import AbstractServer
+from nemubot.server import AbstractServer
 
 
 class SocketServer(AbstractServer):

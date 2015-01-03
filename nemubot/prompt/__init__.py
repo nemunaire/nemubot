@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Nemubot is a modulable IRC bot, built around XML configuration files.
-# Copyright (C) 2012  Mercier Pierre-Olivier
+# Nemubot is a smart and modulable IM bot.
+# Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -23,9 +23,9 @@ import shlex
 import sys
 import traceback
 
-from .error import PromptError
-from .reset import PromptReset
-from . import builtins
+from nemubot.prompt.error import PromptError
+from nemubot.prompt.reset import PromptReset
+from nemubot.prompt import builtins
 
 
 class Prompt:
@@ -134,5 +134,11 @@ def hotswap(bak):
 
 
 def reload():
-    import prompt.builtins
-    imp.reload(prompt.builtins)
+    import nemubot.prompt.builtins
+    imp.reload(nemubot.prompt.builtins)
+
+    import nemubot.prompt.error
+    imp.reload(nemubot.prompt.error)
+
+    import nemubot.prompt.reset
+    imp.reload(nemubot.prompt.reset)
