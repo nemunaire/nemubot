@@ -4,6 +4,7 @@
 
 from datetime import datetime, timezone
 
+from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 

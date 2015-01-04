@@ -4,6 +4,7 @@
 
 import re
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 

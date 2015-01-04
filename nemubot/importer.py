@@ -25,8 +25,6 @@ import os
 import sys
 
 from nemubot import __version__
-from nemubot.event import ModuleEvent
-from nemubot.exception import IRCException
 import nemubot.hooks
 from nemubot.message import TextMessage
 from nemubot.tools.xmlparser import parse_file, module_state
@@ -152,10 +150,6 @@ class ModuleLoader(SourceFileLoader):
             module.DATAS = None
             module.save = lambda: False
         module.CONF = self.config
-
-        module.ModuleEvent = ModuleEvent
-        module.ModuleState = module_state.ModuleState
-        module.IRCException = IRCException
 
         # Load dependancies
         if module.CONF is not None and module.CONF.hasNode("dependson"):

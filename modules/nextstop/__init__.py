@@ -2,6 +2,7 @@
 
 """Informe les usagers des prochains passages des transports en communs de la RATP"""
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from more import Response
 

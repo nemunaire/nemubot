@@ -2,6 +2,7 @@
 
 """Various network tools (w3m, w3c validator, curl, traceurl, ...)"""
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 
 nemubotversion = 3.4
@@ -16,8 +17,6 @@ from . import whois
 
 def load(context):
     for mod in [isup, page, w3c, watchWebsite, whois]:
-        mod.IRCException = IRCException
-        mod.ModuleEvent = ModuleEvent
         mod.add_event = add_event
         mod.del_event = del_event
         mod.save = save

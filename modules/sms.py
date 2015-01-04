@@ -9,6 +9,7 @@ import urllib.error
 import urllib.request
 import urllib.parse
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 
 nemubotversion = 3.4

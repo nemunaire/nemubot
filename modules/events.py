@@ -10,6 +10,7 @@ import time
 import threading
 import traceback
 
+from nemubot.exception import IRCException
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.date import extractDate

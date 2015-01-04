@@ -7,6 +7,7 @@ import sys
 from datetime import datetime, timezone
 import shlex
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.message import TextMessage, Command
 

@@ -5,6 +5,7 @@ import tempfile
 import urllib
 
 from nemubot import __version__
+from nemubot.exception import IRCException
 from nemubot.tools import web
 
 

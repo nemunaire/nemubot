@@ -4,6 +4,7 @@
 
 import random
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 
 nemubotversion = 3.4

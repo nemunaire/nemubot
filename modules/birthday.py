@@ -6,6 +6,7 @@ import re
 import sys
 from datetime import date, datetime
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 from nemubot.tools.date import extractDate

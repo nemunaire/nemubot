@@ -1,6 +1,7 @@
 import datetime
 import urllib
 
+from nemubot.exception import IRCException
 from nemubot.tools.web import getJSON
 
 from more import Response

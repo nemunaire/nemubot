@@ -2,6 +2,7 @@ import json
 import urllib
 
 from nemubot import __version__
+from nemubot.exception import IRCException
 
 def validator(url):
     """Run the w3c validator on the given URL

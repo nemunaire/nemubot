@@ -8,6 +8,7 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 
 nemubotversion = 3.4
@@ -17,7 +18,7 @@ from more import Response
 API_URL="http://worldcup.sfg.io/%s"
 
 def load(context):
-    from event import ModuleEvent
+    from nemubot.event import ModuleEvent
     add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
 
 

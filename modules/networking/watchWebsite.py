@@ -4,6 +4,8 @@ from random import randint
 import urllib.parse
 from urllib.parse import urlparse
 
+from nemubot.event import ModuleEvent
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 

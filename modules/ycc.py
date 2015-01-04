@@ -6,6 +6,7 @@ import re
 from urllib.parse import urlparse
 from urllib.parse import quote
 
+from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.message import TextMessage
 from nemubot.tools import web
