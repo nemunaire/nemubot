@@ -11,6 +11,7 @@ import urllib.parse
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
+from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 

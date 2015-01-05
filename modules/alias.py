@@ -10,6 +10,7 @@ import shlex
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.message import TextMessage, Command
+from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 

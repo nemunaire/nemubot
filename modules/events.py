@@ -13,8 +13,9 @@ import traceback
 from nemubot.exception import IRCException
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
-from nemubot.tools.date import extractDate
 from nemubot.tools.countdown import countdown_format, countdown
+from nemubot.tools.date import extractDate
+from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 

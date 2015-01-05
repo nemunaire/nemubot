@@ -9,6 +9,7 @@ from urllib.parse import quote
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
+from nemubot.tools.xmlparser.node import ModuleState
 
 import mapquest
 
