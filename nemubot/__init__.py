@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 import imp
 import ipaddress
 import logging
+import os
 from queue import Queue
 import re
 from select import select
@@ -64,7 +65,8 @@ class Bot(threading.Thread):
 
         # Context paths
         self.modules_paths = modules_paths
-        self.data_path = data_path
+        self.data_path = None
+        self.set_data_path(data_path)
 
         # Keep global context: servers and modules
         self.servers = dict()
@@ -175,6 +177,52 @@ class Bot(threading.Thread):
                         self.receive_message(r, i)
                     except:
                         logger.exception("Uncatched exception on server read")
+
+
+    # Data path
+
+    def set_data_path(self, path):
+        """Check if the given path is valid and unlock,
+        then lock the directory and set the variable
+
+        Argument:
+        path -- the location
+        """
+
+        lock_file = os.path.join(path, ".used_by_nemubot")
+
+        if os.path.isdir(path):
+            if not os.path.exists(lock_file):
+                if self.data_path is not None:
+                    self.close_data_path(self.data_path)
+                self.data_path = path
+
+                with open(lock_file, 'w') as lf:
+                    lf.write(str(os.getpid()))
+                return True
+
+            else:
+                with open(lock_file, 'r') as lf:
+                    pid = lf.readline()
+                raise Exception("Data dir already locked, by PID %s" % pid)
+        return False
+
+
+    def close_data_path(self, path=None):
+        """Release a locked path
+
+        Argument:
+        path -- the location, self.data_path if None
+        """
+
+        if path is None:
+            path = self.data_path
+
+        lock_file = os.path.join(path, ".used_by_nemubot")
+        if os.path.isdir(path) and os.path.exists(lock_file):
+            os.unlink(lock_file)
+            return True
+        return False
 
 
     # Events methods
@@ -406,6 +454,9 @@ class Bot(threading.Thread):
 
     def quit(self):
         """Save and unload modules and disconnect servers"""
+
+        self.close_data_path()
+
         if self.event_timer is not None:
             logger.info("Stop the event timer...")
             self.event_timer.cancel()
@@ -440,6 +491,7 @@ def hotswap(bak):
     bak.stop = True
     if bak.event_timer is not None:
         bak.event_timer.cancel()
+    bak.close_data_path()
 
     new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
     new.servers = bak.servers
