@@ -24,7 +24,7 @@ import os
 import sys
 
 import nemubot
-import nemubot.prompt as prompt
+import nemubot.prompt
 from nemubot.prompt.builtins import load_file
 from nemubot.prompt.reset import PromptReset
 from nemubot.importer import ModuleFinder
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         context.noautoconnect = True
 
     # Load the prompt
-    prmpt = prompt.Prompt()
+    prmpt = nemubot.prompt.Prompt()
 
     # Register the hook for futur import
     sys.meta_path.append(ModuleFinder(context, prmpt))
@@ -116,26 +116,24 @@ if __name__ == "__main__":
 
     print ("Nemubot v%s ready, my PID is %i!" % (nemubot.__version__,
                                                  os.getpid()))
-    context.start()
     while True:
         try:
-            prmpt.run(context)
+            context.start()
+            if prmpt.run(context):
+                break
         except PromptReset as e:
             if e.type == "quit":
                 break
 
         try:
-            # Reload context
-            imp.reload(bot)
-            context = nemubot.hotswap(context)
-            # Reload prompt
-            imp.reload(prompt)
-            prmpt = prompt.hotswap(prmpt)
             # Reload all other modules
+            imp.reload(nemubot)
+            imp.reload(nemubot.prompt)
             nemubot.reload()
+            context = nemubot.hotswap(context)
+            prmpt = nemubot.prompt.hotswap(prmpt)
             print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
                   nemubot.__version__)
-            context.start()
         except:
             logger.exception("\033[1;31mUnable to reload the prompt due to "
                              "errors.\033[0m Fix them before trying to reload "
@@ -143,5 +141,4 @@ if __name__ == "__main__":
 
     context.quit()
     print("\nWaiting for other threads shuts down...")
-
     sys.exit(0)

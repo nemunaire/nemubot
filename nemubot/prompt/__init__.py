@@ -123,7 +123,7 @@ class Prompt:
                 print("")
             except EOFError:
                 print("quit")
-                raise PromptReset("quit")
+                return True
 
 
 def hotswap(bak):
