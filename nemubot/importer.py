@@ -88,11 +88,11 @@ class ModuleLoader(SourceFileLoader):
 
         def prnt(*args):
             print("[%s]" % module.__name__, *args)
-            module.logger.info(*args)
+            module.logger.info(" ".join(args))
         def prnt_dbg(*args):
             if module.DEBUG:
                 print("{%s}" % module.__name__, *args)
-            module.logger.debug(*args)
+            module.logger.debug(" ".join(args))
 
         def mod_save():
             fpath = os.path.join(self.context.data_path, module.__name__ + ".xml")
