@@ -45,7 +45,7 @@ class Bot(threading.Thread):
     """Class containing the bot context and ensuring key goals"""
 
     def __init__(self, ip="127.0.0.1", modules_paths=list(),
-                 data_path="./datas/", verbosity=0):
+                 data_path=None, verbosity=0):
         """Initialize the bot context
 
         Keyword arguments:
@@ -66,7 +66,8 @@ class Bot(threading.Thread):
         # Context paths
         self.modules_paths = modules_paths
         self.data_path = None
-        self.set_data_path(data_path)
+        if data_path is not None:
+            self.set_data_path(data_path)
 
         # Keep global context: servers and modules
         self.servers = dict()
