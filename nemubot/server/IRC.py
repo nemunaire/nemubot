@@ -33,18 +33,18 @@ class IRC(SocketServer):
 
     """Concrete implementation of a connexion to an IRC server"""
 
-    def __init__(self, owner, nick="nemubot", host="localhost", port=6667,
-                 ssl=False, username=None, password=None, realname="Nemubot",
-                 encoding="utf-8", caps=None, channels=list(),
-                 on_connect=None):
+    def __init__(self, host="localhost", port=6667, ssl=False, owner=None,
+                 nick="nemubot", username=None, password=None,
+                 realname="Nemubot", encoding="utf-8", caps=None,
+                 channels=list(), on_connect=None):
         """Prepare a connection with an IRC server
 
         Keyword arguments:
-        owner -- bot's owner
-        nick -- bot's nick
         host -- host to join
         port -- port on the host to reach
         ssl -- is this server using a TLS socket
+        owner -- bot's owner
+        nick -- bot's nick
         username -- the username as sent to server
         password -- if a password is required to connect to the server
         realname -- the bot's realname
@@ -60,7 +60,7 @@ class IRC(SocketServer):
         self.owner    = owner
         self.realname = realname
 
-        self.id       = self.username + "@" + host + ":" + port
+        self.id       = self.username + "@" + host + ":" + str(port)
         self.printer  = IRCPrinter
         SocketServer.__init__(self, host=host, port=port, ssl=ssl)
 
@@ -128,8 +128,13 @@ class IRC(SocketServer):
         def _on_connect(msg):
             # First, send user defined command
             if on_connect is not None:
-                for oc in on_connect():
-                    self.write(oc)
+                if callable(on_connect):
+                    toc = on_connect()
+                else:
+                    toc = on_connect
+                if toc is not None:
+                    for oc in toc:
+                        self.write(oc)
             # Then, JOIN some channels
             for chn in channels:
                 if isinstance(chn, tuple):
