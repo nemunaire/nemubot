@@ -320,7 +320,7 @@ class Bot(threading.Thread):
             c.start()
 
 
-    def add_server(self, srv, autoconnect=False):
+    def add_server(self, srv, autoconnect=True):
         """Add a new server to the context
 
         Arguments:
@@ -330,7 +330,8 @@ class Bot(threading.Thread):
 
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
-            if autoconnect and not hasattr(self, "noautoconnect"):
+            if (autoconnect and not hasattr(self, "noautoconnect") and
+                hasattr(self, "stop") and not self.stop):
                 srv.open()
             return True
 
