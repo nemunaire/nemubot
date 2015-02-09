@@ -24,6 +24,7 @@ import os
 import sys
 
 import nemubot
+from nemubot import datastore
 import nemubot.prompt
 from nemubot.prompt.builtins import load_file
 from nemubot.prompt.reset import PromptReset
@@ -91,8 +92,8 @@ if __name__ == "__main__":
             logger.error("%s is not a directory", path)
 
     # Create bot context
-    context = nemubot.Bot(modules_paths=modules_paths, data_path=args.data_path,
-                      verbosity=args.verbose)
+    context = nemubot.Bot(modules_paths=modules_paths, data_store=datastore.XML(args.data_path),
+                          verbosity=args.verbose)
 
     if args.no_connect:
         context.noautoconnect = True

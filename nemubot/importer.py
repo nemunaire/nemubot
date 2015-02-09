@@ -86,18 +86,13 @@ class ModuleLoader(SourceFileLoader):
         module.__LOADED__ = True
         module.logger = logging.getLogger("nemubot.module." + fullname)
 
-        def prnt(*args):
-            print("[%s]" % module.__name__, *args)
-            module.logger.info(" ".join(args))
         def prnt_dbg(*args):
             if module.DEBUG:
                 print("{%s}" % module.__name__, *args)
             module.logger.debug(" ".join(args))
 
         def mod_save():
-            fpath = os.path.join(self.context.data_path, module.__name__ + ".xml")
-            module.print_debug("Saving DATAS to " + fpath)
-            module.DATAS.save(fpath)
+            self.context.datastore.save(module.__name__, module.DATAS)
 
         def send_response(server, res):
             if server in self.context.servers:
@@ -129,7 +124,6 @@ class ModuleLoader(SourceFileLoader):
         module.REGISTERED_HOOKS = list()
         module.REGISTERED_EVENTS = list()
         module.DEBUG = self.context.verbosity > 0
-        module.print = prnt
         module.print_debug = prnt_dbg
         module.send_response = send_response
         module.add_hook = add_hook
@@ -139,15 +133,8 @@ class ModuleLoader(SourceFileLoader):
         module.del_event = del_event
 
         if not hasattr(module, "NODATA"):
-            module.DATAS = module_state.ModuleState("nemubotstate")
-            if self.context.data_path is not None:
-                data_file = os.path.join(self.context.data_path,
-                                         module.__name__ + ".xml")
-                if os.path.isfile(data_file):
-                    module.DATAS = parse_file(data_file)
-                module.save = mod_save
-            else:
-                module.save = lambda: False
+            module.DATAS = self.context.datastore.load(module.__name__)
+            module.save = mod_save
         else:
             module.DATAS = None
             module.save = lambda: False

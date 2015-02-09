@@ -32,6 +32,7 @@ __version__ = '4.0.dev0'
 __author__  = 'nemunaire'
 
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
+from nemubot import datastore
 from nemubot.event import ModuleEvent
 from nemubot.hooks.messagehook import MessageHook
 from nemubot.hooks.manager import HooksManager
@@ -45,13 +46,13 @@ class Bot(threading.Thread):
     """Class containing the bot context and ensuring key goals"""
 
     def __init__(self, ip="127.0.0.1", modules_paths=list(),
-                 data_path=None, verbosity=0):
+                 data_store=datastore.Abstract(), verbosity=0):
         """Initialize the bot context
 
         Keyword arguments:
         ip -- The external IP of the bot (default: 127.0.0.1)
         modules_paths -- Paths to all directories where looking for module
-        data_path -- Path to directory where store bot context data
+        data_store -- An instance of the nemubot datastore for bot's modules
         """
 
         threading.Thread.__init__(self)
@@ -65,9 +66,8 @@ class Bot(threading.Thread):
 
         # Context paths
         self.modules_paths = modules_paths
-        self.data_path = None
-        if data_path is not None:
-            self.set_data_path(data_path)
+        self.datastore = data_store
+        self.datastore.open()
 
         # Keep global context: servers and modules
         self.servers = dict()
@@ -178,52 +178,6 @@ class Bot(threading.Thread):
                         self.receive_message(r, i)
                     except:
                         logger.exception("Uncatched exception on server read")
-
-
-    # Data path
-
-    def set_data_path(self, path):
-        """Check if the given path is valid and unlock,
-        then lock the directory and set the variable
-
-        Argument:
-        path -- the location
-        """
-
-        lock_file = os.path.join(path, ".used_by_nemubot")
-
-        if os.path.isdir(path):
-            if not os.path.exists(lock_file):
-                if self.data_path is not None:
-                    self.close_data_path(self.data_path)
-                self.data_path = path
-
-                with open(lock_file, 'w') as lf:
-                    lf.write(str(os.getpid()))
-                return True
-
-            else:
-                with open(lock_file, 'r') as lf:
-                    pid = lf.readline()
-                raise Exception("Data dir already locked, by PID %s" % pid)
-        return False
-
-
-    def close_data_path(self, path=None):
-        """Release a locked path
-
-        Argument:
-        path -- the location, self.data_path if None
-        """
-
-        if path is None:
-            path = self.data_path
-
-        lock_file = os.path.join(path, ".used_by_nemubot")
-        if os.path.isdir(path) and os.path.exists(lock_file):
-            os.unlink(lock_file)
-            return True
-        return False
 
 
     # Events methods
@@ -408,6 +362,13 @@ class Bot(threading.Thread):
         if module.__name__ in self.modules:
             self.unload_module(module.__name__)
 
+        # Overwrite print built-in
+        def prnt(*args):
+            print("[%s]" % module.__name__, *args)
+            if hasattr(module, "logger"):
+                module.logger.info(" ".join(args))
+        module.print = prnt
+
         self.modules[module.__name__] = module
         return True
 
@@ -456,7 +417,7 @@ class Bot(threading.Thread):
     def quit(self):
         """Save and unload modules and disconnect servers"""
 
-        self.close_data_path()
+        self.datastore.close()
 
         if self.event_timer is not None:
             logger.info("Stop the event timer...")
@@ -492,9 +453,9 @@ def hotswap(bak):
     bak.stop = True
     if bak.event_timer is not None:
         bak.event_timer.cancel()
-    bak.close_data_path()
+    bak.datastore.close()
 
-    new = Bot(str(bak.ip), bak.modules_paths, bak.data_path)
+    new = Bot(str(bak.ip), bak.modules_paths, bak.datastore)
     new.servers = bak.servers
     new.modules = bak.modules
     new.modules_configuration = bak.modules_configuration
