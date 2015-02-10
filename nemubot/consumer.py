@@ -203,7 +203,7 @@ class EventConsumer:
         # Or remove reference of this event
         elif (hasattr(self.evt, "module_src") and
               self.evt.module_src is not None):
-            self.evt.module_src.REGISTERED_EVENTS.remove(self.evt.id)
+            self.evt.module_src.__nemubot_context__.events.remove(self.evt.id)
 
 
 

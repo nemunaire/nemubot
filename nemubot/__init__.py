@@ -34,9 +34,13 @@ __author__  = 'nemunaire'
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
 from nemubot import datastore
 from nemubot.event import ModuleEvent
+import nemubot.hooks
 from nemubot.hooks.messagehook import MessageHook
 from nemubot.hooks.manager import HooksManager
+from nemubot.modulecontext import ModuleContext
 from nemubot.networkbot import NetworkBot
+
+context = ModuleContext(None, None)
 
 logger = logging.getLogger("nemubot")
 
@@ -228,7 +232,7 @@ class Bot(threading.Thread):
 
         # Register the event in the source module
         if module_src is not None:
-            module_src.REGISTERED_EVENTS.append(evt.id)
+            module_src.__nemubot_context__.events.append(evt.id)
         evt.module_src = module_src
 
         logger.info("New event registered: %s -> %s", evt.id, evt)
@@ -260,7 +264,7 @@ class Bot(threading.Thread):
             self.events.remove(self.events[0])
             self._update_event_timer()
             if module_src is not None:
-                module_src.REGISTERED_EVENTS.remove(id)
+                module_src.__nemubot_context__.events.remove(id)
             return True
 
         for evt in self.events:
@@ -268,7 +272,7 @@ class Bot(threading.Thread):
                 self.events.remove(evt)
 
                 if module_src is not None:
-                    module_src.REGISTERED_EVENTS.remove(evt.id)
+                    module_src.__nemubot_context__.events.remove(evt.id)
                 return True
         return False
 
@@ -330,8 +334,7 @@ class Bot(threading.Thread):
 
         if srv.id not in self.servers:
             self.servers[srv.id] = srv
-            if (autoconnect and not hasattr(self, "noautoconnect") and
-                hasattr(self, "stop") and not self.stop):
+            if autoconnect and not hasattr(self, "noautoconnect"):
                 srv.open()
             return True
 
@@ -370,23 +373,36 @@ class Bot(threading.Thread):
                 module.logger.info(" ".join(args))
         module.print = prnt
 
+        # Create module context
+        module.__nemubot_context__ = ModuleContext(self, module)
+
+        # Replace imported context by real one
+        for attr in module.__dict__:
+            if attr != "__nemubot_context__" and type(module.__dict__[attr]) == ModuleContext:
+                module.__dict__[attr] = module.__nemubot_context__
+
+        # Register decorated functions
+        for s, h in nemubot.hooks.last_registered:
+            module.__nemubot_context__.add_hook(s, h)
+        nemubot.hooks.last_registered = []
+
+        # Save a reference to the module
         self.modules[module.__name__] = module
+
+        # Launch the module
+        if hasattr(module, "load"):
+            module.load(module.__nemubot_context__)
+
         return True
 
 
     def unload_module(self, name):
         """Unload a module"""
         if name in self.modules:
-            self.modules[name].print_debug("Unloading module %s" % name)
-            self.modules[name].save()
+            self.modules[name].print("Unloading module %s" % name)
             if hasattr(self.modules[name], "unload"):
                 self.modules[name].unload(self)
-            # Remove registered hooks
-            for (s, h) in self.modules[name].REGISTERED_HOOKS:
-                self.hooks.del_hook(h, s)
-            # Remove registered events
-            for e in self.modules[name].REGISTERED_EVENTS:
-                self.del_event(e)
+            self.modules[name].__nemubot_context__.unload()
             # Remove from the dict
             del self.modules[name]
             logger.info("Module `%s' successfully unloaded.", name)

@@ -102,7 +102,7 @@ if __name__ == "__main__":
     prmpt = nemubot.prompt.Prompt()
 
     # Register the hook for futur import
-    sys.meta_path.append(ModuleFinder(context, prmpt))
+    sys.meta_path.append(ModuleFinder(context.modules_paths, context.add_module))
 
     # Load requested configuration files
     for path in args.files:
