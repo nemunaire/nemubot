@@ -4,6 +4,7 @@
 
 import re
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
@@ -14,8 +15,7 @@ from more import Response
 
 
 def load(context):
-    global DATAS
-    DATAS.setIndex("name", "station")
+    context.data.setIndex("name", "station")
 
 #  evt = ModuleEvent(station_available, "42706",
 #                    (lambda a, b: a != b), None, 60,
@@ -30,7 +30,7 @@ def help_full():
 
 def station_status(station):
     """Gets available and free status of a given station"""
-    response = web.getXML(CONF.getNode("server")["url"] + station)
+    response = web.getXML(context.config.getNode("server")["url"] + station)
     if response is not None:
         available = response.getNode("available").getContent()
         if available is not None and len(available) > 0:
@@ -72,7 +72,6 @@ def print_station_status(msg, station):
 @hook("cmd_hook", "velib")
 def ask_stations(msg):
     """Hook entry from !velib"""
-    global DATAS
     if len(msg.cmds) > 5:
         raise IRCException("demande-moi moins de stations à la fois.")
 
@@ -80,9 +79,9 @@ def ask_stations(msg):
         for station in msg.cmds[1:]:
             if re.match("^[0-9]{4,5}$", station):
                 return print_station_status(msg, station)
-            elif station in DATAS.index:
+            elif station in context.data.index:
                 return print_station_status(msg,
-                                            DATAS.index[station]["number"])
+                                            context.data.index[station]["number"])
             else:
                 raise IRCException("numéro de station invalide.")
 

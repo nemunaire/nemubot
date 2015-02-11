@@ -9,6 +9,7 @@ import urllib.error
 import urllib.request
 import urllib.parse
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
@@ -18,8 +19,7 @@ nemubotversion = 3.4
 from more import Response
 
 def load(context):
-    global DATAS
-    DATAS.setIndex("name", "phone")
+    context.data.setIndex("name", "phone")
 
 def help_full():
     return "!sms /who/[,/who/[,...]] message: send a SMS to /who/."
@@ -55,20 +55,20 @@ def cmd_sms(msg):
     # Check dests
     cur_epoch = time.mktime(time.localtime());
     for u in msg.cmds[1].split(","):
-        if u not in DATAS.index:
+        if u not in context.data.index:
             raise IRCException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
-        elif cur_epoch - float(DATAS.index[u]["lastuse"]) < 42:
+        elif cur_epoch - float(context.data.index[u]["lastuse"]) < 42:
             raise IRCException("Un peu de calme, %s a déjà reçu un SMS il n'y a pas si longtemps." % u)
 
     # Go!
     fails = list()
     for u in msg.cmds[1].split(","):
-        DATAS.index[u]["lastuse"] = cur_epoch
+        context.data.index[u]["lastuse"] = cur_epoch
         if msg.to_response[0] == msg.frm:
             frm = msg.frm
         else:
             frm = msg.frm + "@" + msg.to[0]
-        test = send_sms(frm, DATAS.index[u]["user"], DATAS.index[u]["key"], " ".join(msg.cmds[2:]))
+        test = send_sms(frm, context.data.index[u]["user"], context.data.index[u]["key"], " ".join(msg.cmds[2:]))
         if test is not None:
             fails.append( "%s: %s" % (u, test) )
 
@@ -96,16 +96,16 @@ def parseask(msg):
             if test is not None:
                 return Response("je n'ai pas pu enregistrer tes identifiants : %s" % test, msg.channel, msg.nick)
 
-            if msg.nick in DATAS.index:
-                DATAS.index[msg.nick]["user"] = apiuser
-                DATAS.index[msg.nick]["key"] = apikey
+            if msg.nick in context.data.index:
+                context.data.index[msg.nick]["user"] = apiuser
+                context.data.index[msg.nick]["key"] = apikey
             else:
                 ms = ModuleState("phone")
                 ms.setAttribute("name", msg.nick)
                 ms.setAttribute("user", apiuser)
                 ms.setAttribute("key", apikey)
                 ms.setAttribute("lastuse", 0)
-                DATAS.addChild(ms)
-            save()
+                context.data.addChild(ms)
+            context.save()
             return Response("ok, c'est noté. Je t'ai envoyé un SMS pour tester ;)",
                             msg.channel, msg.nick)

@@ -7,6 +7,7 @@ import sys
 from datetime import datetime, timezone
 import shlex
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.message import TextMessage, Command
@@ -19,13 +20,12 @@ from more import Response
 
 def load(context):
     """Load this module"""
-    global DATAS
-    if not DATAS.hasNode("aliases"):
-        DATAS.addChild(ModuleState("aliases"))
-    DATAS.getNode("aliases").setIndex("alias")
-    if not DATAS.hasNode("variables"):
-        DATAS.addChild(ModuleState("variables"))
-    DATAS.getNode("variables").setIndex("name")
+    if not context.data.hasNode("aliases"):
+        context.data.addChild(ModuleState("aliases"))
+    context.data.getNode("aliases").setIndex("alias")
+    if not context.data.hasNode("variables"):
+        context.data.addChild(ModuleState("variables"))
+    context.data.getNode("variables").setIndex("name")
 
 
 def help_full():
@@ -37,7 +37,7 @@ def set_variable(name, value, creator):
     var["name"] = name
     var["value"] = value
     var["creator"] = creator
-    DATAS.getNode("variables").addChild(var)
+    context.data.getNode("variables").addChild(var)
 
 
 def get_variable(name, msg=None):
@@ -47,8 +47,8 @@ def get_variable(name, msg=None):
         return msg.channel
     elif name == "date":
         return datetime.now(timezone.utc).strftime("%c")
-    elif name in DATAS.getNode("variables").index:
-        return DATAS.getNode("variables").index[name]["value"]
+    elif name in context.data.getNode("variables").index:
+        return context.data.getNode("variables").index[name]["value"]
     else:
         return ""
 
@@ -59,7 +59,7 @@ def cmd_set(msg):
         set_variable(msg.cmds[1], " ".join(msg.cmds[2:]), msg.nick)
         res = Response("Variable \$%s définie." % msg.cmds[1],
                        channel=msg.channel)
-        save()
+        context.save()
         return res
     return Response("!set prend au minimum deux arguments : "
                     "le nom de la variable et sa valeur.",
@@ -71,7 +71,7 @@ def cmd_listalias(msg):
     if len(msg.cmds) > 1:
         res = list()
         for user in msg.cmds[1:]:
-            als = [x["alias"] for x in DATAS.getNode("aliases").index.values() if x["creator"] == user]
+            als = [x["alias"] for x in context.data.getNode("aliases").index.values() if x["creator"] == user]
             if len(als) > 0:
                 res.append("Alias créés par %s : %s" % (user, ", ".join(als)))
             else:
@@ -79,7 +79,7 @@ def cmd_listalias(msg):
         return Response(" ; ".join(res), channel=msg.channel)
     else:
         return Response("Alias connus : %s." %
-                        ", ".join(DATAS.getNode("aliases").index.keys()),
+                        ", ".join(context.data.getNode("aliases").index.keys()),
                         channel=msg.channel)
 
 
@@ -88,7 +88,7 @@ def cmd_listvars(msg):
     if len(msg.cmds) > 1:
         res = list()
         for user in msg.cmds[1:]:
-            als = [x["alias"] for x in DATAS.getNode("variables").index.values() if x["creator"] == user]
+            als = [x["alias"] for x in context.data.getNode("variables").index.values() if x["creator"] == user]
             if len(als) > 0:
                 res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
             else:
@@ -96,7 +96,7 @@ def cmd_listvars(msg):
         return Response(" ; ".join(res), channel=msg.channel)
     else:
         return Response("Variables connues : %s." %
-                        ", ".join(DATAS.getNode("variables").index.keys()),
+                        ", ".join(context.data.getNode("variables").index.keys()),
                         channel=msg.channel)
 
 
@@ -107,9 +107,9 @@ def cmd_alias(msg):
         for alias in msg.cmds[1:]:
             if alias[0] == "!":
                 alias = alias[1:]
-            if alias in DATAS.getNode("aliases").index:
+            if alias in context.data.getNode("aliases").index:
                 res.append(Response("!%s correspond à %s" %
-                                    (alias, DATAS.getNode("aliases").index[alias]["origin"]),
+                                    (alias, context.data.getNode("aliases").index[alias]["origin"]),
                                     channel=msg.channel))
             else:
                 res.append(Response("!%s n'est pas un alias" % alias,
@@ -127,9 +127,9 @@ def cmd_unalias(msg):
         for alias in msg.cmds[1:]:
             if alias[0] == "!" and len(alias) > 1:
                 alias = alias[1:]
-            if alias in DATAS.getNode("aliases").index:
-                if DATAS.getNode("aliases").index[alias]["creator"] == msg.nick or msg.frm_owner:
-                    DATAS.getNode("aliases").delChild(DATAS.getNode("aliases").index[alias])
+            if alias in context.data.getNode("aliases").index:
+                if context.data.getNode("aliases").index[alias]["creator"] == msg.nick or msg.frm_owner:
+                    context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
                     res.append(Response("%s a bien été supprimé" % alias,
                                         channel=msg.channel))
                 else:
@@ -167,8 +167,8 @@ def replace_variables(cnt, msg=None):
 
 @hook("pre_Command")
 def treat_alias(msg):
-    if msg.cmd in DATAS.getNode("aliases").index:
-        txt = DATAS.getNode("aliases").index[msg.cmd]["origin"]
+    if msg.cmd in context.data.getNode("aliases").index:
+        txt = context.data.getNode("aliases").index[msg.cmd]["origin"]
         # TODO: for legacy compatibility
         if txt[0] == "!":
             txt = txt[1:]
@@ -190,16 +190,16 @@ def parseask(msg):
     global ALIAS
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
-        if result.group(1) in DATAS.getNode("aliases").index or result.group(3).find("alias") >= 0:
+        if result.group(1) in context.data.getNode("aliases").index or result.group(3).find("alias") >= 0:
             raise IRCException("cet alias est déjà défini.")
         else:
             alias = ModuleState("alias")
             alias["alias"] = result.group(1)
             alias["origin"] = result.group(3)
             alias["creator"] = msg.nick
-            DATAS.getNode("aliases").addChild(alias)
+            context.data.getNode("aliases").addChild(alias)
             res = Response("Nouvel alias %s défini avec succès." %
                            result.group(1), channel=msg.channel)
-            save()
+            context.save()
             return res
     return None

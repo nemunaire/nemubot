@@ -5,6 +5,7 @@
 import re
 from urllib.parse import quote
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
@@ -20,8 +21,7 @@ def help_full():
   return "!spell [<lang>] <word>: give the correct spelling of <word> in <lang=fr>."
 
 def load(context):
-    global DATAS
-    DATAS.setIndex("name", "score")
+    context.data.setIndex("name", "score")
 
 @hook("cmd_hook", "spell")
 def cmd_spell(msg):
@@ -50,27 +50,25 @@ def cmd_spell(msg):
     return Response(strRes, channel=msg.channel, nick=msg.nick)
 
 def add_score(nick, t):
-    global DATAS
-    if nick not in DATAS.index:
+    if nick not in context.data.index:
         st = ModuleState("score")
         st["name"] = nick
-        DATAS.addChild(st)
+        context.data.addChild(st)
 
-    if DATAS.index[nick].hasAttribute(t):
-        DATAS.index[nick][t] = DATAS.index[nick].getInt(t) + 1
+    if context.data.index[nick].hasAttribute(t):
+        context.data.index[nick][t] = context.data.index[nick].getInt(t) + 1
     else:
-        DATAS.index[nick][t] = 1
-    save()
+        context.data.index[nick][t] = 1
+    context.save()
 
 @hook("cmd_hook", "spellscore")
 def cmd_score(msg):
-    global DATAS
     res = list()
     unknown = list()
     if len(msg.cmds) > 1:
         for cmd in msg.cmds[1:]:
-            if cmd in DATAS.index:
-                res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, DATAS.index[cmd].getInt(a)) for a in DATAS.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
+            if cmd in context.data.index:
+                res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, context.data.index[cmd].getInt(a)) for a in context.data.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
             else:
                 unknown.append(cmd)
     else:

@@ -17,15 +17,14 @@ from . import whois
 
 def load(context):
     for mod in [isup, page, w3c, watchWebsite, whois]:
-        mod.add_event = add_event
-        mod.del_event = del_event
-        mod.save = save
+        mod.add_event = context.add_event
+        mod.del_event = context.del_event
+        mod.save = context.save
         mod.print = print
-        mod.print_debug = print_debug
-        mod.send_response = send_response
-    page.load(CONF, add_hook)
-    watchWebsite.load(DATAS)
-    whois.load(CONF, add_hook)
+        mod.send_response = context.send_response
+    page.load(context.config, context.add_hook)
+    watchWebsite.load(context.data)
+    whois.load(context.config, context.add_hook)
 
 
 def help_full():

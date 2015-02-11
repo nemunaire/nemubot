@@ -21,18 +21,17 @@ def help_full():
 def load(context):
     global lang_binding
 
-    if not CONF or not CONF.hasNode("bighugelabs") or not CONF.getNode("bighugelabs").hasAttribute("key"):
+    if not context.config or not context.config.hasNode("bighugelabs") or not context.config.getNode("bighugelabs").hasAttribute("key"):
         print ("You need a NigHugeLabs API key in order to have english "
                "theasorus. Add it to the module configuration file:\n<bighugelabs"
                " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
                "https://words.bighugelabs.com/getkey.php")
     else:
-        lang_binding["en"] = lambda word: get_english_synos(CONF.getNode("bighugelabs")["key"], word)
+        lang_binding["en"] = lambda word: get_english_synos(context.config.getNode("bighugelabs")["key"], word)
 
 
 def get_french_synos(word):
     url = "http://www.crisco.unicaen.fr/des/synonymes/" + quote(word.encode("ISO-8859-1"))
-    print_debug(url)
     page = web.getURLContent(url)
 
     best = list(); synos = list(); anton = list()

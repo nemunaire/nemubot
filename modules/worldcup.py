@@ -8,6 +8,7 @@ import re
 from urllib.parse import quote
 from urllib.request import urlopen
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
@@ -20,7 +21,7 @@ API_URL="http://worldcup.sfg.io/%s"
 
 def load(context):
     from nemubot.event import ModuleEvent
-    add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
+    context.add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
 
 
 def help_full ():
@@ -28,31 +29,29 @@ def help_full ():
 
 
 def start_watch(msg):
-    global DATAS
     w = ModuleState("watch")
     w["server"] = msg.server
     w["channel"] = msg.channel
     w["proprio"] = msg.nick
     w["start"] = datetime.now(timezone.utc)
-    DATAS.addChild(w)
-    save()
+    context.data.addChild(w)
+    context.save()
     raise IRCException("This channel is now watching world cup events!")
 
 @hook("cmd_hook", "watch_worldcup")
 def cmd_watch(msg):
-    global DATAS
 
     # Get current state
     node = None
-    for n in DATAS.getChilds():
+    for n in context.data.getChilds():
         if n["server"] == msg.server and n["channel"] == msg.channel:
             node = n
             break
 
     if len(msg.cmds) >= 2:
         if msg.cmds[1] == "stop" and node is not None:
-            DATAS.delChild(node)
-            save()
+            context.data.delChild(node)
+            context.save()
             raise IRCException("This channel will not anymore receives world cup events.")
         elif msg.cmds[1] == "start" and node is None:
             start_watch(msg)
@@ -62,14 +61,12 @@ def cmd_watch(msg):
         if node is None:
             start_watch(msg)
         else:
-            DATAS.delChild(node)
-            save()
+            context.data.delChild(node)
+            context.save()
             raise IRCException("This channel will not anymore receives world cup events.")
 
 def current_match_new_action(match_str, osef):
-    global DATAS
-
-    add_event(ModuleEvent(func=lambda url: urlopen(url).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
+    context.add_event(ModuleEvent(func=lambda url: urlopen(url).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
 
     matches = json.loads(match_str)
 
@@ -81,8 +78,8 @@ def current_match_new_action(match_str, osef):
             if len(events) > 0:
                 msg += " ; à la " + txt_event(events[0])
 
-            for n in DATAS.getChilds():
-                send_response(n["server"], Response(msg, channel=n["channel"]))
+            for n in context.data.getChilds():
+                context.send_response(n["server"], Response(msg, channel=n["channel"]))
 
 def is_int(s):
     try:

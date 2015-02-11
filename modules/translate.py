@@ -19,17 +19,17 @@ URL = "http://api.wordreference.com/0.8/%s/json/%%s%%s/%%s"
 
 def load(context):
     global URL
-    if not CONF or not CONF.hasNode("wrapi") or not CONF.getNode("wrapi").hasAttribute("key"):
+    if not context.config or not context.config.hasNode("wrapi") or not context.config.getNode("wrapi").hasAttribute("key"):
         print ("You need a WordReference API key in order to use this module."
                " Add it to the module configuration file:\n<wrapi key=\"XXXXX\""
                " />\nRegister at "
                "http://www.wordreference.com/docs/APIregistration.aspx")
         return None
     else:
-        URL = URL % CONF.getNode("wrapi")["key"]
+        URL = URL % context.config.getNode("wrapi")["key"]
 
     from nemubot.hooks.messagehook import MessageHook
-    add_hook("cmd_hook", MessageHook(cmd_translate, "translate"))
+    context.add_hook("cmd_hook", MessageHook(cmd_translate, "translate"))
 
 
 def help_full():

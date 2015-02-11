@@ -4,6 +4,7 @@
 
 import imp
 
+from nemubot import context
 from nemubot.hooks import hook
 
 nemubotversion = 3.4
@@ -15,8 +16,7 @@ from . import UrbanDictionnary
 from . import WFASearch
 
 def load(context):
-    global CONF
-    WFASearch.CONF = CONF
+    WFASearch.CONF = context.config
 
 def reload():
     imp.reload(DDGSearch)

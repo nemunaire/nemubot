@@ -10,6 +10,7 @@ import time
 import threading
 import traceback
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
@@ -22,28 +23,25 @@ nemubotversion = 3.4
 from more import Response
 
 def help_full ():
-    return "This module store a lot of events: ny, we, " + (", ".join(DATAS.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
+    return "This module store a lot of events: ny, we, " + (", ".join(context.datas.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
 
 def load(context):
-    global DATAS
     #Define the index
-    DATAS.setIndex("name")
+    context.data.setIndex("name")
 
-    for evt in DATAS.index.keys():
-        if DATAS.index[evt].hasAttribute("end"):
-            event = ModuleEvent(call=fini, call_data=dict(strend=DATAS.index[evt]))
-            if DATAS.index[evt]["server"] not in context.servers:
-                print("WARNING: registering event for a unexistant server: %s, please connect to it." % DATAS.index[evt]["server"])
-            event._end = DATAS.index[evt].getDate("end")
-            idt = add_event(event)
+    for evt in context.data.index.keys():
+        if context.data.index[evt].hasAttribute("end"):
+            event = ModuleEvent(call=fini, call_data=dict(strend=context.data.index[evt]))
+            event._end = context.data.index[evt].getDate("end")
+            idt = context.add_event(event)
             if idt is not None:
-                DATAS.index[evt]["_id"] = idt
+                context.data.index[evt]["_id"] = idt
 
 
 def fini(d, strend):
-    send_response(strend["server"], Response("%s arrivé à échéance." % strend["name"], channel=strend["channel"], nick=strend["proprio"]))
-    DATAS.delChild(DATAS.index[strend["name"]])
-    save()
+    context.send_response(strend["server"], Response("%s arrivé à échéance." % strend["name"], channel=strend["channel"], nick=strend["proprio"]))
+    context.data.delChild(context.data.index[strend["name"]])
+    context.save()
 
 @hook("cmd_hook", "goûter")
 def cmd_gouter(msg):
@@ -68,7 +66,7 @@ def start_countdown(msg):
     """!start /something/: launch a timer"""
     if len(msg.cmds) < 2:
         raise IRCException("indique le nom d'un événement à chronométrer")
-    if msg.cmds[1] in DATAS.index:
+    if msg.cmds[1] in context.data.index:
         raise IRCException("%s existe déjà." % msg.cmds[1])
 
     strnd = ModuleState("strend")
@@ -77,7 +75,7 @@ def start_countdown(msg):
     strnd["proprio"] = msg.nick
     strnd["start"] = msg.date
     strnd["name"] = msg.cmds[1]
-    DATAS.addChild(strnd)
+    context.data.addChild(strnd)
 
     evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
@@ -106,9 +104,9 @@ def start_countdown(msg):
                   else:
                     strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
                 evt._end = strnd.getDate("end")
-                strnd["_id"] = add_event(evt)
+                strnd["_id"] = context.add_event(evt)
             except:
-                DATAS.delChild(strnd)
+                context.data.delChild(strnd)
                 raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.cmds[1])
 
         elif result1 is not None and len(result1) > 0:
@@ -127,11 +125,11 @@ def start_countdown(msg):
                 else:
                     strnd["end"] += timedelta(seconds=int(t))
             evt._end = strnd.getDate("end")
-            eid = add_event(evt)
+            eid = context.add_event(evt)
             if eid is not None:
                 strnd["_id"] = eid
 
-    save()
+    context.save()
     if "end" in strnd:
         return Response("%s commencé le %s et se terminera le %s." %
                         (msg.cmds[1], msg.date.strftime("%A %d %B %Y à %H:%M:%S"),
@@ -148,16 +146,16 @@ def end_countdown(msg):
     if len(msg.cmds) < 2:
         raise IRCException("quel événement terminer ?")
 
-    if msg.cmds[1] in DATAS.index:
-        if DATAS.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.frm_owner):
-            duration = countdown(msg.date - DATAS.index[msg.cmds[1]].getDate("start"))
-            del_event(DATAS.index[msg.cmds[1]]["_id"])
-            DATAS.delChild(DATAS.index[msg.cmds[1]])
-            save()
+    if msg.cmds[1] in context.data.index:
+        if context.data.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.frm_owner):
+            duration = countdown(msg.date - context.data.index[msg.cmds[1]].getDate("start"))
+            context.del_event(context.data.index[msg.cmds[1]]["_id"])
+            context.data.delChild(context.data.index[msg.cmds[1]])
+            context.save()
             return Response("%s a duré %s." % (msg.cmds[1], duration),
                             channel=msg.channel, nick=msg.nick)
         else:
-            raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.cmds[1], DATAS.index[msg.cmds[1]]["proprio"]))
+            raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.cmds[1], context.data.index[msg.cmds[1]]["proprio"]))
     else:
         return Response("%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
 
@@ -167,31 +165,31 @@ def liste(msg):
     if len(msg.cmds) > 1:
         res = list()
         for user in msg.cmds[1:]:
-            cmptr = [x["name"] for x in DATAS.index.values() if x["proprio"] == user]
+            cmptr = [x["name"] for x in context.data.index.values() if x["proprio"] == user]
             if len(cmptr) > 0:
                 res.append("Compteurs créés par %s : %s" % (user, ", ".join(cmptr)))
             else:
                 res.append("%s n'a pas créé de compteur" % user)
         return Response(" ; ".join(res), channel=msg.channel)
     else:
-        return Response("Compteurs connus : %s." % ", ".join(DATAS.index.keys()), channel=msg.channel)
+        return Response("Compteurs connus : %s." % ", ".join(context.data.index.keys()), channel=msg.channel)
 
 @hook("cmd_default")
 def parseanswer(msg):
-    if msg.cmds[0] in DATAS.index:
+    if msg.cmds[0] in context.data.index:
         res = Response(channel=msg.channel)
 
         # Avoid message starting by ! which can be interpreted as command by other bots
         if msg.cmds[0][0] == "!":
             res.nick = msg.nick
 
-        if DATAS.index[msg.cmds[0]].name == "strend":
-            if DATAS.index[msg.cmds[0]].hasAttribute("end"):
-                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(msg.date - DATAS.index[msg.cmds[0]].getDate("start")), countdown(DATAS.index[msg.cmds[0]].getDate("end") - msg.date)))
+        if context.data.index[msg.cmds[0]].name == "strend":
+            if context.data.index[msg.cmds[0]].hasAttribute("end"):
+                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(msg.date - context.data.index[msg.cmds[0]].getDate("start")), countdown(context.data.index[msg.cmds[0]].getDate("end") - msg.date)))
             else:
-                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(msg.date - DATAS.index[msg.cmds[0]].getDate("start"))))
+                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(msg.date - context.data.index[msg.cmds[0]].getDate("start"))))
         else:
-            res.append_message(countdown_format(DATAS.index[msg.cmds[0]].getDate("start"), DATAS.index[msg.cmds[0]]["msg_before"], DATAS.index[msg.cmds[0]]["msg_after"]))
+            res.append_message(countdown_format(context.data.index[msg.cmds[0]].getDate("start"), context.data.index[msg.cmds[0]]["msg_before"], context.data.index[msg.cmds[0]]["msg_after"]))
         return res
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
@@ -202,7 +200,7 @@ def parseask(msg):
         name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
         if name is None:
             raise IRCException("il faut que tu attribues une commande à l'événement.")
-        if name.group(1) in DATAS.index:
+        if name.group(1) in context.data.index:
             raise IRCException("un événement portant ce nom existe déjà.")
 
         texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
@@ -231,8 +229,8 @@ def parseask(msg):
             evt["start"] = extDate
             evt["msg_after"] = msg_after
             evt["msg_before"] = msg_before
-            DATAS.addChild(evt)
-            save()
+            context.data.addChild(evt)
+            context.save()
             return Response("Nouvel événement !%s ajouté avec succès." % name.group(1),
                             channel=msg.channel)
 
@@ -243,8 +241,8 @@ def parseask(msg):
             evt["proprio"] = msg.nick
             evt["name"] = name.group(1)
             evt["msg_before"] = texts.group (2)
-            DATAS.addChild(evt)
-            save()
+            context.data.addChild(evt)
+            context.save()
             return Response("Nouvelle commande !%s ajoutée avec succès." % name.group(1),
                             channel=msg.channel)
 

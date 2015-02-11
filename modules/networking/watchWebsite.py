@@ -185,7 +185,7 @@ def start_watching(site, offset=0):
     """
 
     o = urlparse(site["url"], "http")
-    print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
+    #print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
 
     evt = ModuleEvent(func=lambda url: page.render(url, None),
                       cmp_data=site["lastcontent"],

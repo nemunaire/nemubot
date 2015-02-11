@@ -44,7 +44,6 @@ def cmd_conjug(msg):
                            "sa conjugaison!")
 
     tens = ' '.join(msg.cmds[1:-1])
-    print_debug(tens)
 
     verb = msg.cmds[-1]
 
@@ -60,7 +59,6 @@ def cmd_conjug(msg):
 def get_conjug(verb, stringTens):
     url = ("http://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
            quote(verb.encode("ISO-8859-1")))
-    print_debug(url)
     page = web.getURLContent(url)
 
     if page is not None:

@@ -1,6 +1,5 @@
 import urllib.request
 from bs4 import BeautifulSoup
-import pprint
 from nemubot.hooks import hook
 from more import Response
 

@@ -34,8 +34,6 @@ def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False)
     if tomatoes:
         url += "tomatoes=true&"
 
-    print_debug(url)
-
     # Make the request
     data = web.getJSON(url)
 
@@ -55,7 +53,6 @@ def find_movies(title):
 
     # Built URL
     url = "http://www.omdbapi.com/?s=%s" % urllib.parse.quote(title)
-    print_debug(url)
 
     # Make the request
     data = web.getJSON(url)

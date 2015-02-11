@@ -6,6 +6,7 @@ import re
 import sys
 from datetime import date, datetime
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
@@ -18,8 +19,7 @@ from more import Response
 
 
 def load(context):
-    global DATAS
-    DATAS.setIndex("name", "birthday")
+    context.data.setIndex("name", "birthday")
 
 
 def help_full():
@@ -38,10 +38,10 @@ def findName(msg):
 
     matches = []
 
-    if name in DATAS.index:
+    if name in context.data.index:
         matches.append(name)
     else:
-        for k in DATAS.index.keys():
+        for k in context.data.index.keys():
             if k.find(name) == 0:
                 matches.append(k)
     return (matches, name)
@@ -52,13 +52,13 @@ def cmd_anniv(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
         name = matches[0]
-        tyd = DATAS.index[name].getDate("born")
+        tyd = context.data.index[name].getDate("born")
         tyd = datetime(date.today().year, tyd.month, tyd.day)
 
         if (tyd.day == datetime.today().day and
             tyd.month == datetime.today().month):
             return Response(countdown_format(
-                DATAS.index[name].getDate("born"), "",
+                context.data.index[name].getDate("born"), "",
                 "C'est aujourd'hui l'anniversaire de %s !"
                 " Il a %s. Joyeux anniversaire :)" % (name, "%s")),
                             msg.channel)
@@ -81,7 +81,7 @@ def cmd_age(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
         name = matches[0]
-        d = DATAS.index[name].getDate("born")
+        d = context.data.index[name].getDate("born")
 
         return Response(countdown_format(d,
                                          "%s va naître dans %s." % (name, "%s"),
@@ -107,14 +107,14 @@ def parseask(msg):
                 nick = res.group(1)
                 if nick == "my" or nick == "I" or nick == "i" or nick == "je" or nick == "mon" or nick == "ma":
                     nick = msg.nick
-                if nick.lower() in DATAS.index:
-                    DATAS.index[nick.lower()]["born"] = extDate
+                if nick.lower() in context.data.index:
+                    context.data.index[nick.lower()]["born"] = extDate
                 else:
                     ms = ModuleState("birthday")
                     ms.setAttribute("name", nick.lower())
                     ms.setAttribute("born", extDate)
-                    DATAS.addChild(ms)
-                save()
+                    context.data.addChild(ms)
+                context.save()
                 return Response("ok, c'est noté, %s est né le %s"
                                 % (nick, extDate.strftime("%A %d %B %Y à %H:%M")),
                                 msg.channel,

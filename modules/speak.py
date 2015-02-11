@@ -20,12 +20,12 @@ SMILEY = list()
 CORRECTIONS = list()
 
 def load(context):
-    for smiley in CONF.getNodes("smiley"):
+    for smiley in context.config.getNodes("smiley"):
         if smiley.hasAttribute("txt") and smiley.hasAttribute("mood"):
             SMILEY.append((smiley.getAttribute("txt"), smiley.getAttribute("mood")))
     print ("%d smileys loaded" % len(SMILEY))
 
-    for correct in CONF.getNodes("correction"):
+    for correct in context.config.getNodes("correction"):
         if correct.hasAttribute("bad") and correct.hasAttribute("good"):
             CORRECTIONS.append((" " + (correct.getAttribute("bad") + " "), (" " + correct.getAttribute("good") + " ")))
     print ("%d corrections loaded" % len(CORRECTIONS))
@@ -38,7 +38,6 @@ class Speaker(Thread):
         while not queue.empty():
             sentence = queue.get_nowait()
             lang = "fr"
-            print_debug(sentence)
             subprocess.call(["espeak", "-v", lang, "--", sentence])
             queue.task_done()
 

@@ -15,16 +15,16 @@ URL_TPBAPI = None
 def load(context):
     global URL_TPBAPI
 
-    if not CONF or not CONF.hasNode("tpbapi") or not CONF.getNode("tpbapi").hasAttribute("url"):
+    if not context.config or not context.config.hasNode("tpbapi") or not context.config.getNode("tpbapi").hasAttribute("url"):
         print ("You need a TPB API in order to use the !tpb feature. Add it to "
                "the module configuration file:\n"
                "<tpbapi url=\"http://tpbapi.org/\" />\nSample API: "
                "https://gist.github.com/colona/07a925f183cfb47d5f20")
     else:
-        URL_TPBAPI = CONF.getNode("tpbapi")["url"]
+        URL_TPBAPI = context.config.getNode("tpbapi")["url"]
 
         from nemubot.hooks.messagehook import MessageHook
-        add_hook("cmd_hook", MessageHook(cmd_tpb, "tpb"))
+        context.add_hook("cmd_hook", MessageHook(cmd_tpb, "tpb"))
 
 
 def cmd_tpb(msg):

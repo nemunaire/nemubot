@@ -6,6 +6,7 @@ import datetime
 import re
 from urllib.parse import quote
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
@@ -19,10 +20,9 @@ from more import Response
 
 
 def load(context):
-    global DATAS
-    DATAS.setIndex("name", "city")
+    context.data.setIndex("name", "city")
 
-    if not CONF or not CONF.hasNode("darkskyapi") or not CONF.getNode("darkskyapi").hasAttribute("key"):
+    if not context.config or not context.config.hasNode("darkskyapi") or not context.config.getNode("darkskyapi").hasAttribute("key"):
         print ("You need a Dark-Sky API key in order to use this "
                "module. Add it to the module configuration file:\n<darkskyapi"
                " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
@@ -30,9 +30,9 @@ def load(context):
         return None
 
     from nemubot.hooks.messagehook import MessageHook
-    add_hook("cmd_hook", MessageHook(cmd_weather, "météo"))
-    add_hook("cmd_hook", MessageHook(cmd_alert, "alert"))
-    add_hook("cmd_hook", MessageHook(cmd_coordinates, "coordinates"))
+    context.add_hook("cmd_hook", MessageHook(cmd_weather, "météo"))
+    context.add_hook("cmd_hook", MessageHook(cmd_alert, "alert"))
+    context.add_hook("cmd_hook", MessageHook(cmd_coordinates, "coordinates"))
 
 
 def help_full ():
@@ -111,10 +111,10 @@ def treat_coord(msg):
         except ValueError:
             pass
 
-        if city in DATAS.index:
+        if city in context.data.index:
             coords = list()
-            coords.append(DATAS.index[city]["lat"])
-            coords.append(DATAS.index[city]["long"])
+            coords.append(context.data.index[city]["lat"])
+            coords.append(context.data.index[city]["long"])
             return city, coords, specific
 
         else:
@@ -132,7 +132,7 @@ def treat_coord(msg):
 
 
 def get_json_weather(coords):
-    wth = web.getJSON("https://api.forecast.io/forecast/%s/%s,%s" % (CONF.getNode("darkskyapi")["key"], float(coords[0]), float(coords[1])))
+    wth = web.getJSON("https://api.forecast.io/forecast/%s/%s,%s" % (context.config.getNode("darkskyapi")["key"], float(coords[0]), float(coords[1])))
 
     # First read flags
     if "darksky-unavailable" in wth["flags"]:
@@ -146,10 +146,10 @@ def cmd_coordinates(msg):
         raise IRCException("indique-moi un nom de ville.")
 
     j = msg.args[0].lower()
-    if j not in DATAS.index:
+    if j not in context.data.index:
         raise IRCException("%s n'est pas une ville connue" % msg.args[0])
 
-    coords = DATAS.index[j]
+    coords = context.data.index[j]
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
 
@@ -227,15 +227,15 @@ def parseask(msg):
         gps_lat = res.group("lat").replace(",", ".")
         gps_long = res.group("long").replace(",", ".")
 
-        if city_name in DATAS.index:
-            DATAS.index[city_name]["lat"] = gps_lat
-            DATAS.index[city_name]["long"] = gps_long
+        if city_name in context.data.index:
+            context.data.index[city_name]["lat"] = gps_lat
+            context.data.index[city_name]["long"] = gps_long
         else:
             ms = ModuleState("city")
             ms.setAttribute("name", city_name)
             ms.setAttribute("lat", gps_lat)
             ms.setAttribute("long", gps_long)
-            DATAS.addChild(ms)
-        save()
+            context.data.addChild(ms)
+        context.save()
         return Response("ok, j'ai bien noté les coordonnées de %s" % res.group("city"),
                         msg.channel, msg.nick)

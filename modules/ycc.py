@@ -30,7 +30,6 @@ def reduce(url):
     """
 
     snd_url = "http://ycc.fr/redirection/create/" + quote(url, "/:%@&=?")
-    print_debug(snd_url)
     return web.getURLContent(snd_url)
 
 

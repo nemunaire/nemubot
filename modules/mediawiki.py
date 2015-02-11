@@ -19,7 +19,6 @@ def get_namespaces(site, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
         "s" if ssl else "", site)
-    print_debug(url)
 
     # Make the request
     data = web.getJSON(url)
@@ -34,7 +33,6 @@ def get_raw_page(site, term, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(term))
-    print_debug(url)
 
     # Make the request
     data = web.getJSON(url)
@@ -50,7 +48,6 @@ def get_unwikitextified(site, wikitext, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=expandtemplates&text=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(wikitext))
-    print_debug(url)
 
     # Make the request
     data = web.getJSON(url)
@@ -107,7 +104,6 @@ def opensearch(site, term, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=xml&action=opensearch&search=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(term))
-    print_debug(url)
 
     # Make the request
     response = web.getXML(url)
@@ -123,7 +119,6 @@ def search(site, term, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
         "s" if ssl else "", site, urllib.parse.quote(term))
-    print_debug(url)
 
     # Make the request
     data = web.getJSON(url)

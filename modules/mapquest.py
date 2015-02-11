@@ -14,7 +14,7 @@ from more import Response
 
 
 def load(context):
-    if not CONF or not CONF.hasNode("mapquestapi") or not CONF.getNode("mapquestapi").hasAttribute("key"):
+    if not context.config or not context.config.hasNode("mapquestapi") or not context.config.getNode("mapquestapi").hasAttribute("key"):
         print ("You need a MapQuest API key in order to use this "
                "module. Add it to the module configuration file:\n<mapquestapi"
                " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
@@ -22,7 +22,7 @@ def load(context):
         return None
 
     from nemubot.hooks.messagehook import MessageHook
-    add_hook("cmd_hook", MessageHook(cmd_geocode, "geocode"))
+    context.add_hook("cmd_hook", MessageHook(cmd_geocode, "geocode"))
 
 
 def help_full():
@@ -31,7 +31,7 @@ def help_full():
 
 def geocode(location):
     obj = web.getJSON("http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%s" %
-                      (CONF.getNode("mapquestapi")["key"], quote(location)))
+                      (context.config.getNode("mapquestapi")["key"], quote(location)))
 
     if "results" in obj and "locations" in obj["results"][0]:
         for loc in obj["results"][0]["locations"]:
