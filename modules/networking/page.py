@@ -108,10 +108,10 @@ def traceURL(url, stack=None):
         stack.append('stack overflow :(')
         return stack
 
-    _, status, _, headers = headers(url)
+    _, status, _, heads = headers(url)
 
     if status == http.client.FOUND or status == http.client.MOVED_PERMANENTLY or status == http.client.SEE_OTHER:
-        for h, c in headers:
+        for h, c in heads:
             if h == "Location":
                 url = c
                 if url in stack:
