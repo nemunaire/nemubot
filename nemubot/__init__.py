@@ -28,7 +28,7 @@ import threading
 import time
 import uuid
 
-__version__ = '4.0.dev0'
+__version__ = '4.0.dev1'
 __author__  = 'nemunaire'
 
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
