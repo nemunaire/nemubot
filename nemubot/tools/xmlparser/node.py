@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import xml.sax
+import calendar
 from datetime import datetime, timezone
 import logging
-import time
+import xml.sax
 
 logger = logging.getLogger("nemubot.tools.xmlparser.node")
 
@@ -82,13 +82,11 @@ class ModuleState:
             return source
         else:
             try:
-                return datetime.fromtimestamp(float(source), timezone.utc)
+                return datetime.utcfromtimestamp(float(source)).replace(tzinfo=timezone.utc)
             except ValueError:
                 while True:
                     try:
-                        return datetime.fromtimestamp(time.mktime(
-                            time.strptime(source[:19], "%Y-%m-%d %H:%M:%S")),
-                                                      timezone.utc)
+                        return time.strptime(source[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     except ImportError:
                         pass
 
@@ -202,7 +200,7 @@ class ModuleState:
         for att in self.attributes.keys():
             if att[0] != "_":  # Don't save attribute starting by _
                 if isinstance(self.attributes[att], datetime):
-                    attribs[att] = str(time.mktime(
+                    attribs[att] = str(calendar.timegm(
                         self.attributes[att].timetuple()))
                 else:
                     attribs[att] = str(self.attributes[att])

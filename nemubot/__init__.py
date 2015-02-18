@@ -215,6 +215,8 @@ class Bot(threading.Thread):
             except ValueError:
                 evt.id = eid
 
+        # TODO: mutex here plz
+
         # Add the event in its place
         t = evt.current
         i = 0 # sentinel
