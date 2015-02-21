@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime, timezone
-import imp
 
 
 class AbstractMessage:
@@ -166,6 +165,8 @@ class OwnerCommand(Command):
 
 
 def reload():
+    import imp
+
     import nemubot.message.visitor
     imp.reload(nemubot.message.visitor)
 

@@ -17,7 +17,6 @@
 import os
 
 from nemubot.datastore.abstract import Abstract
-from nemubot.tools.xmlparser import parse_file
 
 
 class XML(Abstract):
@@ -66,6 +65,7 @@ class XML(Abstract):
 
         data_file = self._get_data_file_path(module)
         if os.path.isfile(data_file):
+            from nemubot.tools.xmlparser import parse_file
             return parse_file(data_file)
         else:
             return Abstract.load(self, module)

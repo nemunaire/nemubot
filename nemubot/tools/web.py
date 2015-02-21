@@ -16,18 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from html.entities import name2codepoint
-import http.client
-import json
-import re
-import socket
-from urllib.parse import quote
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
-from nemubot import __version__
 from nemubot.exception import IRCException
-from nemubot.tools.xmlparser import parse_string
 
 
 def isURL(url):
@@ -70,10 +61,18 @@ def getPassword(url):
 # Get real pages
 
 def getURLContent(url, timeout=15):
-    """Return page content corresponding to URL or None if any error occurs"""
+    """Return page content corresponding to URL or None if any error occurs
+
+    Arguments:
+    url -- the URL to get
+    timeout -- maximum number of seconds to wait before returning an exception
+    """
+
     o = urlparse(url)
     if o.netloc == "":
         o = urlparse("http://" + url)
+
+    import http.client
 
     if o.scheme == "http":
         conn = http.client.HTTPConnection(o.hostname, port=o.port,
@@ -85,7 +84,10 @@ def getURLContent(url, timeout=15):
         conn = http.client.HTTPConnection(o.hostname, port=80, timeout=timeout)
     else:
         return None
+
+    import socket
     try:
+        from nemubot import __version__
         if o.query != '':
             conn.request("GET", o.path + "?" + o.query,
                          None, {"User-agent": "Nemubot v%s" % __version__})
@@ -141,16 +143,31 @@ def getURLContent(url, timeout=15):
 
 
 def getXML(url, timeout=15):
-    """Get content page and return XML parsed content"""
+    """Get content page and return XML parsed content
+
+    Arguments:
+    url -- the URL to get
+    timeout -- maximum number of seconds to wait before returning an exception
+    """
+
     cnt = getURLContent(url, timeout)
     if cnt is None:
         return None
     else:
+        from nemubot.tools.xmlparser import parse_string
         return parse_string(cnt.encode())
 
 
 def getJSON(url, timeout=15):
-    """Get content page and return JSON content"""
+    """Get content page and return JSON content
+
+    Arguments:
+    url -- the URL to get
+    timeout -- maximum number of seconds to wait before returning an exception
+    """
+
+    import json
+
     cnt = getURLContent(url, timeout)
     if cnt is None:
         return None
@@ -161,13 +178,27 @@ def getJSON(url, timeout=15):
 # Other utils
 
 def htmlentitydecode(s):
-    """Decode htmlentities"""
+    """Decode htmlentities
+
+    Argument:
+    s -- The string to decode
+    """
+
+    import re
+    from html.entities import name2codepoint
+
     return re.sub('&(%s);' % '|'.join(name2codepoint),
                   lambda m: chr(name2codepoint[m.group(1)]), s)
 
 
 def striphtml(data):
-    """Remove HTML tags from text"""
+    """Remove HTML tags from text
+
+    Argument:
+    data -- the string to strip
+    """
+
+    import re
     p = re.compile(r'<.*?>')
     return htmlentitydecode(p.sub('', data)
                             .replace("&#x28;", "/(")

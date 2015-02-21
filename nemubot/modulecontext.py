@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.tools.xmlparser import module_state
-
-
 def convert_legacy_store(old):
     if old == "cmd_hook" or old == "cmd_rgxp" or old == "cmd_default":
         return "in_Command"
@@ -84,6 +81,8 @@ class ModuleContext:
                     return False
 
         else:
+            from nemubot.tools.xmlparser import module_state
+
             self.data = module_state.ModuleState("nemubotstate")
 
             def add_hook(store, hook):

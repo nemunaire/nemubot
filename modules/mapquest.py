@@ -5,6 +5,7 @@
 import re
 from urllib.parse import quote
 
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.tools import web
 

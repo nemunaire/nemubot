@@ -16,15 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp
-import os
-import readline
 import shlex
 import sys
 import traceback
 
-from nemubot.prompt.error import PromptError
-from nemubot.prompt.reset import PromptReset
 from nemubot.prompt import builtins
 
 
@@ -102,6 +97,9 @@ class Prompt:
         context -- current bot context
         """
 
+        from nemubot.prompt.error import PromptError
+        from nemubot.prompt.reset import PromptReset
+
         while True:  # Stopped by exception
             try:
                 line = input("\033[0;33m%s\033[0;%dm§\033[0m " %
@@ -134,6 +132,8 @@ def hotswap(bak):
 
 
 def reload():
+    import imp
+
     import nemubot.prompt.builtins
     imp.reload(nemubot.prompt.builtins)
 

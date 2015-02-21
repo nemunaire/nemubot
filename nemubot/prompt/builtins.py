@@ -16,16 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-
-from nemubot.prompt.reset import PromptReset
-from nemubot.tools.config import load_file
-
-logger = logging.getLogger("nemubot.prompt.builtins")
-
-
 def end(toks, context, prompt):
     """Quit the prompt for reload or exit"""
+    from nemubot.prompt.reset import PromptReset
+
     if toks[0] == "refresh":
         raise PromptReset("refresh")
     elif toks[0] == "reset":
@@ -67,6 +61,8 @@ def liste(toks, context, prompt):
 def load(toks, context, prompt):
     """Load an XML configuration file"""
     if len(toks) > 1:
+        from nemubot.tools.config import load_file
+
         for filename in toks[1:]:
             load_file(filename, context)
     else:

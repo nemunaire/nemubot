@@ -17,21 +17,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import argparse
-import imp
-import logging
 import os
 import sys
 
-import nemubot
-from nemubot import datastore
-import nemubot.prompt
-from nemubot.prompt.builtins import load_file
-from nemubot.prompt.reset import PromptReset
-from nemubot.importer import ModuleFinder
-
 if __name__ == "__main__":
     # Parse command line arguments
+    import argparse
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-a", "--no-connect", action="store_true",
@@ -59,11 +50,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    import nemubot
+
     if args.version:
         print(nemubot.__version__)
         sys.exit(0)
 
     # Setup loggin interface
+    import logging
     logger = logging.getLogger("nemubot")
 
     formatter = logging.Formatter(
@@ -92,6 +86,7 @@ if __name__ == "__main__":
             logger.error("%s is not a directory", path)
 
     # Create bot context
+    from nemubot import datastore
     context = nemubot.Bot(modules_paths=modules_paths, data_store=datastore.XML(args.data_path),
                           verbosity=args.verbose)
 
@@ -99,14 +94,17 @@ if __name__ == "__main__":
         context.noautoconnect = True
 
     # Load the prompt
+    import nemubot.prompt
     prmpt = nemubot.prompt.Prompt()
 
     # Register the hook for futur import
+    from nemubot.importer import ModuleFinder
     sys.meta_path.append(ModuleFinder(context.modules_paths, context.add_module))
 
     # Load requested configuration files
     for path in args.files:
         if os.path.isfile(path):
+            from nemubot.prompt.builtins import load_file
             load_file(path, context)
         else:
             logger.error("%s is not a readable file", path)
@@ -117,6 +115,7 @@ if __name__ == "__main__":
 
     print ("Nemubot v%s ready, my PID is %i!" % (nemubot.__version__,
                                                  os.getpid()))
+    from nemubot.prompt.reset import PromptReset
     while True:
         try:
             context.start()
@@ -127,6 +126,7 @@ if __name__ == "__main__":
                 break
 
         try:
+            import imp
             # Reload all other modules
             imp.reload(nemubot)
             imp.reload(nemubot.prompt)

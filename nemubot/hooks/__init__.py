@@ -16,11 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp
-
-from nemubot.exception import IRCException
-
-
 def call_game(call, *args, **kargs):
     """TODO"""
     l = list()
@@ -54,6 +49,8 @@ class AbstractHook:
 
     def run(self, data1, *args):
         """Run the hook"""
+
+        from nemubot.exception import IRCException
         self.times -= 1
 
         try:
@@ -81,6 +78,8 @@ def hook(store, *args, **kargs):
 
 
 def reload():
+    import imp
+
     import nemubot.hooks.manager
     imp.reload(nemubot.hooks.manager)
 

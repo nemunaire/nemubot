@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import calendar
-from datetime import datetime, timezone
 import logging
-import xml.sax
 
 logger = logging.getLogger("nemubot.tools.xmlparser.node")
 
@@ -78,14 +75,17 @@ class ModuleState:
         else:
             return None
 
+        from datetime import datetime
         if isinstance(source, datetime):
             return source
         else:
+            from datetime import timezone
             try:
                 return datetime.utcfromtimestamp(float(source)).replace(tzinfo=timezone.utc)
             except ValueError:
                 while True:
                     try:
+                        import time
                         return time.strptime(source[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     except ImportError:
                         pass
@@ -140,6 +140,7 @@ class ModuleState:
 
     def setAttribute(self, name, value):
         """DOM like method"""
+        from datetime import datetime
         if (isinstance(value, datetime) or isinstance(value, str) or
             isinstance(value, int) or isinstance(value, float)):
             self.attributes[name] = value
@@ -196,14 +197,17 @@ class ModuleState:
 
     def save_node(self, gen):
         """Serialize this node as a XML node"""
+        from datetime import datetime
         attribs = {}
         for att in self.attributes.keys():
             if att[0] != "_":  # Don't save attribute starting by _
                 if isinstance(self.attributes[att], datetime):
+                    import calendar
                     attribs[att] = str(calendar.timegm(
                         self.attributes[att].timetuple()))
                 else:
                     attribs[att] = str(self.attributes[att])
+        import xml.sax
         attrs = xml.sax.xmlreader.AttributesImpl(attribs)
 
         try:
@@ -220,6 +224,7 @@ class ModuleState:
     def save(self, filename):
         """Save the current node as root node in a XML file"""
         with open(filename, "w") as f:
+            import xml.sax
             gen = xml.sax.saxutils.XMLGenerator(f, "utf-8")
             gen.startDocument()
             self.save_node(gen)
