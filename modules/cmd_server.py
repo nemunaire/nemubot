@@ -19,10 +19,7 @@
 import traceback
 import sys
 
-from nemubot.prompt.error import PromptError
 from nemubot.hooks import hook
-from nemubot.message import TextMessage
-from nemubot.networkbot import NetworkBot
 
 nemubotversion = 3.4
 NODATA = True
@@ -37,6 +34,7 @@ def getserver(toks, context, prompt, mandatory=False, **kwargs):
     elif not mandatory or prompt.selectedServer:
         return prompt.selectedServer
     else:
+        from nemubot.prompt.error import PromptError
         raise PromptError("Please SELECT a server or give its name in argument.")
 
 
@@ -144,6 +142,7 @@ def send(toks, **kwargs):
                % (toks[1], srv.id))
         return 3
 
+    from nemubot.message import TextMessage
     srv.send_response(TextMessage(" ".join(toks[2:]), server=None,
                                   to=[toks[1]]))
     return 0

@@ -16,18 +16,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
 from importlib.abc import Finder
 from importlib.machinery import SourceFileLoader
-import imp
 import logging
 import os
-import sys
-
-from nemubot import __version__
-import nemubot.hooks
-from nemubot.message import TextMessage
-from nemubot.tools.xmlparser import parse_file, module_state
 
 logger = logging.getLogger("nemubot.importer")
 

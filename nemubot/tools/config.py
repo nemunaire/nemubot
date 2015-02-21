@@ -17,9 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
-
-from nemubot.tools.xmlparser import parse_file
 
 logger = logging.getLogger("nemubot.tools.config")
 
@@ -97,7 +94,11 @@ def load_file(filename, context):
     filename -- the path to the file to load
     """
 
+    import os
+
     if os.path.isfile(filename):
+        from nemubot.tools.xmlparser import parse_file
+
         config = parse_file(filename)
 
         # This is a true nemubot configuration file, load it!

@@ -18,7 +18,6 @@
 
 # Extraction/Format text
 
-from datetime import datetime, date
 import re
 
 xtrdt = re.compile(r'''^.*? (?P<day>[0-9]{1,4}) .+?
@@ -71,6 +70,7 @@ def extractDate(msg):
         second = result.group("second")
 
         if year is None:
+            from datetime import date
             year = date.today().year
         if hour is None:
             hour = 0
@@ -84,6 +84,7 @@ def extractDate(msg):
                 minute = int(minute) + 1
                 second = 0
 
+        from datetime import datetime
         return datetime(int(year), int(month), int(day),
                         int(hour), int(minute), int(second))
     else:

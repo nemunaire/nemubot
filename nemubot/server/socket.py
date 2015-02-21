@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import ssl
-import socket
-
-from nemubot.server import AbstractServer
+from nemubot.server.abstract import AbstractServer
 
 
 class SocketServer(AbstractServer):
@@ -49,11 +46,14 @@ class SocketServer(AbstractServer):
     # Open/close
 
     def _open(self):
+        import os
+        import socket
         # Create the socket
         self.socket = socket.socket()
 
         # Wrap the socket for SSL
         if self.ssl:
+            import ssl
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             self.socket = ctx.wrap_socket(self.socket)
 
@@ -71,6 +71,8 @@ class SocketServer(AbstractServer):
 
 
     def _close(self):
+        import socket
+
         self._sending_queue.join()
         if self.connected:
             try:

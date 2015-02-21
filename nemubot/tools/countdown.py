@@ -16,10 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime, timezone
-import time
-
-
 def countdown(delta, resolution=5):
     sec = delta.seconds
     hours, remainder = divmod(sec, 3600)
@@ -82,9 +78,14 @@ def countdown_format(date, msg_before, msg_after, tz=None):
     """Replace in a text %s by a sentence incidated the remaining time
     before/after an event"""
     if tz is not None:
+        import os
         oldtz = os.environ['TZ']
         os.environ['TZ'] = tz
+
+        import time
         time.tzset()
+
+    from datetime import datetime, timezone
 
     # Calculate time before the date
     try:
@@ -103,6 +104,7 @@ def countdown_format(date, msg_before, msg_after, tz=None):
             delta = date - datetime.now()
 
     if tz is not None:
+        import os
         os.environ['TZ'] = oldtz
 
     return sentence_c % countdown(delta)

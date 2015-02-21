@@ -16,11 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import calendar
 from datetime import datetime, timezone
-import ipaddress
 import re
-import time
 import shlex
 
 from nemubot.channel import Channel
@@ -82,6 +79,7 @@ class IRC(SocketServer):
         def _ctcp_dcc(msg, cmds):
             """Response to DCC CTCP message"""
             try:
+                import ipaddress
                 ip = ipaddress.ip_address(int(cmds[3]))
                 port = int(cmds[4])
                 conn = DCC(srv, msg.sender)
@@ -333,6 +331,7 @@ class IRCMessage:
 
         # Treat special tags
         if key == "time":
+            import calendar, time
             value = datetime.fromtimestamp(calendar.timegm(time.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")), timezone.utc)
 
         # Store tag

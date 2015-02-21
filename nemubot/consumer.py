@@ -18,7 +18,6 @@
 
 import logging
 import queue
-import re
 import threading
 
 logger = logging.getLogger("nemubot.consumer")

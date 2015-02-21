@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.message import TextMessage, DirectAsk
-
-
 class IRCException(Exception):
 
     def __init__(self, message, personnal=True):
@@ -28,8 +25,11 @@ class IRCException(Exception):
 
     def fill_response(self, msg):
         if self.personnal:
+            from nemubot.message import DirectAsk
             return DirectAsk(msg.frm, self.message,
                              server=msg.server, to=msg.to_response)
+
         else:
+            from nemubot.message import TextMessage
             return TextMessage(self.message,
                                server=msg.server, to=msg.to_response)

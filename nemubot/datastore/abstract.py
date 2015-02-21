@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.tools.xmlparser import module_state
-
-
 class Abstract:
 
     """Abstract implementation of a module data store, that always return an
@@ -38,6 +35,7 @@ class Abstract:
         The loaded data
         """
 
+        from nemubot.tools.xmlparser import module_state
         return module_state.ModuleState("nemubotstate")
 
     def save(self, module, data):
