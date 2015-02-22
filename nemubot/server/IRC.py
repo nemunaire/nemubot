@@ -274,7 +274,7 @@ mgx = re.compile(b'''^(?:@(?P<tags>[^ ]+)\ )?
                       (?::(?P<prefix>
                          (?P<nick>[^!@ ]+)
                          (?: !(?P<user>[^@ ]+))?
-                         (?:@(?P<host>[^ ]+))?
+                         (?:@(?P<host>[^ ]*))?
                       )\ )?
                       (?P<command>(?:[a-zA-Z]+|[0-9]{3}))
                       (?P<params>(?:\ [^:][^ ]*)*)(?:\ :(?P<trailing>.*))?
