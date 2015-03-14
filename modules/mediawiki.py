@@ -56,14 +56,21 @@ def get_unwikitextified(site, wikitext, ssl=False):
 
 
 def strip_model(cnt):
-    # Strip models at begin and end: mostly useless
-    cnt = re.sub(r"^(({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}}|\[\[(.|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt)
+    # Strip models at begin: mostly useless
+    cnt = re.sub(r"^(({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}}|\[\[(.|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt, flags=re.DOTALL)
+
+    # Remove new line from models
+    for full in re.findall(r"{{.*?}}", cnt, flags=re.DOTALL):
+        cnt = cnt.replace(full, full.replace("\n", " "), 1)
+
+    # Remove new line after titles
+    cnt, _ = re.subn(r"((?P<title>==+)\s*(.*?)\s*(?P=title))\n+", r"\1", cnt)
 
     # Strip HTML comments
-    cnt = re.sub(r"<!--.*?-->", "", cnt)
+    cnt = re.sub(r"<!--.*?-->", "", cnt, flags=re.DOTALL)
 
     # Strip ref
-    cnt = re.sub(r"<ref.*?/ref>", "", cnt)
+    cnt = re.sub(r"<ref.*?/ref>", "", cnt, flags=re.DOTALL)
     return cnt
 
 
@@ -92,7 +99,7 @@ def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
 
 
 def irc_format(cnt):
-    cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)\n*", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
+    cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
 
 
