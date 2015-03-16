@@ -330,7 +330,7 @@ class IRCMessage:
         """
 
         # Treat special tags
-        if key == "time":
+        if key == "time" and value is not None:
             import calendar, time
             value = datetime.fromtimestamp(calendar.timegm(time.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")), timezone.utc)
 
