@@ -369,6 +369,9 @@ class Bot(threading.Thread):
         # Create module context
         module.__nemubot_context__ = ModuleContext(self, module)
 
+        if not hasattr(module, "logger"):
+            module.logger = logging.getLogger("nemubot.module." + module.__name__)
+
         # Replace imported context by real one
         for attr in module.__dict__:
             if attr != "__nemubot_context__" and type(module.__dict__[attr]) == ModuleContext:
