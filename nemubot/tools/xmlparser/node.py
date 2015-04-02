@@ -85,8 +85,8 @@ class ModuleState:
             except ValueError:
                 while True:
                     try:
-                        import time
-                        return time.strptime(source[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                        import calendar, time
+                        return datetime.utcfromtimestamp(calendar.timegm(time.strptime(source[:19], "%Y-%m-%d %H:%M:%S"))).replace(tzinfo=timezone.utc)
                     except ImportError:
                         pass
 
