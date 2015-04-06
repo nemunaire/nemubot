@@ -142,7 +142,7 @@ def main():
                              "the prompt.")
 
     context.quit()
-    print("\nWaiting for other threads shuts down...")
+    print("Waiting for other threads shuts down...")
     sys.exit(0)
 
 if __name__ == "__main__":
