@@ -29,18 +29,18 @@ class XML(Abstract):
     def open(self):
         """Lock the directory"""
 
-        if os.path.isdir(self.basedir):
-            lock_file = os.path.join(self.basedir, ".used_by_nemubot")
-            if not os.path.exists(lock_file):
-                with open(lock_file, 'w') as lf:
-                    lf.write(str(os.getpid()))
-                return True
+        if not os.path.isdir(self.basedir):
+            os.mkdir(self.basedir)
 
-            else:
-                with open(lock_file, 'r') as lf:
-                    pid = lf.readline()
-                raise Exception("Data dir already locked, by PID %s" % pid)
-        return False
+        lock_file = os.path.join(self.basedir, ".used_by_nemubot")
+        if os.path.exists(lock_file):
+            with open(lock_file, 'r') as lf:
+                pid = lf.readline()
+            raise Exception("Data dir already locked, by PID %s" % pid)
+
+        with open(lock_file, 'w') as lf:
+            lf.write(str(os.getpid()))
+        return True
 
     def close(self):
         """Release a locked path"""
