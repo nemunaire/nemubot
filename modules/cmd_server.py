@@ -142,9 +142,9 @@ def send(toks, **kwargs):
                % (toks[1], srv.id))
         return 3
 
-    from nemubot.message import TextMessage
-    srv.send_response(TextMessage(" ".join(toks[2:]), server=None,
-                                  to=[toks[1]]))
+    from nemubot.message import Text
+    srv.send_response(Text(" ".join(toks[2:]), server=None,
+                           to=[toks[1]]))
     return 0
 
 

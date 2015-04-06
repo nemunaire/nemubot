@@ -30,6 +30,6 @@ class IRCException(Exception):
                              server=msg.server, to=msg.to_response)
 
         else:
-            from nemubot.message import TextMessage
-            return TextMessage(self.message,
-                               server=msg.server, to=msg.to_response)
+            from nemubot.message import Text
+            return Text(self.message,
+                        server=msg.server, to=msg.to_response)

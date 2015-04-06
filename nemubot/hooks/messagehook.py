@@ -39,12 +39,12 @@ class MessageHook(AbstractHook):
 
 
     def match(self, msg, server=None):
-        if not isinstance(msg, nemubot.message.AbstractMessage):
+        if not isinstance(msg, nemubot.message.abstract.Abstract):
             return True
 
         elif isinstance(msg, nemubot.message.Command):
             return self.is_matching(msg.cmd, msg.to, server)
-        elif isinstance(msg, nemubot.message.TextMessage):
+        elif isinstance(msg, nemubot.message.Text):
             return self.is_matching(msg.message, msg.to, server)
         else:
             return False

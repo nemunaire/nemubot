@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
-from nemubot.message import TextMessage
+from nemubot.message import Text
 from nemubot.tools import web
 
 nemubotversion = 3.4
@@ -37,8 +37,8 @@ def gen_response(res, msg, srv):
     if res is None:
         raise IRCException("mauvaise URL : %s" % srv)
     else:
-        return TextMessage("URL pour %s : %s" % (srv, res), server=None,
-                           to=msg.to_response)
+        return Text("URL pour %s : %s" % (srv, res), server=None,
+                    to=msg.to_response)
 
 
 @hook("cmd_hook", "ycc")

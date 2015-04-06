@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.message import TextMessage
+from nemubot.message import Text
 from nemubot.message.visitor import AbstractVisitor
 
 
@@ -26,7 +26,7 @@ class IRC(AbstractVisitor):
         self.pp = ""
 
 
-    def visit_TextMessage(self, msg):
+    def visit_Text(self, msg):
         self.pp += "PRIVMSG %s :" % ",".join(msg.to)
         if isinstance(msg.message, str):
             self.pp += msg.message
@@ -40,31 +40,31 @@ class IRC(AbstractVisitor):
 
         # Avoid nick starting message when discussing on user channel
         if len(others) != len(msg.to):
-            res = TextMessage(msg.message,
-                              server=msg.server, date=msg.date,
-                              to=msg.to, frm=msg.frm)
+            res = Text(msg.message,
+                       server=msg.server, date=msg.date,
+                       to=msg.to, frm=msg.frm)
             res.accept(self)
 
         if len(others):
-            res = TextMessage("%s: %s" % (msg.designated, msg.message),
-                              server=msg.server, date=msg.date,
-                              to=others, frm=msg.frm)
+            res = Text("%s: %s" % (msg.designated, msg.message),
+                       server=msg.server, date=msg.date,
+                       to=others, frm=msg.frm)
             res.accept(self)
 
 
     def visit_Command(self, msg):
-        res = TextMessage("!%s%s%s" % (msg.cmd,
-                                       " " if len(msg.args) else "",
-                                       " ".join(msg.args)),
-                          server=msg.server, date=msg.date,
-                          to=msg.to, frm=msg.frm)
+        res = Text("!%s%s%s" % (msg.cmd,
+                                " " if len(msg.args) else "",
+                                " ".join(msg.args)),
+                   server=msg.server, date=msg.date,
+                   to=msg.to, frm=msg.frm)
         res.accept(self)
 
 
     def visit_OwnerCommand(self, msg):
-        res = TextMessage("`%s%s%s" % (msg.cmd,
-                                       " " if len(msg.args) else "",
-                                       " ".join(msg.args)),
-                          server=msg.server, date=msg.date,
-                          to=msg.to, frm=msg.frm)
+        res = Text("`%s%s%s" % (msg.cmd,
+                                " " if len(msg.args) else "",
+                                " ".join(msg.args)),
+                   server=msg.server, date=msg.date,
+                   to=msg.to, frm=msg.frm)
         res.accept(self)
