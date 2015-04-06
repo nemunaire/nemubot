@@ -23,6 +23,9 @@ from nemubot.modulecontext import ModuleContext
 context = ModuleContext(None, None)
 
 def reload():
+    """Reload code of all Python modules used by nemubot
+    """
+
     import imp
 
     import nemubot.channel
