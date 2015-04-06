@@ -80,9 +80,8 @@ class ModuleContext:
                     module.logger.error("Try to send a message to the unknown server: %s", server)
                     return False
 
-        else:
+        else:  # Used when using outside of nemubot
             from nemubot.tools.xmlparser import module_state
-
             self.data = module_state.ModuleState("nemubotstate")
 
             def add_hook(store, hook):

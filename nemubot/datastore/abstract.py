@@ -19,6 +19,13 @@ class Abstract:
     """Abstract implementation of a module data store, that always return an
     empty set"""
 
+    def new(self):
+        """Initialize a new empty storage tree
+        """
+
+        from nemubot.tools.xmlparser import module_state
+        return module_state.ModuleState("nemubotstate")
+
     def open(self):
         return
 
@@ -35,8 +42,7 @@ class Abstract:
         The loaded data
         """
 
-        from nemubot.tools.xmlparser import module_state
-        return module_state.ModuleState("nemubotstate")
+        return self.new()
 
     def save(self, module, data):
         """Load data for the given module
