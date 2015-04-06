@@ -20,7 +20,7 @@
 
 import logging
 
-from nemubot.message import TextMessage, DirectAsk
+from nemubot.message import Text, DirectAsk
 from nemubot.hooks import hook
 
 nemubotversion = 3.4
@@ -120,8 +120,8 @@ class Response:
                              self.get_message(maxlen - len(self.nick) - 2),
                              server=None, to=self.receivers)
         else:
-            return TextMessage(self.get_message(maxlen),
-                               server=None, to=self.receivers)
+            return Text(self.get_message(maxlen),
+                        server=None, to=self.receivers)
 
     def get_message(self, maxlen):
         if self.alone and len(self.messages) > 1:

@@ -20,7 +20,7 @@ def convert_legacy_store(old):
     elif old == "ask_hook" or old == "ask_rgxp" or old == "ask_default":
         return "in_DirectAsk"
     elif old == "msg_hook" or old == "msg_rgxp" or old == "msg_default":
-        return "in_TextMessage"
+        return "in_Text"
     elif old == "all_post":
         return "post"
     elif old == "all_pre":

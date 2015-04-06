@@ -1,5 +1,3 @@
-# coding=utf-8
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -16,20 +14,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class IRCException(Exception):
+from nemubot.message.text import Text
 
-    def __init__(self, message, personnal=True):
-        super(IRCException, self).__init__(message)
-        self.message = message
-        self.personnal = personnal
 
-    def fill_response(self, msg):
-        if self.personnal:
-            from nemubot.message import DirectAsk
-            return DirectAsk(msg.frm, self.message,
-                             server=msg.server, to=msg.to_response)
+class DirectAsk(Text):
 
-        else:
-            from nemubot.message import Text
-            return Text(self.message,
-                        server=msg.server, to=msg.to_response)
+    """This class represents a message to this bot"""
+
+    def __init__(self, designated, *args, **kargs):
+        """Initialize a message to a specific person
+
+        Argument:
+        designated -- the user designated by the message
+        """
+
+        Text.__init__(self, *args, **kargs)
+
+        self.designated = designated
+
+    def respond(self, message):
+        return DirectAsk(self.frm,
+                         message,
+                         server=self.server,
+                         to=self.to_response)

@@ -7,7 +7,7 @@ import subprocess
 from threading import Thread
 
 from nemubot.hooks import hook
-from nemubot.message import TextMessage
+from nemubot.message import Text
 from nemubot.message.visitor import AbstractVisitor
 
 nemubotversion = 3.4
@@ -51,7 +51,7 @@ class SpeakerVisitor(AbstractVisitor):
         self.last = last
 
 
-    def visit_TextMessage(self, msg):
+    def visit_Text(self, msg):
         force = (self.last is None)
 
         if force or msg.date - self.last.date > timedelta(0, 500):
@@ -86,27 +86,27 @@ class SpeakerVisitor(AbstractVisitor):
 
 
     def visit_DirectAsk(self, msg):
-        res = TextMessage("%s: %s" % (msg.designated, msg.message),
-                         server=msg.server, date=msg.date,
-                          to=msg.to, frm=msg.frm)
+        res = Text("%s: %s" % (msg.designated, msg.message),
+                   server=msg.server, date=msg.date,
+                   to=msg.to, frm=msg.frm)
         res.accept(self)
 
 
     def visit_Command(self, msg):
-        res = TextMessage("Bang %s%s%s" % (msg.cmd,
-                                           " " if len(msg.args) else "",
-                                           " ".join(msg.args)),
-                          server=msg.server, date=msg.date,
-                          to=msg.to, frm=msg.frm)
+        res = Text("Bang %s%s%s" % (msg.cmd,
+                                    " " if len(msg.args) else "",
+                                    " ".join(msg.args)),
+                   server=msg.server, date=msg.date,
+                   to=msg.to, frm=msg.frm)
         res.accept(self)
 
 
     def visit_OwnerCommand(self, msg):
-        res = TextMessage("Owner Bang %s%s%s" % (msg.cmd,
-                                                 " " if len(msg.args) else "",
-                                                 " ".join(msg.args)),
-                          server=msg.server, date=msg.date,
-                          to=msg.to, frm=msg.frm)
+        res = Text("Owner Bang %s%s%s" % (msg.cmd,
+                                          " " if len(msg.args) else "",
+                                          " ".join(msg.args)),
+                   server=msg.server, date=msg.date,
+                   to=msg.to, frm=msg.frm)
         res.accept(self)
 
 

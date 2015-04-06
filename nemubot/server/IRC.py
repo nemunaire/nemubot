@@ -432,6 +432,6 @@ class IRCMessage:
 
             # Normal message
             else:
-                return message.TextMessage(message=text, **common_args)
+                return message.Text(message=text, **common_args)
 
         return None
