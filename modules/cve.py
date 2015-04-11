@@ -19,7 +19,7 @@ def get_cve_desc(msg):
 
   cve_id = ''
 
-  if msg.cmds[1][:3] == 'cve' :
+  if msg.cmds[1][:3].lower() == 'cve':
     cve_id = msg.cmds[1]
 
   else:
@@ -32,4 +32,4 @@ def get_cve_desc(msg):
 
   desc = soup.body.findAll('td')
 
-  return Response(desc[DESC_INDEX].text, msg.channel)
+  return Response(desc[DESC_INDEX].text.replace("\n", " ") + " Moar at " + search_url, msg.channel)
