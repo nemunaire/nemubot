@@ -120,6 +120,8 @@ def append_message(msg):
 
     if hasattr(msg, "message") and msg.message.find("TYPING ") == 0:
         return
+    if last is not None and last.message == msg.message:
+        return
 
     vprnt = SpeakerVisitor(last)
     msg.accept(vprnt)
