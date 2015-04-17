@@ -23,8 +23,8 @@ def load(context):
     else:
         URL_TPBAPI = context.config.getNode("tpbapi")["url"]
 
-        from nemubot.hooks.messagehook import MessageHook
-        context.add_hook("cmd_hook", MessageHook(cmd_tpb, "tpb"))
+        from nemubot.hooks.message import Message
+        context.add_hook("cmd_hook", Message(cmd_tpb, "tpb"))
 
 
 def cmd_tpb(msg):

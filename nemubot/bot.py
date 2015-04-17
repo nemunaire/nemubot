@@ -23,7 +23,7 @@ import threading
 from nemubot import __version__
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
 from nemubot import datastore
-from nemubot.hooks.messagehook import MessageHook
+import nemubot.hooks
 from nemubot.modulecontext import ModuleContext
 
 logger = logging.getLogger("nemubot")
@@ -75,7 +75,7 @@ class Bot(threading.Thread):
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.message, re.I) is not None:
                 return msg.respond("pong")
-        self.hooks.add_hook(MessageHook(in_ping), "in", "DirectAsk")
+        self.hooks.add_hook(nemubot.hooks.Message(in_ping), "in", "DirectAsk")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
@@ -111,7 +111,7 @@ class Bot(threading.Thread):
                                    " de tous les modules disponibles localement",
                                    message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
             return res
-        self.hooks.add_hook(MessageHook(_help_msg, "help"), "in", "Command")
+        self.hooks.add_hook(nemubot.hooks.Message(_help_msg, "help"), "in", "Command")
 
         # Messages to be treated
         from queue import Queue

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -18,19 +16,19 @@
 
 import re
 
-from nemubot.hooks import AbstractHook
+from nemubot.hooks.abstract import Abstract
 import nemubot.message
 
 
-class MessageHook(AbstractHook):
+class Message(Abstract):
 
     """Class storing hook information, specialized for a generic Message"""
 
     def __init__(self, call, name=None, data=None, regexp=None,
                  channels=list(), server=None, mtimes=-1, end_call=None):
 
-        AbstractHook.__init__(self, call=call, data=data,
-                                    end_call=end_call, mtimes=mtimes)
+        Abstract.__init__(self, call=call, data=data,
+                          end_call=end_call, mtimes=mtimes)
 
         self.name = name
         self.regexp = regexp
