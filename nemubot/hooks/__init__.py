@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -16,55 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-def call_game(call, *args, **kargs):
-    """TODO"""
-    l = list()
-    d = kargs
-
-    for a in args:
-        if a is not None:
-            if isinstance(a, dict):
-                d.update(a)
-            else:
-                l.append(a)
-
-    return call(*l, **d)
-
-
-class AbstractHook:
-
-    """Abstract class for Hook implementation"""
-
-    def __init__(self, call, data=None, mtimes=-1, end_call=None):
-        self.call = call
-        self.data = data
-
-        self.times = mtimes
-        self.end_call = end_call
-
-
-    def match(self, data1, server):
-        return NotImplemented
-
-
-    def run(self, data1, *args):
-        """Run the hook"""
-
-        from nemubot.exception import IRCException
-        self.times -= 1
-
-        try:
-            ret = call_game(self.call, data1, self.data, *args)
-        except IRCException as e:
-            ret = e.fill_response(data1)
-        finally:
-            if self.times == 0:
-                self.call_end(ret)
-
-        return ret
-
-
-from nemubot.hooks.messagehook import MessageHook
+from nemubot.hooks.abstract import Abstract
+from nemubot.hooks.message import Message
 
 last_registered = []
 
@@ -72,16 +23,21 @@ last_registered = []
 def hook(store, *args, **kargs):
     """Function used as a decorator for module loading"""
     def sec(call):
-        last_registered.append((store, MessageHook(call, *args, **kargs)))
+        last_registered.append((store, Message(call, *args, **kargs)))
         return call
     return sec
 
 
 def reload():
+    global Abstract, Message
     import imp
+
+    import nemubot.hooks.abstract
+    imp.reload(nemubot.hooks.abstract)
+    Abstract = nemubot.hooks.abstract.Abstract
+    import nemubot.hooks.message
+    imp.reload(nemubot.hooks.message)
+    Message = nemubot.hooks.message.Message
 
     import nemubot.hooks.manager
     imp.reload(nemubot.hooks.manager)
-
-    import nemubot.hooks.messagehook
-    imp.reload(nemubot.hooks.messagehook)

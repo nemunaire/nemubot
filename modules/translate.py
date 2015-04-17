@@ -28,8 +28,9 @@ def load(context):
     else:
         URL = URL % context.config.getNode("wrapi")["key"]
 
-    from nemubot.hooks.messagehook import MessageHook
-    context.add_hook("cmd_hook", MessageHook(cmd_translate, "translate"))
+    import nemubot.hooks
+    context.add_hook("cmd_hook",
+                     nemubot.hooks.Message(cmd_translate, "translate"))
 
 
 def help_full():

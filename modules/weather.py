@@ -29,10 +29,13 @@ def load(context):
                "http://developer.forecast.io/")
         return None
 
-    from nemubot.hooks.messagehook import MessageHook
-    context.add_hook("cmd_hook", MessageHook(cmd_weather, "météo"))
-    context.add_hook("cmd_hook", MessageHook(cmd_alert, "alert"))
-    context.add_hook("cmd_hook", MessageHook(cmd_coordinates, "coordinates"))
+    import nemubot.hooks
+    context.add_hook("cmd_hook",
+                     nemubot.hooks.Message(cmd_weather, "météo"))
+    context.add_hook("cmd_hook",
+                     nemubot.hooks.Message(cmd_alert, "alert"))
+    context.add_hook("cmd_hook",
+                     nemubot.hooks.Message(cmd_coordinates, "coordinates"))
 
 
 def help_full ():

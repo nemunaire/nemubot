@@ -22,8 +22,9 @@ def load(context):
                "http://developer.mapquest.com/")
         return None
 
-    from nemubot.hooks.messagehook import MessageHook
-    context.add_hook("cmd_hook", MessageHook(cmd_geocode, "geocode"))
+    import nemubot.hooks
+    context.add_hook("cmd_hook",
+                     nemubot.hooks.Message(cmd_geocode, "geocode"))
 
 
 def help_full():

@@ -19,8 +19,8 @@ def load(CONF, add_hook):
     else:
         URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
 
-        from nemubot.hooks.messagehook import MessageHook
-        add_hook("cmd_hook", MessageHook(cmd_whois, "netwhois"))
+        import nemubot.hooks
+        add_hook("cmd_hook", nemubot.hooks.Message(cmd_whois, "netwhois"))
 
 
 def extractdate(str):
