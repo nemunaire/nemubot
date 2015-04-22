@@ -10,7 +10,7 @@ from nemubot.tools import web
 
 
 def load(CONF, add_hook):
-    # check w3m exists
+    # TODO: check w3m exists
     pass
 
 
