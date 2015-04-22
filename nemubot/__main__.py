@@ -36,6 +36,9 @@ def main():
                         default=["./modules/"],
                         help="directory to use as modules store")
 
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="don't deamonize, keep in foreground")
+
     parser.add_argument("-l", "--logfile", default="./nemubot.log",
                         help="Path to store logs")
 
@@ -62,6 +65,38 @@ def main():
     args.files = [ x for x in map(os.path.abspath, args.files)]
     args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
 
+    # Daemonize
+    if not args.debug:
+        try:
+            pid = os.fork()
+            if pid > 0:
+                sys.exit(0)
+        except OSError as err:
+            sys.stderr.write("Unable to fork: %s" % err)
+            sys.exit(1)
+
+        os.setsid()
+        os.umask(0)
+        os.chdir('/')
+
+        try:
+            pid = os.fork()
+            if pid > 0:
+                sys.exit(0)
+        except OSError as err:
+            sys.stderr.write("Unable to fork: %s" % err)
+            sys.exit(1)
+
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = open(os.devnull, 'r')
+        so = open(os.devnull, 'a+')
+        se = open(os.devnull, 'a+')
+
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
     # Setup loggin interface
     import logging
     logger = logging.getLogger("nemubot")
@@ -70,11 +105,12 @@ def main():
     formatter = logging.Formatter(
         '%(asctime)s %(name)s %(levelname)s %(message)s')
 
-    ch = logging.StreamHandler()
-    ch.setFormatter(formatter)
-    if args.verbose < 2:
-        ch.setLevel(logging.INFO)
-    logger.addHandler(ch)
+    if args.debug:
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        if args.verbose < 2:
+            ch.setLevel(logging.INFO)
+        logger.addHandler(ch)
 
     fh = logging.FileHandler(args.logfile)
     fh.setFormatter(formatter)
@@ -146,7 +182,7 @@ def main():
                              "the prompt.")
 
     context.quit()
-    print("Waiting for other threads shuts down...")
+    logger.info("Waiting for other threads shuts down...")
     sys.exit(0)
 
 if __name__ == "__main__":
