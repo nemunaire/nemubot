@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import fcntl, os
 
 from nemubot.datastore.abstract import Abstract
 
@@ -32,22 +32,35 @@ class XML(Abstract):
         if not os.path.isdir(self.basedir):
             os.mkdir(self.basedir)
 
-        lock_file = os.path.join(self.basedir, ".used_by_nemubot")
-        if os.path.exists(lock_file):
-            with open(lock_file, 'r') as lf:
+        lock_path = os.path.join(self.basedir, ".used_by_nemubot")
+
+        self.lock_file = open(lock_path, 'a+')
+        ok = True
+        try:
+            fcntl.lockf(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            ok = False
+
+        if not ok:
+            with open(lock_path, 'r') as lf:
                 pid = lf.readline()
             raise Exception("Data dir already locked, by PID %s" % pid)
 
-        with open(lock_file, 'w') as lf:
-            lf.write(str(os.getpid()))
+        self.lock_file.truncate()
+        self.lock_file.write(str(os.getpid()))
+        self.lock_file.flush()
+
         return True
 
     def close(self):
         """Release a locked path"""
 
-        lock_file = os.path.join(self.basedir, ".used_by_nemubot")
-        if os.path.isdir(self.basedir) and os.path.exists(lock_file):
-            os.unlink(lock_file)
+        if hasattr(self, "lock_file"):
+            self.lock_file.close()
+            lock_path = os.path.join(self.basedir, ".used_by_nemubot")
+            if os.path.isdir(self.basedir) and os.path.exists(lock_path):
+                os.unlink(lock_path)
+            del self.lock_file
             return True
         return False
 
