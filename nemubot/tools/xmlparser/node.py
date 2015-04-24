@@ -224,7 +224,7 @@ class ModuleState:
     def save(self, filename):
         """Save the current node as root node in a XML file"""
         with open(filename, "w") as f:
-            import xml.sax
+            import xml.sax.saxutils
             gen = xml.sax.saxutils.XMLGenerator(f, "utf-8")
             gen.startDocument()
             self.save_node(gen)
