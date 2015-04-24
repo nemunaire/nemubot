@@ -16,14 +16,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import xml.sax
+import xml.parsers.expat
 
 from nemubot.tools.xmlparser import node as module_state
 
 
-class ModuleStatesFile(xml.sax.ContentHandler):
+class ModuleStatesFile:
 
-    def startDocument(self):
+    def __init__(self):
         self.root = None
         self.stack = list()
 
@@ -31,7 +31,7 @@ class ModuleStatesFile(xml.sax.ContentHandler):
         cur = module_state.ModuleState(name)
 
         for name in attrs.keys():
-            cur.setAttribute(name, attrs.getValue(name))
+            cur.setAttribute(name, attrs[name])
 
         self.stack.append(cur)
 
@@ -49,14 +49,18 @@ class ModuleStatesFile(xml.sax.ContentHandler):
 
 
 def parse_file(filename):
-    parser = xml.sax.make_parser()
-    mod = ModuleStatesFile()
-    parser.setContentHandler(mod)
-    parser.parse(open(filename, "r"))
-    return mod.root
+    with open(filename, "r") as f:
+        return parse_string(f.read())
 
 
 def parse_string(string):
+    p = xml.parsers.expat.ParserCreate()
     mod = ModuleStatesFile()
-    xml.sax.parseString(string, mod)
+
+    p.StartElementHandler = mod.startElement
+    p.EndElementHandler = mod.endElement
+    p.CharacterDataHandler = mod.characters
+
+    p.Parse(string, 1)
+
     return mod.root
