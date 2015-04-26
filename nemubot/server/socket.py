@@ -48,17 +48,9 @@ class SocketServer(AbstractServer):
     def _open(self):
         import os
         import socket
-        # Create the socket
-        self.socket = socket.socket()
-
-        # Wrap the socket for SSL
-        if self.ssl:
-            import ssl
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            self.socket = ctx.wrap_socket(self.socket)
 
         try:
-            self.socket.connect((self.host, self.port))  # Connect to server
+            self.socket = socket.create_connection((self.host, self.port))
             self.logger.info("Connected to %s:%d", self.host, self.port)
         except socket.error as e:
             self.socket = None
@@ -66,6 +58,12 @@ class SocketServer(AbstractServer):
                                  self.host, self.port,
                                  os.strerror(e.errno))
             return False
+
+        # Wrap the socket for SSL
+        if self.ssl:
+            import ssl
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            self.socket = ctx.wrap_socket(self.socket)
 
         return True
 
