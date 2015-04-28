@@ -57,7 +57,7 @@ def get_unwikitextified(site, wikitext, ssl=False):
 
 def strip_model(cnt):
     # Strip models at begin: mostly useless
-    cnt = re.sub(r"^(({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}}|\[\[(.|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt, flags=re.DOTALL)
+    cnt = re.sub(r"^(({{([^{]|\s|({{([^{]|\s|{{.*?}})*?}})*?)*?}}|\[\[([^[]|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt, flags=re.DOTALL)
 
     # Remove new line from models
     for full in re.findall(r"{{.*?}}", cnt, flags=re.DOTALL):
