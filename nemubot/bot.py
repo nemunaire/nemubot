@@ -181,6 +181,16 @@ class Bot(threading.Thread):
                     except:
                         logger.exception("Uncatched exception on server read")
 
+            # Launch new consumer threads if necessary
+            while self.cnsr_queue.qsize() > self.cnsr_thrd_size:
+                # Next launch if two more items in queue
+                self.cnsr_thrd_size += 2
+
+                c = Consumer(self)
+                self.cnsr_thrd.append(c)
+                c.start()
+
+
 
     # Events methods
 
@@ -313,24 +323,11 @@ class Bot(threading.Thread):
         while len(self.events) > 0 and datetime.now(timezone.utc) >= self.events[0].current:
             evt = self.events.pop(0)
             self.cnsr_queue.put_nowait(EventConsumer(evt))
-            self._launch_consumers()
 
         self._update_event_timer()
 
 
     # Consumers methods
-
-    def _launch_consumers(self):
-        """Launch new consumer threads if necessary"""
-
-        while self.cnsr_queue.qsize() > self.cnsr_thrd_size:
-            # Next launch if two more items in queue
-            self.cnsr_thrd_size += 2
-
-            c = Consumer(self)
-            self.cnsr_thrd.append(c)
-            c.start()
-
 
     def add_server(self, srv, autoconnect=True):
         """Add a new server to the context
@@ -440,9 +437,6 @@ class Bot(threading.Thread):
         """
 
         self.cnsr_queue.put_nowait(MessageConsumer(srv, msg))
-
-        # Launch a new thread if necessary
-        self._launch_consumers()
 
 
     def quit(self):
