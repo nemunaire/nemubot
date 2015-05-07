@@ -153,35 +153,9 @@ def main():
         for module in args.module:
             __import__(module)
 
-    print ("Nemubot v%s ready, my PID is %i!" % (nemubot.__version__,
-                                                 os.getpid()))
-    while True:
-        from nemubot.prompt.reset import PromptReset
-        try:
-            context.start()
-            if prmpt.run(context):
-                break
-        except PromptReset as e:
-            if e.type == "quit":
-                break
+    context.start()
+    context.join()
 
-        try:
-            import imp
-            # Reload all other modules
-            imp.reload(nemubot)
-            imp.reload(nemubot.prompt)
-            nemubot.reload()
-            import nemubot.bot
-            context = nemubot.bot.hotswap(context)
-            prmpt = nemubot.prompt.hotswap(prmpt)
-            print("\033[1;32mContext reloaded\033[0m, now in Nemubot %s" %
-                  nemubot.__version__)
-        except:
-            logger.exception("\033[1;31mUnable to reload the prompt due to "
-                             "errors.\033[0m Fix them before trying to reload "
-                             "the prompt.")
-
-    context.quit()
     logger.info("Waiting for other threads shuts down...")
     sys.exit(0)
 
