@@ -104,8 +104,7 @@ def main():
     # Load requested configuration files
     for path in args.files:
         if os.path.isfile(path):
-            from nemubot.tools.config import load_file
-            load_file(path, context)
+            context.sync_queue.put_nowait(["loadconf", path])
         else:
             logger.error("%s is not a readable file", path)
 

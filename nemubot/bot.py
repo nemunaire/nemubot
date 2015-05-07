@@ -125,11 +125,13 @@ class Bot(threading.Thread):
             return res
         self.hooks.add_hook(nemubot.hooks.Message(_help_msg, "help"), "in", "Command")
 
-        # Messages to be treated
         from queue import Queue
+        # Messages to be treated
         self.cnsr_queue     = Queue()
         self.cnsr_thrd      = list()
         self.cnsr_thrd_size = -1
+        # Synchrone actions to be treated by main thread
+        self.sync_queue     = Queue()
 
 
     def run(self):
@@ -189,6 +191,16 @@ class Bot(threading.Thread):
                 c = Consumer(self)
                 self.cnsr_thrd.append(c)
                 c.start()
+
+            while self.sync_queue.qsize() > 0:
+                action = self.sync_queue.get_nowait()
+                if action[0] == "exit":
+                    self.quit()
+                elif action[0] == "loadconf":
+                    for path in action[1:]:
+                        from nemubot.tools.config import load_file
+                        load_file(path, self)
+                self.sync_queue.task_done()
 
 
 
