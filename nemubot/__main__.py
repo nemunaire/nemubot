@@ -16,6 +16,7 @@
 
 def main():
     import os
+    import signal
     import sys
 
     # Parse command line arguments
@@ -152,6 +153,12 @@ def main():
     if args.module:
         for module in args.module:
             __import__(module)
+
+    # Signals handling
+    def sighandler(signum, frame):
+        context.quit()
+    signal.signal(signal.SIGINT, sighandler)
+    signal.signal(signal.SIGTERM, sighandler)
 
     context.start()
     context.join()
