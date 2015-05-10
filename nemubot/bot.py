@@ -149,17 +149,17 @@ class Bot(threading.Thread):
                 for r in _rlist:
                     if not hasattr(r, "fileno") or not isinstance(r.fileno(), int) or r.fileno() < 0:
                         _rlist.remove(r)
-                        logger.error("Found invalid object in _rlist: " + r)
+                        logger.error("Found invalid object in _rlist: " + str(r))
                         fnd_smth = True
                 for w in _wlist:
                     if not hasattr(w, "fileno") or not isinstance(w.fileno(), int) or w.fileno() < 0:
                         _wlist.remove(w)
-                        logger.error("Found invalid object in _wlist: " + w)
+                        logger.error("Found invalid object in _wlist: " + str(w))
                         fnd_smth = True
                 for x in _xlist:
                     if not hasattr(x, "fileno") or not isinstance(x.fileno(), int) or x.fileno() < 0:
                         _xlist.remove(x)
-                        logger.error("Found invalid object in _xlist: " + x)
+                        logger.error("Found invalid object in _xlist: " + str(x))
                         fnd_smth = True
                 if not fnd_smth:
                     logger.exception("Can't continue, sorry")
