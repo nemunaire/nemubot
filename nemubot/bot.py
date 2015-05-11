@@ -136,10 +136,11 @@ class Bot(threading.Thread):
 
     def run(self):
         from select import select
-        from nemubot.server import _rlist, _wlist, _xlist
+        from nemubot.server import _lock, _rlist, _wlist, _xlist
 
         self.stop = False
         while not self.stop:
+            _lock.acquire()
             try:
                 rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
             except:
@@ -164,6 +165,7 @@ class Bot(threading.Thread):
                 if not fnd_smth:
                     logger.exception("Can't continue, sorry")
                     self.quit()
+                _lock.release()
                 continue
 
             for x in xl:
@@ -182,6 +184,8 @@ class Bot(threading.Thread):
                         self.receive_message(r, i)
                     except:
                         logger.exception("Uncatched exception on server read")
+
+            _lock.release()
 
             # Launch new consumer threads if necessary
             while self.cnsr_queue.qsize() > self.cnsr_thrd_size:

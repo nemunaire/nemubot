@@ -231,7 +231,7 @@ class Consumer(threading.Thread):
     def run(self):
         try:
             while not self.stop:
-                stm = self.context.cnsr_queue.get(True, 20)
+                stm = self.context.cnsr_queue.get(True, 10)
                 stm.run(self.context)
                 self.context.cnsr_queue.task_done()
 

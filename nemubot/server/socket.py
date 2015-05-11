@@ -73,14 +73,19 @@ class SocketServer(AbstractServer):
     def _close(self):
         import socket
 
+        from nemubot.server import _lock
+        _lock.release()
         self._sending_queue.join()
+        _lock.acquire()
         if self.connected:
             try:
                 self.socket.shutdown(socket.SHUT_RDWR)
                 self.socket.close()
             except socket.error:
                 pass
+
             self.socket = None
+
         return True
 
 

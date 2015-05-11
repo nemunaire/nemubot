@@ -20,7 +20,7 @@ import io
 import logging
 import queue
 
-from nemubot.server import _rlist, _wlist, _xlist
+from nemubot.server import _lock, _rlist, _wlist, _xlist
 
 # Extends from IOBase in order to be compatible with select function
 class AbstractServer(io.IOBase):
@@ -71,6 +71,7 @@ class AbstractServer(io.IOBase):
         """Generic close function that register the server un _{r,w,x}list in
         case of successful _close"""
         self.logger.info("Closing connection to %s", self.id)
+        _lock.acquire()
         if not hasattr(self, "_close") or self._close():
             if self in _rlist:
                 _rlist.remove(self)
@@ -78,7 +79,9 @@ class AbstractServer(io.IOBase):
                 _wlist.remove(self)
             if self in _xlist:
                 _xlist.remove(self)
+            _lock.release()
             return True
+        _lock.release()
         return False
 
 
