@@ -155,14 +155,40 @@ def main():
             __import__(module)
 
     # Signals handling
-    def sighandler(signum, frame):
+    def sigtermhandler(signum, frame):
+        """On SIGTERM and SIGINT, quit nicely"""
         context.quit()
-    signal.signal(signal.SIGINT, sighandler)
-    signal.signal(signal.SIGTERM, sighandler)
+    signal.signal(signal.SIGINT, sigtermhandler)
+    signal.signal(signal.SIGTERM, sigtermhandler)
 
+    def sighuphandler(signum, frame):
+        """On SIGHUP, perform a deep reload"""
+        import imp
+
+        # Reload nemubot Python modules
+        imp.reload(nemubot)
+        nemubot.reload()
+
+        # Hotswap context
+        import nemubot.bot
+        context = nemubot.bot.hotswap(context)
+
+        # Reload configuration file
+        for path in args.files:
+            if os.path.isfile(path):
+                context.sync_queue.put_nowait(["loadconf", path])
+    signal.signal(signal.SIGHUP, sighuphandler)
+
+    # Here we go!
     context.start()
-    context.join()
 
+    # context can change when performing an hotswap, always join the latest context
+    oldcontext = None
+    while oldcontext != context:
+        oldcontext = context
+        context.join()
+
+    # Wait for consumers
     logger.info("Waiting for other threads shuts down...")
     sys.exit(0)
 
