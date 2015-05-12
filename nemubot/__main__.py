@@ -38,6 +38,9 @@ def main():
                         default=["./modules/"],
                         help="directory to use as modules store")
 
+    parser.add_argument("-l", "--logfile", default="./nemubot.log",
+                        help="Path to store logs")
+
     parser.add_argument("-m", "--module", nargs='*',
                         help="load given modules")
 
@@ -57,6 +60,7 @@ def main():
 
     # Resolve relatives paths
     args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
+    args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
     args.files = [ x for x in map(os.path.abspath, args.files)]
     args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
 
@@ -75,7 +79,7 @@ def main():
         ch.setLevel(logging.INFO)
     logger.addHandler(ch)
 
-    fh = logging.FileHandler('./nemubot.log')
+    fh = logging.FileHandler(args.logfile)
     fh.setFormatter(formatter)
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
