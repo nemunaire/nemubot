@@ -67,21 +67,19 @@ def main():
     # Setup loggin interface
     import logging
     logger = logging.getLogger("nemubot")
+    logger.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
         '%(asctime)s %(name)s %(levelname)s %(message)s')
 
     ch = logging.StreamHandler()
     ch.setFormatter(formatter)
-    if args.verbose > 1:
-        ch.setLevel(logging.DEBUG)
-    else:
+    if args.verbose < 2:
         ch.setLevel(logging.INFO)
     logger.addHandler(ch)
 
     fh = logging.FileHandler(args.logfile)
     fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
     # Add modules dir paths
