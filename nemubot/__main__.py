@@ -152,6 +152,15 @@ def main():
                 context.sync_queue.put_nowait(["loadconf", path])
     signal.signal(signal.SIGHUP, sighuphandler)
 
+    def sigusr1handler(signum, frame):
+        """On SIGHUSR1, display stacktraces"""
+        import traceback
+        for threadId, stack in sys._current_frames().items():
+            logger.debug("########### Thread %d:\n%s",
+                         threadId,
+                         "".join(traceback.format_stack(stack)))
+    signal.signal(signal.SIGUSR1, sigusr1handler)
+
     # Here we go!
     context.start()
 
