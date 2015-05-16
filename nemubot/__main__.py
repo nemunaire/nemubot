@@ -68,35 +68,8 @@ def main():
 
     # Daemonize
     if not args.debug:
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError as err:
-            sys.stderr.write("Unable to fork: %s" % err)
-            sys.exit(1)
-
-        os.setsid()
-        os.umask(0)
-        os.chdir('/')
-
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError as err:
-            sys.stderr.write("Unable to fork: %s" % err)
-            sys.exit(1)
-
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = open(os.devnull, 'r')
-        so = open(os.devnull, 'a+')
-        se = open(os.devnull, 'a+')
-
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        from nemubot import daemonize
+        daemonize()
 
     # Setup loggin interface
     import logging

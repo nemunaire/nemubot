@@ -38,6 +38,44 @@ def requires_version(min=None, max=None):
                           "but this is nemubot v%s." % (str(max), __version__))
 
 
+def daemonize():
+    """Detach the running process to run as a daemon
+    """
+
+    import os
+    import sys
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as err:
+        sys.stderr.write("Unable to fork: %s\n" % err)
+        sys.exit(1)
+
+    os.setsid()
+    os.umask(0)
+    os.chdir('/')
+
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+    except OSError as err:
+        sys.stderr.write("Unable to fork: %s\n" % err)
+        sys.exit(1)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    si = open(os.devnull, 'r')
+    so = open(os.devnull, 'a+')
+    se = open(os.devnull, 'a+')
+
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+
 def reload():
     """Reload code of all Python modules used by nemubot
     """
