@@ -55,6 +55,11 @@ def main():
         print(nemubot.__version__)
         sys.exit(0)
 
+    # Resolve relatives paths
+    args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
+    args.files = [ x for x in map(os.path.abspath, args.files)]
+    args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
+
     # Setup loggin interface
     import logging
     logger = logging.getLogger("nemubot")
@@ -79,16 +84,16 @@ def main():
     modules_paths = list()
     for path in args.modules_path:
         if os.path.isdir(path):
-            modules_paths.append(
-                os.path.realpath(os.path.abspath(path)))
+            modules_paths.append(path)
         else:
             logger.error("%s is not a directory", path)
 
     # Create bot context
     from nemubot import datastore
     from nemubot.bot import Bot
-    context = Bot(modules_paths=modules_paths, data_store=datastore.XML(args.data_path),
-                          verbosity=args.verbose)
+    context = Bot(modules_paths=modules_paths,
+                  data_store=datastore.XML(args.data_path),
+                  verbosity=args.verbose)
 
     if args.no_connect:
         context.noautoconnect = True
