@@ -38,6 +38,11 @@ def requires_version(min=None, max=None):
                           "but this is nemubot v%s." % (str(max), __version__))
 
 
+def attach(pid):
+    print("TODO, attach to %d" % pid)
+    return 0
+
+
 def daemonize():
     """Detach the running process to run as a daemon
     """

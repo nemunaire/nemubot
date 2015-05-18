@@ -40,6 +40,9 @@ def main():
     parser.add_argument("-d", "--debug", action="store_true",
                         help="don't deamonize, keep in foreground")
 
+    parser.add_argument("-P", "--pidfile", default="./nemubot.pid",
+                        help="Path to the file where store PID")
+
     parser.add_argument("-l", "--logfile", default="./nemubot.log",
                         help="Path to store logs")
 
@@ -62,14 +65,32 @@ def main():
 
     # Resolve relatives paths
     args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
+    args.pidfile = os.path.abspath(os.path.expanduser(args.pidfile))
     args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
     args.files = [ x for x in map(os.path.abspath, args.files)]
     args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
+
+    # Check if an instance is already launched
+    if args.pidfile is not None and os.path.isfile(args.pidfile):
+        with open(args.pidfile, "r") as f:
+            pid = int(f.readline())
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            pass
+        else:
+            from nemubot import attach
+            sys.exit(attach(pid))
 
     # Daemonize
     if not args.debug:
         from nemubot import daemonize
         daemonize()
+
+    # Store PID to pidfile
+    if args.pidfile is not None:
+        with open(args.pidfile, "w+") as f:
+            f.write(str(os.getpid()))
 
     # Setup loggin interface
     import logging
