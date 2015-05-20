@@ -43,6 +43,9 @@ def main():
     parser.add_argument("-P", "--pidfile", default="./nemubot.pid",
                         help="Path to the file where store PID")
 
+    parser.add_argument("-S", "--socketfile", default="./nemubot.sock",
+                        help="path where open the socket for internal communication")
+
     parser.add_argument("-l", "--logfile", default="./nemubot.log",
                         help="Path to store logs")
 
@@ -66,6 +69,7 @@ def main():
     # Resolve relatives paths
     args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
     args.pidfile = os.path.abspath(os.path.expanduser(args.pidfile))
+    args.socketfile = os.path.abspath(os.path.expanduser(args.socketfile))
     args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
     args.files = [ x for x in map(os.path.abspath, args.files)]
     args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
@@ -184,6 +188,11 @@ def main():
 
     # Here we go!
     context.start()
+
+    if args.socketfile:
+        from nemubot.server.socket import SocketListener
+        context.add_server(SocketListener(context.add_server, "master_socket",
+                                          sock_location=args.socketfile))
 
     # context can change when performing an hotswap, always join the latest context
     oldcontext = None
