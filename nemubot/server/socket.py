@@ -24,13 +24,18 @@ class SocketServer(AbstractServer):
 
     """Concrete implementation of a socket connexion (can be wrapped with TLS)"""
 
-    def __init__(self, host, port, ssl=False):
+    def __init__(self, sock_location=None, host=None, port=None, ssl=False, socket=None, id=None):
+        if id is not None:
+            self.id = id
         AbstractServer.__init__(self)
-        self.host = host
-        self.port = int(port)
+        if sock_location is not None:
+            self.filename = sock_location
+        elif host is not None:
+            self.host = host
+            self.port = int(port)
         self.ssl = ssl
 
-        self.socket = None
+        self.socket = socket
         self.readbuffer = b''
         self.printer  = SocketPrinter
 
@@ -51,9 +56,17 @@ class SocketServer(AbstractServer):
         import os
         import socket
 
+        if self.connected:
+            return True
+
         try:
-            self.socket = socket.create_connection((self.host, self.port))
-            self.logger.info("Connected to %s:%d", self.host, self.port)
+            if hasattr(self, "filename"):
+                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.socket.connect(self.filename)
+                self.logger.info("Connected to %s", self.filename)
+            else:
+                self.socket = socket.create_connection((self.host, self.port))
+                self.logger.info("Connected to %s:%d", self.host, self.port)
         except socket.error as e:
             self.socket = None
             self.logger.critical("Unable to connect to %s:%d: %s",
@@ -109,7 +122,7 @@ class SocketServer(AbstractServer):
 
     def read(self):
         if not self.connected:
-            return
+            return []
 
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
