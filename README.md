@@ -7,7 +7,7 @@ An extremely modulable IRC bot, built around XML configuration files!
 
 *nemubot* requires at least Python 3.3 to work.
 
-Some modules (like `cve` or `nextstop`) require the
+Some modules (like `cve`, `nextstop` or `laposte`) require the
 [BeautifulSoup module](http://www.crummy.com/software/BeautifulSoup/),
 but the core and framework has no dependency.
 
