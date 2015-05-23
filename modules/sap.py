@@ -4,6 +4,8 @@
 
 import re
 import urllib.parse
+import urllib.request
+from bs4 import BeautifulSoup
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
@@ -16,7 +18,7 @@ from more import Response
 
 
 def help_full():
-    return "!tcode <transaction code|keywords>"
+    return "Retrieve SAP transaction codes and details using tcodes or keywords: !tcode <transaction code|keywords>"
 
 
 @hook("cmd_hook", "tcode")
@@ -27,19 +29,17 @@ def cmd_tcode(msg):
 
     url = ("http://www.tcodesearch.com/tcodes/search?q=%s" %
            urllib.parse.quote(msg.cmds[1]))
+
     page = web.getURLContent(url)
+    soup = BeautifulSoup(page)
 
     res = Response(channel=msg.channel,
                    nomore="No more transaction code",
                    count=" (%d more tcodes)")
 
-    if page is not None:
-        index = (page.index('<div id="searchresults">') +
-                 len('<div id="searchresults">'))
-        end = page[index:].index('</div>')+index
-        strscope = page[index:end]
-        for tcode in re.finditer('<strong> ([a-zA-Z0-9_]*)</strong> - ([^\n]*)\n', strscope):
-            res.append_message("\x02%s\x0F - %s" % (tcode.group(1),
-                                                    striphtml(tcode.group(2))))
+
+    search_res = soup.find("", {'id':'searchresults'})
+    for item in search_res.find_all('dd'):
+        res.append_message(item.get_text().split('\n')[1].strip())
 
     return res
