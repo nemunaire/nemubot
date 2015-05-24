@@ -87,6 +87,9 @@ def reload():
 
     import imp
 
+    import nemubot.bot
+    imp.reload(nemubot.bot)
+
     import nemubot.channel
     imp.reload(nemubot.channel)
 

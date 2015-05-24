@@ -139,7 +139,8 @@ def main():
 
     # Register the hook for futur import
     from nemubot.importer import ModuleFinder
-    sys.meta_path.append(ModuleFinder(context.modules_paths, context.add_module))
+    module_finder = ModuleFinder(context.modules_paths, context.add_module)
+    sys.meta_path.append(module_finder)
 
     # Load requested configuration files
     for path in args.files:
@@ -162,6 +163,9 @@ def main():
     def sighuphandler(signum, frame):
         """On SIGHUP, perform a deep reload"""
         import imp
+        nonlocal nemubot, context, module_finder
+
+        logger.debug("SIGHUP receive, iniate reload procedure...")
 
         # Reload nemubot Python modules
         imp.reload(nemubot)
@@ -170,6 +174,11 @@ def main():
         # Hotswap context
         import nemubot.bot
         context = nemubot.bot.hotswap(context)
+
+        # Reload ModuleFinder
+        sys.meta_path.remove(module_finder)
+        module_finder = ModuleFinder(context.modules_paths, context.add_module)
+        sys.meta_path.append(module_finder)
 
         # Reload configuration file
         for path in args.files:
@@ -186,9 +195,6 @@ def main():
                          "".join(traceback.format_stack(stack)))
     signal.signal(signal.SIGUSR1, sigusr1handler)
 
-    # Here we go!
-    context.start()
-
     if args.socketfile:
         from nemubot.server.socket import SocketListener
         context.add_server(SocketListener(context.add_server, "master_socket",
@@ -198,6 +204,7 @@ def main():
     oldcontext = None
     while oldcontext != context:
         oldcontext = context
+        context.start()
         context.join()
 
     # Wait for consumers

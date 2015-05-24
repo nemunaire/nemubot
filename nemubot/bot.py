@@ -145,6 +145,7 @@ class Bot(threading.Thread):
         from select import select
         from nemubot.server import _lock, _rlist, _wlist, _xlist
 
+        logger.info("Starting main loop")
         self.stop = False
         while not self.stop:
             with _lock:
@@ -211,6 +212,7 @@ class Bot(threading.Thread):
                         self.load_file(path)
                     logger.info("Configurations successfully loaded")
                 self.sync_queue.task_done()
+        logger.info("Ending main loop")
 
 
 
@@ -568,14 +570,16 @@ def hotswap(bak):
     bak.stop = True
     if bak.event_timer is not None:
         bak.event_timer.cancel()
+
+    # Unload modules
+    for mod in [k for k in bak.modules.keys()]:
+        bak.unload_module(mod)
+
+    # Save datastore
     bak.datastore.close()
 
     new = Bot(str(bak.ip), bak.modules_paths, bak.datastore)
     new.servers = bak.servers
-    new.modules = bak.modules
-    new.modules_configuration = bak.modules_configuration
-    new.events = bak.events
-    new.hooks = bak.hooks
 
     new._update_event_timer()
     return new

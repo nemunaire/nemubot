@@ -113,7 +113,7 @@ class AbstractServer(io.IOBase):
         """
 
         self._sending_queue.put(self.format(message))
-        self.logger.debug("Message '%s' appended to Queue", message)
+        self.logger.debug("Message '%s' appended to write queue", message)
         if self not in _wlist:
             _wlist.append(self)
 
