@@ -1,7 +1,9 @@
 import urllib.request
 import urllib.parse
 from bs4 import BeautifulSoup
+
 from nemubot.hooks import hook
+from nemubot.exception import IRCException
 from more import Response
 
 nemubotversion = 3.4
@@ -12,6 +14,9 @@ def help_full():
 
 @hook("cmd_hook", "laposte")
 def get_tracking_info(msg):
+    if len(msg.cmds) < 2:
+        raise IRCException("Renseignez un identifiant d'envoi,")
+
     data = urllib.parse.urlencode({'id': msg.cmds[1]})
     laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
 
