@@ -118,7 +118,7 @@ def getURLContent(url, timeout=15):
         if cntype is not None:
             lcharset = res.getheader("Content-Type").split(";")
             if len(lcharset) > 1:
-                for c in charset:
+                for c in lcharset:
                     ch = c.split("=")
                     if ch[0].strip().lower() == "charset" and len(ch) > 1:
                         cha = ch[1].split(".")
@@ -132,7 +132,7 @@ def getURLContent(url, timeout=15):
         conn.close()
 
     if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
-        return data.decode(charset)
+        return data.decode(charset).strip()
     elif ((res.status == http.client.FOUND or
            res.status == http.client.MOVED_PERMANENTLY) and
           res.getheader("Location") != url):
