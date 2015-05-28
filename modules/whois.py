@@ -10,6 +10,7 @@ from nemubot.tools.xmlparser.node import ModuleState
 nemubotversion = 3.4
 
 from more import Response
+from networking.page import headers
 
 PASSWD_FILE = None
 
@@ -48,8 +49,12 @@ class Login:
     def get_photo(self):
         if self.login in context.data.getNode("pics").index:
             return context.data.getNode("pics").index[self.login]["url"]
-        else:
-            return "https://static.acu.epita.fr/photos/%s" % self.login
+        for url in [ "https://static.acu.epita.fr/photos/%s", "https://static.acu.epita.fr/photos/%s/%%s" % self.gid, "https://intra-bocal.epitech.net/trombi/%s.jpg", "http://pub.23.tf/p/%s/%%s.jpg" % self.gid ]:
+            url = url % self.login
+            _, status, _, _ = headers(url)
+            if status == 200:
+                return url
+        return None
 
 
 def found_login(login):
