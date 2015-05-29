@@ -84,6 +84,25 @@ def cmd_whois(msg):
             res.append_message("Unknown %s :(" % srch)
     return res
 
+@hook("cmd_hook", "nicks")
+def cmd_nicks(msg):
+    if len(msg.args) < 1:
+        raise IRCException("Provide a login")
+    nick = found_login(msg.args[0])
+    if nick is None:
+        nick = msg.args[0]
+    else:
+        nick = nick.login
+
+    nicks = []
+    for alias in context.data.getNode("aliases").getChilds():
+        if alias["to"] == nick:
+            nicks.append(alias["from"])
+    if len(nicks) >= 1:
+        return Response("%s is also known as %s." % (nick, ", ".join(nicks)), channel=msg.channel)
+    else:
+        return Response("%s has no known alias." % nick, channel=msg.channel)
+
 @hook("ask_default")
 def parseask(msg):
     res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)\s+([a-zA-Z0-9_-]{3,8})$", msg.text, re.I)
