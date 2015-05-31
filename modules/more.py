@@ -103,6 +103,17 @@ class Response:
         else:
             return self.rawtitle
 
+    @property
+    def text(self):
+        if len(self.messages) < 1:
+            return self.nomore
+        else:
+            for msg in self.messages:
+                if isinstance(msg, list):
+                    return ", ".join(msg)
+                else:
+                    return msg
+
     def pop(self):
         self.messages.pop(0)
         self.elt = 0
