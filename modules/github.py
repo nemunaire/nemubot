@@ -136,10 +136,10 @@ def cmd_github(msg):
     li = re.match("^#?([0-9]+)$", msg.args[0])
     ri = re.match("^#?([0-9]+)$", msg.args[-1])
     if li is not None:
-        issue = msg.args[0]
+        issue = li.group(1)
         del msg.args[0]
     elif ri is not None:
-        issue = msg.args[-1]
+        issue = ri.group(1)
         del msg.args[-1]
 
     repo = " ".join(msg.args)
