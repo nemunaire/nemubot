@@ -67,10 +67,10 @@ def info_commit(repo, commit=None):
 
 @hook("cmd_hook", "github")
 def cmd_github(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indicate a repository name to search")
 
-    repos = info_repos(" ".join(msg.cmds[1:]))
+    repos = info_repos(" ".join(msg.args))
 
     res = Response(channel=msg.channel,
                    nomore="No more repository",
@@ -95,12 +95,12 @@ def cmd_github(msg):
 
 @hook("cmd_hook", "github_user")
 def cmd_github(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indicate a user name to search")
 
     res = Response(channel=msg.channel, nomore="No more user")
 
-    user = info_user(" ".join(msg.cmds[1:]))
+    user = info_user(" ".join(msg.args))
 
     if "login" in user:
         if user["repos"]:
@@ -128,21 +128,21 @@ def cmd_github(msg):
 
 @hook("cmd_hook", "github_issue")
 def cmd_github(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indicate a repository to view its issues")
 
     issue = None
-    if len(msg.cmds) > 2:
-        li = re.match("^#?([0-9]+)$", msg.cmds[1])
-        ri = re.match("^#?([0-9]+)$", msg.cmds[-1])
-        if li is not None:
-            issue = msg.cmds[1]
-            del msg.cmds[1]
-        elif ri is not None:
-            issue = msg.cmds[-1]
-            del msg.cmds[-1]
 
-    repo = " ".join(msg.cmds[1:])
+    li = re.match("^#?([0-9]+)$", msg.args[0])
+    ri = re.match("^#?([0-9]+)$", msg.args[-1])
+    if li is not None:
+        issue = msg.args[0]
+        del msg.args[0]
+    elif ri is not None:
+        issue = msg.args[-1]
+        del msg.args[-1]
+
+    repo = " ".join(msg.args)
 
     count = " (%d more issues)" if issue is None else None
     res = Response(channel=msg.channel, nomore="No more issue", count=count)
@@ -166,19 +166,18 @@ def cmd_github(msg):
 
 @hook("cmd_hook", "github_commit")
 def cmd_github(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indicate a repository to view its commits")
 
     commit = None
-    if len(msg.cmds) > 2:
-        if re.match("^[a-fA-F0-9]+$", msg.cmds[1]):
-            commit = msg.cmds[1]
-            del msg.cmds[1]
-        elif re.match("^[a-fA-F0-9]+$", msg.cmds[-1]):
-            commit = msg.cmds[-1]
-            del msg.cmds[-1]
+    if re.match("^[a-fA-F0-9]+$", msg.args[0]):
+        commit = msg.args[0]
+        del msg.args[0]
+    elif re.match("^[a-fA-F0-9]+$", msg.args[-1]):
+        commit = msg.args[-1]
+        del msg.args[-1]
 
-    repo = " ".join(msg.cmds[1:])
+    repo = " ".join(msg.args)
 
     count = " (%d more commits)" if commit is None else None
     res = Response(channel=msg.channel, nomore="No more commit", count=count)
