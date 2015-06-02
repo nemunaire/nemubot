@@ -57,12 +57,8 @@ class ModuleLoader(SourceFileLoader):
 
     def _load(self, module, name):
         # Add the module to the global modules list
-        if self.add_module(module):
-            logger.info("Module '%s' successfully loaded.", name)
-        else:
-            logger.error("An error occurs while importing `%s'.", name)
-            raise ImportError("An error occurs while importing `%s'."
-                              % name)
+        self.add_module(module)
+        logger.info("Module '%s' successfully loaded.", name)
         return module
 
 

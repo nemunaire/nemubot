@@ -385,14 +385,16 @@ class Bot(threading.Thread):
             module.__nemubot_context__.add_hook(s, h)
         nemubot.hooks.last_registered = []
 
-        # Save a reference to the module
-        self.modules[module_name] = module
-
         # Launch the module
         if hasattr(module, "load"):
-            module.load(module.__nemubot_context__)
+            try:
+                module.load(module.__nemubot_context__)
+            except:
+                module.__nemubot_context__.unload()
+                raise
 
-        return True
+        # Save a reference to the module
+        self.modules[module_name] = module
 
 
     def unload_module(self, name):
