@@ -24,7 +24,10 @@ def load(context):
         mod.send_response = context.send_response
     page.load(context.config, context.add_hook)
     watchWebsite.load(context.data)
-    whois.load(context.config, context.add_hook)
+    try:
+        whois.load(context.config, context.add_hook)
+    except ImportError:
+        logger.exception("Unable to load netwhois module")
 
 
 def help_full():

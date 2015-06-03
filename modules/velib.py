@@ -9,12 +9,18 @@ from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
 
+URL_API = None # http://www.velib.paris.fr/service/stationdetails/paris/%s
+
 def load(context):
+    global URL_API
+    if not context.config or not context.config.hasAttribute("url"):
+        raise ImportError("Please provide url attribute in the module configuration")
+    URL_API = context.config["url"]
     context.data.setIndex("name", "station")
 
 #  evt = ModuleEvent(station_available, "42706",
@@ -30,7 +36,7 @@ def help_full():
 
 def station_status(station):
     """Gets available and free status of a given station"""
-    response = web.getXML(context.config.getNode("server")["url"] + station)
+    response = web.getXML(URL_API % station)
     if response is not None:
         available = response.getNode("available").getContent()
         if available is not None and len(available) > 0:

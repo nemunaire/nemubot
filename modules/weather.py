@@ -14,28 +14,21 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 import mapquest
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
+URL_DSAPI = "https://api.forecast.io/forecast/%s/%%s,%%s"
 
 def load(context):
+    if not context.config or not context.config.hasAttribute("darkskyapikey"):
+        raise ImportError("You need a Dark-Sky API key in order to use this "
+                          "module. Add it to the module configuration file:\n"
+                          "<module name=\"weather\" darkskyapikey=\"XXX\" />\n"
+                          "Register at http://developer.forecast.io/")
     context.data.setIndex("name", "city")
-
-    if not context.config or not context.config.hasNode("darkskyapi") or not context.config.getNode("darkskyapi").hasAttribute("key"):
-        print ("You need a Dark-Sky API key in order to use this "
-               "module. Add it to the module configuration file:\n<darkskyapi"
-               " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
-               "http://developer.forecast.io/")
-        return None
-
-    import nemubot.hooks
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_weather, "météo"))
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_alert, "alert"))
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_coordinates, "coordinates"))
+    global URL_DSAPI
+    URL_DSAPI = URL_DSAPI % context.config["darkskyapikey"]
 
 
 def help_full ():
@@ -135,7 +128,7 @@ def treat_coord(msg):
 
 
 def get_json_weather(coords):
-    wth = web.getJSON("https://api.forecast.io/forecast/%s/%s,%s" % (context.config.getNode("darkskyapi")["key"], float(coords[0]), float(coords[1])))
+    wth = web.getJSON(URL_DSAPI % (float(coords[0]), float(coords[1])))
 
     # First read flags
     if "darksky-unavailable" in wth["flags"]:
@@ -144,6 +137,7 @@ def get_json_weather(coords):
     return wth
 
 
+@hook("cmd_hook", "coordinates")
 def cmd_coordinates(msg):
     if len(msg.args) < 1:
         raise IRCException("indique-moi un nom de ville.")
@@ -156,6 +150,7 @@ def cmd_coordinates(msg):
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
 
+@hook("cmd_hook", "alert")
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
@@ -169,6 +164,7 @@ def cmd_alert(msg):
     return res
 
 
+@hook("cmd_hook", "météo")
 def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)

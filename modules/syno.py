@@ -9,7 +9,7 @@ from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
@@ -21,13 +21,13 @@ def help_full():
 def load(context):
     global lang_binding
 
-    if not context.config or not context.config.hasNode("bighugelabs") or not context.config.getNode("bighugelabs").hasAttribute("key"):
-        print ("You need a NigHugeLabs API key in order to have english "
-               "theasorus. Add it to the module configuration file:\n<bighugelabs"
-               " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
-               "https://words.bighugelabs.com/getkey.php")
+    if not context.config or not context.config.hasAttribute("bighugelabskey"):
+        logger.error("You need a NigHugeLabs API key in order to have english "
+                     "theasorus. Add it to the module configuration file:\n"
+                     "<module name=\"syno\" bighugelabskey=\"XXXXXXXXXXXXXXXX\""
+                     " />\nRegister at https://words.bighugelabs.com/getkey.php")
     else:
-        lang_binding["en"] = lambda word: get_english_synos(context.config.getNode("bighugelabs")["key"], word)
+        lang_binding["en"] = lambda word: get_english_synos(context.config["bighugelabskey"], word)
 
 
 def get_french_synos(word):
@@ -75,18 +75,18 @@ lang_binding = { 'fr': get_french_synos }
 @hook("cmd_hook", "synonymes", data="synonymes")
 @hook("cmd_hook", "antonymes", data="antonymes")
 def go(msg, what):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("de quel mot veux-tu connaître la liste des synonymes ?")
 
     # Detect lang
-    if msg.cmds[1] in lang_binding:
-        func = lang_binding[msg.cmds[1]]
-        word = ' '.join(msg.cmds[2:])
+    if msg.args[0] in lang_binding:
+        func = lang_binding[msg.args[0]]
+        word = ' '.join(msg.args[1:])
     else:
         func = lang_binding["fr"]
-        word = ' '.join(msg.cmds[1:])
+        word = ' '.join(msg.args)
         # TODO: depreciate usage without lang
-        #raise IRCException("language %s is not handled yet." % msg.cmds[1])
+        #raise IRCException("language %s is not handled yet." % msg.args[0])
 
     try:
         best, synos, anton = func(word)
