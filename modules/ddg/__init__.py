@@ -13,17 +13,6 @@ from more import Response
 
 from . import DDGSearch
 from . import UrbanDictionnary
-from . import WFASearch
-
-def load(context):
-    WFASearch.CONF = context.config
-
-def reload():
-    imp.reload(DDGSearch)
-    imp.reload(UrbanDictionnary)
-    imp.reload(WFASearch)
-    imp.reload(Wikipedia)
-
 
 @hook("cmd_hook", "define")
 def define(msg):
@@ -76,22 +65,3 @@ def udsearch(msg):
         res.append_message(d)
 
     return res
-
-
-@hook("cmd_hook", "calculate")
-def calculate(msg):
-    if len(msg.cmds) <= 1:
-        return Response("Indicate a calcul to compute",
-                        msg.channel, nick=msg.nick)
-
-    s = WFASearch.WFASearch(' '.join(msg.cmds[1:]))
-
-    if s.success:
-        res = Response(channel=msg.channel, nomore="No more results")
-        for result in s.nextRes:
-            res.append_message(result)
-        if (len(res.messages) > 0):
-            res.messages.pop(0)
-        return res
-    else:
-        return Response(s.error, msg.channel)
