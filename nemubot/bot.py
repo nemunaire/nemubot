@@ -355,13 +355,15 @@ class Bot(threading.Thread):
     def add_module(self, module):
         """Add a module to the context, if already exists, unload the
         old one before"""
+        module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+
         # Check if the module already exists
-        if module.__name__ in self.modules:
-            self.unload_module(module.__name__)
+        if module_name in self.modules:
+            self.unload_module(module_name)
 
         # Overwrite print built-in
         def prnt(*args):
-            print("[%s]" % module.__name__, *args)
+            print("[%s]" % module_name, *args)
             if hasattr(module, "logger"):
                 module.logger.info(" ".join(args))
         module.print = prnt
@@ -370,7 +372,7 @@ class Bot(threading.Thread):
         module.__nemubot_context__ = ModuleContext(self, module)
 
         if not hasattr(module, "logger"):
-            module.logger = logging.getLogger("nemubot.module." + module.__name__)
+            module.logger = logging.getLogger("nemubot.module." + module_name)
 
         # Replace imported context by real one
         for attr in module.__dict__:
@@ -383,14 +385,16 @@ class Bot(threading.Thread):
             module.__nemubot_context__.add_hook(s, h)
         nemubot.hooks.last_registered = []
 
-        # Save a reference to the module
-        self.modules[module.__name__] = module
-
         # Launch the module
         if hasattr(module, "load"):
-            module.load(module.__nemubot_context__)
+            try:
+                module.load(module.__nemubot_context__)
+            except:
+                module.__nemubot_context__.unload()
+                raise
 
-        return True
+        # Save a reference to the module
+        self.modules[module_name] = module
 
 
     def unload_module(self, name):

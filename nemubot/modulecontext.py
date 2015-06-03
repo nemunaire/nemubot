@@ -40,10 +40,13 @@ class ModuleContext:
         module -- the module
         """
 
+        if module is not None:
+            module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+
         # Load module configuration if exists
         if (context is not None and
-            module.__name__ in context.modules_configuration):
-            self.config = context.modules_configuration[module.__name__]
+            module_name in context.modules_configuration):
+            self.config = context.modules_configuration[module_name]
         else:
             self.config = None
 
@@ -54,7 +57,7 @@ class ModuleContext:
         # Define some callbacks
         if context is not None:
             # Load module data
-            self.data = context.datastore.load(module.__name__)
+            self.data = context.datastore.load(module_name)
 
             def add_hook(store, hook):
                 store = convert_legacy_store(store)
@@ -99,7 +102,7 @@ class ModuleContext:
                 print(res)
 
         def save():
-            context.datastore.save(module.__name__, self.data)
+            context.datastore.save(module_name, self.data)
 
         self.add_hook = add_hook
         self.del_hook = del_hook

@@ -117,7 +117,12 @@ def load_file(filename, context):
             for mod in config.getNodes("module"):
                 context.modules_configuration[mod["name"]] = mod
                 if get_boolean(mod, "autoload", default=True):
-                    __import__(mod["name"])
+                    try:
+                        __import__(mod["name"])
+                    except:
+                        logger.exception("Exception occurs when loading module"
+                                         " '%s'", mod["name"])
+
 
             # Load files asked by the configuration file
             for load in config.getNodes("include"):

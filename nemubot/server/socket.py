@@ -46,6 +46,7 @@ class SocketServer(AbstractServer):
     # Open/close
 
     def _open(self):
+        import os
         import socket
 
         try:

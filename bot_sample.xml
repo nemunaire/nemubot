@@ -11,9 +11,7 @@
   -->
 
   <!--
-  <module name="ddg">
-    <wfaapi key="YOUR-APIKEY" />
-  </module>
+  <module name="wolframalpha" apikey="YOUR-APIKEY" />
   -->
 
   <module name="cmd_server" />

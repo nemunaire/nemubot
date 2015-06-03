@@ -6,32 +6,28 @@ from nemubot.hooks import hook
 from nemubot.tools import human
 from nemubot.tools.web import getJSON
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
 URL_TPBAPI = None
 
 def load(context):
+    if not context.config or not context.config.hasAttribute("url"):
+        raise ImportError("You need a TPB API in order to use the !tpb feature"
+                          ". Add it to the module configuration file:\n<module"
+                          "name=\"tpb\" url=\"http://tpbapi.org/\" />\nSample "
+                          "API: "
+                          "https://gist.github.com/colona/07a925f183cfb47d5f20")
     global URL_TPBAPI
+    URL_TPBAPI = context.config["url"]
 
-    if not context.config or not context.config.hasNode("tpbapi") or not context.config.getNode("tpbapi").hasAttribute("url"):
-        print ("You need a TPB API in order to use the !tpb feature. Add it to "
-               "the module configuration file:\n"
-               "<tpbapi url=\"http://tpbapi.org/\" />\nSample API: "
-               "https://gist.github.com/colona/07a925f183cfb47d5f20")
-    else:
-        URL_TPBAPI = context.config.getNode("tpbapi")["url"]
-
-        from nemubot.hooks.message import Message
-        context.add_hook("cmd_hook", Message(cmd_tpb, "tpb"))
-
-
+@hook("cmd_hook", "tpb")
 def cmd_tpb(msg):
-    if len(msg.cmds) < 1:
+    if not len(msg.args):
         raise IRCException("indicate an item to search!")
 
-    torrents = getJSON(URL_TPBAPI + urllib.parse.quote(" ".join(msg.cmds[1:])))
+    torrents = getJSON(URL_TPBAPI + urllib.parse.quote(" ".join(msg.args)))
 
     res = Response(channel=msg.channel, nomore="No more torrents", count=" (%d more torrents)")
 

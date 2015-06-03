@@ -55,14 +55,20 @@ class ModuleLoader(SourceFileLoader):
         SourceFileLoader.__init__(self, fullname, path)
 
 
-    def load_module(self, fullname):
-        module = SourceFileLoader.load_module(self, fullname)
-
+    def _load(self, module, name):
         # Add the module to the global modules list
-        if self.add_module(module):
-            logger.info("Module '%s' successfully loaded.", module.__name__)
-        else:
-            logger.error("An error occurs while importing `%s'.", module.__name__)
-            raise ImportError("An error occurs while importing `%s'."
-                              % module.__name__)
+        self.add_module(module)
+        logger.info("Module '%s' successfully loaded.", name)
         return module
+
+
+    # Python 3.4
+    def exec_module(self, module):
+        super(ModuleLoader, self).exec_module(module)
+        self._load(module, module.__spec__.name)
+
+
+    # Python 3.3
+    def load_module(self, fullname):
+        module = super(ModuleLoader, self).load_module(fullname)
+        return self._load(module, module.__name__)

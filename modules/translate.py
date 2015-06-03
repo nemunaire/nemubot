@@ -6,9 +6,10 @@ import re
 from urllib.parse import quote
 
 from nemubot.exception import IRCException
+from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
@@ -18,46 +19,42 @@ LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
 URL = "http://api.wordreference.com/0.8/%s/json/%%s%%s/%%s"
 
 def load(context):
+    if not context.config or not context.config.hasAttribute("wrapikey"):
+        raise ImportError("You need a WordReference API key in order to use "
+                          "this module. Add it to the module configuration "
+                          "file:\n<module name=\"translate\" wrapikey=\"XXXXX\""
+                          " />\nRegister at http://"
+                          "www.wordreference.com/docs/APIregistration.aspx")
     global URL
-    if not context.config or not context.config.hasNode("wrapi") or not context.config.getNode("wrapi").hasAttribute("key"):
-        print ("You need a WordReference API key in order to use this module."
-               " Add it to the module configuration file:\n<wrapi key=\"XXXXX\""
-               " />\nRegister at "
-               "http://www.wordreference.com/docs/APIregistration.aspx")
-        return None
-    else:
-        URL = URL % context.config.getNode("wrapi")["key"]
-
-    import nemubot.hooks
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_translate, "translate"))
+    URL = URL % context.config["wrapikey"]
 
 
 def help_full():
     return "!translate [lang] <term>[ <term>[...]]: Found translation of <term> from/to english to/from <lang>. Data © WordReference.com"
 
 
+@hook("cmd_hook", "translate")
 def cmd_translate(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("which word would you translate?")
 
-    if len(msg.cmds) > 3 and msg.cmds[1] in LANG and msg.cmds[2] in LANG:
-        if msg.cmds[1] != "en" and msg.cmds[2] != "en":
+    if len(msg.args) > 2 and msg.args[0] in LANG and msg.args[1] in LANG:
+        if msg.args[0] != "en" and msg.args[1] != "en":
             raise IRCException("sorry, I can only translate to or from english")
-        langFrom = msg.cmds[1]
-        langTo = msg.cmds[2]
-        term = ' '.join(msg.cmds[3:])
-    elif len(msg.cmds) > 2 and msg.cmds[1] in LANG:
-        langFrom = msg.cmds[1]
+        langFrom = msg.args[0]
+        langTo = msg.args[1]
+        term = ' '.join(msg.args[2:])
+    elif len(msg.args) > 1 and msg.args[0] in LANG:
+        langFrom = msg.args[0]
         if langFrom == "en":
             langTo = "fr"
         else:
             langTo = "en"
-        term = ' '.join(msg.cmds[2:])
+        term = ' '.join(msg.args[1:])
     else:
         langFrom = "en"
         langTo = "fr"
-        term = ' '.join(msg.cmds[1:])
+        term = ' '.join(msg.args)
 
     wres = web.getJSON(URL % (langFrom, langTo, quote(term)))
 

@@ -2,22 +2,32 @@
 
 from urllib.parse import quote
 
+from nemubot import context
+from nemubot.exception import IRCException
+from nemubot.hooks import hook
 from nemubot.tools import web
+
+nemubotversion = 4.0
+
+from more import Response
+
+URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&appid=%s"
+
+def load(context):
+    global URL_API
+    if not context.config or not context.config.hasAttribute("apikey"):
+        raise ImportError ("You need a Wolfram|Alpha API key in order to use "
+                           "this module. Add it to the module configuration: "
+                           "\n<module name=\"wolframalpha\" "
+                           "apikey=\"XXXXXX-XXXXXXXXXX\" />\n"
+                           "Register at http://products.wolframalpha.com/api/")
+    URL_API = URL_API % quote(context.config["apikey"]).replace("%", "%%")
 
 
 class WFASearch:
     def __init__(self, terms):
         self.terms = terms
-        try:
-            url = ("http://api.wolframalpha.com/v2/query?input=%s&appid=%s" %
-                   (quote(terms), CONF.getNode("wfaapi")["key"]))
-            self.wfares = web.getXML(url)
-        except (TypeError, KeyError):
-            print ("You need a Wolfram|Alpha API key in order to use this "
-                   "module. Add it to the module configuration file:\n<wfaapi"
-                   " key=\"XXXXXX-XXXXXXXXXX\" />\nRegister at "
-                   "http://products.wolframalpha.com/api/")
-            self.wfares = None
+        self.wfares = web.getXML(URL_API % quote(terms))
 
     @property
     def success(self):
@@ -69,3 +79,21 @@ class WFASearch:
                                subnode.getFirstNode("plaintext").getContent())
         except IndexError:
             pass
+
+
+@hook("cmd_hook", "calculate")
+def calculate(msg):
+    if not len(msg.args):
+        raise IRCException("Indicate a calcul to compute")
+
+    s = WFASearch(' '.join(msg.args))
+
+    if s.success:
+        res = Response(channel=msg.channel, nomore="No more results")
+        for result in s.nextRes:
+            res.append_message(result)
+        if (len(res.messages) > 0):
+            res.messages.pop(0)
+        return res
+    else:
+        return Response(s.error, msg.channel)
