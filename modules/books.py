@@ -9,18 +9,17 @@ from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
 
 def load(context):
-    if not context.config or not context.config.hasNode("goodreadsapi") or not context.config.getNode("goodreadsapi").hasAttribute("key"):
-        print ("You need a Goodreads API key in order to use this "
-               "module. Add it to the module configuration file:\n<goodreadsapi"
-               " key=\"XXXXXXXXXXXXXXXX\" />\nGet one at "
-               "https://www.goodreads.com/api/keys")
-        return None
+    if not context.config or not context.config.getAttribute("goodreadskey"):
+        raise ImportError("You need a Goodreads API key in order to use this "
+                          "module. Add it to the module configuration file:\n"
+                          "<module name=\"books\" goodreadskey=\"XXXXXX\" />\n"
+                          "Get one at https://www.goodreads.com/api/keys")
 
 
 def get_book(title):
@@ -57,10 +56,10 @@ def search_author(name):
 
 @hook("cmd_hook", "book")
 def cmd_book(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("please give me a title to search")
 
-    book = get_book(" ".join(msg.cmds[1:]))
+    book = get_book(" ".join(msg.args))
     if book is None:
         raise IRCException("unable to find book named like this")
     res = Response(channel=msg.channel)
@@ -72,10 +71,10 @@ def cmd_book(msg):
 
 @hook("cmd_hook", "search_books")
 def cmd_books(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("please give me a title to search")
 
-    title = " ".join(msg.cmds[1:])
+    title = " ".join(msg.args)
     res = Response(channel=msg.channel,
                    title="%s" % (title),
                    count=" (%d more books)")
@@ -88,10 +87,10 @@ def cmd_books(msg):
 
 @hook("cmd_hook", "author_books")
 def cmd_author(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("please give me an author to search")
 
-    ath = search_author(" ".join(msg.cmds[1:]))
+    ath = search_author(" ".join(msg.args))
     return Response([b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")],
                     channel=msg.channel,
                     title=ath.getNode("name").getContent())

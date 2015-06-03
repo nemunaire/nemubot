@@ -1,30 +1,28 @@
 # coding=utf-8
 
-"""The mapquest module"""
+"""Transform name location to GPS coordinates"""
 
 import re
 from urllib.parse import quote
 
-from nemubot import context
 from nemubot.exception import IRCException
+from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
+URL_API = "http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%%s"
 
 def load(context):
-    if not context.config or not context.config.hasNode("mapquestapi") or not context.config.getNode("mapquestapi").hasAttribute("key"):
-        print ("You need a MapQuest API key in order to use this "
-               "module. Add it to the module configuration file:\n<mapquestapi"
-               " key=\"XXXXXXXXXXXXXXXX\" />\nRegister at "
-               "http://developer.mapquest.com/")
-        return None
-
-    import nemubot.hooks
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_geocode, "geocode"))
+    if not context.config or not context.config.hasAttribute("apikey"):
+        raise ImportError("You need a MapQuest API key in order to use this "
+                          "module. Add it to the module configuration file:\n"
+                          "<module name=\"mapquest\" key=\"XXXXXXXXXXXXXXXX\" "
+                          "/>\nRegister at http://developer.mapquest.com/")
+    global URL_API
+    URL_API = URL_API % context.config["apikey"].replace("%", "%%")
 
 
 def help_full():
@@ -32,8 +30,7 @@ def help_full():
 
 
 def geocode(location):
-    obj = web.getJSON("http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%s" %
-                      (context.config.getNode("mapquestapi")["key"], quote(location)))
+    obj = web.getJSON(URL_API % quote(location))
 
     if "results" in obj and "locations" in obj["results"][0]:
         for loc in obj["results"][0]["locations"]:
@@ -46,15 +43,15 @@ def where(loc):
                   "{adminArea1}".format(**loc)).strip()
 
 
+@hook("cmd_hook", "geocode")
 def cmd_geocode(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indicate a name")
 
-    locname = ' '.join(msg.cmds[1:])
     res = Response(channel=msg.channel, nick=msg.nick,
                    nomore="No more geocode", count=" (%s more geocode)")
 
-    for loc in geocode(locname):
+    for loc in geocode(' '.join(msg.args)):
         res.append_message("%s is at %s,%s (%s precision)" %
                            (where(loc),
                             loc["latLng"]["lat"],

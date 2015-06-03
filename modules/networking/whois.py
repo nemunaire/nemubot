@@ -12,15 +12,16 @@ def load(CONF, add_hook):
     global URL_WHOIS
 
     if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
-        print ("You need a WhoisXML API account in order to use the "
-               "!netwhois feature. Add it to the module configuration file:\n"
-               "<whoisxmlapi username=\"XX\" password=\"XXX\" />\nRegister at "
-               "http://www.whoisxmlapi.com/newaccount.php")
-    else:
-        URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
+        raise ImportError("You need a WhoisXML API account in order to use "
+                          "the !netwhois feature. Add it to the module "
+                          "configuration file:\n<whoisxmlapi username=\"XX\" "
+                          "password=\"XXX\" />\nRegister at "
+                          "http://www.whoisxmlapi.com/newaccount.php")
 
-        import nemubot.hooks
-        add_hook("cmd_hook", nemubot.hooks.Message(cmd_whois, "netwhois"))
+    URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
+
+    import nemubot.hooks
+    add_hook("cmd_hook", nemubot.hooks.Message(cmd_whois, "netwhois"))
 
 
 def extractdate(str):

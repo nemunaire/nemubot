@@ -12,7 +12,7 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.web import striphtml
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
@@ -23,12 +23,12 @@ def help_full():
 
 @hook("cmd_hook", "tcode")
 def cmd_tcode(msg):
-    if len(msg.cmds) != 2:
+    if not len(msg.args):
         raise IRCException("indicate a transaction code or "
                            "a keyword to search!")
 
     url = ("http://www.tcodesearch.com/tcodes/search?q=%s" %
-           urllib.parse.quote(msg.cmds[1]))
+           urllib.parse.quote(msg.args[0]))
 
     page = web.getURLContent(url)
     soup = BeautifulSoup(page)
