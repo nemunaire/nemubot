@@ -365,7 +365,7 @@ class Bot(threading.Thread):
         def prnt(*args):
             print("[%s]" % module_name, *args)
             if hasattr(module, "logger"):
-                module.logger.info(" ".join(args))
+                module.logger.info(" ".join([str(s) for s in args]))
         module.print = prnt
 
         # Create module context
