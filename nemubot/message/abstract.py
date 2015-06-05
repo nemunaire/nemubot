@@ -21,7 +21,7 @@ class Abstract:
 
     """This class represents an abstract message"""
 
-    def __init__(self, server, date=None, to=None, to_response=None, frm=None):
+    def __init__(self, server=None, date=None, to=None, to_response=None, frm=None):
         """Initialize an abstract message
 
         Arguments:
@@ -59,7 +59,10 @@ class Abstract:
     @property
     def channel(self):
         # TODO: this is for legacy modules
-        return self.to_response[0]
+        if self.to_response is not None and len(self.to_response) > 0:
+            return self.to_response[0]
+        else:
+            return None
 
     @property
     def nick(self):
