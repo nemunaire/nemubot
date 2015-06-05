@@ -67,6 +67,15 @@ class ModuleContext:
                 store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
                 return context.hooks.del_hook(hook, store)
+            def call_hook(store, msg):
+                for h in context.hooks.get_hooks(store):
+                    if h.match(msg):
+                        res = h.run(msg)
+                        if isinstance(res, list):
+                            for i in res:
+                                yield i
+                        else:
+                            yield res
             def add_event(evt, eid=None):
                 return context.add_event(evt, eid, module_src=module)
             def del_event(evt):
@@ -93,6 +102,9 @@ class ModuleContext:
             def del_hook(store, hook):
                 store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
+            def call_hook(store, msg):
+                # TODO: what can we do here?
+                return None
             def add_event(evt, eid=None):
                 return context.add_event(evt, eid, module_src=module)
             def del_event(evt):
@@ -110,6 +122,7 @@ class ModuleContext:
         self.del_event = del_event
         self.save = save
         self.send_response = send_response
+        self.call_hook = call_hook
 
 
     def unload(self):

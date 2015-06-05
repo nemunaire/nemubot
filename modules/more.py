@@ -19,6 +19,7 @@
 """Progressive display of very long messages"""
 
 import logging
+import sys
 
 from nemubot.message import Text, DirectAsk
 from nemubot.hooks import hook
@@ -133,6 +134,17 @@ class Response:
         else:
             return Text(self.get_message(maxlen),
                         server=None, to=self.receivers)
+
+    def __str__(self):
+        ret = []
+        if len(self.messages):
+            for msg in self.messages:
+                if isinstance(msg, list):
+                    ret.append(", ".join(msg))
+                else:
+                    ret.append(msg)
+        ret.append(self.nomore)
+        return "\n".join(ret)
 
     def get_message(self, maxlen):
         if self.alone and len(self.messages) > 1:
