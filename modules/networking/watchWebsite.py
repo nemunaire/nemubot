@@ -46,8 +46,8 @@ def del_site(url, nick, channel, frm_owner):
         site = DATAS.index[url]
         for a in site.getNodes("alert"):
             if a["channel"] == channel:
-                if not (nick == a["nick"] or frm_owner):
-                    raise IRCException("you cannot unwatch this URL.")
+#                if not (nick == a["nick"] or frm_owner):
+#                    raise IRCException("you cannot unwatch this URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
                     del_event(site["_evt_id"])
