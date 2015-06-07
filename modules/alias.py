@@ -146,23 +146,20 @@ def cmd_unalias(msg):
 
 
 def replace_variables(cnt, msg=None):
-    cnt = cnt.split(' ')
+    if isinstance(cnt, list):
+        return [replace_variables(c, msg) for c in cnt]
+
     unsetCnt = list()
-    for i in range(0, len(cnt)):
-        if i not in unsetCnt:
-            res = re.match("^([^$]*)(\\\\)?\\$([a-zA-Z0-9]+)(.*)$", cnt[i])
-            if res is not None:
-                try:
-                    varI = int(res.group(3))
-                    unsetCnt.append(varI)
-                    cnt[i] = res.group(1) + msg.cmds[varI] + res.group(4)
-                except:
-                    if res.group(2) != "":
-                        cnt[i] = res.group(1) + "$" + res.group(3) + res.group(4)
-                    else:
-                        cnt[i] = (res.group(1) + get_variable(res.group(3), msg) +
-                                  res.group(4))
-    return " ".join(cnt)
+    for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9]+)\}", cnt):
+        try:
+            varI = int(res) - 1
+            cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
+            unsetCnt.append(varI)
+        except:
+            cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
+    for u in sorted(unsetCnt, reverse=True):
+        msg.args.pop(u)
+    return cnt
 
 
 @hook("pre_Command")
@@ -176,7 +173,7 @@ def treat_alias(msg):
             args = shlex.split(txt)
         except ValueError:
             args = txt.split(' ')
-        nmsg = Command(args[0], args[1:] + msg.args, **msg.export_args())
+        nmsg = Command(args[0], replace_variables(args[1:], msg) + msg.args, **msg.export_args())
 
         # Avoid infinite recursion
         if msg.cmd != nmsg.cmd:
