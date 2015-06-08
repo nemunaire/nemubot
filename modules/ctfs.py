@@ -1,37 +1,25 @@
-import urllib.request
 from bs4 import BeautifulSoup
-from hooks import hook
+
+from nemubot.hooks import hook
+from nemubot.tools.web import getURLContent
 from more import Response
 
-nemubotversion = 3.4
+"""List upcoming CTFs"""
 
-def help_tiny():
-  return "No help"
-
-def help_full():
-  return "No help "
+nemubotversion = 4.0
 
 @hook("cmd_hook", "ctfs")
 def get_info_yt(msg):
-  req = urllib.request.Request('https://ctftime.org/event/list/upcoming',
-                               data=None,
-                               headers={
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-      })
-
-  ctf = ''
-  url = urllib.request.urlopen(req)
-  soup = BeautifulSoup(url)
-  desc = soup.body.find_all('td')
-  i = 0
-  for result in desc:
-    ctf += result.text.replace('\n', ' ')
-    ctf +=  ' '
-    i += 1
-    if not (i % 5):
-      ctf += '\n'
-  res = Response(channel=msg.channel, nomore="No more description")
-  res.append_message(ctf)
+  soup = BeautifulSoup(getURLContent('https://ctftime.org/event/list/upcoming'))
+  res = Response(channel=msg.channel, nomore="No more upcoming CTF")
+  for line in soup.body.find_all('tr'):
+    n = line.find_all('td')
+    if len(n) == 5:
+      try:
+        res.append_message("\x02%s:\x0F from %s type %s at %s. %s" % tuple([x.text.replace("\n", " ").strip() for x in n]))
+      except:
+        import sys
+        import traceback
+        exc_type, exc_value, _ = sys.exc_info()
+        sys.stderr.write(traceback.format_exception_only(exc_type, exc_value)[0])
   return res
-
-
