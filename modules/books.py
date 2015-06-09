@@ -25,7 +25,7 @@ def load(context):
 def get_book(title):
     """Retrieve a book from its title"""
     response = web.getXML("https://www.goodreads.com/book/title.xml?key=%s&title=%s" %
-                          (context.config.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
+                          (context.config["goodreadskey"], urllib.parse.quote(title)))
     if response is not None and response.hasNode("book"):
         return response.getNode("book")
     else:
@@ -35,7 +35,7 @@ def get_book(title):
 def search_books(title):
     """Get a list of book matching given title"""
     response = web.getXML("https://www.goodreads.com/search.xml?key=%s&q=%s" %
-                          (context.config.getNode("goodreadsapi")["key"], urllib.parse.quote(title)))
+                          (context.config["goodreadskey"], urllib.parse.quote(title)))
     if response is not None and response.hasNode("search"):
         return response.getNode("search").getNode("results").getNodes("work")
     else:
@@ -45,10 +45,10 @@ def search_books(title):
 def search_author(name):
     """Looking for an author"""
     response = web.getXML("https://www.goodreads.com/api/author_url/%s?key=%s" %
-                          (urllib.parse.quote(name), context.config.getNode("goodreadsapi")["key"]))
+                          (urllib.parse.quote(name), context.config["goodreadskey"]))
     if response is not None and response.hasNode("author") and response.getNode("author").hasAttribute("id"):
         response = web.getXML("https://www.goodreads.com/author/show/%s.xml?key=%s" %
-                              (urllib.parse.quote(response.getNode("author")["id"]), context.config.getNode("goodreadsapi")["key"]))
+                              (urllib.parse.quote(response.getNode("author")["id"]), context.config["goodreadskey"]))
         if response is not None and response.hasNode("author"):
             return response.getNode("author")
     return None
