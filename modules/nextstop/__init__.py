@@ -40,3 +40,13 @@ def ask_ratp(msg):
 
     else:
         raise IRCException("Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module.")
+
+@hook("cmd_hook", "ratp_alert")
+def ratp_alert(msg):
+    if len(msg.cmds) == 3:
+        transport = msg.cmds[1]
+        cause  = msg.cmds[2]
+        incidents = ratp.getDisturbance(cause, transport)
+        return Response(incidents, channel=msg.channel, nomore="No more incidents", count=" (%d more incidents)")
+    else:
+        raise IRCException("Mauvais usage, merci de spécifier un type de transport et un type d'alerte (alerte, manif, travaux), ou de consulter l'aide du module.")
