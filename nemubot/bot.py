@@ -133,23 +133,23 @@ class Bot(threading.Thread):
                 fnd_smth = False
                 # Looking for invalid server
                 for r in _rlist:
-                    if not hasattr(r, "fileno") or not isinstance(r.fileno(), int):
+                    if not hasattr(r, "fileno") or not isinstance(r.fileno(), int) or r.fileno() == -1:
                         _rlist.remove(r)
                         logger.error("Found invalid object in _rlist: " + r)
                         fnd_smth = True
                 for w in _wlist:
-                    if not hasattr(r, "fileno") or not isinstance(w.fileno(), int):
+                    if not hasattr(w, "fileno") or not isinstance(w.fileno(), int) or w.fileno() == -1:
                         _wlist.remove(w)
                         logger.error("Found invalid object in _wlist: " + w)
                         fnd_smth = True
                 for x in _xlist:
-                    if not hasattr(r, "fileno") or not isinstance(x.fileno(), int):
+                    if not hasattr(x, "fileno") or not isinstance(x.fileno(), int) or x.fileno() == -1:
                         _xlist.remove(x)
                         logger.error("Found invalid object in _xlist: " + x)
                         fnd_smth = True
                 if not fnd_smth:
                     logger.exception("Can't continue, sorry")
-                    self.stop = True
+                    self.quit()
                 continue
 
             for x in xl:
@@ -428,6 +428,11 @@ class Bot(threading.Thread):
         if self.event_timer is not None:
             logger.info("Stop the event timer...")
             self.event_timer.cancel()
+
+        logger.info("Stop consumers")
+        k = self.cnsr_thrd
+        for cnsr in k:
+            cnsr.stop = True
 
         logger.info("Save and unload all modules...")
         k = list(self.modules.keys())
