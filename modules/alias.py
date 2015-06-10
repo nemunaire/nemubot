@@ -177,7 +177,8 @@ def treat_alias(msg):
 
         # Avoid infinite recursion
         if msg.cmd != nmsg.cmd:
-            return nmsg
+            # Also return origin message, if it can be treated as well
+            return [msg, nmsg]
 
     return msg
 
