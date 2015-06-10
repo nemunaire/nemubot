@@ -184,10 +184,9 @@ def treat_alias(msg):
 
 @hook("ask_default")
 def parseask(msg):
-    global ALIAS
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
-        if result.group(1) in context.data.getNode("aliases").index or result.group(3).find("alias") >= 0:
+        if result.group(1) in context.data.getNode("aliases").index:
             raise IRCException("cet alias est déjà défini.")
         else:
             alias = ModuleState("alias")
