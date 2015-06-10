@@ -108,16 +108,13 @@ def cmd_alias(msg):
             if alias[0] == "!":
                 alias = alias[1:]
             if alias in context.data.getNode("aliases").index:
-                res.append(Response("!%s correspond à %s" %
-                                    (alias, context.data.getNode("aliases").index[alias]["origin"]),
-                                    channel=msg.channel))
+                res.append("!%s correspond à %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
             else:
-                res.append(Response("!%s n'est pas un alias" % alias,
-                                    channel=msg.channel))
-        return res
+                res.append("!%s n'est pas un alias" % alias)
+        return Response(res, channel=msg.channel, nick=msg.nick)
     else:
         return Response("!alias prend en argument l'alias à étendre.",
-                        channel=msg.channel)
+                        channel=msg.channel, nick=msg.nick)
 
 
 @hook("cmd_hook", "unalias")
