@@ -125,14 +125,9 @@ def cmd_unalias(msg):
             if alias[0] == "!" and len(alias) > 1:
                 alias = alias[1:]
             if alias in context.data.getNode("aliases").index:
-                if context.data.getNode("aliases").index[alias]["creator"] == msg.nick or msg.frm_owner:
-                    context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
-                    res.append(Response("%s a bien été supprimé" % alias,
-                                        channel=msg.channel))
-                else:
-                    res.append(Response("Vous n'êtes pas le createur de "
-                                        "l'alias %s." % alias,
-                                        channel=msg.channel))
+                context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
+                res.append(Response("%s a bien été supprimé" % alias,
+                                    channel=msg.channel))
             else:
                 res.append(Response("%s n'est pas un alias" % alias,
                                     channel=msg.channel))
