@@ -15,10 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import fcntl
+import logging
 import os
 import xml.parsers.expat
 
 from nemubot.datastore.abstract import Abstract
+
+logger = logging.getLogger("nemubot.datastore.xml")
 
 
 class XML(Abstract):
@@ -88,11 +91,28 @@ class XML(Abstract):
         """
 
         data_file = self._get_data_file_path(module)
+
+        # Try to load original file
         if os.path.isfile(data_file):
             from nemubot.tools.xmlparser import parse_file
-            return parse_file(data_file)
-        else:
-            return Abstract.load(self, module)
+            try:
+                return parse_file(data_file)
+            except xml.parsers.expat.ExpatError:
+                # Try to load from backup
+                for i in range(10):
+                    path = data_file + "." + str(i)
+                    if os.path.isfile(path):
+                        try:
+                            cnt = parse_file(path)
+
+                            logger.warn("Restoring from backup: %s", path)
+
+                            return cnt
+                        except xml.parsers.expat.ExpatError:
+                            continue
+
+        # Default case: initialize a new empty datastore
+        return Abstract.load(self, module)
 
     def _rotate(self, path):
         """Backup given path
