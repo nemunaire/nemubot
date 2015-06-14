@@ -222,10 +222,21 @@ class ModuleState:
                              "XML node: %s with %s", self.name, attrs)
 
     def save(self, filename):
-        """Save the current node as root node in a XML file"""
-        with open(filename, "w") as f:
+        """Save the current node as root node in a XML file
+
+        Argument:
+        filename -- location of the file to create/erase
+        """
+
+        import tempfile
+        _, tmpath = tempfile.mkstemp()
+        with open(tmpath, "w") as f:
             import xml.sax.saxutils
             gen = xml.sax.saxutils.XMLGenerator(f, "utf-8")
             gen.startDocument()
             self.save_node(gen)
             gen.endDocument()
+
+        # Atomic save
+        import shutil
+        shutil.move(tmpath, filename)
