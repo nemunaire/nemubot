@@ -30,6 +30,6 @@ def get_hn_info(msg):
     for tag in tags:
       if not tag in json_data.keys():
         raise IRCException("The key '%s' was not found in the JSON retrieved." % tag)
-      response += tag + ": " + json_data[tag] + "\n"
+      response += tag + ": " + str(json_data[tag]) + "\n"
 
     return Response(response, channel=msg.channel, nomore="No more content", count=" (%d more lines)")
