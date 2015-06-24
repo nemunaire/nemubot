@@ -2,9 +2,12 @@
 
 """Various network tools (w3m, w3c validator, curl, traceurl, ...)"""
 
+import logging
+
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 
+logger = logging.getLogger("nemubot.module.networking")
 nemubotversion = 3.4
 
 from more import Response
