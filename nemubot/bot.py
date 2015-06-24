@@ -187,6 +187,10 @@ class Bot(threading.Thread):
         module_src -- The module to which the event is attached to
         """
 
+        if hasattr(self, "stop") and self.stop:
+            logger.warn("The bot is stopped, can't register new events")
+            return
+
         import uuid
 
         # Generate the event id if no given
@@ -356,6 +360,10 @@ class Bot(threading.Thread):
         """Add a module to the context, if already exists, unload the
         old one before"""
         module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+
+        if hasattr(self, "stop") and self.stop:
+            logger.warn("The bot is stopped, can't register new modules")
+            return
 
         # Check if the module already exists
         if module_name in self.modules:
