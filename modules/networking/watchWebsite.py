@@ -1,5 +1,6 @@
 """Alert on changes on websites"""
 
+import logging
 from random import randint
 import urllib.parse
 from urllib.parse import urlparse
@@ -9,6 +10,7 @@ from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 
+logger = logging.getLogger("nemubot.module.networking.watchWebsite")
 nemubotversion = 3.4
 
 from more import Response
@@ -187,9 +189,12 @@ def start_watching(site, offset=0):
     o = urlparse(site["url"], "http")
     #print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
 
-    evt = ModuleEvent(func=lambda url: page.render(url, None),
-                      cmp_data=site["lastcontent"],
-                      func_data=site["url"], offset=offset,
-                      interval=site.getInt("time"),
-                      call=alert_change, call_data=site)
-    site["_evt_id"] = add_event(evt)
+    try:
+        evt = ModuleEvent(func=lambda url: page.render(url, None),
+                          cmp_data=site["lastcontent"],
+                          func_data=site["url"], offset=offset,
+                          interval=site.getInt("time"),
+                          call=alert_change, call_data=site)
+        site["_evt_id"] = add_event(evt)
+    except IRCException:
+        logger.exception("Unable to watch %s", site["url"])
