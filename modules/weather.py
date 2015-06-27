@@ -131,7 +131,7 @@ def get_json_weather(coords):
     wth = web.getJSON(URL_DSAPI % (float(coords[0]), float(coords[1])))
 
     # First read flags
-    if "darksky-unavailable" in wth["flags"]:
+    if wth is None or "darksky-unavailable" in wth["flags"]:
         raise IRCException("The given location is supported but a temporary error (such as a radar station being down for maintenace) made data unavailable.")
 
     return wth
