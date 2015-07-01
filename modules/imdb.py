@@ -92,7 +92,7 @@ def cmd_imdb(msg):
     res.append_message("\x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
                        (data['imdbRating'], data['imdbVotes'], data['Plot']))
 
-    res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02genre:\x0F %s; \x02directed by:\x0F %s; \x02writed by:\x0F %s; \x02main actors:\x0F %s"
+    res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02genre:\x0F %s; \x02directed by:\x0F %s; \x02written by:\x0F %s; \x02main actors:\x0F %s"
                        % (data['Type'], data['Country'], data['Released'], data['Genre'], data['Director'], data['Writer'], data['Actors']))
     return res
 
