@@ -74,6 +74,20 @@ def fetch(url, onNone=_onNoneDefault):
         raise IRCException(e.strerror)
 
 
+def _render(cnt):
+    """Render the page contained in cnt as HTML page"""
+    if cnt is None:
+        return None
+
+    with tempfile.NamedTemporaryFile() as fp:
+        fp.write(cnt.encode())
+
+        args = ["w3m", "-T", "text/html", "-dump"]
+        args.append(fp.name)
+        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            return proc.stdout.read().decode()
+
+
 def render(url, onNone=_onNoneDefault):
     """Use w3m to render the given url
 
@@ -81,16 +95,7 @@ def render(url, onNone=_onNoneDefault):
     url -- the URL to render
     """
 
-    with tempfile.NamedTemporaryFile() as fp:
-        cnt = fetch(url, onNone)
-        if cnt is None:
-            return None
-        fp.write(cnt.encode())
-
-        args = ["w3m", "-T", "text/html", "-dump"]
-        args.append(fp.name)
-        with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-            return proc.stdout.read().decode()
+    return _render(fetch(url, onNone))
 
 
 def traceURL(url, stack=None):
