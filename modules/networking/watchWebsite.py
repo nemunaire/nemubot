@@ -176,6 +176,16 @@ def alert_change(content, site):
     save()
 
 
+def fwatch(url):
+    cnt = page.fetch(url, None)
+    if cnt is not None:
+        render = page._render(cnt)
+        if render is None or render == "":
+            return cnt
+        return render
+    return None
+
+
 def start_watching(site, offset=0):
     """Launch the event watching given site
 
@@ -190,7 +200,7 @@ def start_watching(site, offset=0):
     #print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
 
     try:
-        evt = ModuleEvent(func=lambda url: page.render(url, None),
+        evt = ModuleEvent(func=fwatch,
                           cmp_data=site["lastcontent"],
                           func_data=site["url"], offset=offset,
                           interval=site.getInt("time"),
