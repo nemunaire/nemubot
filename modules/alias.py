@@ -142,12 +142,23 @@ def replace_variables(cnt, msg=None):
         return [replace_variables(c, msg) for c in cnt]
 
     unsetCnt = list()
-    for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9]+)\}", cnt):
-        try:
-            varI = int(res) - 1
-            cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
+    for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9:]+)\}", cnt):
+        rv = re.match("([0-9]+)(:([0-9]*))?", res)
+        if rv is not None:
+            varI = int(rv.group(1)) - 1
+            print(varI, len(msg.args))
+            if varI > len(msg.args):
+                cnt = cnt.replace("${%s}" % res, "", 1)
+            elif rv.group(2) is not None:
+                if rv.group(3) is not None:
+                    varJ = int(rv.group(3)) - 1
+                    cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:varJ]), 1)
+                else:
+                    cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:]), 1)
+            else:
+                cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
             unsetCnt.append(varI)
-        except:
+        else:
             cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
     for u in sorted(unsetCnt, reverse=True):
         msg.args.pop(u)
