@@ -1,6 +1,5 @@
-import re
 from urllib.parse import urlparse
-from bs4 import BeautifulSoup
+import re, json, subprocess
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
@@ -14,7 +13,44 @@ nemubotversion = 3.4
 def help_full():
   return "!yt [<url>]: with an argument, get information about the given link; without arguments, use the latest youtube link seen on the current channel."
 
+def _get_ytdl(links):
+  cmd = 'youtube-dl -j --'.split()
+  cmd.extend(links)
+  res = []
+  with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
+    if p.wait() > 0:
+      raise IRCException("Error while retrieving video information.")
+    for line in p.stdout.read().split(b"\n"):
+      localres = ''
+      if not line:
+        continue
+      info = json.loads(line.decode('utf-8'))
+      if info.get('fulltitle'):
+        localres += info['fulltitle']
+      elif info.get('title'):
+        localres += info['title']
+      else:
+        continue
+      if info.get('duration'):
+        d = info['duration']
+        localres += ' [{0}:{1:06.3f}]'.format(int(d/60), d%60)
+      if info.get('age_limit'):
+        localres += ' [-{}]'.format(info['age_limit'])
+      if info.get('uploader'):
+        localres += ' by {}'.format(info['uploader'])
+      if info.get('upload_date'):
+        localres += ' on {}'.format(info['upload_date'])
+      if info.get('description'):
+        localres += ': ' +  info['description']
+      if info.get('webpage_url'):
+        localres += ' | ' +  info['webpage_url']
+      res.append(localres)
+  if not res:
+    raise IRCException("No video information to retrieve about this. Sorry!")
+  return res
+
 LAST_URLS = dict()
+
 
 @hook("cmd_hook", "yt")
 def get_info_yt(msg):
@@ -30,22 +66,10 @@ def get_info_yt(msg):
     for url in msg.args:
       links.append(url)
 
-  titles = list()
-  descrip = list()
-  for url in links:
-    if not re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", url):
-      url = "http://youtube.com/watch?v=" + url
-    soup = BeautifulSoup(getURLContent(url))
-    shortlink = soup.head.find("link", rel="shortlink")
-    titl = soup.body.find(id='eow-title')
-    titles.append("%s : %s" % (shortlink["href"], titl.text.strip()))
-    desc = soup.body.find(id='eow-description')
-    descrip.append(desc.text.strip())
+  data = _get_ytdl(links)
   res = Response(channel=msg.channel)
-  if len(titles) > 0:
-    res.append_message(titles)
-    for d in descrip:
-      res.append_message(d)
+  for msg in data:
+    res.append_message(msg)
   return res
 
 
@@ -64,9 +88,7 @@ def parseresponse(msg):
       if o.scheme != "":
         if o.netloc == "" and len(o.path) < 10:
           continue
-        if (o.netloc == "youtube.com" or o.netloc == "www.youtube.com" or
-            o.netloc == "youtu.be" or o.netloc == "www.youtu.be"):
-          if msg.channel not in LAST_URLS:
-            LAST_URLS[msg.channel] = list()
-          LAST_URLS[msg.channel].append(url)
+        if msg.channel not in LAST_URLS:
+          LAST_URLS[msg.channel] = list()
+        LAST_URLS[msg.channel].append(url)
     return msg

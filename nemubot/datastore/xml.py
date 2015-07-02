@@ -14,17 +14,31 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import fcntl, os
+import fcntl
+import logging
+import os
+import xml.parsers.expat
 
 from nemubot.datastore.abstract import Abstract
+
+logger = logging.getLogger("nemubot.datastore.xml")
 
 
 class XML(Abstract):
 
     """A concrete implementation of a data store that relies on XML files"""
 
-    def __init__(self, basedir):
+    def __init__(self, basedir, rotate=True):
+        """Initialize the datastore
+
+        Arguments:
+        basedir -- path to directory containing XML files
+        rotate -- auto-backup files?
+        """
+
         self.basedir = basedir
+        self.rotate = rotate
+        self.nb_save = 0
 
     def open(self):
         """Lock the directory"""
@@ -77,11 +91,44 @@ class XML(Abstract):
         """
 
         data_file = self._get_data_file_path(module)
+
+        # Try to load original file
         if os.path.isfile(data_file):
             from nemubot.tools.xmlparser import parse_file
-            return parse_file(data_file)
-        else:
-            return Abstract.load(self, module)
+            try:
+                return parse_file(data_file)
+            except xml.parsers.expat.ExpatError:
+                # Try to load from backup
+                for i in range(10):
+                    path = data_file + "." + str(i)
+                    if os.path.isfile(path):
+                        try:
+                            cnt = parse_file(path)
+
+                            logger.warn("Restoring from backup: %s", path)
+
+                            return cnt
+                        except xml.parsers.expat.ExpatError:
+                            continue
+
+        # Default case: initialize a new empty datastore
+        return Abstract.load(self, module)
+
+    def _rotate(self, path):
+        """Backup given path
+
+        Argument:
+        path -- location of the file to backup
+        """
+
+        self.nb_save += 1
+
+        for i in range(10):
+            if self.nb_save % (1 << i) == 0:
+                src = path + "." + str(i-1) if i != 0 else path
+                dst = path + "." + str(i)
+                if os.path.isfile(src):
+                    os.rename(src, dst)
 
     def save(self, module, data):
         """Load data for the given module
@@ -91,4 +138,9 @@ class XML(Abstract):
         data -- the new data to save
         """
 
-        return data.save(self._get_data_file_path(module))
+        path = self._get_data_file_path(module)
+
+        if self.rotate:
+            self._rotate(path)
+
+        return data.save(path)

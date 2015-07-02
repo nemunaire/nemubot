@@ -17,6 +17,7 @@ from more import Response
 URL_API = None # http://www.velib.paris.fr/service/stationdetails/paris/%s
 
 def load(context):
+    global URL_API
     if not context.config or not context.config.hasAttribute("url"):
         raise ImportError("Please provide url attribute in the module configuration")
     URL_API = context.config["url"]

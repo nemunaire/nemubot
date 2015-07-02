@@ -108,16 +108,13 @@ def cmd_alias(msg):
             if alias[0] == "!":
                 alias = alias[1:]
             if alias in context.data.getNode("aliases").index:
-                res.append(Response("!%s correspond à %s" %
-                                    (alias, context.data.getNode("aliases").index[alias]["origin"]),
-                                    channel=msg.channel))
+                res.append("!%s correspond à %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
             else:
-                res.append(Response("!%s n'est pas un alias" % alias,
-                                    channel=msg.channel))
-        return res
+                res.append("!%s n'est pas un alias" % alias)
+        return Response(res, channel=msg.channel, nick=msg.nick)
     else:
         return Response("!alias prend en argument l'alias à étendre.",
-                        channel=msg.channel)
+                        channel=msg.channel, nick=msg.nick)
 
 
 @hook("cmd_hook", "unalias")
@@ -128,14 +125,9 @@ def cmd_unalias(msg):
             if alias[0] == "!" and len(alias) > 1:
                 alias = alias[1:]
             if alias in context.data.getNode("aliases").index:
-                if context.data.getNode("aliases").index[alias]["creator"] == msg.nick or msg.frm_owner:
-                    context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
-                    res.append(Response("%s a bien été supprimé" % alias,
-                                        channel=msg.channel))
-                else:
-                    res.append(Response("Vous n'êtes pas le createur de "
-                                        "l'alias %s." % alias,
-                                        channel=msg.channel))
+                context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
+                res.append(Response("%s a bien été supprimé" % alias,
+                                    channel=msg.channel))
             else:
                 res.append(Response("%s n'est pas un alias" % alias,
                                     channel=msg.channel))
@@ -177,17 +169,17 @@ def treat_alias(msg):
 
         # Avoid infinite recursion
         if msg.cmd != nmsg.cmd:
-            return nmsg
+            # Also return origin message, if it can be treated as well
+            return [msg, nmsg]
 
     return msg
 
 
 @hook("ask_default")
 def parseask(msg):
-    global ALIAS
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
-        if result.group(1) in context.data.getNode("aliases").index or result.group(3).find("alias") >= 0:
+        if result.group(1) in context.data.getNode("aliases").index:
             raise IRCException("cet alias est déjà défini.")
         else:
             alias = ModuleState("alias")
