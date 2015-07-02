@@ -16,11 +16,10 @@ def getRequestedTags(tags, data):
   if isinstance(data, list):
     for element in data:
       repdata = getRequestedTags(tags, element)
-      if repdata:
-        if response:
-          response = response + "\n" + repdata
-        else:
-          response = repdata
+      if response:
+        response = response + "\n" + repdata
+      else:
+        response = repdata
   else:
     for tag in tags:
       if tag in data.keys():
@@ -55,7 +54,7 @@ def get_json_info(msg):
     if len(msg.cmds) == 2:
       raise IRCException("Please specify the keys to return (%s)" % ", ".join(getJsonKeys(json_data)))
 
-    tags = msg.cmds[2].split(',')
+    tags = ','.join(msg.cmds[2:]).split(',')
     response = getRequestedTags(tags, json_data)
 
     return Response(response, channel=msg.channel, nomore="No more content", count=" (%d more lines)")
