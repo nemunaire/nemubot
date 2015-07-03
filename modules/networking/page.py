@@ -31,6 +31,8 @@ def headers(url):
     try:
         conn.request("HEAD", o.path, None, {"User-agent":
                                             "Nemubot v%s" % __version__})
+    except ConnectionError as e:
+        raise IRCException(e.strerror)
     except socket.timeout:
         raise IRCException("request timeout")
     except socket.gaierror:
@@ -68,6 +70,8 @@ def fetch(url, onNone=_onNoneDefault):
                 return onNone()
             else:
                 return None
+    except ConnectionError as e:
+        raise IRCException(e.strerror)
     except socket.timeout:
         raise IRCException("The request timeout when trying to access the page")
     except socket.error as e:
