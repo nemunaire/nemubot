@@ -85,11 +85,15 @@ class Bot(threading.Thread):
                 if msg.args[0] in self.modules:
                     if len(msg.args) >= 2:
                         if hasattr(self.modules[msg.args[0]], "HELP_cmd"):
-                            res.append_message(self.modules[msg.args[0]].HELP_cmd(msg.args[1]))
+                            return self.modules[msg.args[0]].HELP_cmd(msg.args[1])
                         else:
                             res.append_message("No help for command %s in module %s" % (msg.args[1], msg.args[0]))
                     elif hasattr(self.modules[msg.args[0]], "help_full"):
-                        res.append_message(self.modules[msg.args[0]].help_full())
+                        hlp = self.modules[msg.args[0]].help_full()
+                        if isinstance(hlp, Response):
+                            return hlp
+                        else:
+                            res.append_message(hlp)
                     else:
                         res.append_message("No help for module %s" % msg.args[0])
                 else:
