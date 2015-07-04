@@ -81,9 +81,9 @@ class Bot(threading.Thread):
             """Parse and response to help messages"""
             from more import Response
             res = Response(channel=msg.frm)
-            if len(msg.args) > 1:
+            if len(msg.args) >= 1:
                 if msg.args[0] in self.modules:
-                    if len(msg.args) > 2:
+                    if len(msg.args) >= 2:
                         if hasattr(self.modules[msg.args[0]], "HELP_cmd"):
                             res.append_message(self.modules[msg.args[0]].HELP_cmd(msg.args[1]))
                         else:
