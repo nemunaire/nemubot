@@ -83,7 +83,7 @@ def getURLContent(url, timeout=15):
     elif o.scheme is None or o.scheme == "":
         conn = http.client.HTTPConnection(o.hostname, port=80, timeout=timeout)
     else:
-        return None
+        raise IRCException("Invalid URL")
 
     import socket
     try:
@@ -94,14 +94,8 @@ def getURLContent(url, timeout=15):
         else:
             conn.request("GET", o.path, None, {"User-agent":
                                                "Nemubot v%s" % __version__})
-    except socket.timeout:
-        return None
-    except OSError: # [Errno 113] No route to host
-        return None
-    except socket.gaierror:
-        print ("<tools.web> Unable to receive page %s on %s from %s."
-               % (o.path, o.netloc, url))
-        return None
+    except OSError as e:
+        raise IRCException(e.strerror)
 
     try:
         res = conn.getresponse()
@@ -109,7 +103,7 @@ def getURLContent(url, timeout=15):
         cntype = res.getheader("Content-Type")
 
         if size > 524288 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
-            return None
+            raise IRCException("Content too large to be retrieved")
 
         data = res.read(size)
 

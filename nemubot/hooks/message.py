@@ -24,11 +24,10 @@ class Message(Abstract):
 
     """Class storing hook information, specialized for a generic Message"""
 
-    def __init__(self, call, name=None, data=None, regexp=None,
-                 channels=list(), server=None, mtimes=-1, end_call=None):
+    def __init__(self, call, name=None, regexp=None, channels=list(),
+                 server=None, **kargs):
 
-        Abstract.__init__(self, call=call, data=data,
-                          end_call=end_call, mtimes=mtimes)
+        Abstract.__init__(self, call=call, **kargs)
 
         self.name = name
         self.regexp = regexp

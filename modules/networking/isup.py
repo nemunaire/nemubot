@@ -14,7 +14,7 @@ def isup(url):
         o = urllib.parse.urlparse("http://" + url)
     if o.netloc != "":
         isup = getJSON("http://isitup.org/%s.json" % o.netloc)
-        if "status_code" in isup and isup["status_code"] == 1:
+        if isup is not None and "status_code" in isup and isup["status_code"] == 1:
             return isup["response_time"]
 
     return None
