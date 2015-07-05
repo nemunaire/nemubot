@@ -17,11 +17,14 @@ def help_full ():
 @hook("cmd_hook", "ratp")
 def ask_ratp(msg):
     """Hook entry from !ratp"""
-    if len(msg.cmds) == 4:
+    if len(msg.cmds) >= 4:
         transport = msg.cmds[1]
         line = msg.cmds[2]
         station = msg.cmds[3]
-        times = ratp.getNextStopsAtStation(transport, line, station)
+        if len(msg.cmds) == 5:
+            times = ratp.getNextStopsAtStation(transport, line, station, msg.cmds[4])
+        else:
+            times = ratp.getNextStopsAtStation(transport, line, station)
 
         if len(times) == 0:
             raise IRCException("la station %s n'existe pas sur le %s ligne %s." % (station, transport, line))
