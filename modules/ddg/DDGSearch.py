@@ -8,12 +8,12 @@ from nemubot.tools.xmlparser import parse_string
 
 class DDGSearch:
 
-    def __init__(self, terms):
+    def __init__(self, terms, safeoff=False):
         self.terms = terms
 
         self.ddgres = web.getXML(
-            "https://api.duckduckgo.com/?q=%s&format=xml&no_redirect=1" %
-            quote(terms),
+            "https://api.duckduckgo.com/?q=%s&format=xml&no_redirect=1%s" %
+            (quote(terms), "&kp=-1" if safeoff else ""),
             timeout=10)
 
     @property
