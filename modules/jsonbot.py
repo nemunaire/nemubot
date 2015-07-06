@@ -46,7 +46,7 @@ def get_json_info(msg):
     if len(msg.cmds) < 2:
       raise IRCException("Please specify a url and a list of JSON keys.")
 
-    request_data = web.getURLContent(msg.cmds[1])
+    request_data = web.getURLContent(msg.cmds[1].replace(' ', "%20"))
     if not request_data:
       raise IRCException("Please specify a valid url.")
     json_data = json.loads(request_data)
