@@ -1,35 +1,33 @@
-import urllib.request
 from bs4 import BeautifulSoup
+from urllib.parse import quote
+
 from nemubot.hooks import hook
+from nemubot.tools.web import getURLContent
 from more import Response
 
-nemubotversion = 3.4
+"""CVE description"""
 
-def help_tiny():
-  return "CVE description"
+nemubotversion = 4.0
 
-def help_full():
-  return "No help "
+BASEURL_MITRE = 'http://cve.mitre.org/cgi-bin/cvename.cgi?name='
 
+
+def get_cve(cve_id):
+    search_url = BASEURL_MITRE + quote(cve_id.upper())
+
+    soup = BeautifulSoup(getURLContent(search_url))
+    desc = soup.body.findAll('td')
+
+    return desc[17].text.replace("\n", " ") + " Moar at " + search_url
 
 @hook("cmd_hook", "cve")
 def get_cve_desc(msg):
-  DESC_INDEX = 17
-  BASEURL_MITRE = 'http://cve.mitre.org/cgi-bin/cvename.cgi?name='
+    res = Response(channel=msg.channel)
 
-  cve_id = ''
+    for cve_id in msg.args:
+        if cve_id[:3].lower() != 'cve':
+            cve_id = 'cve-' + cve_id
 
-  if msg.cmds[1][:3].lower() == 'cve':
-    cve_id = msg.cmds[1]
+        res.append_message(get_cve(cve_id))
 
-  else:
-    cve_id = 'cve-' + msg.cmds[1]
-
-  search_url = BASEURL_MITRE + cve_id.upper()
-
-  url = urllib.request.urlopen(search_url)
-  soup = BeautifulSoup(url)
-
-  desc = soup.body.findAll('td')
-
-  return Response(desc[DESC_INDEX].text.replace("\n", " ") + " Moar at " + search_url, msg.channel)
+    return res
