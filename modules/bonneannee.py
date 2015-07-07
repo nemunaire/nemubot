@@ -9,7 +9,7 @@ from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 from more import Response
 
@@ -54,7 +54,7 @@ def cmd_newyear(msg, yr):
 
 @hook("cmd_rgxp", data=yrn, regexp="^[0-9]{4}$")
 def cmd_timetoyear(msg, cur):
-    yr = int(msg.cmds[0])
+    yr = int(msg.cmd)
 
     if yr == cur:
         return None
