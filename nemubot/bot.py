@@ -192,7 +192,7 @@ class Bot(threading.Thread):
         """
 
         if self.stop:
-            log.warn("The bot is stopped, can't register new events")
+            logger.warn("The bot is stopped, can't register new events")
             return
 
         import uuid
