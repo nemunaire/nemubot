@@ -22,14 +22,14 @@ LAST_SUBS = dict()
 @hook("cmd_hook", "subreddit")
 def cmd_subreddit(msg):
     global LAST_SUBS
-    if len(msg.cmds) <= 1:
+    if not len(msg.args):
         if msg.channel in LAST_SUBS and len(LAST_SUBS[msg.channel]) > 0:
             subs = [LAST_SUBS[msg.channel].pop()]
         else:
             raise IRCException("Which subreddit? Need inspiration? "
                                "type !horny or !bored")
     else:
-        subs = msg.cmds[1:]
+        subs = msg.args
 
     all_res = list()
     for osub in subs:

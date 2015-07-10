@@ -49,12 +49,12 @@ def send_sms(frm, api_usr, api_key, content):
 
 @hook("cmd_hook", "sms")
 def cmd_sms(msg):
-    if len(msg.cmds) <= 2:
+    if not len(msg.args):
         raise IRCException("À qui veux-tu envoyer ce SMS ?")
 
     # Check dests
     cur_epoch = time.mktime(time.localtime());
-    for u in msg.cmds[1].split(","):
+    for u in msg.args[0].split(","):
         if u not in context.data.index:
             raise IRCException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
         elif cur_epoch - float(context.data.index[u]["lastuse"]) < 42:
@@ -62,13 +62,13 @@ def cmd_sms(msg):
 
     # Go!
     fails = list()
-    for u in msg.cmds[1].split(","):
+    for u in msg.args[0].split(","):
         context.data.index[u]["lastuse"] = cur_epoch
         if msg.to_response[0] == msg.frm:
             frm = msg.frm
         else:
             frm = msg.frm + "@" + msg.to[0]
-        test = send_sms(frm, context.data.index[u]["user"], context.data.index[u]["key"], " ".join(msg.cmds[2:]))
+        test = send_sms(frm, context.data.index[u]["user"], context.data.index[u]["key"], " ".join(msg.args[1:]))
         if test is not None:
             fails.append( "%s: %s" % (u, test) )
 

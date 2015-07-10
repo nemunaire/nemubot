@@ -78,11 +78,11 @@ def print_station_status(msg, station):
 @hook("cmd_hook", "velib")
 def ask_stations(msg):
     """Hook entry from !velib"""
-    if len(msg.cmds) > 5:
+    if len(msg.args) > 4:
         raise IRCException("demande-moi moins de stations à la fois.")
 
-    elif len(msg.cmds) > 1:
-        for station in msg.cmds[1:]:
+    elif len(msg.args):
+        for station in msg.args:
             if re.match("^[0-9]{4,5}$", station):
                 return print_station_status(msg, station)
             elif station in context.data.index:

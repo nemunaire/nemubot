@@ -14,9 +14,9 @@ from more import Response
 
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):
-    if len(msg.cmds) > 1:
-        return Response(random.choice(msg.cmds[1:]),
-                        channel=msg.channel,
-                        nick=msg.nick)
-    else:
+    if not len(msg.args):
         raise IRCException("indicate some terms to pick!")
+
+    return Response(random.choice(msg.args),
+                    channel=msg.channel,
+                    nick=msg.nick)

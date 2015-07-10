@@ -139,27 +139,27 @@ def search(site, term, ssl=False):
 @hook("cmd_hook", "mediawiki")
 def cmd_mediawiki(msg):
     """Read an article on a MediaWiki"""
-    if len(msg.cmds) < 3:
+    if len(msg.args) < 2:
         raise IRCException("indicate a domain and a term to search")
 
-    site = msg.cmds[1]
+    site = msg.args[0]
 
     ns = get_namespaces(site)
 
-    return Response(get_page(site, " ".join(msg.cmds[2:])),
-                    line_treat=lambda line: irc_format(parse_wikitext(msg.cmds[1], line, ns)),
+    return Response(get_page(site, " ".join(msg.args[1:])),
+                    line_treat=lambda line: irc_format(parse_wikitext(msg.args[0], line, ns)),
                     channel=msg.receivers)
 
 
 @hook("cmd_hook", "search_mediawiki")
 def cmd_srchmediawiki(msg):
     """Search an article on a MediaWiki"""
-    if len(msg.cmds) < 3:
+    if len(msg.args) < 2:
         raise IRCException("indicate a domain and a term to search")
 
     res = Response(channel=msg.receivers, nomore="No more results", count=" (%d more results)")
 
-    for r in search(msg.cmds[1], " ".join(msg.cmds[2:])):
+    for r in search(msg.args[0], " ".join(msg.args[1:])):
         res.append_message("%s: %s" % r)
 
     return res
@@ -167,13 +167,13 @@ def cmd_srchmediawiki(msg):
 
 @hook("cmd_hook", "wikipedia")
 def cmd_wikipedia(msg):
-    if len(msg.cmds) < 3:
+    if len(msg.args) < 2:
         raise IRCException("indicate a lang and a term to search")
 
-    site = msg.cmds[1] + ".wikipedia.org"
+    site = msg.args[0] + ".wikipedia.org"
 
     ns = get_namespaces(site)
 
-    return Response(get_page(site, " ".join(msg.cmds[2:])),
+    return Response(get_page(site, " ".join(msg.args[1:])),
                     line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
                     channel=msg.receivers)

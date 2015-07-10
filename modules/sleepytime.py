@@ -21,10 +21,10 @@ def help_full():
 
 @hook("cmd_hook", "sleepytime")
 def cmd_sleep(msg):
-    if len(msg.cmds) > 1 and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
-                                      msg.cmds[1]) is not None:
+    if len(msg.args) and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
+                                  msg.args[0]) is not None:
         # First, parse the hour
-        p = re.match("([0-9]{1,2})[h':.,-]([0-9]{1,2})?[m':.,-]?", msg.cmds[1])
+        p = re.match("([0-9]{1,2})[h':.,-]([0-9]{1,2})?[m':.,-]?", msg.args[0])
         f = [datetime(datetime.now(timezone.utc).year,
                       datetime.now(timezone.utc).month,
                       datetime.now(timezone.utc).day,

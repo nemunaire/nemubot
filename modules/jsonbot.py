@@ -43,18 +43,18 @@ def getJsonKeys(data):
 
 @hook("cmd_hook", "json")
 def get_json_info(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
       raise IRCException("Please specify a url and a list of JSON keys.")
 
-    request_data = web.getURLContent(msg.cmds[1].replace(' ', "%20"))
+    request_data = web.getURLContent(msg.args[0].replace(' ', "%20"))
     if not request_data:
       raise IRCException("Please specify a valid url.")
     json_data = json.loads(request_data)
 
-    if len(msg.cmds) == 2:
+    if len(msg.args) == 1:
       raise IRCException("Please specify the keys to return (%s)" % ", ".join(getJsonKeys(json_data)))
 
-    tags = ','.join(msg.cmds[2:]).split(',')
+    tags = ','.join(msg.args[1:]).split(',')
     response = getRequestedTags(tags, json_data)
 
     return Response(response, channel=msg.channel, nomore="No more content", count=" (%d more lines)")

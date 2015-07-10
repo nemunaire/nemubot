@@ -17,12 +17,12 @@ def help_full ():
 @hook("cmd_hook", "ratp")
 def ask_ratp(msg):
     """Hook entry from !ratp"""
-    if len(msg.cmds) >= 4:
-        transport = msg.cmds[1]
-        line = msg.cmds[2]
-        station = msg.cmds[3]
-        if len(msg.cmds) == 5:
-            times = ratp.getNextStopsAtStation(transport, line, station, msg.cmds[4])
+    if len(msg.args) >= 3:
+        transport = msg.args[0]
+        line = msg.args[1]
+        station = msg.args[2]
+        if len(msg.args) == 4:
+            times = ratp.getNextStopsAtStation(transport, line, station, msg.args[3])
         else:
             times = ratp.getNextStopsAtStation(transport, line, station)
 
@@ -34,8 +34,8 @@ def ask_ratp(msg):
                         title="Prochains passages du %s ligne %s à l'arrêt %s" % (transport, line, stationname),
                         channel=msg.channel)
 
-    elif len(msg.cmds) == 3:
-        stations = ratp.getAllStations(msg.cmds[1], msg.cmds[2])
+    elif len(msg.args) == 2:
+        stations = ratp.getAllStations(msg.args[0], msg.args[1])
 
         if len(stations) == 0:
             raise IRCException("aucune station trouvée.")
@@ -46,9 +46,9 @@ def ask_ratp(msg):
 
 @hook("cmd_hook", "ratp_alert")
 def ratp_alert(msg):
-    if len(msg.cmds) == 3:
-        transport = msg.cmds[1]
-        cause  = msg.cmds[2]
+    if len(msg.args) == 2:
+        transport = msg.args[0]
+        cause  = msg.args[1]
         incidents = ratp.getDisturbance(cause, transport)
         return Response(incidents, channel=msg.channel, nomore="No more incidents", count=" (%d more incidents)")
     else:

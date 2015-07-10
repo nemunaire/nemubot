@@ -64,25 +64,25 @@ def cmd_we(msg):
 @hook("cmd_hook", "start")
 def start_countdown(msg):
     """!start /something/: launch a timer"""
-    if len(msg.cmds) < 2:
+    if len(msg.args) < 1:
         raise IRCException("indique le nom d'un événement à chronométrer")
-    if msg.cmds[1] in context.data.index:
-        raise IRCException("%s existe déjà." % msg.cmds[1])
+    if msg.args[0] in context.data.index:
+        raise IRCException("%s existe déjà." % msg.args[0])
 
     strnd = ModuleState("strend")
     strnd["server"] = msg.server
     strnd["channel"] = msg.channel
     strnd["proprio"] = msg.nick
     strnd["start"] = msg.date
-    strnd["name"] = msg.cmds[1]
+    strnd["name"] = msg.args[0]
     context.data.addChild(strnd)
 
     evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
 
-    if len(msg.cmds) > 2:
-        result1 = re.findall("([0-9]+)([smhdjwyaSMHDJWYA])?", msg.cmds[2])
-        result2 = re.match("(.*[^0-9])?([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.cmds[2])
-        result3 = re.match("(.*[^0-9])?([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.cmds[2])
+    if len(msg.args) > 1:
+        result1 = re.findall("([0-9]+)([smhdjwyaSMHDJWYA])?", msg.args[1])
+        result2 = re.match("(.*[^0-9])?([0-3]?[0-9])/([0-1]?[0-9])/((19|20)?[01239][0-9])", msg.args[1])
+        result3 = re.match("(.*[^0-9])?([0-2]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?", msg.args[1])
         if result2 is not None or result3 is not None:
             try:
                 now = msg.date
@@ -107,7 +107,7 @@ def start_countdown(msg):
                 strnd["_id"] = context.add_event(evt)
             except:
                 context.data.delChild(strnd)
-                raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.cmds[1])
+                raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
 
         elif result1 is not None and len(result1) > 0:
             strnd["end"] = msg.date
@@ -132,39 +132,39 @@ def start_countdown(msg):
     context.save()
     if "end" in strnd:
         return Response("%s commencé le %s et se terminera le %s." %
-                        (msg.cmds[1], msg.date.strftime("%A %d %B %Y à %H:%M:%S"),
+                        (msg.args[0], msg.date.strftime("%A %d %B %Y à %H:%M:%S"),
                          strnd.getDate("end").strftime("%A %d %B %Y à %H:%M:%S")),
                         nick=msg.frm)
     else:
-        return Response("%s commencé le %s"% (msg.cmds[1],
+        return Response("%s commencé le %s"% (msg.args[0],
                             msg.date.strftime("%A %d %B %Y à %H:%M:%S")),
                         nick=msg.frm)
 
 @hook("cmd_hook", "end")
 @hook("cmd_hook", "forceend")
 def end_countdown(msg):
-    if len(msg.cmds) < 2:
+    if len(msg.args) < 1:
         raise IRCException("quel événement terminer ?")
 
-    if msg.cmds[1] in context.data.index:
-        if context.data.index[msg.cmds[1]]["proprio"] == msg.nick or (msg.cmds[0] == "forceend" and msg.frm_owner):
-            duration = countdown(msg.date - context.data.index[msg.cmds[1]].getDate("start"))
-            context.del_event(context.data.index[msg.cmds[1]]["_id"])
-            context.data.delChild(context.data.index[msg.cmds[1]])
+    if msg.args[0] in context.data.index:
+        if context.data.index[msg.args[0]]["proprio"] == msg.nick or (msg.cmd == "forceend" and msg.frm_owner):
+            duration = countdown(msg.date - context.data.index[msg.args[0]].getDate("start"))
+            context.del_event(context.data.index[msg.args[0]]["_id"])
+            context.data.delChild(context.data.index[msg.args[0]])
             context.save()
-            return Response("%s a duré %s." % (msg.cmds[1], duration),
+            return Response("%s a duré %s." % (msg.args[0], duration),
                             channel=msg.channel, nick=msg.nick)
         else:
-            raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.cmds[1], context.data.index[msg.cmds[1]]["proprio"]))
+            raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data.index[msg.args[0]]["proprio"]))
     else:
-        return Response("%s n'est pas un compteur connu."% (msg.cmds[1]), channel=msg.channel, nick=msg.nick)
+        return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.nick)
 
 @hook("cmd_hook", "eventslist")
 def liste(msg):
     """!eventslist: gets list of timer"""
-    if len(msg.cmds) > 1:
+    if len(msg.args):
         res = list()
-        for user in msg.cmds[1:]:
+        for user in msg.args:
             cmptr = [x["name"] for x in context.data.index.values() if x["proprio"] == user]
             if len(cmptr) > 0:
                 res.append("Compteurs créés par %s : %s" % (user, ", ".join(cmptr)))
@@ -176,20 +176,20 @@ def liste(msg):
 
 @hook("cmd_default")
 def parseanswer(msg):
-    if msg.cmds[0] in context.data.index:
+    if msg.cmd in context.data.index:
         res = Response(channel=msg.channel)
 
         # Avoid message starting by ! which can be interpreted as command by other bots
-        if msg.cmds[0][0] == "!":
+        if msg.cmd[0] == "!":
             res.nick = msg.nick
 
-        if context.data.index[msg.cmds[0]].name == "strend":
-            if context.data.index[msg.cmds[0]].hasAttribute("end"):
-                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmds[0], countdown(msg.date - context.data.index[msg.cmds[0]].getDate("start")), countdown(context.data.index[msg.cmds[0]].getDate("end") - msg.date)))
+        if context.data.index[msg.cmd].name == "strend":
+            if context.data.index[msg.cmd].hasAttribute("end"):
+                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start")), countdown(context.data.index[msg.cmd].getDate("end") - msg.date)))
             else:
-                res.append_message("%s commencé il y a %s." % (msg.cmds[0], countdown(msg.date - context.data.index[msg.cmds[0]].getDate("start"))))
+                res.append_message("%s commencé il y a %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start"))))
         else:
-            res.append_message(countdown_format(context.data.index[msg.cmds[0]].getDate("start"), context.data.index[msg.cmds[0]]["msg_before"], context.data.index[msg.cmds[0]]["msg_after"]))
+            res.append_message(countdown_format(context.data.index[msg.cmd].getDate("start"), context.data.index[msg.cmd]["msg_before"], context.data.index[msg.cmd]["msg_after"]))
         return res
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)

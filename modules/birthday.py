@@ -30,11 +30,11 @@ def help_full():
 
 
 def findName(msg):
-    if (len(msg.cmds) < 2 or msg.cmds[1].lower() == "moi" or
-        msg.cmds[1].lower() == "me"):
+    if (not len(msg.args) or msg.args[0].lower() == "moi" or
+        msg.args[0].lower() == "me"):
         name = msg.nick.lower()
     else:
-        name = msg.cmds[1].lower()
+        name = msg.args[0].lower()
 
     matches = []
 

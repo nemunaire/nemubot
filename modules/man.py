@@ -23,15 +23,15 @@ RGXP_s = re.compile(b'\x1b\\[[0-9]+m')
 def cmd_man(msg):
     args = ["man"]
     num = None
-    if len(msg.cmds) == 2:
-        args.append(msg.cmds[1])
-    elif len(msg.cmds) >= 3:
+    if len(msg.args) == 1:
+        args.append(msg.args[0])
+    elif len(msg.args) >= 2:
         try:
-            num = int(msg.cmds[1])
+            num = int(msg.args[0])
             args.append("%d" % num)
-            args.append(msg.cmds[2])
+            args.append(msg.args[1])
         except ValueError:
-            args.append(msg.cmds[1])
+            args.append(msg.args[0])
 
     os.unsetenv("LANG")
     res = Response(channel=msg.channel)
@@ -45,16 +45,16 @@ def cmd_man(msg):
     if len(res.messages) <= 0:
         if num is not None:
             res.append_message("There is no entry %s in section %d." %
-                               (msg.cmds[1], num))
+                               (msg.args[0], num))
         else:
-            res.append_message("There is no man page for %s." % msg.cmds[1])
+            res.append_message("There is no man page for %s." % msg.args[0])
 
     return res
 
 
 @hook("cmd_hook", "man")
 def cmd_whatis(msg):
-    args = ["whatis", " ".join(msg.cmds[1:])]
+    args = ["whatis", " ".join(msg.args)]
 
     res = Response(channel=msg.channel)
     with subprocess.Popen(args,
@@ -67,8 +67,8 @@ def cmd_whatis(msg):
     if len(res.messages) <= 0:
         if num is not None:
             res.append_message("There is no entry %s in section %d." %
-                               (msg.cmds[1], num))
+                               (msg.args[0], num))
         else:
-            res.append_message("There is no man page for %s." % msg.cmds[1])
+            res.append_message("There is no man page for %s." % msg.args[0])
 
     return res

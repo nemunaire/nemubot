@@ -11,7 +11,7 @@ from more import Response
 nemubotversion = 3.4
 
 def help_full():
-  return "!yt [<url>]: with an argument, get information about the given link; without arguments, use the latest youtube link seen on the current channel."
+  return "!yt [<url>]: with an argument, get information about the given link; without arguments, use the latest link seen on the current channel."
 
 def _get_ytdl(links):
   cmd = 'youtube-dl -j --'.split()
@@ -82,13 +82,14 @@ def parselisten(msg):
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
-    urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
-    for url in urls:
-      o = urlparse(url)
-      if o.scheme != "":
-        if o.netloc == "" and len(o.path) < 10:
-          continue
-        if msg.channel not in LAST_URLS:
-          LAST_URLS[msg.channel] = list()
-        LAST_URLS[msg.channel].append(url)
+    if hasattr(msg, "text"):
+      urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
+      for url in urls:
+        o = urlparse(url)
+        if o.scheme != "":
+          if o.netloc == "" and len(o.path) < 10:
+            continue
+          if msg.channel not in LAST_URLS:
+            LAST_URLS[msg.channel] = list()
+          LAST_URLS[msg.channel].append(url)
     return msg
