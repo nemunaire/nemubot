@@ -14,10 +14,10 @@ def help_full():
 
 @hook("cmd_hook", "laposte")
 def get_tracking_info(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("Renseignez un identifiant d'envoi,")
 
-    data = urllib.parse.urlencode({'id': msg.cmds[1]})
+    data = urllib.parse.urlencode({'id': msg.args[0]})
     laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
 
     laposte_data = urllib.request.urlopen(laposte_baseurl, data.encode('utf-8'))
@@ -42,4 +42,3 @@ def get_tracking_info(msg):
 
        return Response("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement \x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F)." % (poste_type.lower(), poste_id.strip(), poste_status.lower(), poste_location, poste_date), msg.channel)
     return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
-

@@ -71,10 +71,10 @@ def find_movies(title):
 @hook("cmd_hook", "imdb")
 def cmd_imdb(msg):
     """View movie details with !imdb <title>"""
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("precise a movie/serie title!")
 
-    title = ' '.join(msg.cmds[1:])
+    title = ' '.join(msg.args)
 
     if re.match("^tt[0-9]{7}$", title) is not None:
         data = get_movie(imdbid=title)
@@ -100,8 +100,10 @@ def cmd_imdb(msg):
 @hook("cmd_hook", "imdbs")
 def cmd_search(msg):
     """!imdbs <approximative title> to search a movie title"""
+    if not len(msg.args):
+        raise IRCException("precise a movie/serie title!")
 
-    data = find_movies(' '.join(msg.cmds[1:]))
+    data = find_movies(' '.join(msg.args))
 
     movies = list()
     for m in data['Search']:

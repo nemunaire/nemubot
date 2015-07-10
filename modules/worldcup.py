@@ -48,12 +48,12 @@ def cmd_watch(msg):
             node = n
             break
 
-    if len(msg.cmds) >= 2:
-        if msg.cmds[1] == "stop" and node is not None:
+    if len(msg.args):
+        if msg.args[0] == "stop" and node is not None:
             context.data.delChild(node)
             context.save()
             raise IRCException("This channel will not anymore receives world cup events.")
-        elif msg.cmds[1] == "start" and node is None:
+        elif msg.args[0] == "start" and node is None:
             start_watch(msg)
         else:
             raise IRCException("Use only start or stop as first argument")
@@ -180,20 +180,19 @@ def get_matches(url):
 @hook("cmd_hook", "worldcup")
 def cmd_worldcup(msg):
     res = Response(channel=msg.channel, nomore="No more match to display", count=" (%d more matches)")
-    nb = len(msg.cmds)
 
     url = None
-    if nb == 2:
-        if msg.cmds[1] == "today" or msg.cmds[1] == "aujourd'hui":
+    if len(msg.args) == 1:
+        if msg.args[0] == "today" or msg.args[0] == "aujourd'hui":
             url = "matches/today?by_date=ASC"
-        elif msg.cmds[1] == "tomorrow" or msg.cmds[1] == "demain":
+        elif msg.args[0] == "tomorrow" or msg.args[0] == "demain":
             url = "matches/tomorrow?by_date=ASC"
-        elif msg.cmds[1] == "all" or msg.cmds[1] == "tout" or msg.cmds[1] == "tous":
+        elif msg.args[0] == "all" or msg.args[0] == "tout" or msg.args[0] == "tous":
             url = "matches/"
-        elif len(msg.cmds[1]) == 3:
-            url = "matches/country?fifa_code=%s&by_date=DESC" % msg.cmds[1]
-        elif is_int(msg.cmds[1]):
-            url = int(msg.cmds[1])
+        elif len(msg.args[0]) == 3:
+            url = "matches/country?fifa_code=%s&by_date=DESC" % msg.args[0]
+        elif is_int(msg.args[0]):
+            url = int(msg.arg[0])
         else:
             raise IRCException("unrecognized request; choose between 'today', 'tomorrow', a FIFA country code or a match identifier")
 

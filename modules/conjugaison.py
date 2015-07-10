@@ -39,13 +39,13 @@ def help_full():
 
 @hook("cmd_hook", "conjugaison")
 def cmd_conjug(msg):
-    if len(msg.cmds) < 3:
+    if len(msg.args) < 2:
         raise IRCException("donne moi un temps et un verbe, et je te donnerai "
                            "sa conjugaison!")
 
-    tens = ' '.join(msg.cmds[1:-1])
+    tens = ' '.join(msg.args[:-1])
 
-    verb = msg.cmds[-1]
+    verb = msg.args[-1]
 
     conjug = get_conjug(verb, tens)
 

@@ -39,10 +39,10 @@ def help_full():
 
 @hook("cmd_hook", "curly")
 def cmd_curly(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("Indicate the URL to visit.")
 
-    url = " ".join(msg.cmds[1:])
+    url = " ".join(msg.args)
     version, status, reason, headers = page.headers(url)
 
     return Response("Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, version, status, reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in headers])), channel=msg.channel)
@@ -50,20 +50,20 @@ def cmd_curly(msg):
 
 @hook("cmd_hook", "curl")
 def cmd_curl(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("Indicate the URL to visit.")
 
     res = Response(channel=msg.channel)
-    for m in page.fetch(" ".join(msg.cmds[1:])).split("\n"):
+    for m in page.fetch(" ".join(msg.args)).split("\n"):
         res.append_message(m)
     return res
 
 
 @hook("cmd_hook", "w3m")
 def cmd_w3m(msg):
-    if len(msg.cmds) > 1:
+    if len(msg.args):
         res = Response(channel=msg.channel)
-        for line in page.render(" ".join(msg.cmds[1:])).split("\n"):
+        for line in page.render(" ".join(msg.args)).split("\n"):
             res.append_message(line)
         return res
     else:
@@ -72,9 +72,9 @@ def cmd_w3m(msg):
 
 @hook("cmd_hook", "traceurl")
 def cmd_traceurl(msg):
-    if 1 < len(msg.cmds) < 6:
+    if 1 < len(msg.args) < 5:
         res = list()
-        for url in msg.cmds[1:]:
+        for url in msg.args:
             trace = page.traceURL(url)
             res.append(Response(trace, channel=msg.channel, title="TraceURL"))
         return res
@@ -84,9 +84,9 @@ def cmd_traceurl(msg):
 
 @hook("cmd_hook", "isup")
 def cmd_isup(msg):
-    if 1 < len(msg.cmds) < 6:
+    if 1 < len(msg.args) < 5:
         res = list()
-        for url in msg.cmds[1:]:
+        for url in msg.args:
             rep = isup.isup(url)
             if rep:
                 res.append(Response("%s is up (response time: %ss)" % (url, rep), channel=msg.channel))
@@ -99,10 +99,10 @@ def cmd_isup(msg):
 
 @hook("cmd_hook", "w3c")
 def cmd_w3c(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("Indicate an URL to validate!")
 
-    headers, validator = w3c.validator(msg.cmds[1])
+    headers, validator = w3c.validator(msg.args[0])
 
     res = Response(channel=msg.channel, nomore="No more error")
 
@@ -121,15 +121,15 @@ def cmd_w3c(msg):
 @hook("cmd_hook", "watch", data="diff")
 @hook("cmd_hook", "updown", data="updown")
 def cmd_watch(msg, diffType="diff"):
-    if len(msg.cmds) <= 1:
+    if not len(msg.args):
         raise IRCException("indicate an URL to watch!")
 
-    return watchWebsite.add_site(msg.cmds[1], msg.frm, msg.channel, msg.server, diffType)
+    return watchWebsite.add_site(msg.args[0], msg.frm, msg.channel, msg.server, diffType)
 
 
 @hook("cmd_hook", "unwatch")
 def cmd_unwatch(msg):
-    if len(msg.cmds) <= 1:
+    if not len(msg.args):
         raise IRCException("which URL should I stop watching?")
 
-    return watchWebsite.del_site(msg.cmds[1], msg.frm, msg.channel, msg.frm_owner)
+    return watchWebsite.del_site(msg.args[0], msg.frm, msg.channel, msg.frm_owner)

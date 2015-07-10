@@ -25,13 +25,13 @@ def load(context):
 
 @hook("cmd_hook", "spell")
 def cmd_spell(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
 
     lang = "fr"
     strRes = list()
-    for word in msg.cmds[1:]:
-        if len(word) <= 2 and len(msg.cmds) > 2:
+    for word in msg.args:
+        if len(word) <= 2 and len(msg.args) > 2:
             lang = word
         else:
             try:
@@ -65,14 +65,13 @@ def add_score(nick, t):
 def cmd_score(msg):
     res = list()
     unknown = list()
-    if len(msg.cmds) > 1:
-        for cmd in msg.cmds[1:]:
-            if cmd in context.data.index:
-                res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, context.data.index[cmd].getInt(a)) for a in context.data.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
-            else:
-                unknown.append(cmd)
-    else:
-        return Response("De qui veux-tu voir les scores ?", channel=msg.channel, nick=msg.nick)
+    if not len(msg.args):
+        raise IRCException("De qui veux-tu voir les scores ?")
+    for cmd in msg.args:
+        if cmd in context.data.index:
+            res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, context.data.index[cmd].getInt(a)) for a in context.data.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))
+        else:
+            unknown.append(cmd)
     if len(unknown) > 0:
         res.append(Response("%s inconnus" % ", ".join(unknown), channel=msg.channel))
 

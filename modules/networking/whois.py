@@ -77,10 +77,10 @@ def whois_entityformat(entity):
 
 
 def cmd_whois(msg):
-    if len(msg.cmds) < 2:
+    if not len(msg.args):
         raise IRCException("Indiquer un domaine ou une IP à whois !")
 
-    dom = msg.cmds[1]
+    dom = msg.args[0]
 
     js = getJSON(URL_WHOIS % urllib.parse.quote(dom))
 

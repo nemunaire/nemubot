@@ -45,17 +45,17 @@ def gen_response(res, msg, srv):
 def cmd_ycc(msg):
     minify = list()
 
-    if len(msg.cmds) == 1:
+    if not len(msg.args):
         global LAST_URLS
         if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
             minify.append(LAST_URLS[msg.channel].pop())
         else:
             raise IRCException("je n'ai pas d'autre URL à réduire.")
 
-    if len(msg.cmds) > 5:
+    if len(msg.args) > 4:
         raise IRCException("je ne peux pas réduire autant d'URL d'un seul coup.")
     else:
-        minify += msg.cmds[1:]
+        minify += msg.args
 
     res = list()
     for url in minify:
