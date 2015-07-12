@@ -47,7 +47,7 @@ class MessageConsumer:
             msg.server = self.srv.id
 
         if hasattr(msg, "frm_owner"):
-            msg.frm_owner = (self.srv.owner == msg.frm)
+            msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
 
         return msg
 
