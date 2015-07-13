@@ -30,7 +30,8 @@ class MessageConsumer:
     def __init__(self, srv, msg):
         self.srv = srv
 
-        self.msgs = [ msg ]
+        self.orig = msg
+        self.msgs = [ ]
         self.responses = None
 
 
@@ -145,6 +146,16 @@ class MessageConsumer:
 
     def run(self, context):
         """Create, parse and treat the message"""
+        try:
+            for msg in self.srv.parse(self.orig):
+                self.msgs.append(msg)
+        except:
+            logger.exception("Error occurred during the processing of the %s: "
+                             "%s", type(self.msgs[0]).__name__, self.msgs[0])
+
+        if len(self.msgs) <= 0:
+            return
+
         try:
             for msg in self.msgs:
                 self.first_treat(msg)

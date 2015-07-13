@@ -423,9 +423,14 @@ class Bot(threading.Thread):
         return False
 
 
-    def receive_message(self, srv, msg, private=False, data=None):
-        """Queued the message for treatment"""
-        #print("READ", raw_msg)
+    def receive_message(self, srv, msg):
+        """Queued the message for treatment
+
+        Arguments:
+        srv -- The server where the message comes from
+        msg -- The message not parsed, as simple as possible
+        """
+
         self.cnsr_queue.put_nowait(MessageConsumer(srv, msg))
 
         # Launch a new thread if necessary

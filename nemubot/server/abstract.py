@@ -139,6 +139,12 @@ class AbstractServer(io.IOBase):
             self.write(vprnt.pp)
 
 
+    # Read
+
+    def parse(self, msg):
+        raise NotImplemented
+
+
     # Exceptions
 
     def exception(self):
