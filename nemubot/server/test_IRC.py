@@ -23,13 +23,13 @@ class TestIRCMessage(unittest.TestCase):
 
 
     def test_prettyprint(self):
-        bst1 = self.msg.to_irc_string(False)
+        bst1 = self.msg.to_server_message(False)
         msg2 = IRC.IRCMessage(bst1.encode())
 
-        bst2 = msg2.to_irc_string(False)
+        bst2 = msg2.to_server_message(False)
         msg3 = IRC.IRCMessage(bst2.encode())
 
-        bst3 = msg3.to_irc_string(False)
+        bst3 = msg3.to_server_message(False)
 
         self.assertEqual(bst2, bst3)
 
