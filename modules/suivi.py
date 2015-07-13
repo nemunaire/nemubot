@@ -4,17 +4,16 @@ from bs4 import BeautifulSoup
 
 from nemubot.hooks import hook
 from nemubot.exception import IRCException
+from nemubot.tools.web import getURLContent
 from more import Response
 
-nemubotversion = 3.4
+nemubotversion = 4.0
 
 def help_full():
-    return "Traquez vos courriers La Poste en utilisant la commande: !laposte <tracking number>\nCe service se base sur http://www.csuivi.courrier.laposte.fr/suivi/index"
+    return "Traquez vos courriers La Poste ou Colissimo en utilisant la commande: !laposte <tracking number> ou !colissimo <tracking number>\nCe service se base sur http://www.csuivi.courrier.laposte.fr/suivi/index et http://www.colissimo.fr/portail_colissimo/suivre.do"
 
 def get_colissimo_info(colissimo_id):
-    data = urllib.parse.urlencode({'colispart': colissimo_id})
-    colissimo_baseurl = "http://www.colissimo.fr/portail_colissimo/suivre.do"
-    colissimo_data = urllib.request.urlopen(colissimo_baseurl, data.encode('utf-8'))
+    colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/suivre.do?colispart=%s" % colissimo_id)
     soup = BeautifulSoup(colissimo_data)
 
     dataArray = soup.find(class_='dataArray')
@@ -25,10 +24,7 @@ def get_colissimo_info(colissimo_id):
         return (date, libelle, site.strip())
 
 def get_laposte_info(laposte_id):
-    data = urllib.parse.urlencode({'id': laposte_id})
-    laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
-
-    laposte_data = urllib.request.urlopen(laposte_baseurl, data.encode('utf-8'))
+    laposte_data = getURLContent("http://www.part.csuivi.courrier.laposte.fr/suivi/index?id=%s" % laposte_id)
     soup = BeautifulSoup(laposte_data)
     search_res = soup.find(class_='resultat_rech_simple_table').tbody.tr
     if (soup.find(class_='resultat_rech_simple_table').thead
@@ -48,7 +44,6 @@ def get_laposte_info(laposte_id):
         field = field.find_next('td')
         poste_status = field.get_text()
         return (poste_type.lower(), poste_id.strip(), poste_status.lower(), poste_location, poste_date)
-
 
 @hook("cmd_hook", "colissimo")
 def get_colissimo_tracking_info(msg):
