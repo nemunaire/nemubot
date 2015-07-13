@@ -257,11 +257,16 @@ class IRC(SocketServer):
 
     def read(self):
         for line in SocketServer.read(self):
+            # PING should be handled here, so start parsing here :/
             msg = IRCMessage(line, self.encoding)
 
             if msg.cmd in self.hookscmd:
                 self.hookscmd[msg.cmd](msg)
 
-            mes = msg.to_bot_message(self)
-            if mes is not None:
-                yield mes
+            yield msg
+
+
+    def parse(self, msg):
+        mes = msg.to_bot_message(self)
+        if mes is not None:
+            yield mes
