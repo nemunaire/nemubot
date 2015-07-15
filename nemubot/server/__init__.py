@@ -23,6 +23,45 @@ _wlist = []
 _xlist = []
 
 
+def factory(uri):
+    from urllib.parse import urlparse, unquote
+    o = urlparse(uri)
+
+    if o.scheme == "irc" or o.scheme == "ircs":
+        # http://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
+        # http://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
+        args = dict()
+
+        modifiers = o.path.split(",")
+        target = unquote(modifiers.pop(0)[1:])
+
+        if o.scheme == "ircs": args["ssl"] = True
+        if o.hostname is not None: args["host"] = o.hostname
+        if o.port is not None: args["port"] = o.port
+        if o.username is not None: args["username"] = o.username
+        if o.password is not None: args["password"] = o.password
+
+        queries = o.query.split("&")
+        for q in queries:
+            key, val = tuple(q.split("=", 1))
+            if key == "msg":
+                args["on_connect"] = [ "PRIVMSG %s :%s" % (target, unquote(val)) ]
+            elif key == "key":
+                args["channels"] = [ (target, unquote(val)) ]
+            elif key == "pass":
+                args["password"] = unquote(val)
+            elif key == "charset":
+                args["encoding"] = unquote(val)
+
+        if "channels" not in args and "isnick" not in modifiers:
+            args["channels"] = [ target ]
+
+        from nemubot.server.IRC import IRC as IRCServer
+        return IRCServer(**args)
+    else:
+        return None
+
+
 def reload():
     import imp
 
