@@ -26,7 +26,6 @@ def convert_legacy_store(old):
     elif old == "all_pre":
         return "pre"
     else:
-        print("UNKNOWN store:", old)
         return old
 
 
@@ -115,7 +114,7 @@ class ModuleContext:
                 return context.del_event(evt, module_src=module)
 
             def send_response(server, res):
-                print(res)
+                module.logger.info("Send response: %s", res)
 
         def save():
             context.datastore.save(module_name, self.data)

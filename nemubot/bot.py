@@ -393,9 +393,10 @@ class Bot(threading.Thread):
 
         # Overwrite print built-in
         def prnt(*args):
-            print("[%s]" % module_name, *args)
             if hasattr(module, "logger"):
                 module.logger.info(" ".join([str(s) for s in args]))
+            else:
+                logger.info("[%s] %s", module_name, " ".join([str(s) for s in args]))
         module.print = prnt
 
         # Create module context

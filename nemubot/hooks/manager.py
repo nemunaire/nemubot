@@ -40,7 +40,6 @@ class HooksManager:
         if trigger not in self.hooks:
             self.hooks[trigger] = list()
 
-        #print("ADD hook: %s => %s" % (trigger, hook))
         self.hooks[trigger].append(hook)
 
 
@@ -86,7 +85,6 @@ class HooksManager:
             if trigger.find(key) == 0:
                 res += self.hooks[key]
 
-        #print("GET hooks: %s => %d" % (trigger, len(res)))
         return res
 
 

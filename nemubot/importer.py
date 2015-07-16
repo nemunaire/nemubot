@@ -31,11 +31,9 @@ class ModuleFinder(Finder):
         self.add_module = add_module
 
     def find_module(self, fullname, path=None):
-        # print ("looking for", fullname, "in", path)
         # Search only for new nemubot modules (packages init)
         if path is None:
             for mpath in self.modules_paths:
-                # print ("looking for", fullname, "in", mpath)
                 if os.path.isfile(os.path.join(mpath, fullname + ".py")):
                     return ModuleLoader(self.add_module, fullname,
                                         os.path.join(mpath, fullname + ".py"))
@@ -44,7 +42,6 @@ class ModuleFinder(Finder):
                                         os.path.join(
                                             os.path.join(mpath, fullname),
                                             "__init__.py"))
-        # print ("not found")
         return None
 
 

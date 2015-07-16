@@ -96,7 +96,7 @@ class IRC(SocketServer):
 
         import nemubot
 
-        self.ctcp_capabilities["ACTION"] = lambda msg, cmds: print ("ACTION receive: %s" % cmds)
+        self.ctcp_capabilities["ACTION"] = lambda msg, cmds: None
         self.ctcp_capabilities["CLIENTINFO"] = _ctcp_clientinfo
         #self.ctcp_capabilities["DCC"] = _ctcp_dcc
         self.ctcp_capabilities["FINGER"] = lambda msg, cmds: "VERSION nemubot v%s" % nemubot.__version__
