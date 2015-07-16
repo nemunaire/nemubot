@@ -69,7 +69,6 @@ setup(
         'nemubot.hooks.keywords',
         'nemubot.message',
         'nemubot.message.printer',
-        'nemubot.prompt',
         'nemubot.server',
         'nemubot.server.message',
         'nemubot.tools',

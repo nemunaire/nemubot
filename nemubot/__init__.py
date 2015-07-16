@@ -127,11 +127,6 @@ def reload():
 
     nemubot.message.reload()
 
-    import nemubot.prompt
-    imp.reload(nemubot.prompt)
-
-    nemubot.prompt.reload()
-
     import nemubot.server
     rl, wl, xl = nemubot.server._rlist, nemubot.server._wlist, nemubot.server._xlist
     imp.reload(nemubot.server)

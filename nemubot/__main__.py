@@ -133,10 +133,6 @@ def main():
     if args.no_connect:
         context.noautoconnect = True
 
-    # Load the prompt
-    import nemubot.prompt
-    prmpt = nemubot.prompt.Prompt()
-
     # Register the hook for futur import
     from nemubot.importer import ModuleFinder
     module_finder = ModuleFinder(context.modules_paths, context.add_module)
