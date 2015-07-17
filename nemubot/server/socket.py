@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from nemubot.message.printer.socket import Socket as SocketPrinter
 from nemubot.server.abstract import AbstractServer
 
 
@@ -31,6 +32,7 @@ class SocketServer(AbstractServer):
 
         self.socket = None
         self.readbuffer = b''
+        self.printer  = SocketPrinter
 
 
     def fileno(self):
