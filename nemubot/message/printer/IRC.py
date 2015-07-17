@@ -17,54 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from nemubot.message import Text
-from nemubot.message.visitor import AbstractVisitor
+from nemubot.message.printer.socket import Socket as SocketPrinter
 
 
-class IRC(AbstractVisitor):
-
-    def __init__(self):
-        self.pp = ""
-
+class IRC(SocketPrinter):
 
     def visit_Text(self, msg):
         self.pp += "PRIVMSG %s :" % ",".join(msg.to)
-        if isinstance(msg.message, str):
-            self.pp += msg.message
-        else:
-            msg.message.accept(self)
-        self.pp += "\r\n"
-
-
-    def visit_DirectAsk(self, msg):
-        others = [to for to in msg.to if to != msg.designated]
-
-        # Avoid nick starting message when discussing on user channel
-        if len(others) != len(msg.to):
-            res = Text(msg.message,
-                       server=msg.server, date=msg.date,
-                       to=msg.to, frm=msg.frm)
-            res.accept(self)
-
-        if len(others):
-            res = Text("%s: %s" % (msg.designated, msg.message),
-                       server=msg.server, date=msg.date,
-                       to=others, frm=msg.frm)
-            res.accept(self)
-
-
-    def visit_Command(self, msg):
-        res = Text("!%s%s%s" % (msg.cmd,
-                                " " if len(msg.args) else "",
-                                " ".join(msg.args)),
-                   server=msg.server, date=msg.date,
-                   to=msg.to, frm=msg.frm)
-        res.accept(self)
-
-
-    def visit_OwnerCommand(self, msg):
-        res = Text("`%s%s%s" % (msg.cmd,
-                                " " if len(msg.args) else "",
-                                " ".join(msg.args)),
-                   server=msg.server, date=msg.date,
-                   to=msg.to, frm=msg.frm)
-        res.accept(self)
+        SocketPrinter.visit_Text(self, msg)
