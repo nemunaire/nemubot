@@ -18,6 +18,7 @@ __version__ = '4.0.dev3'
 __author__  = 'nemunaire'
 
 from nemubot.modulecontext import ModuleContext
+
 context = ModuleContext(None, None)
 
 
@@ -38,8 +39,61 @@ def requires_version(min=None, max=None):
                           "but this is nemubot v%s." % (str(max), __version__))
 
 
-def attach(socketfile):
-    print("TODO: Attach to Unix socket at: %s" % socketfile)
+def attach(pid, socketfile):
+    import socket
+    import sys
+
+    print("nemubot is launched with PID %d. Attaching to Unix socket at: %s" % (pid, socketfile))
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        sock.connect(socketfile)
+    except socket.error as e:
+        sys.stderr.write(str(e))
+        sys.stderr.write("\n")
+        return 1
+
+    from select import select
+    try:
+        while True:
+            rl, wl, xl = select([sys.stdin, sock], [], [])
+
+            if sys.stdin in rl:
+                line = sys.stdin.readline().strip()
+                if line == "exit" or line == "quit":
+                    return 0
+                elif line == "reload":
+                    import os, signal
+                    os.kill(pid, signal.SIGHUP)
+                    print("Reload signal sent. Please wait...")
+
+                elif line == "shutdown":
+                    import os, signal
+                    os.kill(pid, signal.SIGTERM)
+                    print("Shutdown signal sent. Please wait...")
+
+                elif line == "kill":
+                    import os, signal
+                    os.kill(pid, signal.SIGKILL)
+                    print("Signal sent...")
+                    return 0
+
+                elif line == "stack" or line == "stacks":
+                    import os, signal
+                    os.kill(pid, signal.SIGUSR1)
+                    print("Debug signal sent. Consult logs.")
+
+                else:
+                    sock.send(line.encode() + b'\r\n')
+
+            if sock in rl:
+                sys.stdout.write(sock.recv(2048).decode())
+    except KeyboardInterrupt:
+        pass
+    except:
+        return 1
+    finally:
+        sock.close()
     return 0
 
 
@@ -128,9 +182,13 @@ def reload():
     nemubot.message.reload()
 
     import nemubot.server
-    rl, wl, xl = nemubot.server._rlist, nemubot.server._wlist, nemubot.server._xlist
+    rl = nemubot.server._rlist
+    wl = nemubot.server._wlist
+    xl = nemubot.server._xlist
     imp.reload(nemubot.server)
-    nemubot.server._rlist, nemubot.server._wlist, nemubot.server._xlist = rl, wl, xl
+    nemubot.server._rlist = rl
+    nemubot.server._wlist = wl
+    nemubot.server._xlist = xl
 
     nemubot.server.reload()
 

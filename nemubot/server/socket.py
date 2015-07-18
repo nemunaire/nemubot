@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import nemubot.message as message
 from nemubot.message.printer.socket import Socket as SocketPrinter
 from nemubot.server.abstract import AbstractServer
 
@@ -128,6 +129,18 @@ class SocketServer(AbstractServer):
 
         for line in temp:
             yield line
+
+
+    def parse(self, line):
+        import shlex
+
+        line = line.strip().decode()
+        try:
+            args = shlex.split(line)
+        except ValueError:
+            args = line.split(' ')
+
+        yield message.Command(cmd=args[0], args=args[1:], server=self.id, to=["you"], frm="you")
 
 
 class SocketListener(AbstractServer):

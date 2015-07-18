@@ -84,7 +84,7 @@ def main():
             pass
         else:
             from nemubot import attach
-            sys.exit(attach(pid))
+            sys.exit(attach(pid, args.socketfile))
 
     # Daemonize
     if not args.debug:
