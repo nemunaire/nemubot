@@ -22,6 +22,24 @@ __author__  = 'nemunaire'
 from nemubot.modulecontext import ModuleContext
 context = ModuleContext(None, None)
 
+
+def requires_version(min=None, max=None):
+    """Raise ImportError if the current version is not in the given range
+
+    Keyword arguments:
+    min -- minimal compatible version
+    max -- last compatible version
+    """
+
+    from distutils.version import LooseVersion
+    if min is not None and LooseVersion(__version__) < LooseVersion(str(min)):
+        raise ImportError("Requires version above %s, "
+                          "but this is nemubot v%s." % (str(min), __version__))
+    if max is not None and LooseVersion(__version__) > LooseVersion(str(max)):
+        raise ImportError("Requires version under %s, "
+                          "but this is nemubot v%s." % (str(max), __version__))
+
+
 def reload():
     """Reload code of all Python modules used by nemubot
     """
