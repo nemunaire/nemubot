@@ -127,6 +127,15 @@ def cmd_watch(msg, diffType="diff"):
     return watchWebsite.add_site(msg.args[0], msg.frm, msg.channel, msg.server, diffType)
 
 
+@hook("cmd_hook", "listwatch")
+def cmd_listwatch(msg):
+    wl = watchWebsite.watchedon(msg.channel)
+    if len(wl):
+        return Response(wl, channel=msg.channel, title="URL watched on this channel")
+    else:
+        return Response("No URL are currently watched. Use !watch URL to watch one.", channel=msg.channel)
+
+
 @hook("cmd_hook", "unwatch")
 def cmd_unwatch(msg):
     if not len(msg.args):

@@ -36,6 +36,20 @@ def load(datas):
             #DATAS.delChild(site)
 
 
+def watchedon(channel):
+    """Get a list of currently watched URL on the given channel.
+    """
+
+    res = list()
+    for site in DATAS.getNodes("watch"):
+        if site.hasNode("alert"):
+            for a in site.getNodes("alert"):
+                if a["channel"] == channel:
+                    res.append("%s (%s)" % (site["url"], site["type"]))
+                    break
+    return res
+
+
 def del_site(url, nick, channel, frm_owner):
     """Remove a site from watching list
 
