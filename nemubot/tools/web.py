@@ -60,11 +60,12 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, timeout=15):
+def getURLContent(url, body=None, timeout=15):
     """Return page content corresponding to URL or None if any error occurs
 
     Arguments:
     url -- the URL to get
+    body -- Data to send as POST content
     timeout -- maximum number of seconds to wait before returning an exception
     """
 
@@ -89,11 +90,15 @@ def getURLContent(url, timeout=15):
     try:
         from nemubot import __version__
         if o.query != '':
-            conn.request("GET", o.path + "?" + o.query,
-                         None, {"User-agent": "Nemubot v%s" % __version__})
+            conn.request("GET" if body is None else "POST",
+                         o.path + "?" + o.query,
+                         body,
+                         {"User-agent": "Nemubot v%s" % __version__})
         else:
-            conn.request("GET", o.path, None, {"User-agent":
-                                               "Nemubot v%s" % __version__})
+            conn.request("GET" if body is None else "POST",
+                         o.path,
+                         body,
+                         {"User-agent": "Nemubot v%s" % __version__})
     except OSError as e:
         raise IRCException(e.strerror)
 
@@ -130,7 +135,7 @@ def getURLContent(url, timeout=15):
     elif ((res.status == http.client.FOUND or
            res.status == http.client.MOVED_PERMANENTLY) and
           res.getheader("Location") != url):
-        return getURLContent(res.getheader("Location"), timeout)
+        return getURLContent(res.getheader("Location"), timeout=timeout)
     else:
         raise IRCException("A HTTP error occurs: %d - %s" %
                            (res.status, http.client.responses[res.status]))
@@ -144,7 +149,7 @@ def getXML(url, timeout=15):
     timeout -- maximum number of seconds to wait before returning an exception
     """
 
-    cnt = getURLContent(url, timeout)
+    cnt = getURLContent(url, timeout=timeout)
     if cnt is None:
         return None
     else:
@@ -162,7 +167,7 @@ def getJSON(url, timeout=15):
 
     import json
 
-    cnt = getURLContent(url, timeout)
+    cnt = getURLContent(url, timeout=timeout)
     if cnt is None:
         return None
     else:
