@@ -60,7 +60,7 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, body=None, timeout=15):
+def getURLContent(url, body=None, timeout=7):
     """Return page content corresponding to URL or None if any error occurs
 
     Arguments:
