@@ -15,6 +15,8 @@ nemubotversion = 3.4
 from more import Response
 
 
+# MEDIAWIKI REQUESTS ##################################################
+
 def get_namespaces(site, ssl=False):
     # Built URL
     url = "http%s://%s/w/api.php?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
@@ -54,6 +56,39 @@ def get_unwikitextified(site, wikitext, ssl=False):
 
     return data["expandtemplates"]["*"]
 
+
+## Search
+
+def opensearch(site, term, ssl=False):
+    # Built URL
+    url = "http%s://%s/w/api.php?format=xml&action=opensearch&search=%s" % (
+        "s" if ssl else "", site, urllib.parse.quote(term))
+
+    # Make the request
+    response = web.getXML(url)
+
+    if response is not None and response.hasNode("Section"):
+        for itm in response.getNode("Section").getNodes("Item"):
+            yield (itm.getNode("Text").getContent(),
+                   itm.getNode("Description").getContent(),
+                   itm.getNode("Url").getContent())
+
+
+def search(site, term, ssl=False):
+    # Built URL
+    url = "http%s://%s/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
+        "s" if ssl else "", site, urllib.parse.quote(term))
+
+    # Make the request
+    data = web.getJSON(url)
+
+    if data is not None and "query" in data and "search" in data["query"]:
+        for itm in data["query"]["search"]:
+            yield (web.striphtml(itm["titlesnippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")),
+                   web.striphtml(itm["snippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")))
+
+
+# PARSING FUNCTIONS ###################################################
 
 def strip_model(cnt):
     # Strip models at begin: mostly useless
@@ -98,42 +133,33 @@ def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
     return cnt
 
 
+# FORMATING FUNCTIONS #################################################
+
 def irc_format(cnt):
     cnt, _ = re.subn(r"(?P<title>==+)\s*(.*?)\s*(?P=title)", "\x03\x16" + r"\2" + " :\x03\x16 ", cnt)
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
 
 
-def get_page(site, term, ssl=False):
-    return strip_model(get_raw_page(site, term, ssl))
+def get_page(site, term, ssl=False, subpart=None):
+    raw = get_raw_page(site, term, ssl)
+
+    if subpart is not None:
+        subpart = subpart.replace("_", " ")
+        raw = re.sub(r"^.*(?P<title>==+)\s*(" + subpart + r")\s*(?P=title)", r"\1 \2 \1", raw, flags=re.DOTALL)
+
+    return strip_model(raw)
 
 
-def opensearch(site, term, ssl=False):
-    # Built URL
-    url = "http%s://%s/w/api.php?format=xml&action=opensearch&search=%s" % (
-        "s" if ssl else "", site, urllib.parse.quote(term))
+# NEMUBOT #############################################################
 
-    # Make the request
-    response = web.getXML(url)
+def mediawiki_response(site, term, receivers):
+    ns = get_namespaces(site)
 
-    if response is not None and response.hasNode("Section"):
-        for itm in response.getNode("Section").getNodes("Item"):
-            yield (itm.getNode("Text").getContent(),
-                   itm.getNode("Description").getContent(),
-                   itm.getNode("Url").getContent())
+    terms = term.split("#", 1)
 
-
-def search(site, term, ssl=False):
-    # Built URL
-    url = "http%s://%s/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
-        "s" if ssl else "", site, urllib.parse.quote(term))
-
-    # Make the request
-    data = web.getJSON(url)
-
-    if data is not None and "query" in data and "search" in data["query"]:
-        for itm in data["query"]["search"]:
-            yield (web.striphtml(itm["titlesnippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")),
-                   web.striphtml(itm["snippet"].replace("<span class='searchmatch'>", "\x03\x02").replace("</span>", "\x03\x02")))
+    return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None),
+                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
+                    channel=msg.receivers)
 
 
 @hook("cmd_hook", "mediawiki")
@@ -142,13 +168,9 @@ def cmd_mediawiki(msg):
     if len(msg.args) < 2:
         raise IRCException("indicate a domain and a term to search")
 
-    site = msg.args[0]
-
-    ns = get_namespaces(site)
-
-    return Response(get_page(site, " ".join(msg.args[1:])),
-                    line_treat=lambda line: irc_format(parse_wikitext(msg.args[0], line, ns)),
-                    channel=msg.receivers)
+    return mediawiki_response(msg.args[0],
+                              " ".join(msg.args[1:]),
+                              msg.receivers)
 
 
 @hook("cmd_hook", "search_mediawiki")
@@ -170,10 +192,6 @@ def cmd_wikipedia(msg):
     if len(msg.args) < 2:
         raise IRCException("indicate a lang and a term to search")
 
-    site = msg.args[0] + ".wikipedia.org"
-
-    ns = get_namespaces(site)
-
-    return Response(get_page(site, " ".join(msg.args[1:])),
-                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
-                    channel=msg.receivers)
+    return mediawiki_response(msg.args[0] + ".wikipedia.org",
+                              " ".join(msg.args[1:]),
+                              msg.receivers)
