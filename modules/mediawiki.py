@@ -157,9 +157,20 @@ def mediawiki_response(site, term, receivers):
 
     terms = term.split("#", 1)
 
-    return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None),
-                    line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
-                    channel=msg.receivers)
+    try:
+        # Print the article if it exists
+        return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None),
+                        line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
+                        channel=receivers)
+    except:
+        # Try looking at opensearch
+        os = [x for x, _, _ in opensearch(site, terms[0])]
+        # Fallback to global search
+        if not len(os):
+            os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]
+        return Response(os,
+                        channel=receivers,
+                        title="Article not found, would you mean")
 
 
 @hook("cmd_hook", "mediawiki")
