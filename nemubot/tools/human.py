@@ -36,3 +36,25 @@ def size(size, unit=True):
         return "%.3f %s" % (size / math.pow(1024,p), units[int(p)])
     else:
         return "%.3f" % (size / math.pow(1024,p))
+
+
+def word_distance(str1, str2):
+    """Perform a Damerau-Levenshtein distance on the two given strings"""
+
+    d = [[i + j for j in range(len(str2) + 1)] for i in range(len(str1) + 1)]
+
+    for i in range(0, len(str1)):
+        for j in range(0, len(str2)):
+            cost = 0 if str1[i-1] == str2[j-1] else 1
+            d[i+1][j+1] = min(
+                d[i][j+1] + 1, # deletion
+                d[i+1][j] + 1, # insertion
+                d[i][j] + cost, # substitution
+            )
+            if i >= 1 and j >= 1 and str1[i] == str2[j-1] and str1[i-1] == str2[j]:
+                d[i+1][j+1] = min(
+                    d[i+1][j+1],
+                    d[i-1][j-1] + cost, # transposition
+                )
+
+    return d[len(str1)][len(str2)]
