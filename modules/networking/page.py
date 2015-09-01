@@ -37,7 +37,7 @@ def headers(url):
         raise IRCException("request timeout")
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s from %s on %d."
-               % (o.path, o.hostname, o.port))
+               % (o.path, o.hostname, o.port if o.port is not None else 0))
         raise IRCException("an unexpected error occurs")
 
     try:
