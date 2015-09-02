@@ -29,176 +29,62 @@ class MessageConsumer:
 
     def __init__(self, srv, msg):
         self.srv = srv
-
         self.orig = msg
-        self.msgs = [ ]
-        self.responses = None
-
-
-    def first_treat(self, msg):
-        """Qualify a new message/response
-
-        Argument:
-        msg -- The Message or Response to qualify
-        """
-
-        # Define the source server if not already done
-        if not hasattr(msg, "server") or msg.server is None:
-            msg.server = self.srv.id
-
-        if hasattr(msg, "frm_owner"):
-            msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
-
-        return msg
-
-
-    def pre_treat(self, hm):
-        """Modify input Messages
-
-        Arguments:
-        hm -- Hooks manager
-        """
-
-        new_msg = list()
-        new_msg += self.msgs
-        self.msgs = list()
-
-        while len(new_msg) > 0:
-            msg = new_msg.pop(0)
-            for h in hm.get_hooks("pre", type(msg).__name__):
-                if h.match(msg, server=self.srv):
-                    res = h.run(msg)
-                    if isinstance(res, list):
-                        for i in range(len(res)):
-                            if res[i] == msg:
-                                res.pop(i)
-                                break
-                        new_msg += res
-                    elif res is not None and res != msg:
-                        new_msg.append(res)
-                        msg = None
-                        break
-                    elif res is None or res is False:
-                        msg = None
-                        break
-            if msg is not None:
-                self.msgs.append(msg)
-
-
-    def in_treat(self, hm):
-        """Treat Messages and store responses
-
-        Arguments:
-        hm -- Hooks manager
-        """
-
-        self.responses = list()
-        for msg in self.msgs:
-            for h in hm.get_hooks("in", type(msg).__name__):
-                if h.match(msg, server=self.srv):
-                    res = h.run(msg)
-                    if isinstance(res, list):
-                        self.responses += res
-                    elif res is not None:
-                        self.responses.append(res)
-
-
-    def post_treat(self, hm):
-        """Modify output Messages
-
-        Arguments:
-        hm -- Hooks manager
-        """
-
-        new_msg = list()
-        new_msg += self.responses
-        self.responses = list()
-
-        while len(new_msg) > 0:
-            ff = new_msg.pop(0)
-            if isinstance(ff, str):
-                self.responses.append(ff)
-                continue
-            msg = self.first_treat(ff)
-            for h in hm.get_hooks("post"):
-                if h.match(msg, server=self.srv):
-                    res = h.run(msg)
-                    if isinstance(res, list):
-                        for i in range(len(res)):
-                            if isinstance(res[i], str):
-                                self.responses.append(res.pop(i))
-                                break
-                        msg = None
-                        new_msg += res
-                        break
-                    elif res is not None and res != msg:
-                        new_msg.append(res)
-                        msg = None
-                        break
-                    elif res is None or res is False:
-                        msg = None
-                        break
-                    else:
-                        msg = res
-            if msg is not None:
-                self.responses.append(msg)
 
 
     def run(self, context):
         """Create, parse and treat the message"""
+
+        from nemubot.bot import Bot
+        assert isinstance(context, Bot)
+
+        msgs = []
+
+        # Parse the message
         try:
             for msg in self.srv.parse(self.orig):
-                self.msgs.append(msg)
+                msgs.append(msg)
         except:
             logger.exception("Error occurred during the processing of the %s: "
                              "%s", type(self.msgs[0]).__name__, self.msgs[0])
 
-        if len(self.msgs) <= 0:
+        if len(msgs) <= 0:
             return
 
-        try:
-            for msg in self.msgs:
-                self.first_treat(msg)
+        # Qualify the message
+        if not hasattr(msg, "server") or msg.server is None:
+            msg.server = self.srv.id
+        if hasattr(msg, "frm_owner"):
+            msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
 
-            # Run pre-treatment: from Message to [ Message ]
-            self.pre_treat(context.hooks)
+        # Treat the message
+        from nemubot.treatment import MessageTreater
+        mt = MessageTreater(context.hooks) # Should be in context, this is static
+        for msg in msgs:
+            for res in mt.treat_msg(msg):
+                # Identify the destination
+                to_server = None
+                if isinstance(res, str):
+                    to_server = self.srv
+                elif res.server is None:
+                    to_server = self.srv
+                    res.server = self.srv.id
+                elif isinstance(res.server, str) and res.server in context.servers:
+                    to_server = context.servers[res.server]
 
-            # Run in-treatment: from Message to [ Response ]
-            if len(self.msgs) > 0:
-                self.in_treat(context.hooks)
+                if to_server is None:
+                    logger.error("The server defined in this response doesn't "
+                                 "exist: %s", res.server)
+                    continue
 
-            # Run post-treatment: from Response to [ Response ]
-            if self.responses is not None and len(self.responses) > 0:
-                self.post_treat(context.hooks)
-        except BaseException as e:
-            logger.exception("Error occurred during the processing of the %s: "
-                             "%s", type(self.msgs[0]).__name__, self.msgs[0])
-
-            from nemubot.message import Text
-            self.responses.append(Text("Sorry, an error occured (%s). Feel free to open a new issue at https://github.com/nemunaire/nemubot/issues/new" % type(e).__name__,
-                                       server=self.srv.id, to=self.msgs[0].to_response))
-
-        for res in self.responses:
-            to_server = None
-            if isinstance(res, str):
-                to_server = self.srv
-            elif res.server is None:
-                to_server = self.srv
-                res.server = self.srv.id
-            elif isinstance(res.server, str) and res.server in context.servers:
-                to_server = context.servers[res.server]
-
-            if to_server is None:
-                logger.error("The server defined in this response doesn't "
-                             "exist: %s", res.server)
-                continue
-
-            # Sent the message only if treat_post authorize it
-            to_server.send_response(res)
+                # Sent the message only if treat_post authorize it
+                to_server.send_response(res)
 
 
 class EventConsumer:
+
     """Store a event before treating"""
+
     def __init__(self, evt, timeout=20):
         self.evt = evt
         self.timeout = timeout
@@ -222,11 +108,14 @@ class EventConsumer:
 
 
 class Consumer(threading.Thread):
+
     """Dequeue and exec requested action"""
+
     def __init__(self, context):
         self.context = context
         self.stop = False
         threading.Thread.__init__(self)
+
 
     def run(self):
         try:
