@@ -58,10 +58,8 @@ class MessageConsumer:
             msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
 
         # Treat the message
-        from nemubot.treatment import MessageTreater
-        mt = MessageTreater(context.hooks) # Should be in context, this is static
         for msg in msgs:
-            for res in mt.treat_msg(msg):
+            for res in context.treater.treat_msg(msg):
                 # Identify the destination
                 to_server = None
                 if isinstance(res, str):

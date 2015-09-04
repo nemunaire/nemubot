@@ -25,7 +25,6 @@ from nemubot import __version__
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
 from nemubot import datastore
 import nemubot.hooks
-from nemubot.modulecontext import ModuleContext
 
 logger = logging.getLogger("nemubot")
 
@@ -70,19 +69,19 @@ class Bot(threading.Thread):
         self.event_timer = None
 
         # Own hooks
-        from nemubot.hooks.manager import HooksManager
-        self.hooks       = HooksManager()
+        from nemubot.treatment import MessageTreater
+        self.treater     = MessageTreater()
 
         import re
         def in_ping(msg):
             if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.message, re.I) is not None:
                 return msg.respond("pong")
-        self.hooks.add_hook(nemubot.hooks.Message(in_ping), "in", "DirectAsk")
+        self.treater.hm.add_hook(nemubot.hooks.Message(in_ping), "in", "DirectAsk")
 
         def in_echo(msg):
             from nemubot.message import Text
             return Text(msg.nick + ": " + " ".join(msg.args), to=msg.to_response)
-        self.hooks.add_hook(nemubot.hooks.Message(in_echo, "echo"), "in", "Command")
+        self.treater.hm.add_hook(nemubot.hooks.Message(in_echo, "echo"), "in", "Command")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
@@ -129,7 +128,7 @@ class Bot(threading.Thread):
                                    " de tous les modules disponibles localement",
                                    message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
             return res
-        self.hooks.add_hook(nemubot.hooks.Message(_help_msg, "help"), "in", "Command")
+        self.treater.hm.add_hook(nemubot.hooks.Message(_help_msg, "help"), "in", "Command")
 
         from queue import Queue
         # Messages to be treated
@@ -400,6 +399,7 @@ class Bot(threading.Thread):
         module.print = prnt
 
         # Create module context
+        from nemubot.modulecontext import ModuleContext
         module.__nemubot_context__ = ModuleContext(self, module)
 
         if not hasattr(module, "logger"):

@@ -62,13 +62,13 @@ class ModuleContext:
             def add_hook(store, hook):
                 store = convert_legacy_store(store)
                 self.hooks.append((store, hook))
-                return context.hooks.add_hook(hook, store)
+                return context.treater.hm.add_hook(hook, store)
             def del_hook(store, hook):
                 store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
-                return context.hooks.del_hook(hook, store)
+                return context.treater.hm.del_hook(hook, store)
             def call_hook(store, msg):
-                for h in context.hooks.get_hooks(store):
+                for h in context.treater.hm.get_hooks(store):
                     if h.match(msg):
                         res = h.run(msg)
                         if isinstance(res, list):

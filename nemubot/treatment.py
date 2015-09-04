@@ -23,8 +23,9 @@ class MessageTreater:
 
     """Treat a message"""
 
-    def __init__(self, hm):
-        self.hm = hm # Pointer to the HookManager
+    def __init__(self):
+        from nemubot.hooks.manager import HooksManager
+        self.hm = HooksManager()
 
 
     def treat_msg(self, msg):
