@@ -71,17 +71,15 @@ class AbstractServer(io.IOBase):
         """Generic close function that register the server un _{r,w,x}list in
         case of successful _close"""
         self.logger.info("Closing connection to %s", self.id)
-        _lock.acquire()
-        if not hasattr(self, "_close") or self._close():
-            if self in _rlist:
-                _rlist.remove(self)
-            if self in _wlist:
-                _wlist.remove(self)
-            if self in _xlist:
-                _xlist.remove(self)
-            _lock.release()
-            return True
-        _lock.release()
+        with _lock:
+            if not hasattr(self, "_close") or self._close():
+                if self in _rlist:
+                    _rlist.remove(self)
+                if self in _wlist:
+                    _wlist.remove(self)
+                if self in _xlist:
+                    _xlist.remove(self)
+                return True
         return False
 
 

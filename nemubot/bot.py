@@ -145,52 +145,50 @@ class Bot(threading.Thread):
 
         self.stop = False
         while not self.stop:
-            _lock.acquire()
-            try:
-                rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
-            except:
-                logger.error("Something went wrong in select")
-                fnd_smth = False
-                # Looking for invalid server
-                for r in _rlist:
-                    if not hasattr(r, "fileno") or not isinstance(r.fileno(), int) or r.fileno() < 0:
-                        _rlist.remove(r)
-                        logger.error("Found invalid object in _rlist: " + str(r))
-                        fnd_smth = True
-                for w in _wlist:
-                    if not hasattr(w, "fileno") or not isinstance(w.fileno(), int) or w.fileno() < 0:
-                        _wlist.remove(w)
-                        logger.error("Found invalid object in _wlist: " + str(w))
-                        fnd_smth = True
-                for x in _xlist:
-                    if not hasattr(x, "fileno") or not isinstance(x.fileno(), int) or x.fileno() < 0:
-                        _xlist.remove(x)
-                        logger.error("Found invalid object in _xlist: " + str(x))
-                        fnd_smth = True
-                if not fnd_smth:
-                    logger.exception("Can't continue, sorry")
-                    self.quit()
-                _lock.release()
-                continue
+            with _lock:
+                try:
+                    rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
+                except:
+                    logger.error("Something went wrong in select")
+                    fnd_smth = False
+                    # Looking for invalid server
+                    for r in _rlist:
+                        if not hasattr(r, "fileno") or not isinstance(r.fileno(), int) or r.fileno() < 0:
+                            _rlist.remove(r)
+                            logger.error("Found invalid object in _rlist: " + str(r))
+                            fnd_smth = True
+                    for w in _wlist:
+                        if not hasattr(w, "fileno") or not isinstance(w.fileno(), int) or w.fileno() < 0:
+                            _wlist.remove(w)
+                            logger.error("Found invalid object in _wlist: " + str(w))
+                            fnd_smth = True
+                    for x in _xlist:
+                        if not hasattr(x, "fileno") or not isinstance(x.fileno(), int) or x.fileno() < 0:
+                            _xlist.remove(x)
+                            logger.error("Found invalid object in _xlist: " + str(x))
+                            fnd_smth = True
+                    if not fnd_smth:
+                        logger.exception("Can't continue, sorry")
+                        self.quit()
+                    continue
 
-            for x in xl:
-                try:
-                    x.exception()
-                except:
-                    logger.exception("Uncatched exception on server exception")
-            for w in wl:
-                try:
-                    w.write_select()
-                except:
-                    logger.exception("Uncatched exception on server write")
-            for r in rl:
-                for i in r.read():
+                for x in xl:
                     try:
-                        self.receive_message(r, i)
+                        x.exception()
                     except:
-                        logger.exception("Uncatched exception on server read")
+                        logger.exception("Uncatched exception on server exception")
+                for w in wl:
+                    try:
+                        w.write_select()
+                    except:
+                        logger.exception("Uncatched exception on server write")
+                for r in rl:
+                    for i in r.read():
+                        try:
+                            self.receive_message(r, i)
+                        except:
+                            logger.exception("Uncatched exception on server read")
 
-            _lock.release()
 
             # Launch new consumer threads if necessary
             while self.cnsr_queue.qsize() > self.cnsr_thrd_size:
