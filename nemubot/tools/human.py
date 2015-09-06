@@ -32,10 +32,9 @@ def size(size, unit=True):
     units = ['B','KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB']
     p = math.floor(math.log(size, 2) / 10)
 
-    if unit:
-        return "%.3f %s" % (size / math.pow(1024,p), units[int(p)])
-    else:
-        return "%.3f" % (size / math.pow(1024,p))
+    s = size / math.pow(1024, p)
+    r = size % math.pow(1024, p)
+    return (("%.3f" if r else "%.0f") % s) + ((" " + units[int(p)]) if unit else "")
 
 
 def word_distance(str1, str2):
