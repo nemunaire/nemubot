@@ -3,6 +3,7 @@
 """Various network tools (w3m, w3c validator, curl, traceurl, ...)"""
 
 import logging
+import re
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
@@ -35,6 +36,20 @@ def load(context):
 
 def help_full():
     return "!traceurl /url/: Follow redirections from /url/."
+
+
+@hook("cmd_hook", "title")
+def cmd_title(msg):
+    if not len(msg.args):
+        raise IRCException("Indicate the URL to visit.")
+
+    url = " ".join(msg.args)
+    res = re.search("<title>(.*?)</title>", page.fetch(" ".join(msg.args)), re.DOTALL)
+
+    if res is None:
+        raise IRCException("The page %s has no title" % url)
+    else:
+        return Response("%s: %s" % (url, res.group(1).replace("\n", " ")), channel=msg.channel)
 
 
 @hook("cmd_hook", "curly")
