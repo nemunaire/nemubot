@@ -1,6 +1,6 @@
 import unittest
 
-from nemubot.tools.human import size, word_distance
+from nemubot.tools.human import guess, size, word_distance
 
 class TestHuman(unittest.TestCase):
 
@@ -30,6 +30,10 @@ class TestHuman(unittest.TestCase):
         self.assertEqual(word_distance("ba", "ab"), 1)
         self.assertEqual(word_distance("long", "short"), 4)
         self.assertEqual(word_distance("long", "short"), word_distance("short", "long"))
+
+    def test_guess(self):
+        self.assertListEqual([g for g in guess("drunk", ["eat", "drink"])], ["drink"])
+        self.assertListEqual([g for g in guess("drunk", ["long", "short"])], [])
 
 
 if __name__ == '__main__':

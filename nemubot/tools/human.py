@@ -57,3 +57,13 @@ def word_distance(str1, str2):
                 )
 
     return d[len(str1)][len(str2)]
+
+
+def guess(pattern, expect):
+    if len(expect):
+        se = sorted([(e, word_distance(pattern, e)) for e in expect], key=lambda x: x[1])
+        _, m = se[0]
+        for e, wd in se:
+            if wd > m or wd > 1 + len(pattern) / 4:
+                break
+            yield e
