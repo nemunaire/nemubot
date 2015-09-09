@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Create alias of commands"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 import sys
@@ -13,10 +13,15 @@ from nemubot.hooks import hook
 from nemubot.message import Command
 from nemubot.tools.xmlparser.node import ModuleState
 
-nemubotversion = 3.4
-
 from more import Response
 
+
+# HELP ################################################################
+
+def help_full():
+    return "Pour créer un alias, adressez-vous à moi en disant quelque chose comme : \"nouvel alias XX : YY\", où YY sera la commande équivalente à XX. Vous pouvez ajouter des variables comme ${1}, ${2}, ... correspondant aux éventuels arguments.\nDe l'aide supplémentaire existe pour les commandes !alias, !listalias, !unalias, !set et !listvars"
+
+# LOADING #############################################################
 
 def load(context):
     """Load this module"""
@@ -28,18 +33,49 @@ def load(context):
     context.data.getNode("variables").setIndex("name")
 
 
-def set_variable(name, value, creator):
-    var = ModuleState("variable")
-    var["name"] = name
-    var["value"] = value
-    var["creator"] = creator
-    context.data.getNode("variables").addChild(var)
+# MODULE CORE #########################################################
 
+## Alias management
+
+def list_alias(channel=None):
+    """List known aliases.
+
+    Argument:
+    channel -- optional, if defined, return a list of aliases only defined on this channel, else alias widly defined
+    """
+
+    for alias in context.data.getNode("aliases").index.values():
+        if (channel is None and "channel" not in alias) or (channel is not None and "channel" in alias and alias["channel"] == channel):
+            yield alias
+
+def create_alias(alias, origin, channel=None, creator=None):
+    """Create or erase an existing alias
+    """
+
+    anode = ModuleState("alias")
+    anode["alias"] = alias
+    anode["origin"] = origin
+    if channel is not None:
+        anode["creator"] = channel
+    if creator is not None:
+        anode["creator"] = creator
+    context.data.getNode("aliases").addChild(anode)
+    context.save()
+
+
+## Variables management
 
 def get_variable(name, msg=None):
-    if name == "sender" or name == "from" or name == "nick":
+    """Get the value for the given variable
+
+    Arguments:
+    name -- The variable identifier
+    msg -- optional, original message where some variable can be picked
+    """
+
+    if msg is not None and (name == "sender" or name == "from" or name == "nick"):
         return msg.frm
-    elif name == "chan" or name == "channel":
+    elif msg is not None and (name == "chan" or name == "channel"):
         return msg.channel
     elif name == "date":
         return datetime.now(timezone.utc).strftime("%c")
@@ -49,93 +85,43 @@ def get_variable(name, msg=None):
         return ""
 
 
-@hook("cmd_hook", "set")
-def cmd_set(msg):
-    if len(msg.args) < 2:
-        raise IRCException("!set prend au minimum deux arguments : "
-                           "le nom de la variable et sa valeur.")
-    set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
+def list_variables(user=None):
+    """List known variables.
+
+    Argument:
+    user -- optional, if defined, display only variable created by the given user
+    """
+    if user is not None:
+        return [x for x in context.data.getNode("variables").index.values() if x["creator"] == user]
+    else:
+        return context.data.getNode("variables").index.values()
+
+
+def set_variable(name, value, creator):
+    """Define or erase a variable.
+
+    Arguments:
+    name -- The variable identifier
+    value -- Variable value
+    creator -- User who has created this variable
+    """
+
+    var = ModuleState("variable")
+    var["name"] = name
+    var["value"] = value
+    var["creator"] = creator
+    context.data.getNode("variables").addChild(var)
     context.save()
-    return Response("Variable \$%s définie." % msg.args[0],
-                    channel=msg.channel)
-
-
-@hook("cmd_hook", "listalias")
-def cmd_listalias(msg):
-    if len(msg.args):
-        res = list()
-        for user in msg.args:
-            als = [x["alias"] for x in context.data.getNode("aliases").index.values() if x["creator"] == user]
-            if len(als) > 0:
-                res.append("%s's aliases: %s" % (user, ", ".join(als)))
-            else:
-                res.append("%s has never created aliases." % user)
-        return Response("; ".join(res), channel=msg.channel)
-    elif len(context.data.getNode("aliases").index):
-        return Response("Known aliases: %s." %
-                        ", ".join(context.data.getNode("aliases").index.keys()),
-                        channel=msg.channel)
-    else:
-        return Response("There is no alias currently.", channel=msg.channel)
-
-
-@hook("cmd_hook", "listvars")
-def cmd_listvars(msg):
-    if len(msg.args):
-        res = list()
-        for user in msg.args:
-            als = [x["alias"] for x in context.data.getNode("variables").index.values() if x["creator"] == user]
-            if len(als) > 0:
-                res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
-            else:
-                res.append("%s n'a pas encore créé de variable" % user)
-        return Response(" ; ".join(res), channel=msg.channel)
-    elif len(context.data.getNode("variables").index):
-        return Response("Variables connues : %s." %
-                        ", ".join(context.data.getNode("variables").index.keys()),
-                        channel=msg.channel)
-    else:
-        return Response("No variable are currently stored.", channel=msg.channel)
-
-
-@hook("cmd_hook", "alias")
-def cmd_alias(msg):
-    if len(msg.args):
-        res = list()
-        for alias in msg.args:
-            if alias[0] == "!":
-                alias = alias[1:]
-            if alias in context.data.getNode("aliases").index:
-                res.append("!%s correspond à %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
-            else:
-                res.append("!%s n'est pas un alias" % alias)
-        return Response(res, channel=msg.channel, nick=msg.nick)
-    else:
-        return Response("!alias prend en argument l'alias à étendre.",
-                        channel=msg.channel, nick=msg.nick)
-
-
-@hook("cmd_hook", "unalias")
-def cmd_unalias(msg):
-    if len(msg.args):
-        res = list()
-        for alias in msg.args:
-            if alias[0] == "!" and len(alias) > 1:
-                alias = alias[1:]
-            if alias in context.data.getNode("aliases").index:
-                context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
-                res.append(Response("%s a bien été supprimé" % alias,
-                                    channel=msg.channel))
-            else:
-                res.append(Response("%s n'est pas un alias" % alias,
-                                    channel=msg.channel))
-        return res
-    else:
-        return Response("!unalias prend en argument l'alias à supprimer.",
-                        channel=msg.channel)
 
 
 def replace_variables(cnt, msg=None):
+    """Replace variables contained in the content
+
+    Arguments:
+    cnt -- content where search variables
+    msg -- optional message where pick some variables
+    """
+
     if isinstance(cnt, list):
         return [replace_variables(c, msg) for c in cnt]
 
@@ -163,6 +149,86 @@ def replace_variables(cnt, msg=None):
     return cnt
 
 
+# MODULE INTERFACE ####################################################
+
+## Variables management
+
+@hook("cmd_hook", "listvars")
+def cmd_listvars(msg):
+    if len(msg.args):
+        res = list()
+        for user in msg.args:
+            als = [v["alias"] for v in list_variables(user)]
+            if len(als) > 0:
+                res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
+            else:
+                res.append("%s n'a pas encore créé de variable" % user)
+        return Response(" ; ".join(res), channel=msg.channel)
+    elif len(context.data.getNode("variables").index):
+        return Response("Variables connues : %s." %
+                        ", ".join(list_variables()),
+                        channel=msg.channel)
+    else:
+        return Response("No variable are currently stored.", channel=msg.channel)
+
+
+@hook("cmd_hook", "set")
+def cmd_set(msg):
+    if len(msg.args) < 2:
+        raise IRCException("!set prend au minimum deux arguments : "
+                           "le nom de la variable et sa valeur.")
+    set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
+    return Response("Variable \$%s définie avec succès." % msg.args[0],
+                    channel=msg.channel)
+
+
+## Alias management
+
+@hook("cmd_hook", "listalias")
+def cmd_listalias(msg):
+    aliases = [a for a in list_alias(None)] + [a for a in list_alias(msg.channel)]
+    if len(aliases):
+        return Response([a["alias"] for a in aliases],
+                        channel=msg.channel,
+                        title="Known aliases:")
+    return Response("There is no alias currently.", channel=msg.channel)
+
+
+@hook("cmd_hook", "alias")
+def cmd_alias(msg):
+    if not len(msg.args):
+        raise IRCException("!alias prend en argument l'alias à étendre.")
+    res = list()
+    for alias in msg.args:
+        if alias[0] == "!":
+            alias = alias[1:]
+        if alias in context.data.getNode("aliases").index:
+            res.append("!%s correspond à %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
+        else:
+            res.append("!%s n'est pas un alias" % alias)
+    return Response(res, channel=msg.channel, nick=msg.nick)
+
+
+@hook("cmd_hook", "unalias")
+def cmd_unalias(msg):
+    if not len(msg.args):
+        raise IRCException("Quel alias voulez-vous supprimer ?")
+    res = list()
+    for alias in msg.args:
+        if alias[0] == "!" and len(alias) > 1:
+            alias = alias[1:]
+        if alias in context.data.getNode("aliases").index:
+            context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
+            res.append(Response("%s a bien été supprimé" % alias,
+                                channel=msg.channel))
+        else:
+            res.append(Response("%s n'est pas un alias" % alias,
+                                channel=msg.channel))
+    return res
+
+
+## Alias replacement
+
 @hook("pre_Command")
 def treat_alias(msg):
     if msg.cmd in context.data.getNode("aliases").index:
@@ -187,17 +253,15 @@ def treat_alias(msg):
 @hook("ask_default")
 def parseask(msg):
     if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
-        result = re.match(".*alias !?([^ ]+) (pour|=|:) (.+)$", msg.text)
+        result = re.match(".*alias !?([^ ]+) ?(pour|=|:) ?(.+)$", msg.text)
         if result.group(1) in context.data.getNode("aliases").index:
             raise IRCException("cet alias est déjà défini.")
         else:
-            alias = ModuleState("alias")
-            alias["alias"] = result.group(1)
-            alias["origin"] = result.group(3)
-            alias["creator"] = msg.nick
-            context.data.getNode("aliases").addChild(alias)
+            create_alias(result.group(1),
+                         result.group(3),
+                         channel=msg.channel,
+                         creator=msg.nick)
             res = Response("Nouvel alias %s défini avec succès." %
                            result.group(1), channel=msg.channel)
-            context.save()
             return res
     return None
