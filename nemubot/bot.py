@@ -48,6 +48,7 @@ class Bot(threading.Thread):
         logger.info("Initiate nemubot v%s", __version__)
 
         self.verbosity = verbosity
+        self.stop = None
 
         # External IP for accessing this bot
         import ipaddress
