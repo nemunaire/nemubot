@@ -199,7 +199,10 @@ def striphtml(data):
 
     import re
     p = re.compile(r'<.*?>')
-    return htmlentitydecode(p.sub('', data)
-                            .replace("&#x28;", "/(")
-                            .replace("&#x29;", ")/")
-                            .replace("&#x22;", "\""))
+    r, _ = re.subn(r' +', ' ', htmlentitydecode(p.sub('', data)
+                                                .replace("&#x28;", "/(")
+                                                .replace("&#x29;", ")/")
+                                                .replace("&#39;", "´")
+                                                .replace("&#x22;", "\""))
+                   .replace('\n', ' '))
+    return r
