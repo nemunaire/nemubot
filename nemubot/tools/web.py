@@ -75,14 +75,25 @@ def getURLContent(url, body=None, timeout=7):
 
     import http.client
 
+    kwargs = {
+        'host': o.hostname,
+        'port': o.port,
+        'timeout': timeout
+    }
+
     if o.scheme == "http":
-        conn = http.client.HTTPConnection(o.hostname, port=o.port,
-                                          timeout=timeout)
+        conn = http.client.HTTPConnection(**kwargs)
     elif o.scheme == "https":
-        conn = http.client.HTTPSConnection(o.hostname, port=o.port,
-                                           timeout=timeout)
+        # For Python>3.4, restore the Python 3.3 behavior
+        import ssl
+        if hasattr(ssl, "create_default_context"):
+            kwargs["context"] = ssl.create_default_context()
+            kwargs["context"].check_hostname = False
+            kwargs["context"].verify_mode = ssl.CERT_NONE
+
+        conn = http.client.HTTPSConnection(**kwargs)
     elif o.scheme is None or o.scheme == "":
-        conn = http.client.HTTPConnection(o.hostname, port=80, timeout=timeout)
+        conn = http.client.HTTPConnection(**kwargs)
     else:
         raise IRCException("Invalid URL")
 
