@@ -208,6 +208,9 @@ def striphtml(data):
     data -- the string to strip
     """
 
+    if data is None or (not isinstance(data, str) and not isinstance(data, buffer)):
+        return data
+
     import re
     p = re.compile(r'<.*?>')
     r, _ = re.subn(r' +', ' ', htmlentitydecode(p.sub('', data)
