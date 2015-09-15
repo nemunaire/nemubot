@@ -19,16 +19,47 @@ def get_colissimo_info(colissimo_id):
     dataArray = soup.find(class_='dataArray')
     if dataArray and dataArray.tbody and dataArray.tbody.tr:
         date = dataArray.tbody.tr.find(headers="Date").get_text()
-        libelle = dataArray.tbody.tr.find(headers="Libelle").get_text()
+        libelle = dataArray.tbody.tr.find(headers="Libelle").get_text().replace('\n', '').replace('\t', '').replace('\r', '')
         site = dataArray.tbody.tr.find(headers="site").get_text().strip()
         return (date, libelle, site.strip())
 
+def get_chronopost_info(track_id):
+    data = urllib.parse.urlencode({'listeNumeros': track_id})
+    track_baseurl = "http://www.chronopost.fr/expedier/inputLTNumbersNoJahia.do?lang=fr_FR"
+    track_data = urllib.request.urlopen(track_baseurl, data.encode('utf-8'))
+    soup = BeautifulSoup(track_data)
+
+    infoClass = soup.find(class_='numeroColi2')
+    if infoClass and infoClass.get_text():
+        info = infoClass.get_text().split("\n")
+        if len(info) >= 1:
+            info = info[1].strip().split("\"")
+            if len(info) >= 2:
+                date = info[2]
+                libelle = info[1]
+                return (date, libelle)
+
+def get_colisprive_info(track_id):
+    data = urllib.parse.urlencode({'numColis': track_id})
+    track_baseurl = "https://www.colisprive.com/moncolis/pages/detailColis.aspx"
+    track_data = urllib.request.urlopen(track_baseurl, data.encode('utf-8'))
+    soup = BeautifulSoup(track_data)
+
+    dataArray = soup.find(class_='BandeauInfoColis')
+    if dataArray and dataArray.find(class_='divStatut') and dataArray.find(class_='divStatut').find(class_='tdText'):
+        status = dataArray.find(class_='divStatut').find(class_='tdText').get_text()
+        return status
+
 def get_laposte_info(laposte_id):
-    laposte_data = getURLContent("http://www.part.csuivi.courrier.laposte.fr/suivi/index?id=%s" % laposte_id)
+    data = urllib.parse.urlencode({'id': laposte_id})
+    laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
+
+    laposte_data = urllib.request.urlopen(laposte_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(laposte_data)
     search_res = soup.find(class_='resultat_rech_simple_table').tbody.tr
     if (soup.find(class_='resultat_rech_simple_table').thead
-            and soup.find(class_='resultat_rech_simple_table').thead.tr):
+            and soup.find(class_='resultat_rech_simple_table').thead.tr
+            and len(search_res.find_all('td')) > 3):
         field = search_res.find('td')
         poste_id = field.get_text()
 
@@ -43,7 +74,27 @@ def get_laposte_info(laposte_id):
 
         field = field.find_next('td')
         poste_status = field.get_text()
+
         return (poste_type.lower(), poste_id.strip(), poste_status.lower(), poste_location, poste_date)
+
+@hook("cmd_hook", "colisprive")
+def get_colisprive_tracking_info(msg):
+    if not len(msg.args):
+        raise IRCException("Renseignez un identifiant d'envoi,")
+    info = get_colisprive_info(msg.args[0])
+    if info:
+        return Response("Colis: \x02%s\x0F : \x02%s\x0F." % (msg.args[0], info), msg.channel)
+    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
+
+@hook("cmd_hook", "chronopost")
+def get_chronopost_tracking_info(msg):
+    if not len(msg.args):
+        raise IRCException("Renseignez un identifiant d'envoi,")
+    info = get_chronopost_info(msg.args[0])
+    if info:
+        date, libelle = info
+        return Response("Colis: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour \x02%s\x0F." % (msg.args[0], libelle, date), msg.channel)
+    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
 
 @hook("cmd_hook", "colissimo")
 def get_colissimo_tracking_info(msg):
@@ -52,7 +103,7 @@ def get_colissimo_tracking_info(msg):
     info = get_colissimo_info(msg.args[0])
     if info:
         date, libelle, site = info
-        return Response("Colis: \x02%s\x0F : \x02%s\x0F Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (msg.args[0], libelle, date, site), msg.channel)
+        return Response("Colis: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (msg.args[0], libelle, date, site), msg.channel)
     return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
 
 @hook("cmd_hook", "laposte")
