@@ -170,9 +170,13 @@ class MessageConsumer:
             # Run post-treatment: from Response to [ Response ]
             if self.responses is not None and len(self.responses) > 0:
                 self.post_treat(context.hooks)
-        except:
+        except BaseException as e:
             logger.exception("Error occurred during the processing of the %s: "
                              "%s", type(self.msgs[0]).__name__, self.msgs[0])
+
+            from nemubot.message import Text
+            self.responses.append(Text("Sorry, an error occured (%s). Feel free to open a new issue at https://github.com/nemunaire/nemubot/issues/new" % type(e).__name__,
+                                       server=self.srv.id, to=self.msgs[0].to_response))
 
         for res in self.responses:
             to_server = None
