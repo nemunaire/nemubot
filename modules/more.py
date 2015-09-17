@@ -30,6 +30,7 @@ logger = logging.getLogger("nemubot.response")
 
 
 class Response:
+
     def __init__(self, message=None, channel=None, nick=None, server=None,
                  nomore="No more message", title=None, more="(suite) ",
                  count=None, shown_first_count=-1, line_treat=None):
@@ -47,6 +48,7 @@ class Response:
         self.channel = channel
         self.nick = nick
         self.count = count
+
 
     @property
     def receivers(self):
@@ -83,6 +85,8 @@ class Response:
                     self.rawtitle.append(rawtitle)
                 self.rawtitle.pop()
                 self.rawtitle.append(title)
+        return self
+
 
     def append_content(self, message):
         if message is not None and len(message) > 0:
@@ -92,10 +96,13 @@ class Response:
             else:
                 self.messages[len(self.messages)-1] += message
                 self.alone = self.alone and len(self.messages) <= 1
+        return self
+
 
     @property
     def empty(self):
         return len(self.messages) <= 0
+
 
     @property
     def title(self):
@@ -103,6 +110,7 @@ class Response:
             return self.rawtitle[0]
         else:
             return self.rawtitle
+
 
     @property
     def text(self):
@@ -115,6 +123,7 @@ class Response:
                 else:
                     return msg
 
+
     def pop(self):
         self.messages.pop(0)
         self.elt = 0
@@ -123,8 +132,10 @@ class Response:
             if len(self.rawtitle) <= 0:
                 self.rawtitle = None
 
+
     def accept(self, visitor):
         visitor.visit(self.next_response())
+
 
     def next_response(self, maxlen=440):
         if self.nick:
@@ -134,6 +145,7 @@ class Response:
         else:
             return Text(self.get_message(maxlen),
                         server=None, to=self.receivers)
+
 
     def __str__(self):
         ret = []
