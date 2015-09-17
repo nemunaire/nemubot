@@ -43,9 +43,9 @@ def load(context):
 
 
 @hook("cmd_hook", "newyear")
-@hook("cmd_hook", str(yrn), yrn)
-def cmd_newyear(msg, yr):
-    return Response(countdown_format(datetime(yr, 1, 1, 0, 0, 1, 0,
+@hook("cmd_hook", str(yrn))
+def cmd_newyear(msg):
+    return Response(countdown_format(datetime(yrn, 1, 1, 0, 0, 1, 0,
                                               timezone.utc),
                                      "Il reste %s avant la nouvelle année.",
                                      "Nous faisons déjà la fête depuis %s !"),
