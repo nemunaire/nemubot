@@ -77,6 +77,31 @@ def get_laposte_info(laposte_id):
 
         return (poste_type.lower(), poste_id.strip(), poste_status.lower(), poste_location, poste_date)
 
+@hook("cmd_hook", "track")
+def get_tracking_info(msg):
+    if not len(msg.args):
+        raise IRCException("Renseignez un identifiant d'envoi,")
+
+    info = get_colisprive_info(msg.args[0])
+    if info:
+        return Response("Colis Privé: \x02%s\x0F : \x02%s\x0F." % (msg.args[0], info), msg.channel)
+
+    info = get_chronopost_info(msg.args[0])
+    if info:
+        date, libelle = info
+        return Response("Colis Chronopost: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour \x02%s\x0F." % (msg.args[0], libelle, date), msg.channel)
+
+    info = get_colissimo_info(msg.args[0])
+    if info:
+        date, libelle, site = info
+        return Response("Colissimo: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (msg.args[0], libelle, date, site), msg.channel)
+
+    info = get_laposte_info(msg.args[0])
+    if info:
+        poste_type, poste_id, poste_status, poste_location, poste_date = info
+        return Response("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement \x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F)." % (poste_type, poste_id, poste_status, poste_location, poste_date), msg.channel)
+    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
+
 @hook("cmd_hook", "colisprive")
 def get_colisprive_tracking_info(msg):
     if not len(msg.args):
