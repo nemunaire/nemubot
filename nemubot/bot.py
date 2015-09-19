@@ -81,7 +81,7 @@ class Bot(threading.Thread):
         def _help_msg(msg):
             """Parse and response to help messages"""
             from more import Response
-            res = Response(channel=msg.frm)
+            res = Response(channel=msg.to_response)
             if len(msg.args) >= 1:
                 if msg.args[0] in self.modules:
                     if len(msg.args) >= 2:
