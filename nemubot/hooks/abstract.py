@@ -23,6 +23,8 @@ def call_game(call, *args, **kargs):
     **kargs -- named arguments
     """
 
+    assert callable(call)
+
     l = list()
     d = kargs
 

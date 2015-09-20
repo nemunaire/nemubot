@@ -29,7 +29,11 @@ class Message(Abstract):
 
         Abstract.__init__(self, call=call, **kargs)
 
-        self.name = name
+        assert regexp is None or type(regexp) is str, regexp
+        assert channels is None or type(channels) is list, channels
+        assert server is None or type(server) is str, server
+
+        self.name = str(name) if name is not None else None
         self.regexp = regexp
         self.server = server
         self.channels = channels
