@@ -89,7 +89,8 @@ def parseresponse(msg):
         if o.scheme != "":
           if o.netloc == "" and len(o.path) < 10:
             continue
-          if msg.channel not in LAST_URLS:
-            LAST_URLS[msg.channel] = list()
-          LAST_URLS[msg.channel].append(url)
+          for recv in msg.receivers:
+            if recv not in LAST_URLS:
+              LAST_URLS[recv] = list()
+            LAST_URLS[recv].append(url)
     return msg

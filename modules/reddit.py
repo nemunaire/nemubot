@@ -82,9 +82,10 @@ def parseresponse(msg):
     try:
         urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.text)
         for url in urls:
-            if msg.channel not in LAST_SUBS:
-                LAST_SUBS[msg.channel] = list()
-            LAST_SUBS[msg.channel].append(url)
+            for recv in msg.receivers:
+                if recv not in LAST_SUBS:
+                    LAST_SUBS[recv] = list()
+                LAST_SUBS[recv].append(url)
     except:
         pass
 
