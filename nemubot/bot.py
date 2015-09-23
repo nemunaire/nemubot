@@ -84,21 +84,28 @@ class Bot(threading.Thread):
             res = Response(channel=msg.to_response)
             if len(msg.args) >= 1:
                 if msg.args[0] in self.modules:
-                    if len(msg.args) >= 2:
-                        if hasattr(self.modules[msg.args[0]], "HELP_cmd"):
-                            return self.modules[msg.args[0]].HELP_cmd(msg.args[1])
-                        else:
-                            res.append_message("No help for command %s in module %s" % (msg.args[1], msg.args[0]))
-                    elif hasattr(self.modules[msg.args[0]], "help_full"):
+                    if hasattr(self.modules[msg.args[0]], "help_full"):
                         hlp = self.modules[msg.args[0]].help_full()
                         if isinstance(hlp, Response):
                             return hlp
                         else:
                             res.append_message(hlp)
                     else:
-                        res.append_message("No help for module %s" % msg.args[0])
+                        res.append_message([str(h) for s,h in self.modules[msg.args[0]].__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
+                elif msg.args[0][0] == "!":
+                    for module in self.modules:
+                        for (s, h) in self.modules[module].__nemubot_context__.hooks:
+                            if s == "in_Command" and h.is_matching(msg.args[0][1:]):
+                                if h.help_usage:
+                                    return res.append_message(["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], " " + k if k is not None else "", h.help_usage[k]) for k in h.help_usage], title="Usage for command %s from module %s" % (msg.args[0], module))
+                                elif h.help:
+                                    return res.append_message("Command %s from module %s: %s" % (msg.args[0], module, h.help))
+                                else:
+                                    return res.append_message("Sorry, there is currently no help for the command %s. Feel free to make a pull request at https://github.com/nemunaire/nemubot/compare" % msg.args[0])
+                    else:
+                        res.append_message("Sorry, there is no command %s" % msg.args[0])
                 else:
-                    res.append_message("No module named %s" % msg.args[0])
+                    res.append_message("Sorry, there is no module named %s" % msg.args[0])
             else:
                 res.append_message("Pour me demander quelque chose, commencez "
                                    "votre message par mon nom ; je réagis "

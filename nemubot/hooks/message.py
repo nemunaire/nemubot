@@ -25,18 +25,29 @@ class Message(Abstract):
     """Class storing hook information, specialized for a generic Message"""
 
     def __init__(self, call, name=None, regexp=None, channels=list(),
-                 server=None, **kargs):
+                 server=None, help=None, help_usage=dict(), **kargs):
 
         Abstract.__init__(self, call=call, **kargs)
 
         assert regexp is None or type(regexp) is str, regexp
         assert channels is None or type(channels) is list, channels
         assert server is None or type(server) is str, server
+        assert type(help_usage) is dict, help_usage
 
         self.name = str(name) if name is not None else None
         self.regexp = regexp
         self.server = server
         self.channels = channels
+        self.help = help
+        self.help_usage = help_usage
+
+
+    def __str__(self):
+        return "\x03\x02%s\x03\x02%s%s" % (
+            self.name if self.name is not None else "\x03\x1f" + self.regexp + "\x03\x1f" if self.regexp is not None else "",
+            " (restricted to %s)" % (self.server + ":" if self.server is not None else "") + (self.channels if self.channels else "*") if len(self.channels) or self.server else "",
+            ": %s" % self.help if self.help is not None else ""
+        )
 
 
     def match(self, msg, server=None):
