@@ -70,7 +70,7 @@ def opensearch(site, term, ssl=False):
     if response is not None and response.hasNode("Section"):
         for itm in response.getNode("Section").getNodes("Item"):
             yield (itm.getNode("Text").getContent(),
-                   itm.getNode("Description").getContent(),
+                   itm.getNode("Description").getContent() if itm.hasNode("Description") else "",
                    itm.getNode("Url").getContent())
 
 
@@ -163,14 +163,16 @@ def mediawiki_response(site, term, receivers):
                         line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
                         channel=receivers)
     except:
-        # Try looking at opensearch
-        os = [x for x, _, _ in opensearch(site, terms[0])]
-        # Fallback to global search
-        if not len(os):
-            os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]
-        return Response(os,
-                        channel=receivers,
-                        title="Article not found, would you mean")
+        pass
+
+    # Try looking at opensearch
+    os = [x for x, _, _ in opensearch(site, terms[0])]
+    # Fallback to global search
+    if not len(os):
+        os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]
+    return Response(os,
+                    channel=receivers,
+                    title="Article not found, would you mean")
 
 
 @hook("cmd_hook", "mediawiki")
