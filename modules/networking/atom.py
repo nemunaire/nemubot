@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # coding=utf-8
 
+import datetime
 import time
 from xml.dom.minidom import parse
 from xml.dom.minidom import parseString
@@ -23,6 +24,7 @@ class AtomEntry:
             except:
                 print(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10])
                 self.updated = time.localtime()
+        self.updated = datetime.datetime(*self.updated[:6])
         if len(node.getElementsByTagName("summary")) > 0 and node.getElementsByTagName("summary")[0].firstChild is not None:
             self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
         else:
@@ -39,6 +41,9 @@ class AtomEntry:
             self.link2 = node.getElementsByTagName("link")[1].getAttribute("href")
         else:
             self.link2 = None
+
+    def __repr__(self):
+        return "<AtomEntry title='%s' updated='%s'>" % (self.title, self.updated)
 
 
 class Atom:
@@ -69,6 +74,9 @@ class Atom:
                 differ.append(other.entries[k])
         return differ
 
+    def get_ordered_entries(self):
+        entries = self.entries.values()
+        return sorted(entries, key=lambda e: e.updated, reverse=True)
 
 if __name__ == "__main__":
   content1 = ""
