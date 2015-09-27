@@ -15,7 +15,6 @@ nemubotversion = 3.4
 
 from more import Response
 
-from .atom import Atom
 from . import page
 
 DATAS = None
@@ -154,17 +153,18 @@ def alert_change(content, site):
         return
 
     if site["type"] == "atom":
+        from nemubot.tools.feed import Feed
         if site["_lastpage"] is None:
             if site["lastcontent"] is None or site["lastcontent"] == "":
                 site["lastcontent"] = content
-            site["_lastpage"] = Atom(site["lastcontent"])
+            site["_lastpage"] = Feed(site["lastcontent"])
         try:
-            page = Atom(content)
+            page = Feed(content)
         except:
             print("An error occurs during Atom parsing. Restart event...")
             start_watching(site)
             return
-        diff = site["_lastpage"].diff(page)
+        diff = site["_lastpage"] & page
         if len(diff) > 0:
             site["_lastpage"] = page
             diff.reverse()
