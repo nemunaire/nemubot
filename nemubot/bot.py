@@ -78,6 +78,11 @@ class Bot(threading.Thread):
                 return msg.respond("pong")
         self.hooks.add_hook(nemubot.hooks.Message(in_ping), "in", "DirectAsk")
 
+        def in_echo(msg):
+            from nemubot.message import Text
+            return Text(msg.nick + ": " + " ".join(msg.args), to=msg.to_response)
+        self.hooks.add_hook(nemubot.hooks.Message(in_echo, "echo"), "in", "Command")
+
         def _help_msg(msg):
             """Parse and response to help messages"""
             from more import Response
