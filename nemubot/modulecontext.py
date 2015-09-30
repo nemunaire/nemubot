@@ -83,11 +83,10 @@ class ModuleContext:
 
             def send_response(server, res):
                 if server in context.servers:
-                    r = res.next_response()
-                    if r.server is not None:
-                        return context.servers[r.server].send_response(r)
+                    if res.server is not None:
+                        return context.servers[res.server].send_response(res)
                     else:
-                        return context.servers[server].send_response(r)
+                        return context.servers[server].send_response(res)
                 else:
                     module.logger.error("Try to send a message to the unknown server: %s", server)
                     return False
