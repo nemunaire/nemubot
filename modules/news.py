@@ -26,12 +26,16 @@ def help_full():
 
 def find_rss_links(url):
     soup = BeautifulSoup(web.getURLContent(url))
-    for rss in soup.find_all('link', attrs={"type": re.compile("^application/atom")}):
+    for rss in soup.find_all('link', attrs={"type": re.compile("^application/(atom|rss)")}):
         yield urljoin(url, rss["href"])
 
 def get_last_news(url):
-    feed = Feed(web.getURLContent(url))
-    return feed.entries
+    from xml.parsers.expat import ExpatError
+    try:
+        feed = Feed(web.getURLContent(url))
+        return feed.entries
+    except ExpatError:
+        return []
 
 
 # MODULE INTERFACE ####################################################
