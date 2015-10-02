@@ -322,18 +322,14 @@ class Bot(threading.Thread):
         if self.event_timer is not None:
             self.event_timer.cancel()
 
-        if len(self.events) > 0:
+        if len(self.events):
             logger.debug("Update timer: next event in %d seconds",
                          self.events[0].time_left.seconds)
-            if datetime.now(timezone.utc) + timedelta(seconds=5) >= self.events[0].current:
-                import time
-                while datetime.now(timezone.utc) < self.events[0].current:
-                    time.sleep(0.6)
-                self._end_event_timer()
-            else:
-                self.event_timer = threading.Timer(
-                    self.events[0].time_left.seconds + 1, self._end_event_timer)
-                self.event_timer.start()
+            self.event_timer = threading.Timer(
+                self.events[0].time_left.seconds + self.events[0].time_left.microseconds / 1000000 if datetime.now(timezone.utc) < self.events[0].current else 0,
+                self._end_event_timer)
+            self.event_timer.start()
+
         else:
             logger.debug("Update timer: no timer left")
 
