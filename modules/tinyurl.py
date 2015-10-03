@@ -68,7 +68,7 @@ def parselisten(msg):
 def parseresponse(msg):
     global LAST_URLS
     try:
-        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ ]+)", msg.text)
+        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
         for url in urls:
             o = urlparse(url)
             if o.scheme != "":
