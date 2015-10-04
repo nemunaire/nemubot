@@ -87,11 +87,14 @@ def cmd_w3m(msg):
 
 @hook("cmd_hook", "traceurl")
 def cmd_traceurl(msg):
-    if 1 < len(msg.args) < 5:
+    if 0 < len(msg.args) < 5:
         res = list()
         for url in msg.args:
-            trace = page.traceURL(url)
-            res.append(Response(trace, channel=msg.channel, title="TraceURL"))
+            try:
+                trace = page.traceURL(url)
+                res.append(Response(trace, channel=msg.channel, title="TraceURL"))
+            except:
+                pass
         return res
     else:
         raise IRCException("Indicate an URL to trace!")
