@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Wishes Happy New Year when the time comes"""
+
+# PYTHON STUFFS #######################################################
 
 from datetime import datetime, timezone
 
@@ -9,13 +9,16 @@ from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 
-nemubotversion = 4.0
-
 from more import Response
+
+
+# GLOBALS #############################################################
 
 yr = datetime.now(timezone.utc).year
 yrn = datetime.now(timezone.utc).year + 1
 
+
+# LOADING #############################################################
 
 def load(context):
     if not context.config or not context.config.hasNode("sayon"):
@@ -42,8 +45,12 @@ def load(context):
                                   call=bonneannee))
 
 
-@hook("cmd_hook", "newyear")
-@hook("cmd_hook", str(yrn))
+# MODULE INTERFACE ####################################################
+
+@hook("cmd_hook", "newyear",
+      help="Display the remaining time before the next new year")
+@hook("cmd_hook", str(yrn),
+      help="Display the remaining time before %d" % yrn)
 def cmd_newyear(msg):
     return Response(countdown_format(datetime(yrn, 1, 1, 0, 0, 1, 0,
                                               timezone.utc),
@@ -52,7 +59,8 @@ def cmd_newyear(msg):
                     channel=msg.channel)
 
 
-@hook("cmd_rgxp", data=yrn, regexp="^[0-9]{4}$")
+@hook("cmd_rgxp", data=yrn, regexp="^[0-9]{4}$",
+      help="Calculate time remaining/passed before/since the requested year")
 def cmd_timetoyear(msg, cur):
     yr = int(msg.cmd)
 

@@ -16,11 +16,6 @@ from nemubot.tools.xmlparser.node import ModuleState
 from more import Response
 
 
-# HELP ################################################################
-
-def help_full():
-    return "Pour créer un alias, adressez-vous à moi en disant quelque chose comme : \"nouvel alias XX : YY\", où YY sera la commande équivalente à XX. Vous pouvez ajouter des variables comme ${1}, ${2}, ... correspondant aux éventuels arguments.\nDe l'aide supplémentaire existe pour les commandes !alias, !listalias, !unalias, !set et !listvars"
-
 # LOADING #############################################################
 
 def load(context):
@@ -161,38 +156,47 @@ def replace_variables(cnts, msg=None):
 
 ## Variables management
 
-@hook("cmd_hook", "listvars")
+@hook("cmd_hook", "listvars",
+      help="list defined variables for substitution in input commands",
+      help_usage={
+          None: "List all known variables",
+          "USER": "List variables created by USER"})
 def cmd_listvars(msg):
     if len(msg.args):
         res = list()
         for user in msg.args:
             als = [v["alias"] for v in list_variables(user)]
             if len(als) > 0:
-                res.append("Variables créées par %s : %s" % (user, ", ".join(als)))
+                res.append("%s's variables: %s" % (user, ", ".join(als)))
             else:
-                res.append("%s n'a pas encore créé de variable" % user)
+                res.append("%s didn't create variable yet." % user)
         return Response(" ; ".join(res), channel=msg.channel)
     elif len(context.data.getNode("variables").index):
-        return Response("Variables connues : %s." %
+        return Response("Known variables: %s." %
                         ", ".join(list_variables()),
                         channel=msg.channel)
     else:
-        return Response("No variable are currently stored.", channel=msg.channel)
+        return Response("There is currently no variable stored.", channel=msg.channel)
 
 
-@hook("cmd_hook", "set")
+@hook("cmd_hook", "set",
+      help="Create or set variables for substitution in input commands",
+      help_usage={"KEY VALUE": "Define the variable named KEY and fill it with VALUE as content"})
 def cmd_set(msg):
     if len(msg.args) < 2:
-        raise IRCException("!set prend au minimum deux arguments : "
-                           "le nom de la variable et sa valeur.")
+        raise IRCException("!set take two args: the key and the value.")
     set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
-    return Response("Variable \$%s définie avec succès." % msg.args[0],
+    return Response("Variable \$%s successfully defined." % msg.args[0],
                     channel=msg.channel)
 
 
 ## Alias management
 
-@hook("cmd_hook", "listalias")
+@hook("cmd_hook", "listalias",
+      help="List registered aliases",
+      help_usage={
+          None: "List all registered aliases",
+          "USER": "List all aliases created by USER"})
 def cmd_listalias(msg):
     aliases = [a for a in list_alias(None)] + [a for a in list_alias(msg.channel)]
     if len(aliases):
@@ -202,35 +206,37 @@ def cmd_listalias(msg):
     return Response("There is no alias currently.", channel=msg.channel)
 
 
-@hook("cmd_hook", "alias")
+@hook("cmd_hook", "alias",
+      help="Display the replacement command for a given alias")
 def cmd_alias(msg):
     if not len(msg.args):
-        raise IRCException("!alias prend en argument l'alias à étendre.")
+        raise IRCException("!alias takes as argument an alias to extend.")
     res = list()
     for alias in msg.args:
         if alias[0] == "!":
             alias = alias[1:]
         if alias in context.data.getNode("aliases").index:
-            res.append("!%s correspond à %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
+            res.append("!%s correspond to %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
         else:
-            res.append("!%s n'est pas un alias" % alias)
+            res.append("!%s is not an alias" % alias)
     return Response(res, channel=msg.channel, nick=msg.nick)
 
 
-@hook("cmd_hook", "unalias")
+@hook("cmd_hook", "unalias",
+      help="Remove a previously created alias")
 def cmd_unalias(msg):
     if not len(msg.args):
-        raise IRCException("Quel alias voulez-vous supprimer ?")
+        raise IRCException("Which alias would you want to remove?")
     res = list()
     for alias in msg.args:
         if alias[0] == "!" and len(alias) > 1:
             alias = alias[1:]
         if alias in context.data.getNode("aliases").index:
             context.data.getNode("aliases").delChild(context.data.getNode("aliases").index[alias])
-            res.append(Response("%s a bien été supprimé" % alias,
+            res.append(Response("%s doesn't exist anymore." % alias,
                                 channel=msg.channel))
         else:
-            res.append(Response("%s n'est pas un alias" % alias,
+            res.append(Response("%s is not an alias" % alias,
                                 channel=msg.channel))
     return res
 
@@ -260,16 +266,16 @@ def treat_alias(msg):
 
 @hook("ask_default")
 def parseask(msg):
-    if re.match(".*(set|cr[ée]{2}|nouvel(le)?) alias.*", msg.text) is not None:
-        result = re.match(".*alias !?([^ ]+) ?(pour|=|:) ?(.+)$", msg.text)
+    if re.match(".*(register|set|cr[ée]{2}|new|nouvel(le)?) alias.*", msg.text) is not None:
+        result = re.match(".*alias !?([^ ]+) ?(pour|for|=|:) ?(.+)$", msg.text)
         if result.group(1) in context.data.getNode("aliases").index:
-            raise IRCException("cet alias est déjà défini.")
+            raise IRCException("this alias is already defined.")
         else:
             create_alias(result.group(1),
                          result.group(3),
                          channel=msg.channel,
                          creator=msg.nick)
-            res = Response("Nouvel alias %s défini avec succès." %
+            res = Response("New alias %s successfully registered." %
                            result.group(1), channel=msg.channel)
             return res
     return None

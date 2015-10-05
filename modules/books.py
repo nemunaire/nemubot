@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Looking for books"""
+
+# PYTHON STUFFS #######################################################
 
 import urllib
 
@@ -9,10 +9,10 @@ from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 4.0
-
 from more import Response
 
+
+# LOADING #############################################################
 
 def load(context):
     if not context.config or not context.config.getAttribute("goodreadskey"):
@@ -21,6 +21,8 @@ def load(context):
                           "<module name=\"books\" goodreadskey=\"XXXXXX\" />\n"
                           "Get one at https://www.goodreads.com/api/keys")
 
+
+# MODULE CORE #########################################################
 
 def get_book(title):
     """Retrieve a book from its title"""
@@ -54,7 +56,13 @@ def search_author(name):
     return None
 
 
-@hook("cmd_hook", "book")
+# MODULE INTERFACE ####################################################
+
+@hook("cmd_hook", "book",
+      help="Get information about a book from its title",
+      help_usage={
+          "TITLE": "Get information about a book titled TITLE"
+      })
 def cmd_book(msg):
     if not len(msg.args):
         raise IRCException("please give me a title to search")
@@ -69,7 +77,11 @@ def cmd_book(msg):
     return res
 
 
-@hook("cmd_hook", "search_books")
+@hook("cmd_hook", "search_books",
+      help="Search book's title",
+      help_usage={
+          "APPROX_TITLE": "Search for a book approximately titled APPROX_TITLE"
+      })
 def cmd_books(msg):
     if not len(msg.args):
         raise IRCException("please give me a title to search")
@@ -85,7 +97,11 @@ def cmd_books(msg):
     return res
 
 
-@hook("cmd_hook", "author_books")
+@hook("cmd_hook", "author_books",
+      help="Looking for books writen by a given author",
+      help_usage={
+          "AUTHOR": "Looking for books writen by AUTHOR"
+      })
 def cmd_author(msg):
     if not len(msg.args):
         raise IRCException("please give me an author to search")

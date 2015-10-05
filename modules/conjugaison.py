@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Find french conjugaison"""
+
+# PYTHON STUFFS #######################################################
 
 from collections import defaultdict
 import re
@@ -11,9 +11,10 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.web import striphtml
 
-nemubotversion = 3.4
-
 from more import Response
+
+
+# GLOBALS #############################################################
 
 s = [('present', '0'), ('présent', '0'), ('pr', '0'),
      ('passé simple', '12'), ('passe simple', '12'), ('ps', '12'),
@@ -32,29 +33,7 @@ for k, v in s:
     d[k].append(v)
 
 
-def help_full():
-    return ("!conjugaison <tens> <verb>: give the conjugaison for <verb> in "
-            "<tens>.")
-
-
-@hook("cmd_hook", "conjugaison")
-def cmd_conjug(msg):
-    if len(msg.args) < 2:
-        raise IRCException("donne moi un temps et un verbe, et je te donnerai "
-                           "sa conjugaison!")
-
-    tens = ' '.join(msg.args[:-1])
-
-    verb = msg.args[-1]
-
-    conjug = get_conjug(verb, tens)
-
-    if len(conjug) > 0:
-        return Response(conjug, channel=msg.channel,
-                        title="Conjugaison de %s" % verb)
-    else:
-        raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)
-
+# MODULE CORE #########################################################
 
 def get_conjug(verb, stringTens):
     url = ("http://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
@@ -89,3 +68,27 @@ def compute_line(line, stringTens):
                              .replace("<b>", "\x02")
                              .replace("</b>", "\x0F")))
     return res
+
+
+# MODULE INTERFACE ####################################################
+
+@hook("cmd_hook", "conjugaison",
+      help_usage={
+          "TENS VERB": "give the conjugaison for VERB in TENS."
+      })
+def cmd_conjug(msg):
+    if len(msg.args) < 2:
+        raise IRCException("donne moi un temps et un verbe, et je te donnerai "
+                           "sa conjugaison!")
+
+    tens = ' '.join(msg.args[:-1])
+
+    verb = msg.args[-1]
+
+    conjug = get_conjug(verb, tens)
+
+    if len(conjug) > 0:
+        return Response(conjug, channel=msg.channel,
+                        title="Conjugaison de %s" % verb)
+    else:
+        raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)

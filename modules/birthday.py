@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """People birthdays and ages"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 import sys
@@ -13,21 +13,16 @@ from nemubot.tools.countdown import countdown_format
 from nemubot.tools.date import extractDate
 from nemubot.tools.xmlparser.node import ModuleState
 
-nemubotversion = 3.4
-
 from more import Response
 
+
+# LOADING #############################################################
 
 def load(context):
     context.data.setIndex("name", "birthday")
 
 
-def help_full():
-    return ("!anniv /who/: gives the remaining time before the anniversary of "
-            "/who/\n!age /who/: gives the age of /who/\nIf /who/ is not given,"
-            " gives the remaining time before your anniversary.\n\n To set you"
-            "r birthday, say it to nemubot :)")
-
+# MODULE CORE #########################################################
 
 def findName(msg):
     if (not len(msg.args) or msg.args[0].lower() == "moi" or
@@ -47,7 +42,16 @@ def findName(msg):
     return (matches, name)
 
 
-@hook("cmd_hook", "anniv")
+# MODULE INTERFACE ####################################################
+
+## Commands
+
+@hook("cmd_hook", "anniv",
+      help="gives the remaining time before the anniversary of known people",
+      help_usage={
+          None: "Calculate the time remaining before your birthday",
+          "WHO": "Calculate the time remaining before WHO's birthday",
+      })
 def cmd_anniv(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
@@ -76,7 +80,12 @@ def cmd_anniv(msg):
                         msg.channel, msg.nick)
 
 
-@hook("cmd_hook", "age")
+@hook("cmd_hook", "age",
+      help="Calculate age of known people",
+      help_usage={
+          None: "Calculate your age",
+          "WHO": "Calculate the age of WHO"
+      })
 def cmd_age(msg):
     (matches, name) = findName(msg)
     if len(matches) == 1:
@@ -92,6 +101,8 @@ def cmd_age(msg):
                         " Quand est-il né ?" % name, msg.channel, msg.nick)
     return True
 
+
+## Input parsing
 
 @hook("ask_default")
 def parseask(msg):
