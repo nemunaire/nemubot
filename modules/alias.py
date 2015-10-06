@@ -114,7 +114,7 @@ def set_variable(name, value, creator):
     context.save()
 
 
-def replace_variables(cnt, msg=None):
+def replace_variables(cnts, msg=None):
     """Replace variables contained in the content
 
     Arguments:
@@ -122,34 +122,39 @@ def replace_variables(cnt, msg=None):
     msg -- optional message where pick some variables
     """
 
-    if isinstance(cnt, list):
-        return [replace_variables(c, msg) for c in cnt]
-
     unsetCnt = list()
-    for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9:]+)\}", cnt):
-        rv = re.match("([0-9]+)(:([0-9]*))?", res)
-        if rv is not None:
-            varI = int(rv.group(1)) - 1
-            if varI > len(msg.args):
-                cnt = cnt.replace("${%s}" % res, "", 1)
-            elif rv.group(2) is not None:
-                if rv.group(3) is not None and len(rv.group(3)):
-                    varJ = int(rv.group(3)) - 1
-                    cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:varJ]), 1)
-                    for v in range(varI, varJ):
-                        unsetCnt.append(v)
+    if not isinstance(cnts, list):
+        cnts = list(cnts)
+    resultCnt = list()
+
+    for cnt in cnts:
+        for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9:]+)\}", cnt):
+            rv = re.match("([0-9]+)(:([0-9]*))?", res)
+            if rv is not None:
+                varI = int(rv.group(1)) - 1
+                if varI > len(msg.args):
+                    cnt = cnt.replace("${%s}" % res, "", 1)
+                elif rv.group(2) is not None:
+                    if rv.group(3) is not None and len(rv.group(3)):
+                        varJ = int(rv.group(3)) - 1
+                        cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:varJ]), 1)
+                        for v in range(varI, varJ):
+                            unsetCnt.append(v)
+                    else:
+                        cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:]), 1)
+                        for v in range(varI, len(msg.args)):
+                            unsetCnt.append(v)
                 else:
-                    cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:]), 1)
-                    for v in range(varI, len(msg.args)):
-                        unsetCnt.append(v)
+                    cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
+                    unsetCnt.append(varI)
             else:
-                cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
-                unsetCnt.append(varI)
-        else:
-            cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
-    for u in sorted(unsetCnt, reverse=True):
-        msg.args.pop(u)
-    return cnt
+                cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
+        resultCnt.append(cnt)
+
+    for u in sorted(set(unsetCnt), reverse=True):
+        k = msg.args.pop(u)
+
+    return resultCnt
 
 
 # MODULE INTERFACE ####################################################
