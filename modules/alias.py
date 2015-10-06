@@ -130,18 +130,21 @@ def replace_variables(cnt, msg=None):
         rv = re.match("([0-9]+)(:([0-9]*))?", res)
         if rv is not None:
             varI = int(rv.group(1)) - 1
-            print(varI, len(msg.args))
             if varI > len(msg.args):
                 cnt = cnt.replace("${%s}" % res, "", 1)
             elif rv.group(2) is not None:
-                if rv.group(3) is not None:
+                if rv.group(3) is not None and len(rv.group(3)):
                     varJ = int(rv.group(3)) - 1
                     cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:varJ]), 1)
+                    for v in range(varI, varJ):
+                        unsetCnt.append(v)
                 else:
                     cnt = cnt.replace("${%s}" % res, " ".join(msg.args[varI:]), 1)
+                    for v in range(varI, len(msg.args)):
+                        unsetCnt.append(v)
             else:
                 cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
-            unsetCnt.append(varI)
+                unsetCnt.append(varI)
         else:
             cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
     for u in sorted(unsetCnt, reverse=True):
