@@ -76,6 +76,8 @@ class ModuleContext:
                                 yield i
                         else:
                             yield res
+            def subtreat(msg):
+                yield from context.treater.treat_msg(msg)
             def add_event(evt, eid=None):
                 return context.add_event(evt, eid, module_src=module)
             def del_event(evt):
@@ -104,6 +106,8 @@ class ModuleContext:
             def call_hook(store, msg):
                 # TODO: what can we do here?
                 return None
+            def subtreat(msg):
+                return None
             def add_event(evt, eid=None):
                 return context.add_event(evt, eid, module_src=module)
             def del_event(evt):
@@ -122,6 +126,7 @@ class ModuleContext:
         self.save = save
         self.send_response = send_response
         self.call_hook = call_hook
+        self.subtreat = subtreat
 
 
     def unload(self):
