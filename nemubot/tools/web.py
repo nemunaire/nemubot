@@ -60,7 +60,7 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, body=None, timeout=7):
+def getURLContent(url, body=None, timeout=7, header=None):
     """Return page content corresponding to URL or None if any error occurs
 
     Arguments:
@@ -97,19 +97,24 @@ def getURLContent(url, body=None, timeout=7):
     else:
         raise IRCException("Invalid URL")
 
+    from nemubot import __version__
+    if header is None:
+        header = {"User-agent": "Nemubot v%s" % __version__}
+    elif "User-agent" not in header:
+        header["User-agent"] = "Nemubot v%s" % __version__
+
     import socket
     try:
-        from nemubot import __version__
         if o.query != '':
             conn.request("GET" if body is None else "POST",
                          o.path + "?" + o.query,
                          body,
-                         {"User-agent": "Nemubot v%s" % __version__})
+                         header)
         else:
             conn.request("GET" if body is None else "POST",
                          o.path,
                          body,
-                         {"User-agent": "Nemubot v%s" % __version__})
+                         header)
     except OSError as e:
         raise IRCException(e.strerror)
 
