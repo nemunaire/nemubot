@@ -165,7 +165,7 @@ def cmd_listvars(msg):
     if len(msg.args):
         res = list()
         for user in msg.args:
-            als = [v["alias"] for v in list_variables(user)]
+            als = [v["name"] for v in list_variables(user)]
             if len(als) > 0:
                 res.append("%s's variables: %s" % (user, ", ".join(als)))
             else:
@@ -186,7 +186,7 @@ def cmd_set(msg):
     if len(msg.args) < 2:
         raise IRCException("!set take two args: the key and the value.")
     set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
-    return Response("Variable \$%s successfully defined." % msg.args[0],
+    return Response("Variable $%s successfully defined." % msg.args[0],
                     channel=msg.channel)
 
 
