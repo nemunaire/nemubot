@@ -19,6 +19,7 @@
 from datetime import datetime, timedelta, timezone
 import logging
 import threading
+import sys
 
 from nemubot import __version__
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
@@ -372,12 +373,9 @@ class Bot(threading.Thread):
         """
 
         if name in self.modules:
-            import imp
             self.unload_module(name)
-            tt = __import__(name)
-            imp.reload(tt)
-        else:
-            __import__(name)
+
+        __import__(name)
 
 
     def add_module(self, module):
@@ -433,12 +431,24 @@ class Bot(threading.Thread):
         """Unload a module"""
         if name in self.modules:
             self.modules[name].print("Unloading module %s" % name)
+
+            # Call the user defined unload method
             if hasattr(self.modules[name], "unload"):
                 self.modules[name].unload(self)
             self.modules[name].__nemubot_context__.unload()
-            # Remove from the dict
+
+            # Remove from the nemubot dict
             del self.modules[name]
+
+            # Remove from the Python dict
+            del sys.modules[name]
+            for mod in [i for i in sys.modules]:
+                if mod[:len(name) + 1] == name + ".":
+                    logger.debug("Module '%s' also removed from system modules list.", mod)
+                    del sys.modules[mod]
+
             logger.info("Module `%s' successfully unloaded.", name)
+
             return True
         return False
 
