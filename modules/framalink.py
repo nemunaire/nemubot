@@ -23,7 +23,12 @@ def framalink_reducer(url, data):
     json_data =  json.loads(web.getURLContent(url, "lsturl="
         + quote(data, "/:%@&=?"),
         header={"Content-Type": "application/x-www-form-urlencoded"}))
-    return json_data['short']
+    if 'short' in json_data:
+        return json_data['short']
+    elif 'msg' in json_data:
+        raise IRCException("Error: %s" % json_data['msg'])
+    else:
+        IRCException("An error occured while shortening %s." % data)
 
 # MODULE VARIABLES ####################################################
 
