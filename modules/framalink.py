@@ -3,6 +3,7 @@
 # PYTHON STUFFS #######################################################
 
 import re
+import json
 from urllib.parse import urlparse
 from urllib.parse import quote
 
@@ -12,13 +13,26 @@ from nemubot.message import Text
 from nemubot.tools import web
 
 
+# MODULE FUCNTIONS ####################################################
+
+def default_reducer(url, data):
+    snd_url = url + quote(data, "/:%@&=?")
+    return web.getURLContent(snd_url)
+
+def framalink_reducer(url, data):
+    json_data =  json.loads(web.getURLContent(url, "lsturl="
+        + quote(data, "/:%@&=?"),
+        header={"Content-Type": "application/x-www-form-urlencoded"}))
+    return json_data['short']
+
 # MODULE VARIABLES ####################################################
 
 PROVIDERS = {
-    "tinyurl": "http://tinyurl.com/api-create.php?url=",
-    "ycc": "http://ycc.fr/redirection/create/",
+    "tinyurl": (default_reducer, "http://tinyurl.com/api-create.php?url="),
+    "ycc": (default_reducer, "http://ycc.fr/redirection/create/"),
+    "framalink": (framalink_reducer, "https://frama.link/a?format=json")
 }
-DEFAULT_PROVIDER = "ycc"
+DEFAULT_PROVIDER = "framalink"
 
 
 # LOADING #############################################################
@@ -35,15 +49,12 @@ def load(context):
 # MODULE CORE #########################################################
 
 def reduce(url):
-    """Ask YCC website to reduce given URL
+    """Ask the url shortner website to reduce given URL
 
     Argument:
     url -- the URL to reduce
     """
-
-    snd_url = PROVIDERS[DEFAULT_PROVIDER] + quote(url, "/:%@&=?")
-    return web.getURLContent(snd_url)
-
+    return PROVIDERS[DEFAULT_PROVIDER][0](PROVIDERS[DEFAULT_PROVIDER][1], url)
 
 def gen_response(res, msg, srv):
     if res is None:
@@ -72,7 +83,7 @@ def parseresponse(msg):
         for url in urls:
             o = urlparse(url)
             if o.scheme != "":
-                if o.netloc == "ycc.fr" or o.netloc == "tinyurl.com" or (
+                if o.netloc == "ycc.fr" or o.netloc == "tinyurl.com" or o.netloc == "frama.link" or (
                         o.netloc == "" and len(o.path) < 10):
                     continue
                 for recv in msg.receivers:
@@ -86,7 +97,7 @@ def parseresponse(msg):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "tinyurl",
+@hook("cmd_hook", "framalink",
       help="Reduce any given URL",
       help_usage={None: "Reduce the last URL said on the channel",
                   "URL [URL ...]": "Reduce the given URL(s)"})
