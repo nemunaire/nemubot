@@ -21,7 +21,7 @@ def default_reducer(url, data):
 
 def framalink_reducer(url, data):
     json_data =  json.loads(web.getURLContent(url, "lsturl="
-        + quote(data, "/:%@&=?"),
+        + quote(data),
         header={"Content-Type": "application/x-www-form-urlencoded"}))
     if 'short' in json_data:
         return json_data['short']
@@ -54,13 +54,13 @@ def load(context):
 
 # MODULE CORE #########################################################
 
-def reduce(url):
+def reduce(url, provider=DEFAULT_PROVIDER):
     """Ask the url shortner website to reduce given URL
 
     Argument:
     url -- the URL to reduce
     """
-    return PROVIDERS[DEFAULT_PROVIDER][0](PROVIDERS[DEFAULT_PROVIDER][1], url)
+    return PROVIDERS[provider][0](PROVIDERS[provider][1], url)
 
 def gen_response(res, msg, srv):
     if res is None:
@@ -105,7 +105,7 @@ def parseresponse(msg):
 @hook("cmd_hook", "framalink",
       help="Reduce any given URL",
       help_usage={None: "Reduce the last URL said on the channel",
-                  "URL [URL ...]": "Reduce the given URL(s)"})
+                  "[@provider=framalink] URL [URL ...]": "Reduce the given URL(s) using thespecified shortner"})
 def cmd_reduceurl(msg):
     minify = list()
 
@@ -121,10 +121,15 @@ def cmd_reduceurl(msg):
     else:
         minify += msg.args
 
+    if 'provider' in msg.kwargs and msg.kwargs['provider'] in PROVIDERS:
+        provider = msg.kwargs['provider']
+    else:
+        provider = DEFAULT_PROVIDER
+
     res = list()
     for url in minify:
         o = urlparse(web.getNormalizedURL(url), "http")
-        minief_url = reduce(url)
+        minief_url = reduce(url, provider)
         if o.netloc == "":
             res.append(gen_response(minief_url, msg, o.scheme))
         else:
