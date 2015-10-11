@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, urlunsplit
 
 from nemubot.exception import IRCException
 
@@ -24,38 +24,43 @@ from nemubot.exception import IRCException
 def isURL(url):
     """Return True if the URL can be parsed"""
     o = urlparse(url)
-    return o.scheme == "" and o.netloc == "" and o.path == ""
+    return o.netloc == "" and o.path == ""
+
+
+def getNormalizedURL(url):
+    """Return a normalized form for the given URL"""
+    return urlunsplit(urlsplit(url, "http"))
 
 
 def getScheme(url):
     """Return the protocol of a given URL"""
-    o = urlparse(url)
+    o = urlparse(url, "http")
     return o.scheme
 
 
 def getHost(url):
     """Return the domain of a given URL"""
-    return urlparse(url).hostname
+    return urlparse(url, "http").hostname
 
 
 def getPort(url):
     """Return the port of a given URL"""
-    return urlparse(url).port
+    return urlparse(url, "http").port
 
 
 def getPath(url):
     """Return the page request of a given URL"""
-    return urlparse(url).path
+    return urlparse(url, "http").path
 
 
 def getUser(url):
     """Return the page request of a given URL"""
-    return urlparse(url).username
+    return urlparse(url, "http").username
 
 
 def getPassword(url):
     """Return the page request of a given URL"""
-    return urlparse(url).password
+    return urlparse(url, "http").password
 
 
 # Get real pages
@@ -69,9 +74,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
     timeout -- maximum number of seconds to wait before returning an exception
     """
 
-    o = urlparse(url)
-    if o.netloc == "":
-        o = urlparse("http://" + url)
+    o = urlparse(url, "http")
 
     import http.client
 

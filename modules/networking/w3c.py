@@ -13,9 +13,7 @@ def validator(url):
 
     o = urllib.parse.urlparse(url, "http")
     if o.netloc == "":
-        o = urllib.parse.urlparse("http://" + url)
-    if o.netloc == "":
-        raise IRCException("Indiquer une URL valide !")
+        raise IRCException("Indicate a valid URL!")
 
     try:
         req = urllib.request.Request("http://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "Nemubot v%s" % __version__})
