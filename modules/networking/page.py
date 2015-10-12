@@ -66,7 +66,7 @@ def fetch(url, onNone=_onNoneDefault):
         if req is not None:
             return req
         else:
-            if onNone is not None:
+            if callable(onNone):
                 return onNone()
             else:
                 return None
