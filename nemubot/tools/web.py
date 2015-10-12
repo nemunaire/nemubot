@@ -192,20 +192,6 @@ def getJSON(url, timeout=15):
 
 # Other utils
 
-def htmlentitydecode(s):
-    """Decode htmlentities
-
-    Argument:
-    s -- The string to decode
-    """
-
-    import re
-    from html.entities import name2codepoint
-
-    return re.sub('&(%s);' % '|'.join(name2codepoint),
-                  lambda m: chr(name2codepoint[m.group(1)]), s)
-
-
 def striphtml(data):
     """Remove HTML tags from text
 
@@ -213,15 +199,35 @@ def striphtml(data):
     data -- the string to strip
     """
 
-    if data is None or (not isinstance(data, str) and not isinstance(data, buffer)):
+    if not isinstance(data, str) and not isinstance(data, buffer):
         return data
 
+    try:
+        from html import unescape
+    except ImportError:
+        def _replace_charref(s):
+            s = s.group(1)
+
+            if s[0] == '#':
+                if s[1] in 'xX':
+                    return chr(int(s[2:], 16))
+                else:
+                    return chr(int(s[2:]))
+            else:
+                from html.entities import name2codepoint
+                return chr(name2codepoint[s])
+
+        # unescape exists from Python 3.4
+        def unescape(s):
+            if '&' not in s:
+                return s
+
+            import re
+
+            return re.sub('&([^;]+);', _replace_charref, s)
+
+
     import re
-    p = re.compile(r'<.*?>')
-    r, _ = re.subn(r' +', ' ', htmlentitydecode(p.sub('', data)
-                                                .replace("&#x28;", "/(")
-                                                .replace("&#x29;", ")/")
-                                                .replace("&#39;", "´")
-                                                .replace("&#x22;", "\""))
-                   .replace('\n', ' '))
+    r, _ = re.subn(r' +', ' ',
+                   unescape(re.sub(r'<.*?>', '', data)).replace('\n', ' '))
     return r

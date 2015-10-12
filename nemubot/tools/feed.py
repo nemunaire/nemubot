@@ -11,11 +11,16 @@ from xml.dom.minidom import getDOMImplementation
 class AtomEntry:
 
     def __init__(self, node):
-        self.id = node.getElementsByTagName("id")[0].firstChild.nodeValue
-        if node.getElementsByTagName("title")[0].firstChild is not None:
+        if len(node.getElementsByTagName("id")) > 0 and node.getElementsByTagName("id")[0].firstChild is not None:
+            self.id = node.getElementsByTagName("id")[0].firstChild.nodeValue
+        else:
+            self.id = None
+
+        if len(node.getElementsByTagName("title")) > 0 and node.getElementsByTagName("title")[0].firstChild is not None:
             self.title = node.getElementsByTagName("title")[0].firstChild.nodeValue
         else:
             self.title = ""
+
         try:
             self.updated = time.strptime(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:19], "%Y-%m-%dT%H:%M:%S")
         except:
@@ -25,25 +30,31 @@ class AtomEntry:
                 print(node.getElementsByTagName("updated")[0].firstChild.nodeValue[:10])
                 self.updated = time.localtime()
         self.updated = datetime.datetime(*self.updated[:6])
+
         if len(node.getElementsByTagName("summary")) > 0 and node.getElementsByTagName("summary")[0].firstChild is not None:
             self.summary = node.getElementsByTagName("summary")[0].firstChild.nodeValue
         else:
             self.summary = None
-        if len(node.getElementsByTagName("link")) > 0:
+
+        if len(node.getElementsByTagName("link")) > 0 and node.getElementsByTagName("link")[0].hasAttribute("href"):
             self.link = node.getElementsByTagName("link")[0].getAttribute("href")
         else:
             self.link = None
-        if len(node.getElementsByTagName("category")) >= 1:
+
+        if len(node.getElementsByTagName("category")) >= 1 and node.getElementsByTagName("category")[0].hasAttribute("term"):
             self.category = node.getElementsByTagName("category")[0].getAttribute("term")
         else:
             self.category = None
-        if len(node.getElementsByTagName("link")) > 1:
+
+        if len(node.getElementsByTagName("link")) > 1 and node.getElementsByTagName("link")[1].hasAttribute("href"):
             self.link2 = node.getElementsByTagName("link")[1].getAttribute("href")
         else:
             self.link2 = None
 
+
     def __repr__(self):
         return "<AtomEntry title='%s' updated='%s'>" % (self.title, self.updated)
+
 
     def __cmp__(self, other):
         return not (self.id == other.id)
@@ -52,25 +63,35 @@ class AtomEntry:
 class RSSEntry:
 
     def __init__(self, node):
-        self.id = node.getElementsByTagName("guid")[0].firstChild.nodeValue
-        if node.getElementsByTagName("title")[0].firstChild is not None:
+        if len(node.getElementsByTagName("guid")) > 0 and node.getElementsByTagName("guid")[0].firstChild is not None:
+            self.id = node.getElementsByTagName("guid")[0].firstChild.nodeValue
+        else:
+            self.id = None
+
+        if len(node.getElementsByTagName("title")) > 0 and node.getElementsByTagName("title")[0].firstChild is not None:
             self.title = node.getElementsByTagName("title")[0].firstChild.nodeValue
         else:
             self.title = ""
 
-        self.pubDate = node.getElementsByTagName("pubDate")[0].firstChild.nodeValue
+        if len(node.getElementsByTagName("pubDate")) > 0 and node.getElementsByTagName("pubDate")[0].firstChild is not None:
+            self.pubDate = node.getElementsByTagName("pubDate")[0].firstChild.nodeValue
+        else:
+            self.pubDate = ""
 
         if len(node.getElementsByTagName("description")) > 0 and node.getElementsByTagName("description")[0].firstChild is not None:
             self.summary = node.getElementsByTagName("description")[0].firstChild.nodeValue
         else:
             self.summary = None
-        if len(node.getElementsByTagName("link")) > 0:
+
+        if len(node.getElementsByTagName("link")) > 0 and node.getElementsByTagName("link")[0].hasAttribute("href"):
             self.link = node.getElementsByTagName("link")[0].getAttribute("href")
         else:
             self.link = None
 
+
     def __repr__(self):
         return "<RSSEntry title='%s' updated='%s'>" % (self.title, self.pubDate)
+
 
     def __cmp__(self, other):
         return not (self.id == other.id)
