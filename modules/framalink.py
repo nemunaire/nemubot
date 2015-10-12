@@ -34,6 +34,7 @@ PROVIDERS = {
 }
 DEFAULT_PROVIDER = "framalink"
 
+PROVIDERS_NETLOC = [urlparse(url, "http").netloc for f, url in PROVIDERS.values()]
 
 # LOADING #############################################################
 
@@ -81,15 +82,16 @@ def parseresponse(msg):
     try:
         urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
         for url in urls:
-            o = urlparse(url)
-            if o.scheme != "":
-                if o.netloc == "ycc.fr" or o.netloc == "tinyurl.com" or o.netloc == "frama.link" or (
-                        o.netloc == "" and len(o.path) < 10):
-                    continue
-                for recv in msg.receivers:
-                    if recv not in LAST_URLS:
-                        LAST_URLS[recv] = list()
-                    LAST_URLS[recv].append(url)
+            o = urlparse(url, "http")
+
+            # Skip short URLs
+            if o.netloc == "" or o.netloc in PROVIDERS or len(o.netloc) + len(o.path) < 17:
+                continue
+
+            for recv in msg.receivers:
+                if recv not in LAST_URLS:
+                    LAST_URLS[recv] = list()
+                LAST_URLS[recv].append(url)
     except:
         pass
     return msg
@@ -119,12 +121,9 @@ def cmd_reduceurl(msg):
     res = list()
     for url in minify:
         o = urlparse(url, "http")
-        if o.scheme != "":
-            minief_url = reduce(url)
-            if o.netloc == "":
-                res.append(gen_response(minief_url, msg, o.scheme))
-            else:
-                res.append(gen_response(minief_url, msg, o.netloc))
+        minief_url = reduce(url)
+        if o.netloc == "":
+            res.append(gen_response(minief_url, msg, o.scheme))
         else:
-            res.append(gen_response(None, msg, url))
+            res.append(gen_response(minief_url, msg, o.netloc))
     return res
