@@ -23,13 +23,17 @@ from nemubot.exception import IRCException
 
 def isURL(url):
     """Return True if the URL can be parsed"""
-    o = urlparse(url)
+    o = urlparse(_getNormalizedURL(url))
     return o.netloc == "" and o.path == ""
 
 
+def _getNormalizedURL(url):
+    """Return a light normalized form for the given URL"""
+    return url if "//" in url else "//" + url
+
 def getNormalizedURL(url):
     """Return a normalized form for the given URL"""
-    return urlunsplit(urlsplit(url, "http"))
+    return urlunsplit(urlsplit(_getNormalizedURL(url), "http"))
 
 
 def getScheme(url):
@@ -40,27 +44,27 @@ def getScheme(url):
 
 def getHost(url):
     """Return the domain of a given URL"""
-    return urlparse(url, "http").hostname
+    return urlparse(_getNormalizedURL(url), "http").hostname
 
 
 def getPort(url):
     """Return the port of a given URL"""
-    return urlparse(url, "http").port
+    return urlparse(_getNormalizedURL(url), "http").port
 
 
 def getPath(url):
     """Return the page request of a given URL"""
-    return urlparse(url, "http").path
+    return urlparse(_getNormalizedURL(url), "http").path
 
 
 def getUser(url):
     """Return the page request of a given URL"""
-    return urlparse(url, "http").username
+    return urlparse(_getNormalizedURL(url), "http").username
 
 
 def getPassword(url):
     """Return the page request of a given URL"""
-    return urlparse(url, "http").password
+    return urlparse(_getNormalizedURL(url), "http").password
 
 
 # Get real pages
@@ -74,7 +78,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
     timeout -- maximum number of seconds to wait before returning an exception
     """
 
-    o = urlparse(url, "http")
+    o = urlparse(_getNormalizedURL(url), "http")
 
     import http.client
 

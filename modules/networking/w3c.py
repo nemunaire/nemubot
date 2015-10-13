@@ -3,6 +3,7 @@ import urllib
 
 from nemubot import __version__
 from nemubot.exception import IRCException
+from nemubot.tools.web import getNormalizedURL
 
 def validator(url):
     """Run the w3c validator on the given URL
@@ -11,7 +12,7 @@ def validator(url):
     url -- the URL to validate
     """
 
-    o = urllib.parse.urlparse(url, "http")
+    o = urllib.parse.urlparse(getNormalizedURL(url), "http")
     if o.netloc == "":
         raise IRCException("Indicate a valid URL!")
 

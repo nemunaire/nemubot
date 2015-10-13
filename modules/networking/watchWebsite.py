@@ -8,10 +8,10 @@ from urllib.parse import urlparse
 from nemubot.event import ModuleEvent
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
+from nemubot.tools.web import getNormalizedURL
 from nemubot.tools.xmlparser.node import ModuleState
 
 logger = logging.getLogger("nemubot.module.networking.watchWebsite")
-nemubotversion = 3.4
 
 from more import Response
 
@@ -56,7 +56,7 @@ def del_site(url, nick, channel, frm_owner):
     url -- URL to unwatch
     """
 
-    o = urlparse(url, "http")
+    o = urlparse(getNormalizedURL(url), "http")
     if o.scheme != "" and url in DATAS.index:
         site = DATAS.index[url]
         for a in site.getNodes("alert"):
@@ -80,7 +80,7 @@ def add_site(url, nick, channel, server, diffType="diff"):
     url -- URL to watch
     """
 
-    o = urlparse(url, "http")
+    o = urlparse(getNormalizedURL(url), "http")
     if o.netloc == "":
         raise IRCException("sorry, I can't watch this URL :(")
 
@@ -210,7 +210,7 @@ def start_watching(site, offset=0):
     offset -- offset time to delay the launch of the first check
     """
 
-    o = urlparse(site["url"], "http")
+    o = urlparse(getNormalizedURL(site["url"]), "http")
     #print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
 
     try:

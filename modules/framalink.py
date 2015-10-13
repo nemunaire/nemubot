@@ -34,7 +34,7 @@ PROVIDERS = {
 }
 DEFAULT_PROVIDER = "framalink"
 
-PROVIDERS_NETLOC = [urlparse(url, "http").netloc for f, url in PROVIDERS.values()]
+PROVIDERS_NETLOC = [urlparse(web.getNormalizedURL(url), "http").netloc for f, url in PROVIDERS.values()]
 
 # LOADING #############################################################
 
@@ -82,7 +82,7 @@ def parseresponse(msg):
     if hasattr(msg, "text") and msg.text:
         urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
         for url in urls:
-            o = urlparse(url, "http")
+            o = urlparse(web._getNormalizedURL(url), "http")
 
             # Skip short URLs
             if o.netloc == "" or o.netloc in PROVIDERS or len(o.netloc) + len(o.path) < 17:
@@ -118,7 +118,7 @@ def cmd_reduceurl(msg):
 
     res = list()
     for url in minify:
-        o = urlparse(url, "http")
+        o = urlparse(web.getNormalizedURL(url), "http")
         minief_url = reduce(url)
         if o.netloc == "":
             res.append(gen_response(minief_url, msg, o.scheme))

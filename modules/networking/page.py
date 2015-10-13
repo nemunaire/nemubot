@@ -21,7 +21,7 @@ def headers(url):
     url -- the page URL to get header
     """
 
-    o = urllib.parse.urlparse(url, "http")
+    o = urllib.parse.urlparse(web.getNormalizedURL(url), "http")
     if o.netloc == "":
         raise IRCException("invalid URL")
     if o.scheme == "http":
