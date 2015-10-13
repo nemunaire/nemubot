@@ -79,7 +79,7 @@ def parselisten(msg):
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
-    try:
+    if hasattr(msg, "text") and msg.text:
         urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
         for url in urls:
             o = urlparse(url, "http")
@@ -92,8 +92,6 @@ def parseresponse(msg):
                 if recv not in LAST_URLS:
                     LAST_URLS[recv] = list()
                 LAST_URLS[recv].append(url)
-    except:
-        pass
     return msg
 
 

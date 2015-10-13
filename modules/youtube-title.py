@@ -82,7 +82,7 @@ def parselisten(msg):
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
-    if hasattr(msg, "text"):
+    if hasattr(msg, "text") and msg.text:
       urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
       for url in urls:
         o = urlparse(url)
