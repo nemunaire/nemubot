@@ -1,16 +1,19 @@
-# coding=utf-8
-
 """Help to make choice"""
 
-import random
+# PYTHON STUFFS #######################################################
 
+import random
+import shlex
+
+from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
-
-nemubotversion = 3.4
+from nemubot.message import Command
 
 from more import Response
 
+
+# MODULE INTERFACE ####################################################
 
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):
@@ -20,3 +23,17 @@ def cmd_choice(msg):
     return Response(random.choice(msg.args),
                     channel=msg.channel,
                     nick=msg.nick)
+
+
+@hook("cmd_hook", "choicecmd")
+def cmd_choice(msg):
+    if not len(msg.args):
+        raise IRCException("indicate some command to pick!")
+
+    choice = shlex.split(random.choice(msg.args))
+
+    return [x for x in context.subtreat(Command(choice[0][1:],
+                                                choice[1:],
+                                                to_response=msg.to_response,
+                                                frm=msg.frm,
+                                                server=msg.server))]
