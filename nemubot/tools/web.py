@@ -29,7 +29,7 @@ def isURL(url):
 
 def _getNormalizedURL(url):
     """Return a light normalized form for the given URL"""
-    return url if "//" in url else "//" + url
+    return url if "//" in url or ":" in url else "//" + url
 
 def getNormalizedURL(url):
     """Return a normalized form for the given URL"""
