@@ -46,7 +46,10 @@ def factory(uri):
 
         queries = o.query.split("&")
         for q in queries:
-            key, val = tuple(q.split("=", 1))
+            if "=" in q:
+                key, val = tuple(q.split("=", 1))
+            else:
+                key, val = q, ""
             if key == "msg":
                 args["on_connect"] = [ "PRIVMSG %s :%s" % (target, unquote(val)) ]
             elif key == "key":
