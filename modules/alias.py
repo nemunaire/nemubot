@@ -172,9 +172,9 @@ def cmd_listvars(msg):
                 res.append("%s didn't create variable yet." % user)
         return Response(" ; ".join(res), channel=msg.channel)
     elif len(context.data.getNode("variables").index):
-        return Response("Known variables: %s." %
-                        ", ".join(list_variables()),
-                        channel=msg.channel)
+        return Response(list_variables(),
+                        channel=msg.channel,
+                        title="Known variables")
     else:
         return Response("There is currently no variable stored.", channel=msg.channel)
 
@@ -202,7 +202,7 @@ def cmd_listalias(msg):
     if len(aliases):
         return Response([a["alias"] for a in aliases],
                         channel=msg.channel,
-                        title="Known aliases:")
+                        title="Known aliases")
     return Response("There is no alias currently.", channel=msg.channel)
 
 
