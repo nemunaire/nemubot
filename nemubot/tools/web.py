@@ -164,7 +164,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
                            (res.status, http.client.responses[res.status]))
 
 
-def getXML(url, timeout=15):
+def getXML(url, timeout=7):
     """Get content page and return XML parsed content
 
     Arguments:
@@ -180,7 +180,7 @@ def getXML(url, timeout=15):
         return parse_string(cnt.encode())
 
 
-def getJSON(url, timeout=15):
+def getJSON(url, timeout=7):
     """Get content page and return JSON content
 
     Arguments:
