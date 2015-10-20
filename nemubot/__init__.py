@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = '4.0.dev2'
+__version__ = '4.0.dev3'
 __author__  = 'nemunaire'
 
 from nemubot.modulecontext import ModuleContext
