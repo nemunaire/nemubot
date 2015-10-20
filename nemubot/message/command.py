@@ -21,11 +21,12 @@ class Command(Abstract):
 
     """This class represents a specialized TextMessage"""
 
-    def __init__(self, cmd, args=None, *nargs, **kargs):
+    def __init__(self, cmd, args=None, kwargs=None, *nargs, **kargs):
         Abstract.__init__(self, *nargs, **kargs)
 
         self.cmd = cmd
         self.args = args if args is not None else list()
+        self.kwargs = kwargs if kwargs is not None else dict()
 
     def __str__(self):
         return self.cmd + " @" + ",@".join(self.args)

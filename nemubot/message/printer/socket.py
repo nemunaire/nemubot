@@ -51,9 +51,11 @@ class Socket(AbstractVisitor):
 
 
     def visit_Command(self, msg):
-        res = Text("!%s%s%s" % (msg.cmd,
-                                " " if len(msg.args) else "",
-                                " ".join(msg.args)),
+        res = Text("!%s%s%s%s%s" % (msg.cmd,
+                                    " " if len(msg.kwargs) else "",
+                                    " ".join(["@%s=%s" % (k, msg.kwargs[k]) if msg.kwargs[k] is not None else "@%s" % k for k in msg.kwargs]),
+                                    " " if len(msg.args) else "",
+                                    " ".join(msg.args)),
                    server=msg.server, date=msg.date,
                    to=msg.to, frm=msg.frm)
         res.accept(self)

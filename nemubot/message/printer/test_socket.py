@@ -72,6 +72,32 @@ class TestSocketPrinter(unittest.TestCase):
                 ),
                 "!COMMAND TEXT"
             ),
+            (
+                Command(cmd="COMMAND",
+                        kwargs={"KEY1": "VALUE"},
+                ),
+                "!COMMAND @KEY1=VALUE"
+            ),
+            (
+                Command(cmd="COMMAND",
+                        args=["TEXT"],
+                        kwargs={"KEY1": "VALUE"},
+                ),
+                "!COMMAND @KEY1=VALUE TEXT"
+            ),
+            (
+                Command(cmd="COMMAND",
+                        kwargs={"KEY2": None},
+                ),
+                "!COMMAND @KEY2"
+            ),
+            (
+                Command(cmd="COMMAND",
+                        args=["TEXT"],
+                        kwargs={"KEY2": None},
+                ),
+                "!COMMAND @KEY2 TEXT"
+            ),
         ]
 
 
