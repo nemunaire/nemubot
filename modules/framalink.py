@@ -39,6 +39,7 @@ PROVIDERS = {
 }
 DEFAULT_PROVIDER = "framalink"
 
+PROVIDERS_NETLOC = [urlparse(web.getNormalizedURL(url), "http").netloc for f, url in PROVIDERS.values()]
 
 # LOADING #############################################################
 
@@ -83,20 +84,19 @@ def parselisten(msg):
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
-    try:
+    if hasattr(msg, "text") and msg.text:
         urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
         for url in urls:
-            o = urlparse(url)
-            if o.scheme != "":
-                if o.netloc == "ycc.fr" or o.netloc == "tinyurl.com" or o.netloc == "frama.link" or (
-                        o.netloc == "" and len(o.path) < 10):
-                    continue
-                for recv in msg.receivers:
-                    if recv not in LAST_URLS:
-                        LAST_URLS[recv] = list()
-                    LAST_URLS[recv].append(url)
-    except:
-        pass
+            o = urlparse(web._getNormalizedURL(url), "http")
+
+            # Skip short URLs
+            if o.netloc == "" or o.netloc in PROVIDERS or len(o.netloc) + len(o.path) < 17:
+                continue
+
+            for recv in msg.receivers:
+                if recv not in LAST_URLS:
+                    LAST_URLS[recv] = list()
+                LAST_URLS[recv].append(url)
     return msg
 
 
@@ -123,13 +123,10 @@ def cmd_reduceurl(msg):
 
     res = list()
     for url in minify:
-        o = urlparse(url, "http")
-        if o.scheme != "":
-            minief_url = reduce(url)
-            if o.netloc == "":
-                res.append(gen_response(minief_url, msg, o.scheme))
-            else:
-                res.append(gen_response(minief_url, msg, o.netloc))
+        o = urlparse(web.getNormalizedURL(url), "http")
+        minief_url = reduce(url)
+        if o.netloc == "":
+            res.append(gen_response(minief_url, msg, o.scheme))
         else:
-            res.append(gen_response(None, msg, url))
+            res.append(gen_response(minief_url, msg, o.netloc))
     return res

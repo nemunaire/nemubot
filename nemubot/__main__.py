@@ -38,6 +38,9 @@ def main():
                         default=["./modules/"],
                         help="directory to use as modules store")
 
+    parser.add_argument("-l", "--logfile", default="./nemubot.log",
+                        help="Path to store logs")
+
     parser.add_argument("-m", "--module", nargs='*',
                         help="load given modules")
 
@@ -55,40 +58,44 @@ def main():
         print(nemubot.__version__)
         sys.exit(0)
 
+    # Resolve relatives paths
+    args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
+    args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
+    args.files = [ x for x in map(os.path.abspath, args.files)]
+    args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
+
     # Setup loggin interface
     import logging
     logger = logging.getLogger("nemubot")
+    logger.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
         '%(asctime)s %(name)s %(levelname)s %(message)s')
 
     ch = logging.StreamHandler()
     ch.setFormatter(formatter)
-    if args.verbose > 1:
-        ch.setLevel(logging.DEBUG)
-    else:
+    if args.verbose < 2:
         ch.setLevel(logging.INFO)
     logger.addHandler(ch)
 
-    fh = logging.FileHandler('./nemubot.log')
+    fh = logging.FileHandler(args.logfile)
     fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
     # Add modules dir paths
     modules_paths = list()
     for path in args.modules_path:
         if os.path.isdir(path):
-            modules_paths.append(
-                os.path.realpath(os.path.abspath(path)))
+            modules_paths.append(path)
         else:
             logger.error("%s is not a directory", path)
 
     # Create bot context
     from nemubot import datastore
     from nemubot.bot import Bot
-    context = Bot(modules_paths=modules_paths, data_store=datastore.XML(args.data_path),
-                          verbosity=args.verbose)
+    context = Bot(modules_paths=modules_paths,
+                  data_store=datastore.XML(args.data_path),
+                  verbosity=args.verbose)
 
     if args.no_connect:
         context.noautoconnect = True

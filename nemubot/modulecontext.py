@@ -26,7 +26,6 @@ def convert_legacy_store(old):
     elif old == "all_pre":
         return "pre"
     else:
-        print("UNKNOWN store:", old)
         return old
 
 
@@ -48,7 +47,8 @@ class ModuleContext:
             module_name in context.modules_configuration):
             self.config = context.modules_configuration[module_name]
         else:
-            self.config = None
+            from nemubot.tools.xmlparser.node import ModuleState
+            self.config = ModuleState("module")
 
         self.hooks = list()
         self.events = list()
@@ -62,13 +62,13 @@ class ModuleContext:
             def add_hook(store, hook):
                 store = convert_legacy_store(store)
                 self.hooks.append((store, hook))
-                return context.hooks.add_hook(hook, store)
+                return context.treater.hm.add_hook(hook, store)
             def del_hook(store, hook):
                 store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
-                return context.hooks.del_hook(hook, store)
+                return context.treater.hm.del_hook(hook, store)
             def call_hook(store, msg):
-                for h in context.hooks.get_hooks(store):
+                for h in context.treater.hm.get_hooks(store):
                     if h.match(msg):
                         res = h.run(msg)
                         if isinstance(res, list):
@@ -114,7 +114,7 @@ class ModuleContext:
                 return context.del_event(evt, module_src=module)
 
             def send_response(server, res):
-                print(res)
+                module.logger.info("Send response: %s", res)
 
         def save():
             context.datastore.save(module_name, self.data)

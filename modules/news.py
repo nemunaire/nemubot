@@ -25,6 +25,7 @@ def help_full():
 # MODULE CORE #########################################################
 
 def find_rss_links(url):
+    url = web.getNormalizedURL(url)
     soup = BeautifulSoup(web.getURLContent(url))
     for rss in soup.find_all('link', attrs={"type": re.compile("^application/(atom|rss)")}):
         yield urljoin(url, rss["href"])

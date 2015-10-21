@@ -177,7 +177,25 @@ class IRC(Abstract):
                 except ValueError:
                     args = text.split(' ')
 
-                return message.Command(cmd=args[0], args=args[1:], **common_args)
+                # Extract explicit named arguments: @key=value or just @key
+                kwargs = {}
+                for i in range(len(args) - 1, 0, -1):
+                    arg = args[i]
+                    if len(arg) > 2:
+                        if arg[0:1] == '\\@':
+                            args[i] = arg[1:]
+                        elif arg[0] == '@':
+                            arsp = arg[1:].split("=", 1)
+                            if len(arsp) == 2:
+                                kwargs[arsp[0]] = arsp[1]
+                            else:
+                                kwargs[arg[1:]] = None
+                            args.pop(i)
+
+                return message.Command(cmd=args[0],
+                                       args=args[1:],
+                                       kwargs=kwargs,
+                                       **common_args)
 
             # Is this an ask for this bot?
             elif designated is not None:

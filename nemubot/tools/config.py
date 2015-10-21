@@ -109,9 +109,9 @@ def load_file(filename, context):
 
                 # Add the server in the context
                 if context.add_server(srv, get_boolean(server, "autoconnect")):
-                    print("Server '%s' successfully added." % srv.id)
+                    logger.info("Server '%s' successfully added." % srv.id)
                 else:
-                    print("Can't add server '%s'." % srv.id)
+                    logger.error("Can't add server '%s'." % srv.id)
 
             # Load module and their configuration
             for mod in config.getNodes("module"):
@@ -130,8 +130,8 @@ def load_file(filename, context):
 
         # Other formats
         else:
-            print ("  Can't load `%s'; this is not a valid nemubot "
-                   "configuration file." % filename)
+            logger.error("Can't load `%s'; this is not a valid nemubot "
+                         "configuration file." % filename)
 
     # Unexisting file, assume a name was passed, import the module!
     else:

@@ -24,13 +24,18 @@ class SocketServer(AbstractServer):
 
     """Concrete implementation of a socket connexion (can be wrapped with TLS)"""
 
-    def __init__(self, host, port, ssl=False):
+    def __init__(self, sock_location=None, host=None, port=None, ssl=False, socket=None, id=None):
+        if id is not None:
+            self.id = id
         AbstractServer.__init__(self)
-        self.host = host
-        self.port = int(port)
+        if sock_location is not None:
+            self.filename = sock_location
+        elif host is not None:
+            self.host = host
+            self.port = int(port)
         self.ssl = ssl
 
-        self.socket = None
+        self.socket = socket
         self.readbuffer = b''
         self.printer  = SocketPrinter
 
@@ -51,9 +56,17 @@ class SocketServer(AbstractServer):
         import os
         import socket
 
+        if self.connected:
+            return True
+
         try:
-            self.socket = socket.create_connection((self.host, self.port))
-            self.logger.info("Connected to %s:%d", self.host, self.port)
+            if hasattr(self, "filename"):
+                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.socket.connect(self.filename)
+                self.logger.info("Connected to %s", self.filename)
+            else:
+                self.socket = socket.create_connection((self.host, self.port))
+                self.logger.info("Connected to %s:%d", self.host, self.port)
         except socket.error as e:
             self.socket = None
             self.logger.critical("Unable to connect to %s:%d: %s",
@@ -109,7 +122,7 @@ class SocketServer(AbstractServer):
 
     def read(self):
         if not self.connected:
-            return
+            return []
 
         raw = self.socket.recv(1024)
         temp = (self.readbuffer + raw).split(b'\r\n')
@@ -117,3 +130,70 @@ class SocketServer(AbstractServer):
 
         for line in temp:
             yield line
+
+
+class SocketListener(AbstractServer):
+
+    def __init__(self, new_server_cb, id, sock_location=None, host=None, port=None, ssl=None):
+        self.id = id
+        AbstractServer.__init__(self)
+        self.new_server_cb = new_server_cb
+        self.sock_location = sock_location
+        self.host = host
+        self.port = port
+        self.ssl = ssl
+        self.nb_son = 0
+
+
+    def fileno(self):
+        return self.socket.fileno() if self.socket else None
+
+
+    @property
+    def connected(self):
+        """Indicator of the connection aliveness"""
+        return self.socket is not None
+
+
+    def _open(self):
+        import os
+        import socket
+
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if self.sock_location is not None:
+            try:
+                os.remove(self.sock_location)
+            except FileNotFoundError:
+                pass
+            self.socket.bind(self.sock_location)
+        elif self.host is not None and self.port is not None:
+            self.socket.bind((self.host, self.port))
+        self.socket.listen(5)
+
+        return True
+
+
+    def _close(self):
+        import os
+        import socket
+
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+            if self.sock_location is not None:
+                os.remove(self.sock_location)
+        except socket.error:
+            pass
+
+    # Read
+
+    def read(self):
+        if not self.connected:
+            return []
+
+        conn, addr = self.socket.accept()
+        self.nb_son += 1
+        ss = SocketServer(id=self.id + "#" + str(self.nb_son), socket=conn)
+        self.new_server_cb(ss)
+
+        return []

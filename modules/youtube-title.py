@@ -3,7 +3,7 @@ import re, json, subprocess
 
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
-from nemubot.tools.web import getURLContent
+from nemubot.tools.web import _getNormalizedURL, getURLContent
 from more import Response
 
 """Get information of youtube videos"""
@@ -82,10 +82,10 @@ def parselisten(msg):
 @hook("all_post")
 def parseresponse(msg):
     global LAST_URLS
-    if hasattr(msg, "text"):
+    if hasattr(msg, "text") and msg.text:
       urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
       for url in urls:
-        o = urlparse(url)
+        o = urlparse(_getNormalizedURL(url))
         if o.scheme != "":
           if o.netloc == "" and len(o.path) < 10:
             continue

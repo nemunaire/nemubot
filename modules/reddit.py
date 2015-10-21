@@ -79,14 +79,12 @@ def parselisten(msg):
 def parseresponse(msg):
     global LAST_SUBS
 
-    try:
+    if hasattr(msg, "text") and msg.text:
         urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.text)
         for url in urls:
             for recv in msg.receivers:
                 if recv not in LAST_SUBS:
                     LAST_SUBS[recv] = list()
                 LAST_SUBS[recv].append(url)
-    except:
-        pass
 
     return msg

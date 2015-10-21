@@ -28,7 +28,7 @@ class Abstract:
         raise NotImplemented
 
 
-    def to_server_message(self):
+    def to_server_string(self, **kwargs):
         """Pretty print the message to close to original input string
         """
 
