@@ -1,5 +1,3 @@
-# coding=utf-8
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -176,8 +174,8 @@ def getXML(url, timeout=7):
     if cnt is None:
         return None
     else:
-        from nemubot.tools.xmlparser import parse_string
-        return parse_string(cnt.encode())
+        from xml.dom.minidom import parseString
+        return parseString(cnt)
 
 
 def getJSON(url, timeout=7):
@@ -188,12 +186,11 @@ def getJSON(url, timeout=7):
     timeout -- maximum number of seconds to wait before returning an exception
     """
 
-    import json
-
     cnt = getURLContent(url, timeout=timeout)
     if cnt is None:
         return None
     else:
+        import json
         return json.loads(cnt)
 
 
