@@ -203,7 +203,7 @@ def striphtml(data):
     data -- the string to strip
     """
 
-    if not isinstance(data, str) and not isinstance(data, buffer):
+    if not isinstance(data, str) and not isinstance(data, bytes):
         return data
 
     try:
@@ -232,6 +232,5 @@ def striphtml(data):
 
 
     import re
-    r, _ = re.subn(r' +', ' ',
-                   unescape(re.sub(r'<.*?>', '', data)).replace('\n', ' '))
-    return r
+    return re.sub(r' +', ' ',
+                  unescape(re.sub(r'<.*?>', '', data)).replace('\n', ' '))
