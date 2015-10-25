@@ -19,9 +19,13 @@ def default_reducer(url, data):
     snd_url = url + quote(data, "/:%@&=?")
     return web.getURLContent(snd_url)
 
+
+def ycc_reducer(url, data):
+    snd_url = url + quote(data, "/:%@&=?")
+    return "http://ycc.fr/%s" % web.getURLContent(snd_url)
+
 def framalink_reducer(url, data):
-    json_data =  json.loads(web.getURLContent(url, "lsturl="
-        + quote(data),
+    json_data = json.loads(web.getURLContent(url, "lsturl=" + quote(data),
         header={"Content-Type": "application/x-www-form-urlencoded"}))
     if 'short' in json_data:
         return json_data['short']
@@ -34,7 +38,7 @@ def framalink_reducer(url, data):
 
 PROVIDERS = {
     "tinyurl": (default_reducer, "http://tinyurl.com/api-create.php?url="),
-    "ycc": (default_reducer, "http://ycc.fr/redirection/create/"),
+    "ycc": (ycc_reducer, "http://ycc.fr/redirection/create/"),
     "framalink": (framalink_reducer, "https://frama.link/a?format=json")
 }
 DEFAULT_PROVIDER = "framalink"
@@ -42,6 +46,7 @@ DEFAULT_PROVIDER = "framalink"
 PROVIDERS_NETLOC = [urlparse(web.getNormalizedURL(url), "http").netloc for f, url in PROVIDERS.values()]
 
 # LOADING #############################################################
+
 
 def load(context):
     global DEFAULT_PROVIDER
@@ -61,6 +66,7 @@ def reduce(url, provider=DEFAULT_PROVIDER):
     url -- the URL to reduce
     """
     return PROVIDERS[provider][0](PROVIDERS[provider][1], url)
+
 
 def gen_response(res, msg, srv):
     if res is None:
@@ -90,7 +96,8 @@ def parseresponse(msg):
             o = urlparse(web._getNormalizedURL(url), "http")
 
             # Skip short URLs
-            if o.netloc == "" or o.netloc in PROVIDERS or len(o.netloc) + len(o.path) < 17:
+            if (o.netloc == "" or o.netloc in PROVIDERS or
+                    len(o.netloc) + len(o.path) < 17):
                 continue
 
             for recv in msg.receivers:
