@@ -28,8 +28,8 @@ def get_book(title):
     """Retrieve a book from its title"""
     response = web.getXML("https://www.goodreads.com/book/title.xml?key=%s&title=%s" %
                           (context.config["goodreadskey"], urllib.parse.quote(title)))
-    if response is not None and response.hasNode("book"):
-        return response.getNode("book")
+    if response is not None and len(response.getElementsByTagName("book")):
+        return response.getElementsByTagName("book")[0]
     else:
         return None
 
@@ -38,8 +38,8 @@ def search_books(title):
     """Get a list of book matching given title"""
     response = web.getXML("https://www.goodreads.com/search.xml?key=%s&q=%s" %
                           (context.config["goodreadskey"], urllib.parse.quote(title)))
-    if response is not None and response.hasNode("search"):
-        return response.getNode("search").getNode("results").getNodes("work")
+    if response is not None and len(response.getElementsByTagName("search")):
+        return response.getElementsByTagName("search")[0].getElementsByTagName("results")[0].getElementsByTagName("work")
     else:
         return []
 
@@ -48,11 +48,11 @@ def search_author(name):
     """Looking for an author"""
     response = web.getXML("https://www.goodreads.com/api/author_url/%s?key=%s" %
                           (urllib.parse.quote(name), context.config["goodreadskey"]))
-    if response is not None and response.hasNode("author") and response.getNode("author").hasAttribute("id"):
+    if response is not None and len(response.getElementsByTagName("author")) and response.getElementsByTagName("author")[0].hasAttribute("id"):
         response = web.getXML("https://www.goodreads.com/author/show/%s.xml?key=%s" %
-                              (urllib.parse.quote(response.getNode("author")["id"]), context.config["goodreadskey"]))
-        if response is not None and response.hasNode("author"):
-            return response.getNode("author")
+                              (urllib.parse.quote(response.getElementsByTagName("author")[0].getAttribute("id")), context.config["goodreadskey"]))
+        if response is not None and len(response.getElementsByTagName("author")):
+            return response.getElementsByTagName("author")[0]
     return None
 
 
@@ -71,9 +71,9 @@ def cmd_book(msg):
     if book is None:
         raise IRCException("unable to find book named like this")
     res = Response(channel=msg.channel)
-    res.append_message("%s, writed by %s: %s" % (book.getNode("title").getContent(),
-                                                 book.getNode("authors").getNode("author").getNode("name").getContent(),
-                                                 web.striphtml(book.getNode("description").getContent())))
+    res.append_message("%s, written by %s: %s" % (book.getElementsByTagName("title")[0].firstChild.nodeValue,
+                                                 book.getElementsByTagName("author")[0].getElementsByTagName("name")[0].firstChild.nodeValue,
+                                                 web.striphtml(book.getElementsByTagName("description")[0].firstChild.nodeValue if book.getElementsByTagName("description")[0].firstChild else "")))
     return res
 
 
@@ -92,8 +92,8 @@ def cmd_books(msg):
                    count=" (%d more books)")
 
     for book in search_books(title):
-        res.append_message("%s, writed by %s" % (book.getNode("best_book").getNode("title").getContent(),
-                                                 book.getNode("best_book").getNode("author").getNode("name").getContent()))
+        res.append_message("%s, writed by %s" % (book.getElementsByTagName("best_book")[0].getElementsByTagName("title")[0].firstChild.nodeValue,
+                                                 book.getElementsByTagName("best_book")[0].getElementsByTagName("author")[0].getElementsByTagName("name")[0].firstChild.nodeValue))
     return res
 
 
@@ -106,7 +106,10 @@ def cmd_author(msg):
     if not len(msg.args):
         raise IRCException("please give me an author to search")
 
-    ath = search_author(" ".join(msg.args))
-    return Response([b.getNode("title").getContent() for b in ath.getNode("books").getNodes("book")],
+    name = " ".join(msg.args)
+    ath = search_author(name)
+    if ath is None:
+        raise IRCException("%s does not appear to be a published author." % name)
+    return Response([b.getElementsByTagName("title")[0].firstChild.nodeValue for b in ath.getElementsByTagName("book")],
                     channel=msg.channel,
-                    title=ath.getNode("name").getContent())
+                    title=ath.getElementsByTagName("name")[0].firstChild.nodeValue)

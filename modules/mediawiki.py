@@ -61,17 +61,17 @@ def get_unwikitextified(site, wikitext, ssl=False):
 
 def opensearch(site, term, ssl=False):
     # Built URL
-    url = "http%s://%s/w/api.php?format=xml&action=opensearch&search=%s" % (
+    url = "http%s://%s/w/api.php?format=json&action=opensearch&search=%s" % (
         "s" if ssl else "", site, urllib.parse.quote(term))
 
     # Make the request
-    response = web.getXML(url)
+    response = web.getJSON(url)
 
-    if response is not None and response.hasNode("Section"):
-        for itm in response.getNode("Section").getNodes("Item"):
-            yield (itm.getNode("Text").getContent(),
-                   itm.getNode("Description").getContent() if itm.hasNode("Description") else "",
-                   itm.getNode("Url").getContent())
+    if response is not None and len(response) >= 4:
+        for k in range(len(response[1])):
+            yield (response[1][k],
+                   response[2][k],
+                   response[3][k])
 
 
 def search(site, term, ssl=False):
@@ -167,6 +167,7 @@ def mediawiki_response(site, term, receivers):
 
     # Try looking at opensearch
     os = [x for x, _, _ in opensearch(site, terms[0])]
+    print(os)
     # Fallback to global search
     if not len(os):
         os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]

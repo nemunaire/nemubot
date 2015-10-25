@@ -1,15 +1,19 @@
-# coding=utf-8
+"""Performing search and calculation"""
+
+# PYTHON STUFFS #######################################################
 
 from urllib.parse import quote
+import re
 
 from nemubot import context
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 4.0
-
 from more import Response
+
+
+# LOADING #############################################################
 
 URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&appid=%s"
 
@@ -24,76 +28,90 @@ def load(context):
     URL_API = URL_API % quote(context.config["apikey"]).replace("%", "%%")
 
 
-class WFASearch:
+# MODULE CORE #########################################################
+
+class WFAResults:
+
     def __init__(self, terms):
-        self.terms = terms
         self.wfares = web.getXML(URL_API % quote(terms))
+
 
     @property
     def success(self):
         try:
-            return self.wfares["success"] == "true"
+            return self.wfares.documentElement.hasAttribute("success") and self.wfares.documentElement.getAttribute("success") == "true"
         except:
             return False
+
 
     @property
     def error(self):
         if self.wfares is None:
             return "An error occurs during computation."
-        elif self.wfares["error"] == "true":
+        elif self.wfares.documentElement.hasAttribute("error") and self.wfares.documentElement.getAttribute("error") == "true":
             return ("An error occurs during computation: " +
-                    self.wfares.getNode("error").getNode("msg").getContent())
-        elif self.wfares.hasNode("didyoumeans"):
+                    self.wfares.getElementsByTagName("error")[0].getElementsByTagName("msg")[0].firstChild.nodeValue)
+        elif len(self.wfares.getElementsByTagName("didyoumeans")):
             start = "Did you mean: "
             tag = "didyoumean"
             end = "?"
-        elif self.wfares.hasNode("tips"):
+        elif len(self.wfares.getElementsByTagName("tips")):
             start = "Tips: "
             tag = "tip"
             end = ""
-        elif self.wfares.hasNode("relatedexamples"):
+        elif len(self.wfares.getElementsByTagName("relatedexamples")):
             start = "Related examples: "
             tag = "relatedexample"
             end = ""
-        elif self.wfares.hasNode("futuretopic"):
-            return self.wfares.getNode("futuretopic")["msg"]
+        elif len(self.wfares.getElementsByTagName("futuretopic")):
+            return self.wfares.getElementsByTagName("futuretopic")[0].getAttribute("msg")
         else:
             return "An error occurs during computation"
+
         proposal = list()
-        for dym in self.wfares.getNode(tag + "s").getNodes(tag):
+        for dym in self.wfares.getElementsByTagName(tag):
             if tag == "tip":
-                proposal.append(dym["text"])
+                proposal.append(dym.getAttribute("text"))
             elif tag == "relatedexample":
-                proposal.append(dym["desc"])
+                proposal.append(dym.getAttribute("desc"))
             else:
-                proposal.append(dym.getContent())
+                proposal.append(dym.firstChild.nodeValue)
+
         return start + ', '.join(proposal) + end
 
+
     @property
-    def nextRes(self):
-        try:
-            for node in self.wfares.getNodes("pod"):
-                for subnode in node.getNodes("subpod"):
-                    if subnode.getFirstNode("plaintext").getContent() != "":
-                        yield (node["title"] + " " + subnode["title"] + ": " +
-                               subnode.getFirstNode("plaintext").getContent())
-        except IndexError:
-            pass
+    def results(self):
+        for node in self.wfares.getElementsByTagName("pod"):
+            for subnode in node.getElementsByTagName("subpod"):
+                if subnode.getElementsByTagName("plaintext")[0].firstChild:
+                    yield (node.getAttribute("title") +
+                           ((" / " + subnode.getAttribute("title")) if subnode.getAttribute("title") else "") + ": " +
+                           "; ".join(subnode.getElementsByTagName("plaintext")[0].firstChild.nodeValue.split("\n")))
 
 
-@hook("cmd_hook", "calculate")
+# MODULE INTERFACE ####################################################
+
+@hook("cmd_hook", "calculate",
+      help="Perform search and calculation using WolframAlpha",
+      help_usage={
+          "TERM": "Look at the given term on WolframAlpha",
+          "CALCUL": "Perform the computation over WolframAlpha service",
+      })
 def calculate(msg):
     if not len(msg.args):
         raise IRCException("Indicate a calcul to compute")
 
-    s = WFASearch(' '.join(msg.args))
+    s = WFAResults(' '.join(msg.args))
 
-    if s.success:
-        res = Response(channel=msg.channel, nomore="No more results")
-        for result in s.nextRes:
-            res.append_message(result)
-        if (len(res.messages) > 0):
-            res.messages.pop(0)
-        return res
-    else:
-        return Response(s.error, msg.channel)
+    if not s.success:
+        raise IRCException(s.error)
+
+    res = Response(channel=msg.channel, nomore="No more results")
+
+    for result in s.results:
+        res.append_message(re.sub(r' +', ' ', result))
+    if len(res.messages):
+        res.messages.pop(0)
+
+    return res
