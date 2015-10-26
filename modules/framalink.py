@@ -21,8 +21,7 @@ def default_reducer(url, data):
 
 
 def ycc_reducer(url, data):
-    snd_url = url + quote(data, "/:%@&=?")
-    return "http://ycc.fr/%s" % web.getURLContent(snd_url)
+    return "http://ycc.fr/%s" % default_reducer(url, data)
 
 def framalink_reducer(url, data):
     json_data = json.loads(web.getURLContent(url, "lsturl=" + quote(data),
@@ -91,7 +90,7 @@ def parselisten(msg):
 def parseresponse(msg):
     global LAST_URLS
     if hasattr(msg, "text") and msg.text:
-        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?[^ :]+)", msg.text)
+        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?(?:[^ :/]+:[0-9]+)?[^ :]+)", msg.text)
         for url in urls:
             o = urlparse(web._getNormalizedURL(url), "http")
 
@@ -112,7 +111,8 @@ def parseresponse(msg):
 @hook("cmd_hook", "framalink",
       help="Reduce any given URL",
       help_usage={None: "Reduce the last URL said on the channel",
-                  "[@provider=framalink] URL [URL ...]": "Reduce the given URL(s) using thespecified shortner"})
+                  "[@provider=framalink] URL [URL ...]": "Reduce the given "
+                  "URL(s) using the specified shortner"})
 def cmd_reduceurl(msg):
     minify = list()
 
@@ -124,7 +124,7 @@ def cmd_reduceurl(msg):
             raise IRCException("I have no more URL to reduce.")
 
     if len(msg.args) > 4:
-        raise IRCException("I cannot reduce as much URL at once.")
+        raise IRCException("I cannot reduce that maby URLs at once.")
     else:
         minify += msg.args
 
