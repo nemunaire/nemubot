@@ -26,14 +26,14 @@ _wlist = []
 _xlist = []
 
 
-def factory(uri):
+def factory(uri, **init_args):
     from urllib.parse import urlparse, unquote
     o = urlparse(uri)
 
     if o.scheme == "irc" or o.scheme == "ircs":
         # http://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
         # http://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
-        args = dict()
+        args = init_args
 
         modifiers = o.path.split(",")
         target = unquote(modifiers.pop(0)[1:])
@@ -51,9 +51,13 @@ def factory(uri):
             else:
                 key, val = q, ""
             if key == "msg":
-                args["on_connect"] = [ "PRIVMSG %s :%s" % (target, unquote(val)) ]
+                if "on_connect" not in args:
+                    args["on_connect"] = []
+                args["on_connect"].append("PRIVMSG %s :%s" % (target, unquote(val)))
             elif key == "key":
-                args["channels"] = [ (target, unquote(val)) ]
+                if "channels" not in args:
+                    args["channels"] = []
+                args["channels"].append((target, unquote(val)))
             elif key == "pass":
                 args["password"] = unquote(val)
             elif key == "charset":
