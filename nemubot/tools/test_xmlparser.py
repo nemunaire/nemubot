@@ -20,6 +20,7 @@ class TestNode():
 
     def addChild(self, name, child):
         self.mystr = child.string
+        return True
 
 
 class Test2Node():
