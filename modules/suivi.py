@@ -9,8 +9,7 @@ from more import Response
 
 nemubotversion = 4.0
 
-def help_full():
-    return "Traquez vos courriers La Poste ou Colissimo en utilisant la commande: !laposte <tracking number> ou !colissimo <tracking number>\nCe service se base sur http://www.csuivi.courrier.laposte.fr/suivi/index et http://www.colissimo.fr/portail_colissimo/suivre.do"
+# POSTAGE SERVICE PARSERS ############################################
 
 def get_colissimo_info(colissimo_id):
     colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/suivre.do?colispart=%s" % colissimo_id)
@@ -77,66 +76,66 @@ def get_laposte_info(laposte_id):
 
         return (poste_type.lower(), poste_id.strip(), poste_status.lower(), poste_location, poste_date)
 
-@hook("cmd_hook", "track")
+
+# TRACKING HANDLERS ###################################################
+
+def handle_laposte(tracknum):
+    info = get_laposte_info(tracknum)
+    if info:
+        poste_type, poste_id, poste_status, poste_location, poste_date = info
+        return ("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement \x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F)." % (poste_type, poste_id, poste_status, poste_location, poste_date))
+
+def handle_colissimo(tracknum):
+    info = get_colissimo_info(tracknum)
+    if info:
+        date, libelle, site = info
+        return ("Colissimo: \x02%s\x0F : \x02%s\x0F Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (tracknum, libelle, date, site))
+
+def handle_chronopost(tracknum):
+    info = get_chronopost_info(tracknum)
+    if info:
+        date, libelle = info
+        return ("Colis Chronopost: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour \x02%s\x0F." % (tracknum, libelle, date))
+
+def handle_coliprive(tracknum):
+    info = get_colisprive_info(tracknum)
+    if info:
+        return ("Colis Privé: \x02%s\x0F : \x02%s\x0F." % (tracknum, info))
+
+TRACKING_HANDLERS = {
+    'laposte': handle_laposte,
+    'colissimo': handle_colissimo,
+    'chronopost': handle_chronopost,
+    'coliprive': handle_coliprive
+}
+
+# HOOKS ##############################################################
+
+@hook("cmd_hook", "track",
+        help="Track postage",
+        help_usage={"[@tracker] TRACKING_ID [TRACKING_ID ...]": "Track the specified postage IDs using the specified tracking service or all of them."})
 def get_tracking_info(msg):
     if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi,")
+        raise IRCException("Renseignez un identifiant d'envoi.")
 
-    info = get_colisprive_info(msg.args[0])
-    if info:
-        return Response("Colis Privé: \x02%s\x0F : \x02%s\x0F." % (msg.args[0], info), msg.channel)
+    res = Response(channel=msg.channel, count=" (%d suivis supplémentaires)")
 
-    info = get_chronopost_info(msg.args[0])
-    if info:
-        date, libelle = info
-        return Response("Colis Chronopost: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour \x02%s\x0F." % (msg.args[0], libelle, date), msg.channel)
+    if 'tracker' in msg.kwargs:
+        if msg.kwargs['tracker'] in TRACKING_HANDLERS:
+            trackers = {
+                msg.kwargs['tracker']: TRACKING_HANDLERS[msg.kwargs['tracker']]
+            }
+        else:
+            raise IRCException("No tracker named \x02{tracker}\x0F, please use one of the following: \x02{trackers}\x0F".format(tracker=msg.kwargs['tracker'], trackers=', '.join(TRACKING_HANDLERS.keys())))
+    else:
+        trackers = TRACKING_HANDLERS
 
-    info = get_colissimo_info(msg.args[0])
-    if info:
-        date, libelle, site = info
-        return Response("Colissimo: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (msg.args[0], libelle, date, site), msg.channel)
-
-    info = get_laposte_info(msg.args[0])
-    if info:
-        poste_type, poste_id, poste_status, poste_location, poste_date = info
-        return Response("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement \x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F)." % (poste_type, poste_id, poste_status, poste_location, poste_date), msg.channel)
-    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
-
-@hook("cmd_hook", "colisprive")
-def get_colisprive_tracking_info(msg):
-    if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi,")
-    info = get_colisprive_info(msg.args[0])
-    if info:
-        return Response("Colis: \x02%s\x0F : \x02%s\x0F." % (msg.args[0], info), msg.channel)
-    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
-
-@hook("cmd_hook", "chronopost")
-def get_chronopost_tracking_info(msg):
-    if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi,")
-    info = get_chronopost_info(msg.args[0])
-    if info:
-        date, libelle = info
-        return Response("Colis: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour \x02%s\x0F." % (msg.args[0], libelle, date), msg.channel)
-    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
-
-@hook("cmd_hook", "colissimo")
-def get_colissimo_tracking_info(msg):
-    if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi,")
-    info = get_colissimo_info(msg.args[0])
-    if info:
-        date, libelle, site = info
-        return Response("Colis: \x02%s\x0F : \x02%s\x0F. Dernière mise à jour le \x02%s\x0F au site \x02%s\x0F." % (msg.args[0], libelle, date, site), msg.channel)
-    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
-
-@hook("cmd_hook", "laposte")
-def get_laposte_tracking_info(msg):
-    if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi,")
-    info = get_laposte_info(msg.args[0])
-    if info:
-        poste_type, poste_id, poste_status, poste_location, poste_date = info
-        return Response("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement \x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F)." % (poste_type, poste_id, poste_status, poste_location, poste_date), msg.channel)
-    return Response("L'identifiant recherché semble incorrect, merci de vérifier son exactitude.", msg.channel)
+    for tracknum in msg.args:
+        for name,tracker in trackers.items():
+            ret = tracker(tracknum)
+            if ret:
+                res.append_message(ret)
+                break
+        if not ret:
+            res.append_message("L'identifiant \x02{id}\x0F semble incorrect, merci de vérifier son exactitude.".format(id=tracknum))
+    return res
