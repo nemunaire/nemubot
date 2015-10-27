@@ -13,7 +13,7 @@ from nemubot.message import Text
 from nemubot.tools import web
 
 
-# MODULE FUCNTIONS ####################################################
+# MODULE FUNCTIONS ####################################################
 
 def default_reducer(url, data):
     snd_url = url + quote(data, "/:%@&=?")
