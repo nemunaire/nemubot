@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -48,9 +46,107 @@ class ModuleStatesFile:
             self.root = child
 
 
+class XMLParser:
+
+    def __init__(self, knodes):
+        self.knodes = knodes
+
+        self.stack = list()
+        self.child = 0
+
+
+    def parse_file(self, path):
+        p = xml.parsers.expat.ParserCreate()
+
+        p.StartElementHandler = self.startElement
+        p.CharacterDataHandler = self.characters
+        p.EndElementHandler = self.endElement
+
+        with open(path, "rb") as f:
+            p.ParseFile(f)
+
+        return self.root
+
+
+    def parse_string(self, s):
+        p = xml.parsers.expat.ParserCreate()
+
+        p.StartElementHandler = self.startElement
+        p.CharacterDataHandler = self.characters
+        p.EndElementHandler = self.endElement
+
+        p.Parse(s, 1)
+
+        return self.root
+
+
+    @property
+    def root(self):
+        if len(self.stack):
+            return self.stack[0]
+        else:
+            return None
+
+
+    @property
+    def current(self):
+        if len(self.stack):
+            return self.stack[-1]
+        else:
+            return None
+
+
+    def display_stack(self):
+        return " in ".join([str(type(s).__name__) for s in reversed(self.stack)])
+
+
+    def startElement(self, name, attrs):
+        if not self.current or not hasattr(self.current, "startElement") or not self.current.startElement(name, attrs):
+            if name not in self.knodes:
+                raise TypeError(name + " is not a known type to decode")
+            else:
+                self.stack.append(self.knodes[name](**attrs))
+        else:
+            self.child += 1
+
+
+    def characters(self, content):
+        if self.current and hasattr(self.current, "characters"):
+            self.current.characters(content)
+
+
+    def endElement(self, name):
+        if self.child:
+            self.child -= 1
+
+            if hasattr(self.current, "endElement"):
+                self.current.endElement(name)
+            return
+
+        if hasattr(self.current, "endElement"):
+            self.current.endElement(None)
+
+        # Don't remove root
+        if len(self.stack) > 1:
+            last = self.stack.pop()
+            if hasattr(self.current, "addChild"):
+                if self.current.addChild(name, last):
+                    return
+            raise TypeError(name + " tag not expected in " + self.display_stack())
+
+
 def parse_file(filename):
-    with open(filename, "r") as f:
-        return parse_string(f.read())
+    p = xml.parsers.expat.ParserCreate()
+    mod = ModuleStatesFile()
+
+    p.StartElementHandler = mod.startElement
+    p.EndElementHandler = mod.endElement
+    p.CharacterDataHandler = mod.characters
+
+    with open(filename, "rb") as f:
+        p.ParseFile(f)
+
+    return mod.root
 
 
 def parse_string(string):

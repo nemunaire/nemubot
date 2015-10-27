@@ -61,10 +61,8 @@ def liste(toks, context, prompt):
 def load(toks, context, prompt):
     """Load an XML configuration file"""
     if len(toks) > 1:
-        from nemubot.tools.config import load_file
-
         for filename in toks[1:]:
-            load_file(filename, context)
+            context.load_file(filename)
     else:
         print ("Not enough arguments. `load' takes a filename.")
         return 1

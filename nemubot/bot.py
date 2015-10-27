@@ -205,10 +205,60 @@ class Bot(threading.Thread):
                     self.quit()
                 elif action[0] == "loadconf":
                     for path in action[1:]:
-                        from nemubot.tools.config import load_file
-                        load_file(path, self)
+                        self.load_file(path)
                 self.sync_queue.task_done()
 
+
+
+    # Config methods
+
+    def load_file(self, filename):
+        """Load a configuration file
+
+        Arguments:
+        filename -- the path to the file to load
+        """
+
+        import os
+
+        # Unexisting file, assume a name was passed, import the module!
+        if not os.path.isfile(filename):
+            return self.import_module(filename)
+
+        from nemubot.tools.config import config_nodes
+        from nemubot.tools.xmlparser import XMLParser
+
+        try:
+            p = XMLParser(config_nodes)
+            config = p.parse_file(filename)
+        except:
+            logger.exception("Can't load `%s'; this is not a valid nemubot "
+                             "configuration file." % filename)
+            return False
+
+        # Preset each server in this file
+        for server in config.servers:
+            srv = server.server(config)
+            # Add the server in the context
+            if self.add_server(srv, server.autoconnect):
+                logger.info("Server '%s' successfully added." % srv.id)
+            else:
+                logger.error("Can't add server '%s'." % srv.id)
+
+        # Load module and their configuration
+        for mod in config.modules:
+            self.modules_configuration[mod.name] = mod
+            if mod.autoload:
+                try:
+                    __import__(mod.name)
+                except:
+                    logger.exception("Exception occurs when loading module"
+                                     " '%s'", mod.name)
+
+
+        # Load files asked by the configuration file
+        for load in config.includes:
+            self.load_file(load.path)
 
 
     # Events methods

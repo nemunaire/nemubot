@@ -16,7 +16,7 @@ PASSWD_FILE = None
 
 def load(context):
     global PASSWD_FILE
-    if not context.config or not context.config.hasAttribute("passwd"):
+    if not context.config or "passwd" not in context.config:
         print("No passwd file given")
         return None
     PASSWD_FILE = context.config["passwd"]

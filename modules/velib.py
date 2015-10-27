@@ -18,7 +18,7 @@ URL_API = None # http://www.velib.paris.fr/service/stationdetails/paris/%s
 
 def load(context):
     global URL_API
-    if not context.config or not context.config.hasAttribute("url"):
+    if not context.config or "url" not in context.config:
         raise ImportError("Please provide url attribute in the module configuration")
     URL_API = context.config["url"]
     context.data.setIndex("name", "station")
