@@ -15,7 +15,7 @@ from more import Response
 # LOADING #############################################################
 
 def load(context):
-    if not context.config or not context.config.getAttribute("goodreadskey"):
+    if not context.config or "goodreadskey" not in context.config:
         raise ImportError("You need a Goodreads API key in order to use this "
                           "module. Add it to the module configuration file:\n"
                           "<module name=\"books\" goodreadskey=\"XXXXXX\" />\n"

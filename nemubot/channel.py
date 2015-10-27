@@ -1,5 +1,3 @@
-# coding=utf-8
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -23,16 +21,18 @@ class Channel:
 
     """A chat room"""
 
-    def __init__(self, name, password=None):
+    def __init__(self, name, password=None, encoding=None):
         """Initialize the channel
 
         Arguments:
         name -- the channel name
         password -- the optional password use to join it
+        encoding -- the optional encoding of the channel
         """
 
         self.name = name
         self.password = password
+        self.encoding = encoding
         self.people = dict()
         self.topic = ""
         self.logger = logging.getLogger("nemubot.channel." + name)

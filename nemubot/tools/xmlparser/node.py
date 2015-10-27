@@ -1,5 +1,3 @@
-# coding=utf-8
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -37,7 +35,7 @@ class ModuleState:
         """Get the name of the current node"""
         return self.name
 
-    def display(self, level = 0):
+    def display(self, level=0):
         ret = ""
         out = list()
         for k in self.attributes:
@@ -49,6 +47,9 @@ class ModuleState:
         return ret
 
     def __str__(self):
+        return self.display()
+
+    def __repr__(self):
         return self.display()
 
     def __getitem__(self, i):

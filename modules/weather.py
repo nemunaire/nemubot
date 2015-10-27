@@ -21,7 +21,7 @@ from more import Response
 URL_DSAPI = "https://api.forecast.io/forecast/%s/%%s,%%s"
 
 def load(context):
-    if not context.config or not context.config.hasAttribute("darkskyapikey"):
+    if not context.config or "darkskyapikey" not in context.config:
         raise ImportError("You need a Dark-Sky API key in order to use this "
                           "module. Add it to the module configuration file:\n"
                           "<module name=\"weather\" darkskyapikey=\"XXX\" />\n"

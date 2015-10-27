@@ -13,7 +13,7 @@ from more import Response
 URL_TPBAPI = None
 
 def load(context):
-    if not context.config or not context.config.hasAttribute("url"):
+    if not context.config or "url" not in context.config:
         raise ImportError("You need a TPB API in order to use the !tpb feature"
                           ". Add it to the module configuration file:\n<module"
                           "name=\"tpb\" url=\"http://tpbapi.org/\" />\nSample "

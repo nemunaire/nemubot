@@ -19,7 +19,7 @@ URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&appid=%s"
 
 def load(context):
     global URL_API
-    if not context.config or not context.config.hasAttribute("apikey"):
+    if not context.config or "apikey" not in context.config:
         raise ImportError ("You need a Wolfram|Alpha API key in order to use "
                            "this module. Add it to the module configuration: "
                            "\n<module name=\"wolframalpha\" "

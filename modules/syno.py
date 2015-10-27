@@ -21,7 +21,7 @@ def help_full():
 def load(context):
     global lang_binding
 
-    if not context.config or not context.config.hasAttribute("bighugelabskey"):
+    if not context.config or not "bighugelabskey" in context.config:
         logger.error("You need a NigHugeLabs API key in order to have english "
                      "theasorus. Add it to the module configuration file:\n"
                      "<module name=\"syno\" bighugelabskey=\"XXXXXXXXXXXXXXXX\""

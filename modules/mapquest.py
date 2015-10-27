@@ -16,7 +16,7 @@ from more import Response
 URL_API = "http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%%s"
 
 def load(context):
-    if not context.config or not context.config.hasAttribute("apikey"):
+    if not context.config or "apikey" not in context.config:
         raise ImportError("You need a MapQuest API key in order to use this "
                           "module. Add it to the module configuration file:\n"
                           "<module name=\"mapquest\" key=\"XXXXXXXXXXXXXXXX\" "

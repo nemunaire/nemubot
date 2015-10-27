@@ -11,7 +11,7 @@ URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainNam
 def load(CONF, add_hook):
     global URL_WHOIS
 
-    if not CONF or not CONF.hasNode("whoisxmlapi") or not CONF.getNode("whoisxmlapi").hasAttribute("username") or not CONF.getNode("whoisxmlapi").hasAttribute("password"):
+    if not CONF or not CONF.hasNode("whoisxmlapi") or "username" not in CONF.getNode("whoisxmlapi") or "password" not in CONF.getNode("whoisxmlapi"):
         raise ImportError("You need a WhoisXML API account in order to use "
                           "the !netwhois feature. Add it to the module "
                           "configuration file:\n<whoisxmlapi username=\"XX\" "
