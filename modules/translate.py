@@ -19,7 +19,7 @@ LANG = ["ar", "zh", "cz", "en", "fr", "gr", "it",
 URL = "http://api.wordreference.com/0.8/%s/json/%%s%%s/%%s"
 
 def load(context):
-    if not context.config or not context.config.hasAttribute("wrapikey"):
+    if not context.config or "wrapikey" not in context.config:
         raise ImportError("You need a WordReference API key in order to use "
                           "this module. Add it to the module configuration "
                           "file:\n<module name=\"translate\" wrapikey=\"XXXXX\""

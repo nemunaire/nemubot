@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -16,123 +14,146 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-
-logger = logging.getLogger("nemubot.tools.config")
-
-
-def get_boolean(d, k, default=False):
-    return ((k in d and d[k].lower() != "false" and d[k].lower() != "off") or
-            (k not in d and default))
+def get_boolean(s):
+    if isinstance(s, bool):
+        return s
+    else:
+        return (s and s != "0" and s.lower() != "false" and s.lower() != "off")
 
 
-def _load_server(config, xmlnode):
-    """Load a server configuration
+class GenericNode:
 
-    Arguments:
-    config -- the global configuration
-    xmlnode -- the current server configuration node
-    """
+    def __init__(self, tag, **kwargs):
+        self.tag = tag
+        self.attrs = kwargs
+        self.content = ""
+        self.children = []
+        self._cur = None
+        self._deep_cur = 0
 
-    opts = {
-        "host": xmlnode["host"],
-        "ssl": xmlnode.hasAttribute("ssl") and xmlnode["ssl"].lower() == "true",
 
-        "nick": xmlnode["nick"] if xmlnode.hasAttribute("nick") else config["nick"],
-        "owner": xmlnode["owner"] if xmlnode.hasAttribute("owner") else config["owner"],
-    }
-
-    # Optional keyword arguments
-    for optional_opt in [ "port", "username", "realname",
-                          "password", "encoding", "caps" ]:
-        if xmlnode.hasAttribute(optional_opt):
-            opts[optional_opt] = xmlnode[optional_opt]
-        elif optional_opt in config:
-            opts[optional_opt] = config[optional_opt]
-
-    # Command to send on connection
-    if "on_connect" in xmlnode:
-        def on_connect():
-            yield xmlnode["on_connect"]
-        opts["on_connect"] = on_connect
-
-    # Channels to autojoin on connection
-    if xmlnode.hasNode("channel"):
-        opts["channels"] = list()
-    for chn in xmlnode.getNodes("channel"):
-        opts["channels"].append((chn["name"], chn["password"])
-                                if chn["password"] is not None
-                                else chn["name"])
-
-    # Server/client capabilities
-    if "caps" in xmlnode or "caps" in config:
-        capsl = (xmlnode["caps"] if xmlnode.hasAttribute("caps")
-                 else config["caps"]).lower()
-        if capsl == "no" or capsl == "off" or capsl == "false":
-            opts["caps"] = None
+    def startElement(self, name, attrs):
+        if self._cur is None:
+            self._cur = GenericNode(name, **attrs)
+            self._deep_cur = 0
         else:
-            opts["caps"] = capsl.split(',')
-    else:
-        opts["caps"] = list()
-
-    # Bind the protocol asked to the corresponding implementation
-    if "protocol" not in xmlnode or xmlnode["protocol"] == "irc":
-        from nemubot.server.IRC import IRC as IRCServer
-        srvcls = IRCServer
-    else:
-        raise Exception("Unhandled protocol '%s'" %
-                        xmlnode["protocol"])
-
-    # Initialize the server
-    return srvcls(**opts)
+            self._deep_cur += 1
+            self._cur.startElement(name, attrs)
+        return True
 
 
-def load_file(filename, context):
-    """Load the configuration file
-
-    Arguments:
-    filename -- the path to the file to load
-    """
-
-    import os
-
-    if os.path.isfile(filename):
-        from nemubot.tools.xmlparser import parse_file
-
-        config = parse_file(filename)
-
-        # This is a true nemubot configuration file, load it!
-        if config.getName() == "nemubotconfig":
-            # Preset each server in this file
-            for server in config.getNodes("server"):
-                srv = _load_server(config, server)
-
-                # Add the server in the context
-                if context.add_server(srv, get_boolean(server, "autoconnect")):
-                    logger.info("Server '%s' successfully added." % srv.id)
-                else:
-                    logger.error("Can't add server '%s'." % srv.id)
-
-            # Load module and their configuration
-            for mod in config.getNodes("module"):
-                context.modules_configuration[mod["name"]] = mod
-                if get_boolean(mod, "autoload", default=True):
-                    try:
-                        __import__(mod["name"])
-                    except:
-                        logger.exception("Exception occurs when loading module"
-                                         " '%s'", mod["name"])
-
-
-            # Load files asked by the configuration file
-            for load in config.getNodes("include"):
-                load_file(load["path"], context)
-
-        # Other formats
+    def characters(self, content):
+        if self._cur is None:
+            self.content += content
         else:
-            logger.error("Can't load `%s'; this is not a valid nemubot "
-                         "configuration file." % filename)
+            self._cur.characters(content)
 
-    # Unexisting file, assume a name was passed, import the module!
-    else:
-        context.import_module(filename)
+
+    def endElement(self, name):
+        if name is None:
+            return
+
+        if self._deep_cur:
+            self._deep_cur -= 1
+            self._cur.endElement(name)
+        else:
+            self.children.append(self._cur)
+            self._cur = None
+        return True
+
+
+    def hasNode(self, nodename):
+        return self.getNode(nodename) is not None
+
+
+    def getNode(self, nodename):
+        for c in self.children:
+            if c is not None and c.tag == nodename:
+                return c
+        return None
+
+
+    def __getitem__(self, item):
+        return self.attrs[item]
+
+    def __contains__(self, item):
+        return item in self.attrs
+
+
+class NemubotConfig:
+
+    def __init__(self, nick="nemubot", realname="nemubot", owner=None,
+                 ip=None, ssl=False, caps=None, encoding="utf-8"):
+        self.nick = nick
+        self.realname = realname
+        self.owner = owner
+        self.ip = ip
+        self.caps = caps.split(" ") if caps is not None else []
+        self.encoding = encoding
+        self.servers = []
+        self.modules = []
+        self.includes = []
+
+
+    def addChild(self, name, child):
+        if name == "module" and isinstance(child, ModuleConfig):
+            self.modules.append(child)
+            return True
+        elif name == "server" and isinstance(child, ServerConfig):
+            self.servers.append(child)
+            return True
+        elif name == "include" and isinstance(child, IncludeConfig):
+            self.includes.append(child)
+            return True
+
+
+class ServerConfig:
+
+    def __init__(self, uri="irc://nemubot@localhost/", autoconnect=True, caps=None, **kwargs):
+        self.uri = uri
+        self.autoconnect = autoconnect
+        self.caps = caps.split(" ") if caps is not None else []
+        self.args = kwargs
+        self.channels = []
+
+
+    def addChild(self, name, child):
+        if name == "channel" and isinstance(child, Channel):
+            self.channels.append(child)
+            return True
+
+
+    def server(self, parent):
+        from nemubot.server import factory
+
+        for a in ["nick", "owner", "realname", "encoding"]:
+            if a not in self.args:
+                self.args[a] = getattr(parent, a)
+
+        self.caps += parent.caps
+
+        return factory(self.uri, **self.args)
+
+
+class IncludeConfig:
+
+    def __init__(self, path):
+        self.path = path
+
+
+class ModuleConfig(GenericNode):
+
+    def __init__(self, name, autoload=True, **kwargs):
+        super(ModuleConfig, self).__init__(None, **kwargs)
+        self.name = name
+        self.autoload = get_boolean(autoload)
+
+from nemubot.channel import Channel
+
+config_nodes = {
+    "nemubotconfig": NemubotConfig,
+    "server": ServerConfig,
+    "channel": Channel,
+    "module": ModuleConfig,
+    "include": IncludeConfig,
+}
