@@ -65,10 +65,6 @@ def cmd_whatis(msg):
             res.append_message(" ".join(line.decode().split()))
 
     if len(res.messages) <= 0:
-        if num is not None:
-            res.append_message("There is no entry %s in section %d." %
-                               (msg.args[0], num))
-        else:
-            res.append_message("There is no man page for %s." % msg.args[0])
+        res.append_message("There is no man page for %s." % msg.args[0])
 
     return res
