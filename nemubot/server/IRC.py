@@ -46,7 +46,7 @@ class IRC(SocketServer):
         realname -- the bot's realname
         encoding -- the encoding used on the whole server
         caps -- client capabilities to register on the server
-        channels -- list of channels to join on connection (if a channel is password protected, give a tuple: (channel_name, password))
+        channels -- list of channels to join on connection
         on_connect -- generator to call when connection is done
         """
 
@@ -134,10 +134,10 @@ class IRC(SocketServer):
                         self.write(oc)
             # Then, JOIN some channels
             for chn in channels:
-                if isinstance(chn, tuple):
-                    self.write("JOIN %s %s" % chn)
+                if chn.password:
+                    self.write("JOIN %s %s" % (chn.name, chn.password))
                 else:
-                    self.write("JOIN %s" % chn)
+                    self.write("JOIN %s" % chn.name)
         self.hookscmd["001"] = _on_connect
 
         # Respond to ERROR

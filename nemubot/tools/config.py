@@ -132,7 +132,7 @@ class ServerConfig:
 
         self.caps += parent.caps
 
-        return factory(self.uri, **self.args)
+        return factory(self.uri, caps=self.caps, channels=self.channels, **self.args)
 
 
 class IncludeConfig:
