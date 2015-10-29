@@ -13,6 +13,15 @@ nemubotversion = 4.0
 # POSTAGE SERVICE PARSERS ############################################
 
 
+def get_tnt_info(track_id):
+    data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/'
+                         'visubontransport.do?bonTransport=%s' % track_id)
+    soup = BeautifulSoup(data)
+    status = soup.find('p', class_='suivi-title-selected')
+    if status:
+        return status.get_text()
+
+
 def get_colissimo_info(colissimo_id):
     colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/"
                                    "suivre.do?colispart=%s" % colissimo_id)
@@ -93,6 +102,13 @@ def get_laposte_info(laposte_id):
 # TRACKING HANDLERS ###################################################
 
 
+def handle_tnt(tracknum):
+    info = get_tnt_info(tracknum)
+    if info:
+        return ('Le colis \x02{trackid}\x0f a actuellement le status: '
+                '\x02{status}\x0F'.format(trackid=tracknum, status=info))
+
+
 def handle_laposte(tracknum):
     info = get_laposte_info(tracknum)
     if info:
@@ -129,7 +145,8 @@ TRACKING_HANDLERS = {
     'laposte': handle_laposte,
     'colissimo': handle_colissimo,
     'chronopost': handle_chronopost,
-    'coliprive': handle_coliprive
+    'coliprive': handle_coliprive,
+    'tnt': handle_tnt
 }
 
 
