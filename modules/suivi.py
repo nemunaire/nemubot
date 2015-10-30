@@ -16,12 +16,19 @@ from more import Response
 # POSTAGE SERVICE PARSERS ############################################
 
 def get_tnt_info(track_id):
+    values = []
     data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/'
                          'visubontransport.do?bonTransport=%s' % track_id)
     soup = BeautifulSoup(data)
-    status = soup.find('p', class_='suivi-title-selected')
-    if status:
-        return status.get_text()
+    status_list = soup.find('div', class_='result__content')
+    if not status_list:
+        return None
+    last_status = status_list.find('div', class_='roster')
+    if last_status:
+        for info in last_status.find_all('div', class_='roster__item'):
+            values.append(info.get_text().strip())
+    if len(values) == 3:
+        return (values[0], values[1], values[2])
 
 
 def get_colissimo_info(colissimo_id):
@@ -106,8 +113,14 @@ def get_laposte_info(laposte_id):
 def handle_tnt(tracknum):
     info = get_tnt_info(tracknum)
     if info:
+        status, date, place = info
+        placestr = ''
+        if place:
+            placestr = ' à \x02{place}\x0f'
         return ('Le colis \x02{trackid}\x0f a actuellement le status: '
-                '\x02{status}\x0F'.format(trackid=tracknum, status=info))
+                '\x02{status}\x0F mis à jour le \x02{date}\x0f{place}.'
+                .format(trackid=tracknum, status=status,
+                        date=re.sub(r'\s+', ' ', date), place=placestr))
 
 
 def handle_laposte(tracknum):

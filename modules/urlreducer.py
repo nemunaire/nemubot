@@ -92,7 +92,8 @@ def parselisten(msg):
 def parseresponse(msg):
     global LAST_URLS
     if hasattr(msg, "text") and isinstance(msg.text, str):
-        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?(?:[^ :/]+:[0-9]+)?[^ :]+)", msg.text)
+        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?(?:[^ :/]+:[0-9]+)?[^ :]+)",
+                          msg.text)
         for url in urls:
             o = urlparse(web._getNormalizedURL(url), "http")
 
@@ -130,7 +131,7 @@ def cmd_reduceurl(msg):
             raise IMException("I have no more URL to reduce.")
 
     if len(msg.args) > 4:
-        raise IMException("I cannot reduce that maby URLs at once.")
+        raise IMException("I cannot reduce that many URLs at once.")
     else:
         minify += msg.args
 
