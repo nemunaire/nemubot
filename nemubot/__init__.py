@@ -50,6 +50,11 @@ def reload():
     import nemubot.consumer
     imp.reload(nemubot.consumer)
 
+    import nemubot.datastore
+    imp.reload(nemubot.datastore)
+
+    nemubot.datastore.reload()
+
     import nemubot.event
     imp.reload(nemubot.event)
 

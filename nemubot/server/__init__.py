@@ -81,3 +81,8 @@ def reload():
 
     import nemubot.server.IRC
     imp.reload(nemubot.server.IRC)
+
+    import nemubot.server.message
+    imp.reload(nemubot.server.message)
+
+    nemubot.server.message.reload()

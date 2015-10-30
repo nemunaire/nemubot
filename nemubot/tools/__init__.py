@@ -23,6 +23,9 @@ def reload():
     import nemubot.tools.countdown
     imp.reload(nemubot.tools.countdown)
 
+    import nemubot.tools.feed
+    imp.reload(nemubot.tools.feed)
+
     import nemubot.tools.date
     imp.reload(nemubot.tools.date)
 

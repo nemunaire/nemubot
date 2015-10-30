@@ -19,3 +19,6 @@ def reload():
 
     import nemubot.message.printer.IRC
     imp.reload(nemubot.message.printer.IRC)
+
+    import nemubot.message.printer.socket
+    imp.reload(nemubot.message.printer.socket)
