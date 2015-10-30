@@ -3,7 +3,6 @@
 # PYTHON STUFFS #######################################################
 
 import re
-import sys
 from datetime import datetime, timezone
 import shlex
 
@@ -147,7 +146,7 @@ def replace_variables(cnts, msg=None):
         resultCnt.append(cnt)
 
     for u in sorted(set(unsetCnt), reverse=True):
-        k = msg.args.pop(u)
+        msg.args.pop(u)
 
     return resultCnt
 

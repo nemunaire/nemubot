@@ -1,5 +1,3 @@
-# coding=utf-8
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #

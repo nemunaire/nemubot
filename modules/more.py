@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -18,16 +16,17 @@
 
 """Progressive display of very long messages"""
 
+# PYTHON STUFFS #######################################################
+
 import logging
-import sys
 
 from nemubot.message import Text, DirectAsk
 from nemubot.hooks import hook
 
-nemubotversion = 3.4
-
 logger = logging.getLogger("nemubot.response")
 
+
+# MODULE CORE #########################################################
 
 class Response:
 
@@ -236,6 +235,8 @@ class Response:
 
 SERVERS = dict()
 
+
+# MODULE INTERFACE ####################################################
 
 @hook("all_post")
 def parseresponse(res):

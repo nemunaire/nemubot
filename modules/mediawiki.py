@@ -2,7 +2,6 @@
 
 """Use MediaWiki API to get pages"""
 
-import json
 import re
 import urllib.parse
 

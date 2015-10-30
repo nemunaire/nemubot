@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.hooks.abstract import Abstract
 from nemubot.hooks.message import Message
 
 last_registered = []
@@ -29,12 +28,12 @@ def hook(store, *args, **kargs):
 
 
 def reload():
-    global Abstract, Message
+    global Message
     import imp
 
     import nemubot.hooks.abstract
     imp.reload(nemubot.hooks.abstract)
-    Abstract = nemubot.hooks.abstract.Abstract
+
     import nemubot.hooks.message
     imp.reload(nemubot.hooks.message)
     Message = nemubot.hooks.message.Message

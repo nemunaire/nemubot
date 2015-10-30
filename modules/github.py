@@ -94,7 +94,7 @@ def cmd_github(msg):
 
 
 @hook("cmd_hook", "github_user")
-def cmd_github(msg):
+def cmd_github_user(msg):
     if not len(msg.args):
         raise IRCException("indicate a user name to search")
 
@@ -127,7 +127,7 @@ def cmd_github(msg):
 
 
 @hook("cmd_hook", "github_issue")
-def cmd_github(msg):
+def cmd_github_issue(msg):
     if not len(msg.args):
         raise IRCException("indicate a repository to view its issues")
 
@@ -165,7 +165,7 @@ def cmd_github(msg):
 
 
 @hook("cmd_hook", "github_commit")
-def cmd_github(msg):
+def cmd_github_commit(msg):
     if not len(msg.args):
         raise IRCException("indicate a repository to view its commits")
 

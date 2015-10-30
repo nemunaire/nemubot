@@ -87,7 +87,6 @@ def cmd_whois(msg):
     js = getJSON(URL_WHOIS % urllib.parse.quote(dom))
 
     if "ErrorMessage" in js:
-        err = js["ErrorMessage"]
         raise IRCException(js["ErrorMessage"]["msg"])
 
     whois = js["WhoisRecord"]

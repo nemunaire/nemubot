@@ -26,7 +26,7 @@ def cmd_choice(msg):
 
 
 @hook("cmd_hook", "choicecmd")
-def cmd_choice(msg):
+def cmd_choicecmd(msg):
     if not len(msg.args):
         raise IRCException("indicate some command to pick!")
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Nemubot is a smart and modulable IM bot.
 # Copyright (C) 2012-2015  Mercier Pierre-Olivier
 #
@@ -16,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import logging
 import threading
 import sys

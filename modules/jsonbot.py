@@ -1,5 +1,3 @@
-from bs4 import BeautifulSoup
-
 from nemubot.hooks import hook
 from nemubot.exception import IRCException
 from nemubot.tools import web

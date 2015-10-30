@@ -2,7 +2,6 @@
 
 """Find information about an SAP transaction codes"""
 
-import re
 import urllib.parse
 import urllib.request
 from bs4 import BeautifulSoup
@@ -10,7 +9,6 @@ from bs4 import BeautifulSoup
 from nemubot.exception import IRCException
 from nemubot.hooks import hook
 from nemubot.tools import web
-from nemubot.tools.web import striphtml
 
 nemubotversion = 4.0
 

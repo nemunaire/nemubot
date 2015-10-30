@@ -128,7 +128,7 @@ def search(msg):
     res.append_message(s.redirect)
     res.append_message(s.answer)
     res.append_message(s.abstract)
-    res.append_message([res for res in s.result])
+    res.append_message([r for r in s.result])
 
     for rt in s.relatedTopics:
         res.append_message(rt)

@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 
 from nemubot.event import ModuleEvent
 from nemubot.exception import IRCException
-from nemubot.hooks import hook
 from nemubot.tools.web import getNormalizedURL
 from nemubot.tools.xmlparser.node import ModuleState
 
