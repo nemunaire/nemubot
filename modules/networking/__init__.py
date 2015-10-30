@@ -5,7 +5,7 @@
 import logging
 import re
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 
 from more import Response
@@ -43,13 +43,13 @@ def load(context):
       help_usage={"URL": "Display the title of the given URL"})
 def cmd_title(msg):
     if not len(msg.args):
-        raise IRCException("Indicate the URL to visit.")
+        raise IMException("Indicate the URL to visit.")
 
     url = " ".join(msg.args)
     res = re.search("<title>(.*?)</title>", page.fetch(" ".join(msg.args)), re.DOTALL)
 
     if res is None:
-        raise IRCException("The page %s has no title" % url)
+        raise IMException("The page %s has no title" % url)
     else:
         return Response("%s: %s" % (url, res.group(1).replace("\n", " ")), channel=msg.channel)
 
@@ -59,7 +59,7 @@ def cmd_title(msg):
       help_usage={"URL": "Display HTTP headers of the given URL"})
 def cmd_curly(msg):
     if not len(msg.args):
-        raise IRCException("Indicate the URL to visit.")
+        raise IMException("Indicate the URL to visit.")
 
     url = " ".join(msg.args)
     version, status, reason, headers = page.headers(url)
@@ -72,7 +72,7 @@ def cmd_curly(msg):
       help_usage={"URL": "Display raw HTTP body of the given URL"})
 def cmd_curl(msg):
     if not len(msg.args):
-        raise IRCException("Indicate the URL to visit.")
+        raise IMException("Indicate the URL to visit.")
 
     res = Response(channel=msg.channel)
     for m in page.fetch(" ".join(msg.args)).split("\n"):
@@ -85,7 +85,7 @@ def cmd_curl(msg):
       help_usage={"URL": "Display and format HTTP content of the given URL"})
 def cmd_w3m(msg):
     if not len(msg.args):
-        raise IRCException("Indicate the URL to visit.")
+        raise IMException("Indicate the URL to visit.")
     res = Response(channel=msg.channel)
     for line in page.render(" ".join(msg.args)).split("\n"):
         res.append_message(line)
@@ -97,7 +97,7 @@ def cmd_w3m(msg):
       help_usage={"URL": "Display redirections steps for the given URL"})
 def cmd_traceurl(msg):
     if not len(msg.args):
-        raise IRCException("Indicate an URL to trace!")
+        raise IMException("Indicate an URL to trace!")
 
     res = list()
     for url in msg.args[:4]:
@@ -114,7 +114,7 @@ def cmd_traceurl(msg):
       help_usage={"DOMAIN": "Check if a DOMAIN is up"})
 def cmd_isup(msg):
     if not len(msg.args):
-        raise IRCException("Indicate an domain name to check!")
+        raise IMException("Indicate an domain name to check!")
 
     res = list()
     for url in msg.args[:4]:
@@ -131,7 +131,7 @@ def cmd_isup(msg):
       help_usage={"URL": "Do W3C HTML validation on the given URL"})
 def cmd_w3c(msg):
     if not len(msg.args):
-        raise IRCException("Indicate an URL to validate!")
+        raise IMException("Indicate an URL to validate!")
 
     headers, validator = w3c.validator(msg.args[0])
 
@@ -157,7 +157,7 @@ def cmd_w3c(msg):
       help_usage={"URL": "Watch the given domain and alert when it availability status changes"})
 def cmd_watch(msg, diffType="diff"):
     if not len(msg.args):
-        raise IRCException("indicate an URL to watch!")
+        raise IMException("indicate an URL to watch!")
 
     return watchWebsite.add_site(msg.args[0], msg.frm, msg.channel, msg.server, diffType)
 
@@ -178,7 +178,7 @@ def cmd_listwatch(msg):
       help_usage={"URL": "Unwatch the given URL"})
 def cmd_unwatch(msg):
     if not len(msg.args):
-        raise IRCException("which URL should I stop watching?")
+        raise IMException("which URL should I stop watching?")
 
     for arg in msg.args:
         return watchWebsite.del_site(arg, msg.frm, msg.channel, msg.frm_owner)

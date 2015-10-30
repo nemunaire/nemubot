@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import shlex
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.message import Command
 from nemubot.tools.xmlparser.node import ModuleState
@@ -183,7 +183,7 @@ def cmd_listvars(msg):
       help_usage={"KEY VALUE": "Define the variable named KEY and fill it with VALUE as content"})
 def cmd_set(msg):
     if len(msg.args) < 2:
-        raise IRCException("!set take two args: the key and the value.")
+        raise IMException("!set take two args: the key and the value.")
     set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
     return Response("Variable $%s successfully defined." % msg.args[0],
                     channel=msg.channel)
@@ -209,7 +209,7 @@ def cmd_listalias(msg):
       help="Display the replacement command for a given alias")
 def cmd_alias(msg):
     if not len(msg.args):
-        raise IRCException("!alias takes as argument an alias to extend.")
+        raise IMException("!alias takes as argument an alias to extend.")
     res = list()
     for alias in msg.args:
         if alias[0] == "!":
@@ -225,7 +225,7 @@ def cmd_alias(msg):
       help="Remove a previously created alias")
 def cmd_unalias(msg):
     if not len(msg.args):
-        raise IRCException("Which alias would you want to remove?")
+        raise IMException("Which alias would you want to remove?")
     res = list()
     for alias in msg.args:
         if alias[0] == "!" and len(alias) > 1:
@@ -268,7 +268,7 @@ def parseask(msg):
     if re.match(".*(register|set|cr[ée]{2}|new|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) ?(pour|for|=|:) ?(.+)$", msg.text)
         if result.group(1) in context.data.getNode("aliases").index:
-            raise IRCException("this alias is already defined.")
+            raise IMException("this alias is already defined.")
         else:
             create_alias(result.group(1),
                          result.group(3),

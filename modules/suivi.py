@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import re
 
 from nemubot.hooks import hook
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.tools.web import getURLContent
 from more import Response
 
@@ -160,7 +160,7 @@ TRACKING_HANDLERS = {
                   "or all of them."})
 def get_tracking_info(msg):
     if not len(msg.args):
-        raise IRCException("Renseignez un identifiant d'envoi.")
+        raise IMException("Renseignez un identifiant d'envoi.")
 
     res = Response(channel=msg.channel, count=" (%d suivis supplémentaires)")
 
@@ -170,7 +170,7 @@ def get_tracking_info(msg):
                 msg.kwargs['tracker']: TRACKING_HANDLERS[msg.kwargs['tracker']]
             }
         else:
-            raise IRCException("No tracker named \x02{tracker}\x0F, please use"
+            raise IMException("No tracker named \x02{tracker}\x0F, please use"
                                " one of the following: \x02{trackers}\x0F"
                                .format(tracker=msg.kwargs['tracker'],
                                        trackers=', '

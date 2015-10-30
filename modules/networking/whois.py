@@ -1,7 +1,7 @@
 import datetime
 import urllib
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.tools.web import getJSON
 
 from more import Response
@@ -80,14 +80,14 @@ def whois_entityformat(entity):
 
 def cmd_whois(msg):
     if not len(msg.args):
-        raise IRCException("Indiquer un domaine ou une IP à whois !")
+        raise IMException("Indiquer un domaine ou une IP à whois !")
 
     dom = msg.args[0]
 
     js = getJSON(URL_WHOIS % urllib.parse.quote(dom))
 
     if "ErrorMessage" in js:
-        raise IRCException(js["ErrorMessage"]["msg"])
+        raise IMException(js["ErrorMessage"]["msg"])
 
     whois = js["WhoisRecord"]
 

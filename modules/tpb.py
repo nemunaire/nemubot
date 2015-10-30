@@ -1,7 +1,7 @@
 from datetime import datetime
 import urllib
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import human
 from nemubot.tools.web import getJSON
@@ -25,7 +25,7 @@ def load(context):
 @hook("cmd_hook", "tpb")
 def cmd_tpb(msg):
     if not len(msg.args):
-        raise IRCException("indicate an item to search!")
+        raise IMException("indicate an item to search!")
 
     torrents = getJSON(URL_TPBAPI + urllib.parse.quote(" ".join(msg.args)))
 

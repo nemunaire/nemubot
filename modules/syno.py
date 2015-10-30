@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -76,7 +76,7 @@ lang_binding = { 'fr': get_french_synos }
 @hook("cmd_hook", "antonymes", data="antonymes")
 def go(msg, what):
     if not len(msg.args):
-        raise IRCException("de quel mot veux-tu connaître la liste des synonymes ?")
+        raise IMException("de quel mot veux-tu connaître la liste des synonymes ?")
 
     # Detect lang
     if msg.args[0] in lang_binding:
@@ -86,7 +86,7 @@ def go(msg, what):
         func = lang_binding["fr"]
         word = ' '.join(msg.args)
         # TODO: depreciate usage without lang
-        #raise IRCException("language %s is not handled yet." % msg.args[0])
+        #raise IMException("language %s is not handled yet." % msg.args[0])
 
     try:
         best, synos, anton = func(word)
@@ -100,7 +100,7 @@ def go(msg, what):
             if len(synos) > 0: res.append_message(synos)
             return res
         else:
-            raise IRCException("Aucun synonyme de %s n'a été trouvé" % word)
+            raise IMException("Aucun synonyme de %s n'a été trouvé" % word)
 
     elif what == "antonymes":
         if len(anton) > 0:
@@ -108,7 +108,7 @@ def go(msg, what):
                             title="Antonymes de %s" % word)
             return res
         else:
-            raise IRCException("Aucun antonyme de %s n'a été trouvé" % word)
+            raise IMException("Aucun antonyme de %s n'a été trouvé" % word)
 
     else:
-        raise IRCException("WHAT?!")
+        raise IMException("WHAT?!")

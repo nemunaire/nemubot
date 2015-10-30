@@ -1,5 +1,5 @@
 from nemubot.hooks import hook
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.tools import web
 from more import Response
 import json
@@ -42,15 +42,15 @@ def getJsonKeys(data):
 @hook("cmd_hook", "json")
 def get_json_info(msg):
     if not len(msg.args):
-      raise IRCException("Please specify a url and a list of JSON keys.")
+      raise IMException("Please specify a url and a list of JSON keys.")
 
     request_data = web.getURLContent(msg.args[0].replace(' ', "%20"))
     if not request_data:
-      raise IRCException("Please specify a valid url.")
+      raise IMException("Please specify a valid url.")
     json_data = json.loads(request_data)
 
     if len(msg.args) == 1:
-      raise IRCException("Please specify the keys to return (%s)" % ", ".join(getJsonKeys(json_data)))
+      raise IMException("Please specify the keys to return (%s)" % ", ".join(getJsonKeys(json_data)))
 
     tags = ','.join(msg.args[1:]).split(',')
     response = getRequestedTags(tags, json_data)

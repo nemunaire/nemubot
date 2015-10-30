@@ -5,7 +5,7 @@
 import urllib
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -65,11 +65,11 @@ def search_author(name):
       })
 def cmd_book(msg):
     if not len(msg.args):
-        raise IRCException("please give me a title to search")
+        raise IMException("please give me a title to search")
 
     book = get_book(" ".join(msg.args))
     if book is None:
-        raise IRCException("unable to find book named like this")
+        raise IMException("unable to find book named like this")
     res = Response(channel=msg.channel)
     res.append_message("%s, written by %s: %s" % (book.getElementsByTagName("title")[0].firstChild.nodeValue,
                                                  book.getElementsByTagName("author")[0].getElementsByTagName("name")[0].firstChild.nodeValue,
@@ -84,7 +84,7 @@ def cmd_book(msg):
       })
 def cmd_books(msg):
     if not len(msg.args):
-        raise IRCException("please give me a title to search")
+        raise IMException("please give me a title to search")
 
     title = " ".join(msg.args)
     res = Response(channel=msg.channel,
@@ -104,12 +104,12 @@ def cmd_books(msg):
       })
 def cmd_author(msg):
     if not len(msg.args):
-        raise IRCException("please give me an author to search")
+        raise IMException("please give me an author to search")
 
     name = " ".join(msg.args)
     ath = search_author(name)
     if ath is None:
-        raise IRCException("%s does not appear to be a published author." % name)
+        raise IMException("%s does not appear to be a published author." % name)
     return Response([b.getElementsByTagName("title")[0].firstChild.nodeValue for b in ath.getElementsByTagName("book")],
                     channel=msg.channel,
                     title=ath.getElementsByTagName("name")[0].firstChild.nodeValue)

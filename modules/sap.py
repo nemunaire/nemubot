@@ -6,7 +6,7 @@ import urllib.parse
 import urllib.request
 from bs4 import BeautifulSoup
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -22,7 +22,7 @@ def help_full():
 @hook("cmd_hook", "tcode")
 def cmd_tcode(msg):
     if not len(msg.args):
-        raise IRCException("indicate a transaction code or "
+        raise IMException("indicate a transaction code or "
                            "a keyword to search!")
 
     url = ("http://www.tcodesearch.com/tcodes/search?q=%s" %

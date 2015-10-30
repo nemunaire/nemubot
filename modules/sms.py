@@ -10,7 +10,7 @@ import urllib.request
 import urllib.parse
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 
@@ -50,15 +50,15 @@ def send_sms(frm, api_usr, api_key, content):
 @hook("cmd_hook", "sms")
 def cmd_sms(msg):
     if not len(msg.args):
-        raise IRCException("À qui veux-tu envoyer ce SMS ?")
+        raise IMException("À qui veux-tu envoyer ce SMS ?")
 
     # Check dests
     cur_epoch = time.mktime(time.localtime());
     for u in msg.args[0].split(","):
         if u not in context.data.index:
-            raise IRCException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
+            raise IMException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
         elif cur_epoch - float(context.data.index[u]["lastuse"]) < 42:
-            raise IRCException("Un peu de calme, %s a déjà reçu un SMS il n'y a pas si longtemps." % u)
+            raise IMException("Un peu de calme, %s a déjà reçu un SMS il n'y a pas si longtemps." % u)
 
     # Go!
     fails = list()

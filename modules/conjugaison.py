@@ -6,7 +6,7 @@ from collections import defaultdict
 import re
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.web import striphtml
@@ -51,10 +51,10 @@ def compute_line(line, stringTens):
     try:
         idTemps = d[stringTens]
     except:
-        raise IRCException("le temps demandé n'existe pas")
+        raise IMException("le temps demandé n'existe pas")
 
     if len(idTemps) == 0:
-        raise IRCException("le temps demandé n'existe pas")
+        raise IMException("le temps demandé n'existe pas")
 
     index = line.index('<div id="temps' + idTemps[0] + '\"')
     endIndex = line[index:].index('<div class=\"conjugBloc\"')
@@ -78,7 +78,7 @@ def compute_line(line, stringTens):
       })
 def cmd_conjug(msg):
     if len(msg.args) < 2:
-        raise IRCException("donne moi un temps et un verbe, et je te donnerai "
+        raise IMException("donne moi un temps et un verbe, et je te donnerai "
                            "sa conjugaison!")
 
     tens = ' '.join(msg.args[:-1])
@@ -91,4 +91,4 @@ def cmd_conjug(msg):
         return Response(conjug, channel=msg.channel,
                         title="Conjugaison de %s" % verb)
     else:
-        raise IRCException("aucune conjugaison de '%s' n'a été trouvé" % verb)
+        raise IMException("aucune conjugaison de '%s' n'a été trouvé" % verb)

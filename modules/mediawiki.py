@@ -5,7 +5,7 @@
 import re
 import urllib.parse
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -42,7 +42,7 @@ def get_raw_page(site, term, ssl=False):
         try:
             return data["query"]["pages"][k]["revisions"][0]["*"]
         except:
-            raise IRCException("article not found")
+            raise IMException("article not found")
 
 
 def get_unwikitextified(site, wikitext, ssl=False):
@@ -179,7 +179,7 @@ def mediawiki_response(site, term, receivers):
 def cmd_mediawiki(msg):
     """Read an article on a MediaWiki"""
     if len(msg.args) < 2:
-        raise IRCException("indicate a domain and a term to search")
+        raise IMException("indicate a domain and a term to search")
 
     return mediawiki_response(msg.args[0],
                               " ".join(msg.args[1:]),
@@ -190,7 +190,7 @@ def cmd_mediawiki(msg):
 def cmd_srchmediawiki(msg):
     """Search an article on a MediaWiki"""
     if len(msg.args) < 2:
-        raise IRCException("indicate a domain and a term to search")
+        raise IMException("indicate a domain and a term to search")
 
     res = Response(channel=msg.receivers, nomore="No more results", count=" (%d more results)")
 
@@ -203,7 +203,7 @@ def cmd_srchmediawiki(msg):
 @hook("cmd_hook", "wikipedia")
 def cmd_wikipedia(msg):
     if len(msg.args) < 2:
-        raise IRCException("indicate a lang and a term to search")
+        raise IMException("indicate a lang and a term to search")
 
     return mediawiki_response(msg.args[0] + ".wikipedia.org",
                               " ".join(msg.args[1:]),

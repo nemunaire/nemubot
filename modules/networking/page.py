@@ -5,7 +5,7 @@ import tempfile
 import urllib
 
 from nemubot import __version__
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.tools import web
 
 
@@ -23,7 +23,7 @@ def headers(url):
 
     o = urllib.parse.urlparse(web.getNormalizedURL(url), "http")
     if o.netloc == "":
-        raise IRCException("invalid URL")
+        raise IMException("invalid URL")
     if o.scheme == "http":
         conn = http.client.HTTPConnection(o.hostname, port=o.port, timeout=5)
     else:
@@ -32,18 +32,18 @@ def headers(url):
         conn.request("HEAD", o.path, None, {"User-agent":
                                             "Nemubot v%s" % __version__})
     except ConnectionError as e:
-        raise IRCException(e.strerror)
+        raise IMException(e.strerror)
     except socket.timeout:
-        raise IRCException("request timeout")
+        raise IMException("request timeout")
     except socket.gaierror:
         print ("<tools.web> Unable to receive page %s from %s on %d."
                % (o.path, o.hostname, o.port if o.port is not None else 0))
-        raise IRCException("an unexpected error occurs")
+        raise IMException("an unexpected error occurs")
 
     try:
         res = conn.getresponse()
     except http.client.BadStatusLine:
-        raise IRCException("An error occurs")
+        raise IMException("An error occurs")
     finally:
         conn.close()
 
@@ -51,7 +51,7 @@ def headers(url):
 
 
 def _onNoneDefault():
-    raise IRCException("An error occurs when trying to access the page")
+    raise IMException("An error occurs when trying to access the page")
 
 
 def fetch(url, onNone=_onNoneDefault):
@@ -71,11 +71,11 @@ def fetch(url, onNone=_onNoneDefault):
             else:
                 return None
     except ConnectionError as e:
-        raise IRCException(e.strerror)
+        raise IMException(e.strerror)
     except socket.timeout:
-        raise IRCException("The request timeout when trying to access the page")
+        raise IMException("The request timeout when trying to access the page")
     except socket.error as e:
-        raise IRCException(e.strerror)
+        raise IMException(e.strerror)
 
 
 def _render(cnt):

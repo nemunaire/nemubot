@@ -16,7 +16,7 @@
 
 from urllib.parse import urlparse, urlsplit, urlunsplit
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 
 
 def isURL(url):
@@ -100,7 +100,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
     elif o.scheme is None or o.scheme == "":
         conn = http.client.HTTPConnection(**kwargs)
     else:
-        raise IRCException("Invalid URL")
+        raise IMException("Invalid URL")
 
     from nemubot import __version__
     if header is None:
@@ -121,7 +121,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
                          body,
                          header)
     except OSError as e:
-        raise IRCException(e.strerror)
+        raise IMException(e.strerror)
 
     try:
         res = conn.getresponse()
@@ -129,7 +129,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
         cntype = res.getheader("Content-Type")
 
         if size > 524288 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
-            raise IRCException("Content too large to be retrieved")
+            raise IMException("Content too large to be retrieved")
 
         data = res.read(size)
 
@@ -147,7 +147,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
                         else:
                             charset = cha[0]
     except http.client.BadStatusLine:
-        raise IRCException("Invalid HTTP response")
+        raise IMException("Invalid HTTP response")
     finally:
         conn.close()
 
@@ -158,7 +158,7 @@ def getURLContent(url, body=None, timeout=7, header=None):
           res.getheader("Location") != url):
         return getURLContent(res.getheader("Location"), timeout=timeout)
     else:
-        raise IRCException("A HTTP error occurs: %d - %s" %
+        raise IMException("A HTTP error occurs: %d - %s" %
                            (res.status, http.client.responses[res.status]))
 
 

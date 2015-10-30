@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -68,7 +68,7 @@ def info_commit(repo, commit=None):
 @hook("cmd_hook", "github")
 def cmd_github(msg):
     if not len(msg.args):
-        raise IRCException("indicate a repository name to search")
+        raise IMException("indicate a repository name to search")
 
     repos = info_repos(" ".join(msg.args))
 
@@ -96,7 +96,7 @@ def cmd_github(msg):
 @hook("cmd_hook", "github_user")
 def cmd_github_user(msg):
     if not len(msg.args):
-        raise IRCException("indicate a user name to search")
+        raise IMException("indicate a user name to search")
 
     res = Response(channel=msg.channel, nomore="No more user")
 
@@ -121,7 +121,7 @@ def cmd_github_user(msg):
                             user["html_url"],
                             kf))
     else:
-        raise IRCException("User not found")
+        raise IMException("User not found")
 
     return res
 
@@ -129,7 +129,7 @@ def cmd_github_user(msg):
 @hook("cmd_hook", "github_issue")
 def cmd_github_issue(msg):
     if not len(msg.args):
-        raise IRCException("indicate a repository to view its issues")
+        raise IMException("indicate a repository to view its issues")
 
     issue = None
 
@@ -150,7 +150,7 @@ def cmd_github_issue(msg):
     issues = info_issue(repo, issue)
 
     if issues is None:
-        raise IRCException("Repository not found")
+        raise IMException("Repository not found")
 
     for issue in issues:
         res.append_message("%s%s issue #%d: \x03\x02%s\x03\x02 opened by %s on %s: %s" %
@@ -167,7 +167,7 @@ def cmd_github_issue(msg):
 @hook("cmd_hook", "github_commit")
 def cmd_github_commit(msg):
     if not len(msg.args):
-        raise IRCException("indicate a repository to view its commits")
+        raise IMException("indicate a repository to view its commits")
 
     commit = None
     if re.match("^[a-fA-F0-9]+$", msg.args[0]):
@@ -185,7 +185,7 @@ def cmd_github_commit(msg):
     commits = info_commit(repo, commit)
 
     if commits is None:
-        raise IRCException("Repository not found")
+        raise IMException("Repository not found")
 
     for commit in commits:
         res.append_message("Commit %s by %s on %s: %s" %

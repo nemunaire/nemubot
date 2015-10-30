@@ -5,7 +5,7 @@
 import re
 import urllib.parse
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -39,13 +39,13 @@ def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False)
 
     # Return data
     if "Error" in data:
-        raise IRCException(data["Error"])
+        raise IMException(data["Error"])
 
     elif "Response" in data and data["Response"] == "True":
         return data
 
     else:
-        raise IRCException("An error occurs during movie search")
+        raise IMException("An error occurs during movie search")
 
 
 def find_movies(title):
@@ -59,20 +59,20 @@ def find_movies(title):
 
     # Return data
     if "Error" in data:
-        raise IRCException(data["Error"])
+        raise IMException(data["Error"])
 
     elif "Search" in data:
         return data
 
     else:
-        raise IRCException("An error occurs during movie search")
+        raise IMException("An error occurs during movie search")
 
 
 @hook("cmd_hook", "imdb")
 def cmd_imdb(msg):
     """View movie details with !imdb <title>"""
     if not len(msg.args):
-        raise IRCException("precise a movie/serie title!")
+        raise IMException("precise a movie/serie title!")
 
     title = ' '.join(msg.args)
 
@@ -101,7 +101,7 @@ def cmd_imdb(msg):
 def cmd_search(msg):
     """!imdbs <approximative title> to search a movie title"""
     if not len(msg.args):
-        raise IRCException("precise a movie/serie title!")
+        raise IMException("precise a movie/serie title!")
 
     data = find_movies(' '.join(msg.args))
 

@@ -110,8 +110,8 @@ class Feed:
         elif self.feed.tagName == "feed":
             self._parse_atom_feed()
         else:
-            from nemubot.exception import IRCException
-            raise IRCException("This is not a valid Atom or RSS feed")
+            from nemubot.exception import IMException
+            raise IMException("This is not a valid Atom or RSS feed")
 
 
     def _parse_atom_feed(self):

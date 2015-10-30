@@ -6,7 +6,7 @@ import random
 import shlex
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.message import Command
 
@@ -18,7 +18,7 @@ from more import Response
 @hook("cmd_hook", "choice")
 def cmd_choice(msg):
     if not len(msg.args):
-        raise IRCException("indicate some terms to pick!")
+        raise IMException("indicate some terms to pick!")
 
     return Response(random.choice(msg.args),
                     channel=msg.channel,
@@ -28,7 +28,7 @@ def cmd_choice(msg):
 @hook("cmd_hook", "choicecmd")
 def cmd_choicecmd(msg):
     if not len(msg.args):
-        raise IRCException("indicate some command to pick!")
+        raise IMException("indicate some command to pick!")
 
     choice = shlex.split(random.choice(msg.args))
 

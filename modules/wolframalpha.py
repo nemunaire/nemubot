@@ -6,7 +6,7 @@ from urllib.parse import quote
 import re
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -100,12 +100,12 @@ class WFAResults:
       })
 def calculate(msg):
     if not len(msg.args):
-        raise IRCException("Indicate a calcul to compute")
+        raise IMException("Indicate a calcul to compute")
 
     s = WFAResults(' '.join(msg.args))
 
     if not s.success:
-        raise IRCException(s.error)
+        raise IMException(s.error)
 
     res = Response(channel=msg.channel, nomore="No more results")
 

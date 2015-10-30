@@ -4,7 +4,7 @@
 
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -29,7 +29,7 @@ class DDGResult:
 
     def __init__(self, terms, res):
         if res is None:
-            raise IRCException("An error occurs during search")
+            raise IMException("An error occurs during search")
 
         self.terms = terms
         self.ddgres = res
@@ -106,19 +106,19 @@ class DDGResult:
 @hook("cmd_hook", "define")
 def define(msg):
     if not len(msg.args):
-        raise IRCException("Indicate a term to define")
+        raise IMException("Indicate a term to define")
 
     s = do_search(msg.args)
 
     if not s.definition:
-        raise IRCException("no definition found for '%s'." % " ".join(msg.args))
+        raise IMException("no definition found for '%s'." % " ".join(msg.args))
 
     return Response(s.definition, channel=msg.channel)
 
 @hook("cmd_hook", "search")
 def search(msg):
     if not len(msg.args):
-        raise IRCException("Indicate a term to search")
+        raise IMException("Indicate a term to search")
 
     s = do_search(msg.args)
 

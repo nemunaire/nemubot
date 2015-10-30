@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 import re, json, subprocess
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.web import _getNormalizedURL, getURLContent
 from more import Response
@@ -19,7 +19,7 @@ def _get_ytdl(links):
   res = []
   with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
     if p.wait() > 0:
-      raise IRCException("Error while retrieving video information.")
+      raise IMException("Error while retrieving video information.")
     for line in p.stdout.read().split(b"\n"):
       localres = ''
       if not line:
@@ -46,7 +46,7 @@ def _get_ytdl(links):
         localres += ' | ' +  info['webpage_url']
       res.append(localres)
   if not res:
-    raise IRCException("No video information to retrieve about this. Sorry!")
+    raise IMException("No video information to retrieve about this. Sorry!")
   return res
 
 LAST_URLS = dict()
@@ -61,7 +61,7 @@ def get_info_yt(msg):
     if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
       links.append(LAST_URLS[msg.channel].pop())
     else:
-      raise IRCException("I don't have any youtube URL for now, please provide me one to get information!")
+      raise IMException("I don't have any youtube URL for now, please provide me one to get information!")
   else:
     for url in msg.args:
       links.append(url)

@@ -7,7 +7,7 @@ import sys
 from datetime import date, datetime
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 from nemubot.tools.date import extractDate
@@ -131,4 +131,4 @@ def parseask(msg):
                                 msg.channel,
                                 msg.nick)
         except:
-            raise IRCException("la date de naissance ne paraît pas valide.")
+            raise IMException("la date de naissance ne paraît pas valide.")

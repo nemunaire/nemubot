@@ -2,16 +2,11 @@
 
 """Create countdowns and reminders"""
 
-import imp
 import re
-import sys
 from datetime import datetime, timedelta, timezone
-import time
-import threading
-import traceback
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format, countdown
@@ -65,9 +60,9 @@ def cmd_we(msg):
 def start_countdown(msg):
     """!start /something/: launch a timer"""
     if len(msg.args) < 1:
-        raise IRCException("indique le nom d'un événement à chronométrer")
+        raise IMException("indique le nom d'un événement à chronométrer")
     if msg.args[0] in context.data.index:
-        raise IRCException("%s existe déjà." % msg.args[0])
+        raise IMException("%s existe déjà." % msg.args[0])
 
     strnd = ModuleState("strend")
     strnd["server"] = msg.server
@@ -107,7 +102,7 @@ def start_countdown(msg):
                 strnd["_id"] = context.add_event(evt)
             except:
                 context.data.delChild(strnd)
-                raise IRCException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
+                raise IMException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
 
         elif result1 is not None and len(result1) > 0:
             strnd["end"] = msg.date
@@ -144,7 +139,7 @@ def start_countdown(msg):
 @hook("cmd_hook", "forceend")
 def end_countdown(msg):
     if len(msg.args) < 1:
-        raise IRCException("quel événement terminer ?")
+        raise IMException("quel événement terminer ?")
 
     if msg.args[0] in context.data.index:
         if context.data.index[msg.args[0]]["proprio"] == msg.nick or (msg.cmd == "forceend" and msg.frm_owner):
@@ -155,7 +150,7 @@ def end_countdown(msg):
             return Response("%s a duré %s." % (msg.args[0], duration),
                             channel=msg.channel, nick=msg.nick)
         else:
-            raise IRCException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data.index[msg.args[0]]["proprio"]))
+            raise IMException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data.index[msg.args[0]]["proprio"]))
     else:
         return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.nick)
 
@@ -199,15 +194,15 @@ def parseask(msg):
     if RGXP_ask.match(msg.text) is not None:
         name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
         if name is None:
-            raise IRCException("il faut que tu attribues une commande à l'événement.")
+            raise IMException("il faut que tu attribues une commande à l'événement.")
         if name.group(1) in context.data.index:
-            raise IRCException("un événement portant ce nom existe déjà.")
+            raise IMException("un événement portant ce nom existe déjà.")
 
         texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
         if texts is not None and texts.group(3) is not None:
             extDate = extractDate(msg.text)
             if extDate is None or extDate == "":
-                raise IRCException("la date de l'événement est invalide !")
+                raise IMException("la date de l'événement est invalide !")
 
             if texts.group(1) is not None and (texts.group(1) == "après" or texts.group(1) == "apres" or texts.group(1) == "after"):
                 msg_after = texts.group (2)
@@ -217,7 +212,7 @@ def parseask(msg):
                 msg_after = texts.group (5)
 
             if msg_before.find("%s") == -1 or msg_after.find("%s") == -1:
-                raise IRCException("Pour que l'événement soit valide, ajouter %s à"
+                raise IMException("Pour que l'événement soit valide, ajouter %s à"
                                 " l'endroit où vous voulez que soit ajouté le"
                                 " compte à rebours.")
 
@@ -247,4 +242,4 @@ def parseask(msg):
                             channel=msg.channel)
 
         else:
-            raise IRCException("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")
+            raise IMException("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")

@@ -57,12 +57,12 @@ class Abstract:
     def run(self, data1, *args):
         """Run the hook"""
 
-        from nemubot.exception import IRCException
+        from nemubot.exception import IMException
         self.times -= 1
 
         try:
             ret = call_game(self.call, data1, self.data, *args)
-        except IRCException as e:
+        except IMException as e:
             ret = e.fill_response(data1)
         finally:
             if self.times == 0:

@@ -5,7 +5,7 @@
 import re
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -61,7 +61,7 @@ def print_station_status(msg, station):
         return Response("À la station %s : %d vélib et %d points d'attache"
                         " disponibles." % (station, available, free),
                         channel=msg.channel)
-    raise IRCException("station %s inconnue." % station)
+    raise IMException("station %s inconnue." % station)
 
 
 # MODULE INTERFACE ####################################################
@@ -73,9 +73,9 @@ def print_station_status(msg, station):
       })
 def ask_stations(msg):
     if len(msg.args) > 4:
-        raise IRCException("demande-moi moins de stations à la fois.")
+        raise IMException("demande-moi moins de stations à la fois.")
     elif not len(msg.args):
-        raise IRCException("pour quelle station ?")
+        raise IMException("pour quelle station ?")
 
     for station in msg.args:
         if re.match("^[0-9]{4,5}$", station):
@@ -84,4 +84,4 @@ def ask_stations(msg):
             return print_station_status(msg,
                                         context.data.index[station]["number"])
         else:
-            raise IRCException("numéro de station invalide.")
+            raise IMException("numéro de station invalide.")

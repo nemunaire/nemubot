@@ -6,7 +6,7 @@ import urllib.parse
 from urllib.parse import urlparse
 
 from nemubot.event import ModuleEvent
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.tools.web import getNormalizedURL
 from nemubot.tools.xmlparser.node import ModuleState
 
@@ -61,7 +61,7 @@ def del_site(url, nick, channel, frm_owner):
         for a in site.getNodes("alert"):
             if a["channel"] == channel:
 #                if not (nick == a["nick"] or frm_owner):
-#                    raise IRCException("you cannot unwatch this URL.")
+#                    raise IMException("you cannot unwatch this URL.")
                 site.delChild(a)
                 if not site.hasNode("alert"):
                     del_event(site["_evt_id"])
@@ -69,7 +69,7 @@ def del_site(url, nick, channel, frm_owner):
                 save()
                 return Response("I don't watch this URL anymore.",
                                 channel=channel, nick=nick)
-    raise IRCException("I didn't watch this URL!")
+    raise IMException("I didn't watch this URL!")
 
 
 def add_site(url, nick, channel, server, diffType="diff"):
@@ -81,7 +81,7 @@ def add_site(url, nick, channel, server, diffType="diff"):
 
     o = urlparse(getNormalizedURL(url), "http")
     if o.netloc == "":
-        raise IRCException("sorry, I can't watch this URL :(")
+        raise IMException("sorry, I can't watch this URL :(")
 
     alert = ModuleState("alert")
     alert["nick"] = nick
@@ -219,5 +219,5 @@ def start_watching(site, offset=0):
                           interval=site.getInt("time"),
                           call=alert_change, call_data=site)
         site["_evt_id"] = add_event(evt)
-    except IRCException:
+    except IMException:
         logger.exception("Unable to watch %s", site["url"])

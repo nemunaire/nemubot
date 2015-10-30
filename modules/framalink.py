@@ -7,7 +7,7 @@ import json
 from urllib.parse import urlparse
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.message import Text
 from nemubot.tools import web
@@ -29,9 +29,9 @@ def framalink_reducer(url, data):
     if 'short' in json_data:
         return json_data['short']
     elif 'msg' in json_data:
-        raise IRCException("Error: %s" % json_data['msg'])
+        raise IMException("Error: %s" % json_data['msg'])
     else:
-        IRCException("An error occured while shortening %s." % data)
+        IMException("An error occured while shortening %s." % data)
 
 # MODULE VARIABLES ####################################################
 
@@ -69,7 +69,7 @@ def reduce(url, provider=DEFAULT_PROVIDER):
 
 def gen_response(res, msg, srv):
     if res is None:
-        raise IRCException("bad URL : %s" % srv)
+        raise IMException("bad URL : %s" % srv)
     else:
         return Text("URL for %s: %s" % (srv, res), server=None,
                     to=msg.to_response)
@@ -121,10 +121,10 @@ def cmd_reduceurl(msg):
         if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
             minify.append(LAST_URLS[msg.channel].pop())
         else:
-            raise IRCException("I have no more URL to reduce.")
+            raise IMException("I have no more URL to reduce.")
 
     if len(msg.args) > 4:
-        raise IRCException("I cannot reduce that maby URLs at once.")
+        raise IMException("I cannot reduce that maby URLs at once.")
     else:
         minify += msg.args
 

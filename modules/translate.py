@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -36,11 +36,11 @@ def help_full():
 @hook("cmd_hook", "translate")
 def cmd_translate(msg):
     if not len(msg.args):
-        raise IRCException("which word would you translate?")
+        raise IMException("which word would you translate?")
 
     if len(msg.args) > 2 and msg.args[0] in LANG and msg.args[1] in LANG:
         if msg.args[0] != "en" and msg.args[1] != "en":
-            raise IRCException("sorry, I can only translate to or from english")
+            raise IMException("sorry, I can only translate to or from english")
         langFrom = msg.args[0]
         langTo = msg.args[1]
         term = ' '.join(msg.args[2:])
@@ -59,7 +59,7 @@ def cmd_translate(msg):
     wres = web.getJSON(URL % (langFrom, langTo, quote(term)))
 
     if "Error" in wres:
-        raise IRCException(wres["Note"])
+        raise IMException(wres["Note"])
 
     else:
         res = Response(channel=msg.channel,

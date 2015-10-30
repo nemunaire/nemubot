@@ -3,7 +3,7 @@
 import re
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 
@@ -75,7 +75,7 @@ def found_login(login):
 
 def cmd_whois(msg):
     if len(msg.args) < 1:
-        raise IRCException("Provide a name")
+        raise IMException("Provide a name")
 
     res = Response(channel=msg.channel, count=" (%d more logins)")
     for srch in msg.args:
@@ -90,7 +90,7 @@ def cmd_whois(msg):
 @hook("cmd_hook", "nicks")
 def cmd_nicks(msg):
     if len(msg.args) < 1:
-        raise IRCException("Provide a login")
+        raise IMException("Provide a login")
     nick = found_login(msg.args[0])
     if nick is None:
         nick = msg.args[0]

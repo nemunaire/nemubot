@@ -4,7 +4,7 @@
 
 import re
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -26,7 +26,7 @@ def cmd_subreddit(msg):
         if msg.channel in LAST_SUBS and len(LAST_SUBS[msg.channel]) > 0:
             subs = [LAST_SUBS[msg.channel].pop()]
         else:
-            raise IRCException("Which subreddit? Need inspiration? "
+            raise IMException("Which subreddit? Need inspiration? "
                                "type !horny or !bored")
     else:
         subs = msg.args
@@ -44,7 +44,7 @@ def cmd_subreddit(msg):
                               (where, sub.group(2)))
 
             if sbr is None:
-                raise IRCException("subreddit not found")
+                raise IMException("subreddit not found")
 
             if "title" in sbr["data"]:
                 res = Response(channel=msg.channel,

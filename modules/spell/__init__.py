@@ -6,7 +6,7 @@ import re
 from urllib.parse import quote
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 
@@ -26,7 +26,7 @@ def load(context):
 @hook("cmd_hook", "spell")
 def cmd_spell(msg):
     if not len(msg.args):
-        raise IRCException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
+        raise IMException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
 
     lang = "fr"
     strRes = list()
@@ -66,7 +66,7 @@ def cmd_score(msg):
     res = list()
     unknown = list()
     if not len(msg.args):
-        raise IRCException("De qui veux-tu voir les scores ?")
+        raise IMException("De qui veux-tu voir les scores ?")
     for cmd in msg.args:
         if cmd in context.data.index:
             res.append(Response("%s: %s" % (cmd, " ; ".join(["%s: %d" % (a, context.data.index[cmd].getInt(a)) for a in context.data.index[cmd].attributes.keys() if a != "name"])), channel=msg.channel))

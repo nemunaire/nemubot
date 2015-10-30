@@ -9,7 +9,7 @@ from urllib.parse import quote
 from urllib.request import urlopen
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
 
@@ -36,7 +36,7 @@ def start_watch(msg):
     w["start"] = datetime.now(timezone.utc)
     context.data.addChild(w)
     context.save()
-    raise IRCException("This channel is now watching world cup events!")
+    raise IMException("This channel is now watching world cup events!")
 
 @hook("cmd_hook", "watch_worldcup")
 def cmd_watch(msg):
@@ -52,18 +52,18 @@ def cmd_watch(msg):
         if msg.args[0] == "stop" and node is not None:
             context.data.delChild(node)
             context.save()
-            raise IRCException("This channel will not anymore receives world cup events.")
+            raise IMException("This channel will not anymore receives world cup events.")
         elif msg.args[0] == "start" and node is None:
             start_watch(msg)
         else:
-            raise IRCException("Use only start or stop as first argument")
+            raise IMException("Use only start or stop as first argument")
     else:
         if node is None:
             start_watch(msg)
         else:
             context.data.delChild(node)
             context.save()
-            raise IRCException("This channel will not anymore receives world cup events.")
+            raise IMException("This channel will not anymore receives world cup events.")
 
 def current_match_new_action(match_str, osef):
     context.add_event(ModuleEvent(func=lambda url: urlopen(url).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
@@ -170,7 +170,7 @@ def get_matches(url):
     try:
         raw = urlopen(url)
     except:
-        raise IRCException("requête invalide")
+        raise IMException("requête invalide")
     matches = json.loads(raw.read().decode())
 
     for match in matches:
@@ -194,7 +194,7 @@ def cmd_worldcup(msg):
         elif is_int(msg.args[0]):
             url = int(msg.arg[0])
         else:
-            raise IRCException("unrecognized request; choose between 'today', 'tomorrow', a FIFA country code or a match identifier")
+            raise IMException("unrecognized request; choose between 'today', 'tomorrow', a FIFA country code or a match identifier")
 
     if url is None:
         url = "matches/current?by_date=ASC"

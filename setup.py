@@ -63,6 +63,7 @@ setup(
         'nemubot',
         'nemubot.datastore',
         'nemubot.event',
+        'nemubot.exception',
         'nemubot.hooks',
         'nemubot.message',
         'nemubot.message.printer',

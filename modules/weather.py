@@ -6,7 +6,7 @@ import datetime
 import re
 
 from nemubot import context
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.xmlparser.node import ModuleState
@@ -120,10 +120,10 @@ def treat_coord(msg):
                 coords.append(geocode[0]["latLng"]["lng"])
                 return mapquest.where(geocode[0]), coords, specific
 
-        raise IRCException("Je ne sais pas où se trouve %s." % city)
+        raise IMException("Je ne sais pas où se trouve %s." % city)
 
     else:
-        raise IRCException("indique-moi un nom de ville ou des coordonnées.")
+        raise IMException("indique-moi un nom de ville ou des coordonnées.")
 
 
 def get_json_weather(coords):
@@ -131,7 +131,7 @@ def get_json_weather(coords):
 
     # First read flags
     if wth is None or "darksky-unavailable" in wth["flags"]:
-        raise IRCException("The given location is supported but a temporary error (such as a radar station being down for maintenace) made data unavailable.")
+        raise IMException("The given location is supported but a temporary error (such as a radar station being down for maintenace) made data unavailable.")
 
     return wth
 
@@ -139,11 +139,11 @@ def get_json_weather(coords):
 @hook("cmd_hook", "coordinates")
 def cmd_coordinates(msg):
     if len(msg.args) < 1:
-        raise IRCException("indique-moi un nom de ville.")
+        raise IMException("indique-moi un nom de ville.")
 
     j = msg.args[0].lower()
     if j not in context.data.index:
-        raise IRCException("%s n'est pas une ville connue" % msg.args[0])
+        raise IMException("%s n'est pas une ville connue" % msg.args[0])
 
     coords = context.data.index[j]
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)

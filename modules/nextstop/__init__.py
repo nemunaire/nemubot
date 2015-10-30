@@ -2,7 +2,7 @@
 
 """Informe les usagers des prochains passages des transports en communs de la RATP"""
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from more import Response
 
@@ -27,7 +27,7 @@ def ask_ratp(msg):
             times = ratp.getNextStopsAtStation(transport, line, station)
 
         if len(times) == 0:
-            raise IRCException("la station %s n'existe pas sur le %s ligne %s." % (station, transport, line))
+            raise IMException("la station %s n'existe pas sur le %s ligne %s." % (station, transport, line))
 
         (time, direction, stationname) = times[0]
         return Response(message=["\x03\x02%s\x03\x02 direction %s" % (time, direction) for time, direction, stationname in times],
@@ -38,11 +38,11 @@ def ask_ratp(msg):
         stations = ratp.getAllStations(msg.args[0], msg.args[1])
 
         if len(stations) == 0:
-            raise IRCException("aucune station trouvée.")
+            raise IMException("aucune station trouvée.")
         return Response([s for s in stations], title="Stations", channel=msg.channel)
 
     else:
-        raise IRCException("Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module.")
+        raise IMException("Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module.")
 
 @hook("cmd_hook", "ratp_alert")
 def ratp_alert(msg):
@@ -52,4 +52,4 @@ def ratp_alert(msg):
         incidents = ratp.getDisturbance(cause, transport)
         return Response(incidents, channel=msg.channel, nomore="No more incidents", count=" (%d more incidents)")
     else:
-        raise IRCException("Mauvais usage, merci de spécifier un type de transport et un type d'alerte (alerte, manif, travaux), ou de consulter l'aide du module.")
+        raise IMException("Mauvais usage, merci de spécifier un type de transport et un type d'alerte (alerte, manif, travaux), ou de consulter l'aide du module.")

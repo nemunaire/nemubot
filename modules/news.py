@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -44,7 +44,7 @@ def get_last_news(url):
 @hook("cmd_hook", "news")
 def cmd_news(msg):
     if not len(msg.args):
-        raise IRCException("Indicate the URL to visit.")
+        raise IMException("Indicate the URL to visit.")
 
     url = " ".join(msg.args)
     links = [x for x in find_rss_links(url)]

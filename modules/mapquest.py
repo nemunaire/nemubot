@@ -5,7 +5,7 @@
 import re
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -46,7 +46,7 @@ def where(loc):
 @hook("cmd_hook", "geocode")
 def cmd_geocode(msg):
     if not len(msg.args):
-        raise IRCException("indicate a name")
+        raise IMException("indicate a name")
 
     res = Response(channel=msg.channel, nick=msg.nick,
                    nomore="No more geocode", count=" (%s more geocode)")

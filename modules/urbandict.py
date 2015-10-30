@@ -4,7 +4,7 @@
 
 from urllib.parse import quote
 
-from nemubot.exception import IRCException
+from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
@@ -23,7 +23,7 @@ def search(terms):
 @hook("cmd_hook", "urbandictionnary")
 def udsearch(msg):
     if not len(msg.args):
-        raise IRCException("Indicate a term to search")
+        raise IMException("Indicate a term to search")
 
     s = search(msg.args)
 
