@@ -100,7 +100,9 @@ class Bot(threading.Thread):
                         for (s, h) in self.modules[module].__nemubot_context__.hooks:
                             if s == "in_Command" and (h.name is not None or h.regexp is not None) and h.is_matching(msg.args[0][1:]):
                                 if h.help_usage:
-                                    return res.append_message(["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], (" " + k if k is not None else ""), h.help_usage[k]) for k in h.help_usage], title="Usage for command %s from module %s" % (msg.args[0], module))
+                                    lp = ["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], (" " + k if k is not None else ""), h.help_usage[k]) for k in h.help_usage]
+                                    jp = ["\x03\x02@%s\x03\x02: %s" % (k, h.keywords[k]) for k in h.keywords]
+                                    return res.append_message(lp + ([". Moreover, you can provides some optional parameters: "] + jp if len(jp) else []), title="Usage for command %s from module %s" % (msg.args[0], module))
                                 elif h.help:
                                     return res.append_message("Command %s from module %s: %s" % (msg.args[0], module, h.help))
                                 else:

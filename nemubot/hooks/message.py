@@ -25,7 +25,8 @@ class Message(Abstract):
     """Class storing hook information, specialized for a generic Message"""
 
     def __init__(self, call, name=None, regexp=None, channels=list(),
-                 server=None, help=None, help_usage=dict(), **kargs):
+                 server=None, help=None, help_usage=dict(), keywords=dict(),
+                 **kargs):
 
         Abstract.__init__(self, call=call, **kargs)
 
@@ -33,6 +34,7 @@ class Message(Abstract):
         assert channels is None or type(channels) is list, channels
         assert server is None or type(server) is str, server
         assert type(help_usage) is dict, help_usage
+        assert type(keywords) is dict, keywords
 
         self.name = str(name) if name is not None else None
         self.regexp = regexp
@@ -40,6 +42,7 @@ class Message(Abstract):
         self.channels = channels
         self.help = help
         self.help_usage = help_usage
+        self.keywords = keywords
 
 
     def __str__(self):
