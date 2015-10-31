@@ -1,3 +1,7 @@
+"""Postal tracking module"""
+
+# PYTHON STUFF ############################################
+
 import urllib.request
 import urllib.parse
 from bs4 import BeautifulSoup
@@ -8,10 +12,8 @@ from nemubot.exception import IMException
 from nemubot.tools.web import getURLContent
 from more import Response
 
-nemubotversion = 4.0
 
 # POSTAGE SERVICE PARSERS ############################################
-
 
 def get_tnt_info(track_id):
     data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/'
@@ -101,7 +103,6 @@ def get_laposte_info(laposte_id):
 
 # TRACKING HANDLERS ###################################################
 
-
 def handle_tnt(tracknum):
     info = get_tnt_info(tracknum)
     if info:
@@ -141,23 +142,26 @@ def handle_coliprive(tracknum):
     if info:
         return ("Colis Privé: \x02%s\x0F : \x02%s\x0F." % (tracknum, info))
 
+
 TRACKING_HANDLERS = {
     'laposte': handle_laposte,
     'colissimo': handle_colissimo,
     'chronopost': handle_chronopost,
     'coliprive': handle_coliprive,
-    'tnt': handle_tnt
+    'tnt': handle_tnt,
 }
 
 
 # HOOKS ##############################################################
 
-
 @hook("cmd_hook", "track",
-      help="Track postage",
-      help_usage={"[@tracker] TRACKING_ID [TRACKING_ID ...]": "Track the "
-                  "specified postage IDs using the specified tracking service "
-                  "or all of them."})
+      help="Track postage delivery",
+      help_usage={
+          "TRACKING_ID [...]": "Track the specified postage IDs on various tracking services."
+      },
+      keywords={
+          "tracker=TRK": "Precise the tracker (default: all) among: " + ', '.join(TRACKING_HANDLERS)
+      })
 def get_tracking_info(msg):
     if not len(msg.args):
         raise IMException("Renseignez un identifiant d'envoi.")

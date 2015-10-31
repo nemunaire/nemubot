@@ -109,10 +109,14 @@ def parseresponse(msg):
 # MODULE INTERFACE ####################################################
 
 @hook("cmd_hook", "framalink",
-      help="Reduce any given URL",
-      help_usage={None: "Reduce the last URL said on the channel",
-                  "[@provider=framalink] URL [URL ...]": "Reduce the given "
-                  "URL(s) using the specified shortner"})
+      help="Reduce any long URL",
+      help_usage={
+          None: "Reduce the last URL said on the channel",
+          "URL [URL ...]": "Reduce the given URL(s)"
+      },
+      keywords={
+          "provider=SMTH": "Change the service provider used (by default: %s) among %s" % (DEFAULT_PROVIDER, ", ".join(PROVIDERS.keys()))
+      })
 def cmd_reduceurl(msg):
     minify = list()
 
