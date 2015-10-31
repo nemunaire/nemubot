@@ -209,7 +209,7 @@ class Response:
         else:
             if len(elts.encode()) <= maxlen:
                 self.pop()
-                if self.count is not None:
+                if self.count is not None and not self.alone:
                     return msg + elts + (self.count % len(self.messages))
                 else:
                     return msg + elts
