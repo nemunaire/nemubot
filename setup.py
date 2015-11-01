@@ -65,6 +65,7 @@ setup(
         'nemubot.event',
         'nemubot.exception',
         'nemubot.hooks',
+        'nemubot.hooks.keywords',
         'nemubot.message',
         'nemubot.message.printer',
         'nemubot.prompt',

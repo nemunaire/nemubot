@@ -50,8 +50,12 @@ class Abstract:
         self.end_call = end_call
 
 
+    def check(self, data1):
+        return True
+
+
     def match(self, data1, server):
-        return NotImplemented
+        return True
 
 
     def run(self, data1, *args):
@@ -60,8 +64,11 @@ class Abstract:
         from nemubot.exception import IMException
         self.times -= 1
 
+        ret = None
+
         try:
-            ret = call_game(self.call, data1, self.data, *args)
+            if self.check(data1):
+                ret = call_game(self.call, data1, self.data, *args)
         except IMException as e:
             ret = e.fill_response(data1)
         finally:

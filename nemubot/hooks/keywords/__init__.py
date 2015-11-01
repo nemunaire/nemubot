@@ -14,28 +14,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class IMException(Exception):
+from nemubot.exception.keyword import KeywordException
+from nemubot.hooks.keywords.abstract import Abstract
 
 
-    def __init__(self, message, personnal=True):
-        super(IMException, self).__init__(message)
-        self.personnal = personnal
+class NoKeyword(Abstract):
 
-
-    def fill_response(self, msg):
-        if self.personnal:
-            from nemubot.message import DirectAsk
-            return DirectAsk(msg.frm, *self.args,
-                             server=msg.server, to=msg.to_response)
-
-        else:
-            from nemubot.message import Text
-            return Text(*self.args,
-                        server=msg.server, to=msg.to_response)
+    def check(self, mkw):
+        if len(mkw):
+            raise KeywordException("This command doesn't take any keyword arguments.")
+        return super().check(mkw)
 
 
 def reload():
     import imp
 
-    import nemubot.exception.Keyword
-    imp.reload(nemubot.exception.printer.IRC)
+    import nemubot.hooks.keywords.abstract
+    imp.reload(nemubot.hooks.keywords.abstract)
+
+    import nemubot.hooks.keywords.dict
+    imp.reload(nemubot.hooks.keywords.dict)

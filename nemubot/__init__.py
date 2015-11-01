@@ -61,6 +61,8 @@ def reload():
     import nemubot.exception
     imp.reload(nemubot.exception)
 
+    nemubot.exception.reload()
+
     import nemubot.hooks
     imp.reload(nemubot.hooks)
 

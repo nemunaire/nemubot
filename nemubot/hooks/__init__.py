@@ -38,5 +38,9 @@ def reload():
     imp.reload(nemubot.hooks.message)
     Message = nemubot.hooks.message.Message
 
+    import nemubot.hooks.keywords
+    imp.reload(nemubot.hooks.keywords)
+    nemubot.hooks.keywords.reload()
+
     import nemubot.hooks.manager
     imp.reload(nemubot.hooks.manager)

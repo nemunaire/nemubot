@@ -17,6 +17,9 @@
 import re
 
 from nemubot.hooks.abstract import Abstract
+from nemubot.hooks.keywords import NoKeyword
+from nemubot.hooks.keywords.abstract import Abstract as AbstractKeywords
+from nemubot.hooks.keywords.dict import Dict as DictKeywords
 import nemubot.message
 
 
@@ -25,16 +28,19 @@ class Message(Abstract):
     """Class storing hook information, specialized for a generic Message"""
 
     def __init__(self, call, name=None, regexp=None, channels=list(),
-                 server=None, help=None, help_usage=dict(), keywords=dict(),
+                 server=None, help=None, help_usage=dict(), keywords=NoKeyword(),
                  **kargs):
 
         Abstract.__init__(self, call=call, **kargs)
+
+        if isinstance(keywords, dict):
+            keywords = DictKeywords(keywords)
 
         assert regexp is None or type(regexp) is str, regexp
         assert channels is None or type(channels) is list, channels
         assert server is None or type(server) is str, server
         assert type(help_usage) is dict, help_usage
-        assert type(keywords) is dict, keywords
+        assert isinstance(keywords, AbstractKeywords), keywords
 
         self.name = str(name) if name is not None else None
         self.regexp = regexp
@@ -51,6 +57,10 @@ class Message(Abstract):
             " (restricted to %s)" % (self.server + ":" if self.server is not None else "") + (self.channels if self.channels else "*") if len(self.channels) or self.server else "",
             ": %s" % self.help if self.help is not None else ""
         )
+
+
+    def check(self, msg):
+        return not hasattr(msg, "kwargs") or self.keywords.check(msg.kwargs)
 
 
     def match(self, msg, server=None):

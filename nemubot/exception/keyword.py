@@ -14,28 +14,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class IMException(Exception):
+from nemubot.exception import IMException
 
 
-    def __init__(self, message, personnal=True):
-        super(IMException, self).__init__(message)
-        self.personnal = personnal
+class KeywordException(IMException):
 
-
-    def fill_response(self, msg):
-        if self.personnal:
-            from nemubot.message import DirectAsk
-            return DirectAsk(msg.frm, *self.args,
-                             server=msg.server, to=msg.to_response)
-
-        else:
-            from nemubot.message import Text
-            return Text(*self.args,
-                        server=msg.server, to=msg.to_response)
-
-
-def reload():
-    import imp
-
-    import nemubot.exception.Keyword
-    imp.reload(nemubot.exception.printer.IRC)
+    def __init__(self, message):
+        super(KeywordException, self).__init__(message)
