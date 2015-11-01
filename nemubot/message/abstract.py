@@ -52,11 +52,6 @@ class Abstract:
 
 
     @property
-    def receivers(self):
-        # TODO: this is for legacy modules
-        return self.to_response
-
-    @property
     def channel(self):
         # TODO: this is for legacy modules
         if self.to_response is not None and len(self.to_response) > 0:

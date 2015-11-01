@@ -52,7 +52,7 @@ def _get_ytdl(links):
 LAST_URLS = dict()
 
 
-@hook("cmd_hook", "yt")
+@hook.command("yt")
 def get_info_yt(msg):
   links = list()
 
@@ -73,13 +73,13 @@ def get_info_yt(msg):
   return res
 
 
-@hook("msg_default")
+@hook.message()
 def parselisten(msg):
     parseresponse(msg)
     return None
 
 
-@hook("all_post")
+@hook.post()
 def parseresponse(msg):
     global LAST_URLS
     if hasattr(msg, "text") and msg.text:
@@ -89,7 +89,7 @@ def parseresponse(msg):
         if o.scheme != "":
           if o.netloc == "" and len(o.path) < 10:
             continue
-          for recv in msg.receivers:
+          for recv in msg.to:
             if recv not in LAST_URLS:
               LAST_URLS[recv] = list()
             LAST_URLS[recv].append(url)

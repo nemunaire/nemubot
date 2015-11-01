@@ -19,7 +19,7 @@ def help_full():
 LAST_SUBS = dict()
 
 
-@hook("cmd_hook", "subreddit")
+@hook.command("subreddit")
 def cmd_subreddit(msg):
     global LAST_SUBS
     if not len(msg.args):
@@ -69,20 +69,20 @@ def cmd_subreddit(msg):
     return all_res
 
 
-@hook("msg_default")
+@hook.message()
 def parselisten(msg):
     parseresponse(msg)
     return None
 
 
-@hook("all_post")
+@hook.post()
 def parseresponse(msg):
     global LAST_SUBS
 
     if hasattr(msg, "text") and msg.text:
         urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.text)
         for url in urls:
-            for recv in msg.receivers:
+            for recv in msg.to:
                 if recv not in LAST_SUBS:
                     LAST_SUBS[recv] = list()
                 LAST_SUBS[recv].append(url)

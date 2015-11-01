@@ -151,7 +151,7 @@ def get_page(site, term, ssl=False, subpart=None):
 
 # NEMUBOT #############################################################
 
-def mediawiki_response(site, term, receivers):
+def mediawiki_response(site, term, to):
     ns = get_namespaces(site)
 
     terms = term.split("#", 1)
@@ -160,7 +160,7 @@ def mediawiki_response(site, term, receivers):
         # Print the article if it exists
         return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None),
                         line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
-                        channel=receivers)
+                        channel=to)
     except:
         pass
 
@@ -171,11 +171,11 @@ def mediawiki_response(site, term, receivers):
     if not len(os):
         os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]
     return Response(os,
-                    channel=receivers,
+                    channel=to,
                     title="Article not found, would you mean")
 
 
-@hook("cmd_hook", "mediawiki")
+@hook.command("mediawiki")
 def cmd_mediawiki(msg):
     """Read an article on a MediaWiki"""
     if len(msg.args) < 2:
@@ -183,16 +183,16 @@ def cmd_mediawiki(msg):
 
     return mediawiki_response(msg.args[0],
                               " ".join(msg.args[1:]),
-                              msg.receivers)
+                              msg.to_response)
 
 
-@hook("cmd_hook", "search_mediawiki")
+@hook.command("search_mediawiki")
 def cmd_srchmediawiki(msg):
     """Search an article on a MediaWiki"""
     if len(msg.args) < 2:
         raise IMException("indicate a domain and a term to search")
 
-    res = Response(channel=msg.receivers, nomore="No more results", count=" (%d more results)")
+    res = Response(channel=msg.to_response, nomore="No more results", count=" (%d more results)")
 
     for r in search(msg.args[0], " ".join(msg.args[1:])):
         res.append_message("%s: %s" % r)
@@ -200,11 +200,11 @@ def cmd_srchmediawiki(msg):
     return res
 
 
-@hook("cmd_hook", "wikipedia")
+@hook.command("wikipedia")
 def cmd_wikipedia(msg):
     if len(msg.args) < 2:
         raise IMException("indicate a lang and a term to search")
 
     return mediawiki_response(msg.args[0] + ".wikipedia.org",
                               " ".join(msg.args[1:]),
-                              msg.receivers)
+                              msg.to_response)

@@ -50,7 +50,7 @@ class Response:
 
 
     @property
-    def receivers(self):
+    def to(self):
         if self.channel is None:
             if self.nick is not None:
                 return [self.nick]
@@ -59,6 +59,7 @@ class Response:
             return self.channel
         else:
             return [self.channel]
+
 
     def append_message(self, message, title=None, shown_first_count=-1):
         if type(message) is str:
@@ -140,10 +141,10 @@ class Response:
         if self.nick:
             return DirectAsk(self.nick,
                              self.get_message(maxlen - len(self.nick) - 2),
-                             server=None, to=self.receivers)
+                             server=None, to=self.to)
         else:
             return Text(self.get_message(maxlen),
-                        server=None, to=self.receivers)
+                        server=None, to=self.to)
 
 
     def __str__(self):
@@ -245,7 +246,7 @@ def parseresponse(res):
     if isinstance(res, Response):
         if res.server not in SERVERS:
             SERVERS[res.server] = dict()
-        for receiver in res.receivers:
+        for receiver in res.to:
             if receiver in SERVERS[res.server]:
                 nw, bk = SERVERS[res.server][receiver]
             else:

@@ -80,13 +80,13 @@ def gen_response(res, msg, srv):
 LAST_URLS = dict()
 
 
-@hook("msg_default")
+@hook.message()
 def parselisten(msg):
     parseresponse(msg)
     return None
 
 
-@hook("all_post")
+@hook.post()
 def parseresponse(msg):
     global LAST_URLS
     if hasattr(msg, "text") and msg.text:
@@ -99,7 +99,7 @@ def parseresponse(msg):
                     len(o.netloc) + len(o.path) < 17):
                 continue
 
-            for recv in msg.receivers:
+            for recv in msg.to:
                 if recv not in LAST_URLS:
                     LAST_URLS[recv] = list()
                 LAST_URLS[recv].append(url)
@@ -108,7 +108,7 @@ def parseresponse(msg):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "framalink",
+@hook.command("framalink",
       help="Reduce any long URL",
       help_usage={
           None: "Reduce the last URL said on the channel",
