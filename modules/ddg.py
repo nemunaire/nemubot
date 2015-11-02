@@ -103,7 +103,7 @@ class DDGResult:
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "define")
+@hook.command("define")
 def define(msg):
     if not len(msg.args):
         raise IMException("Indicate a term to define")
@@ -115,7 +115,7 @@ def define(msg):
 
     return Response(s.definition, channel=msg.channel)
 
-@hook("cmd_hook", "search")
+@hook.command("search")
 def search(msg):
     if not len(msg.args):
         raise IMException("Indicate a term to search")

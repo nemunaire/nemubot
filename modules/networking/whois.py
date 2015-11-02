@@ -21,9 +21,9 @@ def load(CONF, add_hook):
     URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
 
     import nemubot.hooks
-    add_hook("cmd_hook", nemubot.hooks.Message(cmd_whois, "netwhois",
-                                               help="Get whois information about given domains",
-                                               help_usage={"DOMAIN": "Return whois information on the given DOMAIN"}))
+    add_hook("in_Command", nemubot.hooks.Command(cmd_whois, "netwhois",
+                                                 help="Get whois information about given domains",
+                                                 help_usage={"DOMAIN": "Return whois information on the given DOMAIN"}))
 
 
 def extractdate(str):

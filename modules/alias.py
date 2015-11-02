@@ -155,7 +155,7 @@ def replace_variables(cnts, msg=None):
 
 ## Variables management
 
-@hook("cmd_hook", "listvars",
+@hook.command("listvars",
       help="list defined variables for substitution in input commands",
       help_usage={
           None: "List all known variables",
@@ -178,7 +178,7 @@ def cmd_listvars(msg):
         return Response("There is currently no variable stored.", channel=msg.channel)
 
 
-@hook("cmd_hook", "set",
+@hook.command("set",
       help="Create or set variables for substitution in input commands",
       help_usage={"KEY VALUE": "Define the variable named KEY and fill it with VALUE as content"})
 def cmd_set(msg):
@@ -191,7 +191,7 @@ def cmd_set(msg):
 
 ## Alias management
 
-@hook("cmd_hook", "listalias",
+@hook.command("listalias",
       help="List registered aliases",
       help_usage={
           None: "List all registered aliases",
@@ -205,7 +205,7 @@ def cmd_listalias(msg):
     return Response("There is no alias currently.", channel=msg.channel)
 
 
-@hook("cmd_hook", "alias",
+@hook.command("alias",
       help="Display the replacement command for a given alias")
 def cmd_alias(msg):
     if not len(msg.args):
@@ -221,7 +221,7 @@ def cmd_alias(msg):
     return Response(res, channel=msg.channel, nick=msg.nick)
 
 
-@hook("cmd_hook", "unalias",
+@hook.command("unalias",
       help="Remove a previously created alias")
 def cmd_unalias(msg):
     if not len(msg.args):
@@ -242,7 +242,7 @@ def cmd_unalias(msg):
 
 ## Alias replacement
 
-@hook("pre_Command")
+@hook.add("pre_Command")
 def treat_alias(msg):
     if msg.cmd in context.data.getNode("aliases").index:
         txt = context.data.getNode("aliases").index[msg.cmd]["origin"]
@@ -263,7 +263,7 @@ def treat_alias(msg):
     return msg
 
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     if re.match(".*(register|set|cr[ée]{2}|new|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) ?(pour|for|=|:) ?(.+)$", msg.text)

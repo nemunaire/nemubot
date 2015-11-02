@@ -19,7 +19,7 @@ def help_full():
             " hh:mm")
 
 
-@hook("cmd_hook", "sleepytime")
+@hook.command("sleepytime")
 def cmd_sleep(msg):
     if len(msg.args) and re.match("[0-9]{1,2}[h':.,-]([0-9]{1,2})?[m'\":.,-]?",
                                   msg.args[0]) is not None:

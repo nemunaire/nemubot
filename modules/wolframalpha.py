@@ -92,7 +92,7 @@ class WFAResults:
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "calculate",
+@hook.command("calculate",
       help="Perform search and calculation using WolframAlpha",
       help_usage={
           "TERM": "Look at the given term on WolframAlpha",

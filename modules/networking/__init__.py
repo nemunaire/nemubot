@@ -38,7 +38,7 @@ def load(context):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "title",
+@hook.command("title",
       help="Retrieve webpage's title",
       help_usage={"URL": "Display the title of the given URL"})
 def cmd_title(msg):
@@ -54,7 +54,7 @@ def cmd_title(msg):
         return Response("%s: %s" % (url, res.group(1).replace("\n", " ")), channel=msg.channel)
 
 
-@hook("cmd_hook", "curly",
+@hook.command("curly",
       help="Retrieve webpage's headers",
       help_usage={"URL": "Display HTTP headers of the given URL"})
 def cmd_curly(msg):
@@ -67,7 +67,7 @@ def cmd_curly(msg):
     return Response("Entêtes de la page %s : HTTP/%s, statut : %d %s ; headers : %s" % (url, version, status, reason, ", ".join(["\x03\x02" + h + "\x03\x02: " + v for h, v in headers])), channel=msg.channel)
 
 
-@hook("cmd_hook", "curl",
+@hook.command("curl",
       help="Retrieve webpage's body",
       help_usage={"URL": "Display raw HTTP body of the given URL"})
 def cmd_curl(msg):
@@ -80,7 +80,7 @@ def cmd_curl(msg):
     return res
 
 
-@hook("cmd_hook", "w3m",
+@hook.command("w3m",
       help="Retrieve and format webpage's content",
       help_usage={"URL": "Display and format HTTP content of the given URL"})
 def cmd_w3m(msg):
@@ -92,7 +92,7 @@ def cmd_w3m(msg):
     return res
 
 
-@hook("cmd_hook", "traceurl",
+@hook.command("traceurl",
       help="Follow redirections of a given URL and display each step",
       help_usage={"URL": "Display redirections steps for the given URL"})
 def cmd_traceurl(msg):
@@ -109,7 +109,7 @@ def cmd_traceurl(msg):
     return res
 
 
-@hook("cmd_hook", "isup",
+@hook.command("isup",
       help="Check if a website is up",
       help_usage={"DOMAIN": "Check if a DOMAIN is up"})
 def cmd_isup(msg):
@@ -126,7 +126,7 @@ def cmd_isup(msg):
     return res
 
 
-@hook("cmd_hook", "w3c",
+@hook.command("w3c",
       help="Perform a w3c HTML validator check",
       help_usage={"URL": "Do W3C HTML validation on the given URL"})
 def cmd_w3c(msg):
@@ -149,10 +149,10 @@ def cmd_w3c(msg):
 
 
 
-@hook("cmd_hook", "watch", data="diff",
+@hook.command("watch", data="diff",
       help="Alert on webpage change",
       help_usage={"URL": "Watch the given URL and alert when it changes"})
-@hook("cmd_hook", "updown", data="updown",
+@hook.command("updown", data="updown",
       help="Alert on server availability change",
       help_usage={"URL": "Watch the given domain and alert when it availability status changes"})
 def cmd_watch(msg, diffType="diff"):
@@ -162,7 +162,7 @@ def cmd_watch(msg, diffType="diff"):
     return watchWebsite.add_site(msg.args[0], msg.frm, msg.channel, msg.server, diffType)
 
 
-@hook("cmd_hook", "listwatch",
+@hook.command("listwatch",
       help="List URL watched for the channel",
       help_usage={None: "List URL watched for the channel"})
 def cmd_listwatch(msg):
@@ -173,7 +173,7 @@ def cmd_listwatch(msg):
         return Response("No URL are currently watched. Use !watch URL to watch one.", channel=msg.channel)
 
 
-@hook("cmd_hook", "unwatch",
+@hook.command("unwatch",
       help="Unwatch a previously watched URL",
       help_usage={"URL": "Unwatch the given URL"})
 def cmd_unwatch(msg):

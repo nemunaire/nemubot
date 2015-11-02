@@ -23,7 +23,7 @@ def help_full():
 def load(context):
     context.data.setIndex("name", "score")
 
-@hook("cmd_hook", "spell")
+@hook.command("spell")
 def cmd_spell(msg):
     if not len(msg.args):
         raise IMException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
@@ -61,7 +61,7 @@ def add_score(nick, t):
         context.data.index[nick][t] = 1
     context.save()
 
-@hook("cmd_hook", "spellscore")
+@hook.command("spellscore")
 def cmd_score(msg):
     res = list()
     unknown = list()

@@ -72,7 +72,7 @@ def compute_line(line, stringTens):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "conjugaison",
+@hook.command("conjugaison",
       help_usage={
           "TENS VERB": "give the conjugaison for VERB in TENS."
       })

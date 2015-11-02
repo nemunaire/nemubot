@@ -79,7 +79,7 @@ def translate(term, langFrom="en", langTo="fr"):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "translate",
+@hook.command("translate",
       help="Word translation using WordReference.com",
       help_usage={
           "TERM": "Found translation of TERM from/to english to/from <lang>."

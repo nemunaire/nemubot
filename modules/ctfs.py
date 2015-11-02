@@ -16,7 +16,7 @@ URL = 'https://ctftime.org/event/list/upcoming'
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "ctfs",
+@hook.command("ctfs",
       help="Display the upcoming CTFs")
 def get_info_yt(msg):
     soup = BeautifulSoup(getURLContent(URL))

@@ -41,7 +41,7 @@ def get_last_news(url):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "news")
+@hook.command("news")
 def cmd_news(msg):
     if not len(msg.args):
         raise IMException("Indicate the URL to visit.")

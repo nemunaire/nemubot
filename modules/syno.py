@@ -72,8 +72,8 @@ def get_english_synos(key, word):
 lang_binding = { 'fr': get_french_synos }
 
 
-@hook("cmd_hook", "synonymes", data="synonymes")
-@hook("cmd_hook", "antonymes", data="antonymes")
+@hook.command("synonymes", data="synonymes")
+@hook.command("antonymes", data="antonymes")
 def go(msg, what):
     if not len(msg.args):
         raise IMException("de quel mot veux-tu connaître la liste des synonymes ?")

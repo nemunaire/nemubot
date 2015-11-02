@@ -38,7 +38,7 @@ def start_watch(msg):
     context.save()
     raise IMException("This channel is now watching world cup events!")
 
-@hook("cmd_hook", "watch_worldcup")
+@hook.command("watch_worldcup")
 def cmd_watch(msg):
 
     # Get current state
@@ -177,7 +177,7 @@ def get_matches(url):
         if is_valid(match):
             yield match
 
-@hook("cmd_hook", "worldcup")
+@hook.command("worldcup")
 def cmd_worldcup(msg):
     res = Response(channel=msg.channel, nomore="No more match to display", count=" (%d more matches)")
 

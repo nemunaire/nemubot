@@ -20,7 +20,7 @@ def get_cve(cve_id):
 
     return desc[17].text.replace("\n", " ") + " Moar at " + search_url
 
-@hook("cmd_hook", "cve")
+@hook.command("cve")
 def get_cve_desc(msg):
     res = Response(channel=msg.channel)
 

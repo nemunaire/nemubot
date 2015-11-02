@@ -65,7 +65,7 @@ def info_commit(repo, commit=None):
                            quote(fullname))
 
 
-@hook("cmd_hook", "github")
+@hook.command("github")
 def cmd_github(msg):
     if not len(msg.args):
         raise IMException("indicate a repository name to search")
@@ -93,7 +93,7 @@ def cmd_github(msg):
     return res
 
 
-@hook("cmd_hook", "github_user")
+@hook.command("github_user")
 def cmd_github_user(msg):
     if not len(msg.args):
         raise IMException("indicate a user name to search")
@@ -126,7 +126,7 @@ def cmd_github_user(msg):
     return res
 
 
-@hook("cmd_hook", "github_issue")
+@hook.command("github_issue")
 def cmd_github_issue(msg):
     if not len(msg.args):
         raise IMException("indicate a repository to view its issues")
@@ -164,7 +164,7 @@ def cmd_github_issue(msg):
     return res
 
 
-@hook("cmd_hook", "github_commit")
+@hook.command("github_commit")
 def cmd_github_commit(msg):
     if not len(msg.args):
         raise IMException("indicate a repository to view its commits")

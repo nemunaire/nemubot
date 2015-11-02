@@ -87,6 +87,10 @@ class Abstract:
         return False
 
 
+    def __str__(self):
+        return ""
+
+
     def can_write(self, receivers=list(), server=None):
         return True
 

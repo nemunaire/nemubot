@@ -17,9 +17,6 @@
 import re
 
 from nemubot.hooks.abstract import Abstract
-from nemubot.hooks.keywords import NoKeyword
-from nemubot.hooks.keywords.abstract import Abstract as AbstractKeywords
-from nemubot.hooks.keywords.dict import Dict as DictKeywords
 import nemubot.message
 
 
@@ -27,64 +24,26 @@ class Message(Abstract):
 
     """Class storing hook information, specialized for a generic Message"""
 
-    def __init__(self, call, name=None, regexp=None, channels=list(),
-                 server=None, help=None, help_usage=dict(), keywords=NoKeyword(),
-                 **kargs):
-
-        Abstract.__init__(self, call=call, **kargs)
-
-        if isinstance(keywords, dict):
-            keywords = DictKeywords(keywords)
+    def __init__(self, call, regexp=None, help=None, **kwargs):
+        super().__init__(call=call, **kwargs)
 
         assert regexp is None or type(regexp) is str, regexp
-        assert channels is None or type(channels) is list, channels
-        assert server is None or type(server) is str, server
-        assert type(help_usage) is dict, help_usage
-        assert isinstance(keywords, AbstractKeywords), keywords
 
-        self.name = str(name) if name is not None else None
         self.regexp = regexp
-        self.server = server
-        self.channels = channels
         self.help = help
-        self.help_usage = help_usage
-        self.keywords = keywords
 
 
     def __str__(self):
-        return "\x03\x02%s\x03\x02%s%s" % (
-            self.name if self.name is not None else "\x03\x1f" + self.regexp + "\x03\x1f" if self.regexp is not None else "",
-            " (restricted to %:%s)" % ((",".join(self.servers) if self.server else "*") + (",".join(self.channels) if self.channels else "*")) if len(self.channels) or len(self.server) else "",
-            ": %s" % self.help if self.help is not None else ""
-        )
+        # TODO: find a way to name the feature (like command: help)
+        return self.help if self.help is not None else super().__str__()
 
 
     def check(self, msg):
-        return not hasattr(msg, "kwargs") or self.keywords.check(msg.kwargs)
+        return super().check(msg)
 
 
-    def match(self, msg, server=None):
-        if not isinstance(msg, nemubot.message.abstract.Abstract):
-            return True
-
-        elif isinstance(msg, nemubot.message.Command):
-            return self.is_matching(msg.cmd, msg.to, server)
-        elif isinstance(msg, nemubot.message.Text):
-            return self.is_matching(msg.message, msg.to, server)
-        else:
+    def match(self, msg):
+        if not isinstance(msg, nemubot.message.text.Text):
             return False
-
-
-    def is_matching(self, strcmp, receivers=list(), server=None):
-        """Test if the current hook correspond to the message"""
-        if ((server is None or self.server is None or self.server == server)
-            and ((self.name is None or strcmp == self.name) and (
-                self.regexp is None or re.match(self.regexp, strcmp)))):
-
-            if receivers and self.channels:
-                for receiver in receivers:
-                    if receiver in self.channels:
-                        return True
-            else:
-                return True
-        return False
+        else:
+            return self.regexp is None or re.match(self.regexp, msg.message)

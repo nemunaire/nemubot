@@ -43,7 +43,7 @@ def where(loc):
                   "{adminArea1}".format(**loc)).strip()
 
 
-@hook("cmd_hook", "geocode")
+@hook.command("geocode")
 def cmd_geocode(msg):
     if not len(msg.args):
         raise IMException("indicate a name")

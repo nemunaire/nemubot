@@ -19,7 +19,7 @@ def help_full():
 RGXP_s = re.compile(b'\x1b\\[[0-9]+m')
 
 
-@hook("cmd_hook", "MAN")
+@hook.command("MAN")
 def cmd_man(msg):
     args = ["man"]
     num = None
@@ -52,7 +52,7 @@ def cmd_man(msg):
     return res
 
 
-@hook("cmd_hook", "man")
+@hook.command("man")
 def cmd_whatis(msg):
     args = ["whatis", " ".join(msg.args)]
 

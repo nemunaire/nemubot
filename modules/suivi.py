@@ -154,7 +154,7 @@ TRACKING_HANDLERS = {
 
 # HOOKS ##############################################################
 
-@hook("cmd_hook", "track",
+@hook.command("track",
       help="Track postage delivery",
       help_usage={
           "TRACKING_ID [...]": "Track the specified postage IDs on various tracking services."

@@ -46,7 +46,7 @@ def findName(msg):
 
 ## Commands
 
-@hook("cmd_hook", "anniv",
+@hook.command("anniv",
       help="gives the remaining time before the anniversary of known people",
       help_usage={
           None: "Calculate the time remaining before your birthday",
@@ -80,7 +80,7 @@ def cmd_anniv(msg):
                         msg.channel, msg.nick)
 
 
-@hook("cmd_hook", "age",
+@hook.command("age",
       help="Calculate age of known people",
       help_usage={
           None: "Calculate your age",
@@ -104,7 +104,7 @@ def cmd_age(msg):
 
 ## Input parsing
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.text, re.I)
     if res is not None:

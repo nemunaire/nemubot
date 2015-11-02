@@ -239,7 +239,7 @@ SERVERS = dict()
 
 # MODULE INTERFACE ####################################################
 
-@hook("all_post")
+@hook.post()
 def parseresponse(res):
     # TODO: handle inter-bot communication NOMORE
     # TODO: check that the response is not the one already saved
@@ -256,7 +256,7 @@ def parseresponse(res):
     return res
 
 
-@hook("cmd_hook", "more")
+@hook.command("more")
 def cmd_more(msg):
     """Display next chunck of the message"""
     res = list()
@@ -272,7 +272,7 @@ def cmd_more(msg):
     return res
 
 
-@hook("cmd_hook", "next")
+@hook.command("next")
 def cmd_next(msg):
     """Display the next information include in the message"""
     res = list()

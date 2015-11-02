@@ -66,7 +66,7 @@ def print_station_status(msg, station):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "velib",
+@hook.command("velib",
       help="gives available bikes and slots at the given station",
       help_usage={
           "STATION_ID": "gives available bikes and slots at the station STATION_ID"

@@ -47,9 +47,9 @@ def load(context):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "newyear",
+@hook.command("newyear",
       help="Display the remaining time before the next new year")
-@hook("cmd_hook", str(yrn),
+@hook.command(str(yrn),
       help="Display the remaining time before %d" % yrn)
 def cmd_newyear(msg):
     return Response(countdown_format(datetime(yrn, 1, 1, 0, 0, 1, 0,
@@ -59,7 +59,7 @@ def cmd_newyear(msg):
                     channel=msg.channel)
 
 
-@hook("cmd_rgxp", data=yrn, regexp="^[0-9]{4}$",
+@hook.command(data=yrn, regexp="^[0-9]{4}$",
       help="Calculate time remaining/passed before/since the requested year")
 def cmd_timetoyear(msg, cur):
     yr = int(msg.cmd)

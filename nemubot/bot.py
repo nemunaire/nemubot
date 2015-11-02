@@ -79,7 +79,7 @@ class Bot(threading.Thread):
         def in_echo(msg):
             from nemubot.message import Text
             return Text(msg.nick + ": " + " ".join(msg.args), to=msg.to_response)
-        self.treater.hm.add_hook(nemubot.hooks.Message(in_echo, "echo"), "in", "Command")
+        self.treater.hm.add_hook(nemubot.hooks.Command(in_echo, "echo"), "in", "Command")
 
         def _help_msg(msg):
             """Parse and response to help messages"""
@@ -98,7 +98,7 @@ class Bot(threading.Thread):
                 elif msg.args[0][0] == "!":
                     for module in self.modules:
                         for (s, h) in self.modules[module].__nemubot_context__.hooks:
-                            if s == "in_Command" and (h.name is not None or h.regexp is not None) and h.is_matching(msg.args[0][1:]):
+                            if s == "in_Command" and (h.name is not None or h.regexp is not None) and ((h.name is not None and msg.args[0][1:] == h.name) or (h.regexp is not None and re.match(h.regexp, msg.args[0][1:]))):
                                 if h.help_usage:
                                     lp = ["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], (" " + k if k is not None else ""), h.help_usage[k]) for k in h.help_usage]
                                     jp = h.keywords.help()
@@ -128,7 +128,7 @@ class Bot(threading.Thread):
                                    " de tous les modules disponibles localement",
                                    message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
             return res
-        self.treater.hm.add_hook(nemubot.hooks.Message(_help_msg, "help"), "in", "Command")
+        self.treater.hm.add_hook(nemubot.hooks.Command(_help_msg, "help"), "in", "Command")
 
         from queue import Queue
         # Messages to be treated
@@ -462,9 +462,9 @@ class Bot(threading.Thread):
 
         # Register decorated functions
         import nemubot.hooks
-        for s, h in nemubot.hooks.last_registered:
+        for s, h in nemubot.hooks.hook.last_registered:
             module.__nemubot_context__.add_hook(s, h)
-        nemubot.hooks.last_registered = []
+        nemubot.hooks.hook.last_registered = []
 
         # Launch the module
         if hasattr(module, "load"):

@@ -22,7 +22,7 @@ def load(context):
     global URL_TPBAPI
     URL_TPBAPI = context.config["url"]
 
-@hook("cmd_hook", "tpb")
+@hook.command("tpb")
 def cmd_tpb(msg):
     if not len(msg.args):
         raise IMException("indicate an item to search!")

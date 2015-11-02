@@ -14,29 +14,54 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from nemubot.hooks.abstract import Abstract
+from nemubot.hooks.command import Command
 from nemubot.hooks.message import Message
 
-last_registered = []
+
+class hook:
+
+    last_registered = []
 
 
-def hook(store, *args, **kargs):
-    """Function used as a decorator for module loading"""
-    def sec(call):
-        last_registered.append((store, Message(call, *args, **kargs)))
-        return call
-    return sec
+    def _add(store, h, *args, **kwargs):
+        """Function used as a decorator for module loading"""
+        def sec(call):
+            hook.last_registered.append((store, h(call, *args, **kwargs)))
+            return call
+        return sec
+
+
+    def add(store, *args, **kwargs):
+        return hook._add(store, Abstract, *args, **kwargs)
+
+    def ask(*args, store="in_DirectAsk", **kwargs):
+        return hook._add(store, Message, *args, **kwargs)
+
+    def command(*args, store="in_Command", **kwargs):
+        return hook._add(store, Command, *args, **kwargs)
+
+    def message(*args, store="in_Text", **kwargs):
+        return hook._add(store, Message, *args, **kwargs)
+
+    def post(*args, store="post", **kwargs):
+        return hook._add(store, Abstract, *args, **kwargs)
+
+    def pre(*args, store="pre", **kwargs):
+        return hook._add(store, Abstract, *args, **kwargs)
 
 
 def reload():
-    global Message
     import imp
 
     import nemubot.hooks.abstract
     imp.reload(nemubot.hooks.abstract)
 
+    import nemubot.hooks.command
+    imp.reload(nemubot.hooks.command)
+
     import nemubot.hooks.message
     imp.reload(nemubot.hooks.message)
-    Message = nemubot.hooks.message.Message
 
     import nemubot.hooks.keywords
     imp.reload(nemubot.hooks.keywords)

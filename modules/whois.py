@@ -30,8 +30,8 @@ def load(context):
     context.data.getNode("pics").setIndex("login", "pict")
 
     import nemubot.hooks
-    context.add_hook("cmd_hook",
-                     nemubot.hooks.Message(cmd_whois, "whois"))
+    context.add_hook("in_Command",
+                     nemubot.hooks.Command(cmd_whois, "whois"))
 
 class Login:
 
@@ -87,7 +87,7 @@ def cmd_whois(msg):
             res.append_message("Unknown %s :(" % srch)
     return res
 
-@hook("cmd_hook", "nicks")
+@hook.command("nicks")
 def cmd_nicks(msg):
     if len(msg.args) < 1:
         raise IMException("Provide a login")
@@ -106,7 +106,7 @@ def cmd_nicks(msg):
     else:
         return Response("%s has no known alias." % nick, channel=msg.channel)
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)\s+([a-zA-Z0-9_-]{3,8})$", msg.text, re.I)
     if res is not None:

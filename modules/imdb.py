@@ -68,7 +68,7 @@ def find_movies(title):
         raise IMException("An error occurs during movie search")
 
 
-@hook("cmd_hook", "imdb")
+@hook.command("imdb")
 def cmd_imdb(msg):
     """View movie details with !imdb <title>"""
     if not len(msg.args):
@@ -97,7 +97,7 @@ def cmd_imdb(msg):
     return res
 
 
-@hook("cmd_hook", "imdbs")
+@hook.command("imdbs")
 def cmd_search(msg):
     """!imdbs <approximative title> to search a movie title"""
     if not len(msg.args):

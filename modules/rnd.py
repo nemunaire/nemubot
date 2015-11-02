@@ -15,7 +15,7 @@ from more import Response
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "choice")
+@hook.command("choice")
 def cmd_choice(msg):
     if not len(msg.args):
         raise IMException("indicate some terms to pick!")
@@ -25,7 +25,7 @@ def cmd_choice(msg):
                     nick=msg.nick)
 
 
-@hook("cmd_hook", "choicecmd")
+@hook.command("choicecmd")
 def cmd_choicecmd(msg):
     if not len(msg.args):
         raise IMException("indicate some command to pick!")

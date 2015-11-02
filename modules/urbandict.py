@@ -20,7 +20,7 @@ def search(terms):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "urbandictionnary")
+@hook.command("urbandictionnary")
 def udsearch(msg):
     if not len(msg.args):
         raise IMException("Indicate a term to search")

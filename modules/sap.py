@@ -19,7 +19,7 @@ def help_full():
     return "Retrieve SAP transaction codes and details using tcodes or keywords: !tcode <transaction code|keywords>"
 
 
-@hook("cmd_hook", "tcode")
+@hook.command("tcode")
 def cmd_tcode(msg):
     if not len(msg.args):
         raise IMException("indicate a transaction code or "

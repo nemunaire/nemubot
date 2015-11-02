@@ -14,7 +14,7 @@ def help_full ():
     return "!ratp transport line [station]: Donne des informations sur les prochains passages du transport en commun séléctionné à l'arrêt désiré. Si aucune station n'est précisée, les liste toutes."
 
 
-@hook("cmd_hook", "ratp")
+@hook.command("ratp")
 def ask_ratp(msg):
     """Hook entry from !ratp"""
     if len(msg.args) >= 3:
@@ -44,7 +44,7 @@ def ask_ratp(msg):
     else:
         raise IMException("Mauvais usage, merci de spécifier un type de transport et une ligne, ou de consulter l'aide du module.")
 
-@hook("cmd_hook", "ratp_alert")
+@hook.command("ratp_alert")
 def ratp_alert(msg):
     if len(msg.args) == 2:
         transport = msg.args[0]

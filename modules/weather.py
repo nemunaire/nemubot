@@ -136,7 +136,7 @@ def get_json_weather(coords):
     return wth
 
 
-@hook("cmd_hook", "coordinates")
+@hook.command("coordinates")
 def cmd_coordinates(msg):
     if len(msg.args) < 1:
         raise IMException("indique-moi un nom de ville.")
@@ -149,7 +149,7 @@ def cmd_coordinates(msg):
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
 
-@hook("cmd_hook", "alert")
+@hook.command("alert")
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
@@ -163,7 +163,7 @@ def cmd_alert(msg):
     return res
 
 
-@hook("cmd_hook", "météo")
+@hook.command("météo")
 def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords)
@@ -217,7 +217,7 @@ def cmd_weather(msg):
 gps_ask = re.compile(r"^\s*(?P<city>.*\w)\s*(?:(?:se|est)\s+(?:trouve|situ[ée]*)\s+[aà])\s*(?P<lat>-?[0-9]+(?:[,.][0-9]+))[^0-9.](?P<long>-?[0-9]+(?:[,.][0-9]+))\s*$", re.IGNORECASE)
 
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     res = gps_ask.match(msg.text)
     if res is not None:

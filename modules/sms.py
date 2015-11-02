@@ -47,7 +47,7 @@ def send_sms(frm, api_usr, api_key, content):
     return None
 
 
-@hook("cmd_hook", "sms")
+@hook.command("sms")
 def cmd_sms(msg):
     if not len(msg.args):
         raise IMException("À qui veux-tu envoyer ce SMS ?")
@@ -80,7 +80,7 @@ def cmd_sms(msg):
 apiuser_ask = re.compile(r"(utilisateur|user|numéro|numero|compte|abonne|abone|abonné|account)\s+(est|is)\s+(?P<user>[0-9]{7,})", re.IGNORECASE)
 apikey_ask = re.compile(r"(clef|key|password|mot de passe?)\s+(?:est|is)?\s+(?P<key>[a-zA-Z0-9]{10,})", re.IGNORECASE)
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     if msg.text.find("Free") >= 0 and (
             msg.text.find("API") >= 0 or msg.text.find("api") >= 0) and (

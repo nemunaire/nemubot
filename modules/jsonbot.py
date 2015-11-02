@@ -39,7 +39,7 @@ def getJsonKeys(data):
   else:
     return data.keys()
 
-@hook("cmd_hook", "json")
+@hook.command("json")
 def get_json_info(msg):
     if not len(msg.args):
       raise IMException("Please specify a url and a list of JSON keys.")

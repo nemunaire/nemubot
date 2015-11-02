@@ -14,21 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-def convert_legacy_store(old):
-    if old == "cmd_hook" or old == "cmd_rgxp" or old == "cmd_default":
-        return "in_Command"
-    elif old == "ask_hook" or old == "ask_rgxp" or old == "ask_default":
-        return "in_DirectAsk"
-    elif old == "msg_hook" or old == "msg_rgxp" or old == "msg_default":
-        return "in_Text"
-    elif old == "all_post":
-        return "post"
-    elif old == "all_pre":
-        return "pre"
-    else:
-        return old
-
-
 class ModuleContext:
 
     def __init__(self, context, module):
@@ -60,11 +45,9 @@ class ModuleContext:
             self.data = context.datastore.load(module_name)
 
             def add_hook(store, hook):
-                store = convert_legacy_store(store)
                 self.hooks.append((store, hook))
                 return context.treater.hm.add_hook(hook, store)
             def del_hook(store, hook):
-                store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
                 return context.treater.hm.del_hook(hook, store)
             def call_hook(store, msg):
@@ -98,10 +81,8 @@ class ModuleContext:
             self.data = module_state.ModuleState("nemubotstate")
 
             def add_hook(store, hook):
-                store = convert_legacy_store(store)
                 self.hooks.append((store, hook))
             def del_hook(store, hook):
-                store = convert_legacy_store(store)
                 self.hooks.remove((store, hook))
             def call_hook(store, msg):
                 # TODO: what can we do here?

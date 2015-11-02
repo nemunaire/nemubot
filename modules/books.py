@@ -58,7 +58,7 @@ def search_author(name):
 
 # MODULE INTERFACE ####################################################
 
-@hook("cmd_hook", "book",
+@hook.command("book",
       help="Get information about a book from its title",
       help_usage={
           "TITLE": "Get information about a book titled TITLE"
@@ -77,7 +77,7 @@ def cmd_book(msg):
     return res
 
 
-@hook("cmd_hook", "search_books",
+@hook.command("search_books",
       help="Search book's title",
       help_usage={
           "APPROX_TITLE": "Search for a book approximately titled APPROX_TITLE"
@@ -97,7 +97,7 @@ def cmd_books(msg):
     return res
 
 
-@hook("cmd_hook", "author_books",
+@hook.command("author_books",
       help="Looking for books writen by a given author",
       help_usage={
           "AUTHOR": "Looking for books writen by AUTHOR"

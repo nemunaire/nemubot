@@ -38,7 +38,7 @@ def fini(d, strend):
     context.data.delChild(context.data.index[strend["name"]])
     context.save()
 
-@hook("cmd_hook", "goûter")
+@hook.command("goûter")
 def cmd_gouter(msg):
     ndate = datetime.now(timezone.utc)
     ndate = datetime(ndate.year, ndate.month, ndate.day, 16, 42, 0, 0, timezone.utc)
@@ -47,7 +47,7 @@ def cmd_gouter(msg):
                              "Nous avons %s de retard pour le goûter :("),
                     channel=msg.channel)
 
-@hook("cmd_hook", "week-end")
+@hook.command("week-end")
 def cmd_we(msg):
     ndate = datetime.now(timezone.utc) + timedelta(5 - datetime.today().weekday())
     ndate = datetime(ndate.year, ndate.month, ndate.day, 0, 0, 1, 0, timezone.utc)
@@ -56,7 +56,7 @@ def cmd_we(msg):
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
 
-@hook("cmd_hook", "start")
+@hook.command("start")
 def start_countdown(msg):
     """!start /something/: launch a timer"""
     if len(msg.args) < 1:
@@ -135,8 +135,8 @@ def start_countdown(msg):
                             msg.date.strftime("%A %d %B %Y à %H:%M:%S")),
                         nick=msg.frm)
 
-@hook("cmd_hook", "end")
-@hook("cmd_hook", "forceend")
+@hook.command("end")
+@hook.command("forceend")
 def end_countdown(msg):
     if len(msg.args) < 1:
         raise IMException("quel événement terminer ?")
@@ -154,7 +154,7 @@ def end_countdown(msg):
     else:
         return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.nick)
 
-@hook("cmd_hook", "eventslist")
+@hook.command("eventslist")
 def liste(msg):
     """!eventslist: gets list of timer"""
     if len(msg.args):
@@ -169,7 +169,7 @@ def liste(msg):
     else:
         return Response("Compteurs connus : %s." % ", ".join(context.data.index.keys()), channel=msg.channel)
 
-@hook("cmd_default")
+@hook.command()
 def parseanswer(msg):
     if msg.cmd in context.data.index:
         res = Response(channel=msg.channel)
@@ -189,7 +189,7 @@ def parseanswer(msg):
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
 
-@hook("ask_default")
+@hook.ask()
 def parseask(msg):
     if RGXP_ask.match(msg.text) is not None:
         name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
