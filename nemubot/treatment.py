@@ -65,7 +65,7 @@ class MessageTreater:
         """
 
         for h in self.hm.get_hooks("pre", type(msg).__name__):
-            if h.match(msg):
+            if h.can_read(msg.to, msg.server) and h.match(msg):
                 res = h.run(msg)
 
                 if isinstance(res, list):
@@ -91,7 +91,7 @@ class MessageTreater:
         """
 
         for h in self.hm.get_hooks("in", type(msg).__name__):
-            if h.match(msg):
+            if h.can_read(msg.to, msg.server) and h.match(msg):
                 res = h.run(msg)
 
                 if isinstance(res, list):
@@ -113,7 +113,7 @@ class MessageTreater:
         """
 
         for h in self.hm.get_hooks("post"):
-            if h.match(msg):
+            if h.can_write(msg.to, msg.server) and h.match(msg):
                 res = h.run(msg)
 
                 if isinstance(res, list):

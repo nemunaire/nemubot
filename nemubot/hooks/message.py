@@ -54,7 +54,7 @@ class Message(Abstract):
     def __str__(self):
         return "\x03\x02%s\x03\x02%s%s" % (
             self.name if self.name is not None else "\x03\x1f" + self.regexp + "\x03\x1f" if self.regexp is not None else "",
-            " (restricted to %s)" % (self.server + ":" if self.server is not None else "") + (self.channels if self.channels else "*") if len(self.channels) or self.server else "",
+            " (restricted to %:%s)" % ((",".join(self.servers) if self.server else "*") + (",".join(self.channels) if self.channels else "*")) if len(self.channels) or len(self.server) else "",
             ": %s" % self.help if self.help is not None else ""
         )
 

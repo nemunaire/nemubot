@@ -42,19 +42,60 @@ class Abstract:
 
     """Abstract class for Hook implementation"""
 
-    def __init__(self, call, data=None, mtimes=-1, end_call=None):
+    def __init__(self, call, data=None, channels=None, servers=None, mtimes=-1,
+                 end_call=None):
+        """Create basis of the hook
+
+        Arguments:
+        call -- function to call to perform the hook
+
+        Keyword arguments:
+        data -- optional datas passed to call
+        """
+
+        if channels is None: channels = list()
+        if servers is None: servers = list()
+
+        assert callable(call), call
+        assert end_call is None or callable(end_call), end_call
+        assert isinstance(channels, list), channels
+        assert isinstance(servers, list), servers
+        assert type(mtimes) is int, mtimes
+
         self.call = call
         self.data = data
 
+        # TODO: find a way to have only one list: a limit is server + channel, not only server or channel
+        self.channels = channels
+        self.servers = servers
+
         self.times = mtimes
         self.end_call = end_call
+
+
+    def can_read(self, receivers=list(), server=None):
+        assert isinstance(receivers, list), receivers
+
+        if server is None or len(self.servers) == 0 or server in self.servers:
+            if len(self.channels) == 0:
+                return True
+
+            for receiver in receivers:
+                if receiver in self.channels:
+                    return True
+
+        return False
+
+
+    def can_write(self, receivers=list(), server=None):
+        return True
 
 
     def check(self, data1):
         return True
 
 
-    def match(self, data1, server):
+    def match(self, data1):
         return True
 
 
