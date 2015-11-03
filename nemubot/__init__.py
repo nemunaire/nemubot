@@ -47,6 +47,11 @@ def reload():
     import nemubot.channel
     imp.reload(nemubot.channel)
 
+    import nemubot.config
+    imp.reload(nemubot.config)
+
+    nemubot.config.reload()
+
     import nemubot.consumer
     imp.reload(nemubot.consumer)
 

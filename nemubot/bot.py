@@ -225,11 +225,18 @@ class Bot(threading.Thread):
         if not os.path.isfile(filename):
             return self.import_module(filename)
 
-        from nemubot.tools.config import config_nodes
+        from nemubot.channel import Channel
+        from nemubot import config
         from nemubot.tools.xmlparser import XMLParser
 
         try:
-            p = XMLParser(config_nodes)
+            p = XMLParser({
+                "nemubotconfig": config.Nemubot,
+                "server": config.Server,
+                "channel": Channel,
+                "module": config.Module,
+                "include": config.Include,
+            })
             config = p.parse_file(filename)
         except:
             logger.exception("Can't load `%s'; this is not a valid nemubot "
