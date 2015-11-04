@@ -45,7 +45,7 @@ class DDGResult:
     @property
     def definition(self):
         if "Definition" not in self.ddgres or not self.ddgres["Definition"]:
-            return "Sorry, no definition found for %s." % self.terms
+            return None
         return self.ddgres["Definition"] + " <" + self.ddgres["DefinitionURL"] + "> from " + self.ddgres["DefinitionSource"]
 
 
