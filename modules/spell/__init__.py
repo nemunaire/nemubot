@@ -1,9 +1,6 @@
-# coding=utf-8
-
 """Check words spelling"""
 
-import re
-from urllib.parse import quote
+# PYTHON STUFFS #######################################################
 
 from nemubot import context
 from nemubot.exception import IMException
@@ -13,41 +10,16 @@ from nemubot.tools.xmlparser.node import ModuleState
 from .pyaspell import Aspell
 from .pyaspell import AspellError
 
-nemubotversion = 3.4
-
 from more import Response
 
-def help_full():
-  return "!spell [<lang>] <word>: give the correct spelling of <word> in <lang=fr>."
+
+# LOADING #############################################################
 
 def load(context):
     context.data.setIndex("name", "score")
 
-@hook.command("spell")
-def cmd_spell(msg):
-    if not len(msg.args):
-        raise IMException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
 
-    lang = "fr"
-    strRes = list()
-    for word in msg.args:
-        if len(word) <= 2 and len(msg.args) > 2:
-            lang = word
-        else:
-            try:
-                r = check_spell(word, lang)
-            except AspellError:
-                return Response("Je n'ai pas le dictionnaire `%s' :(" % lang, msg.channel, msg.nick)
-            if r == True:
-                add_score(msg.nick, "correct")
-                strRes.append("l'orthographe de `%s' est correcte" % word)
-            elif len(r) > 0:
-                add_score(msg.nick, "bad")
-                strRes.append("suggestions pour `%s' : %s" % (word, ", ".join(r)))
-            else:
-                add_score(msg.nick, "bad")
-                strRes.append("aucune suggestion pour `%s'" % word)
-    return Response(strRes, channel=msg.channel, nick=msg.nick)
+# MODULE CORE #########################################################
 
 def add_score(nick, t):
     if nick not in context.data.index:
@@ -61,7 +33,54 @@ def add_score(nick, t):
         context.data.index[nick][t] = 1
     context.save()
 
-@hook.command("spellscore")
+
+def check_spell(word, lang='fr'):
+    a = Aspell([("lang", lang)])
+    if a.check(word.encode("utf-8")):
+        ret = True
+    else:
+        ret = a.suggest(word.encode("utf-8"))
+    a.close()
+    return ret
+
+
+# MODULE INTERFACE ####################################################
+
+@hook.command("spell",
+              help="give the correct spelling of given words",
+              help_usage={"WORD": "give the correct spelling of the WORD."},
+              keywords={"lang=": "change the language use for checking, default fr"})
+def cmd_spell(msg):
+    if not len(msg.args):
+        raise IMException("indique une orthographe approximative du mot dont tu veux vérifier l'orthographe.")
+
+    lang = msg.kwargs["lang"] if "lang" in msg.kwargs else "fr"
+
+    res = Response(channel=msg.channel)
+    for word in msg.args:
+        try:
+            r = check_spell(word, lang)
+        except AspellError:
+            raise IMException("Je n'ai pas le dictionnaire `%s' :(" % lang)
+
+        if r == True:
+            add_score(msg.nick, "correct")
+            res.append_message("l'orthographe de `%s' est correcte" % word)
+
+        elif len(r) > 0:
+            add_score(msg.nick, "bad")
+            res.append_message(r, title="suggestions pour `%s'" % word)
+
+        else:
+            add_score(msg.nick, "bad")
+            res.append_message("aucune suggestion pour `%s'" % word)
+
+    return res
+
+
+@hook.command("spellscore",
+              help="Show spell score (tests, mistakes, ...) for someone",
+              help_usage={"USER": "Display score of USER"})
 def cmd_score(msg):
     res = list()
     unknown = list()
@@ -76,12 +95,3 @@ def cmd_score(msg):
         res.append(Response("%s inconnus" % ", ".join(unknown), channel=msg.channel))
 
     return res
-
-def check_spell(word, lang='fr'):
-    a = Aspell([("lang", lang)])
-    if a.check(word.encode("utf-8")):
-        ret = True
-    else:
-        ret = a.suggest(word.encode("utf-8"))
-    a.close()
-    return ret
