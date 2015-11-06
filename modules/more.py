@@ -91,7 +91,7 @@ class Response:
     def append_content(self, message):
         if message is not None and len(message) > 0:
             if self.messages is None or len(self.messages) == 0:
-                self.messages = list(message)
+                self.messages = [message]
                 self.alone = True
             else:
                 self.messages[len(self.messages)-1] += message
