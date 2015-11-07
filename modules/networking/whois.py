@@ -9,7 +9,7 @@ from nemubot.tools.web import getJSON
 from more import Response
 
 URL_AVAIL = "https://www.whoisxmlapi.com/whoisserver/WhoisService?cmd=GET_DN_AVAILABILITY&domainName=%%s&outputFormat=json&username=%s&password=%s"
-URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainName=%%s&outputFormat=json&userName=%s&password=%s"
+URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?da=2&domainName=%%s&outputFormat=json&userName=%s&password=%s"
 
 
 # LOADING #############################################################
@@ -38,36 +38,12 @@ def load(CONF, add_hook):
 
 # MODULE CORE #########################################################
 
-def extractdate(str):
-    tries = [
-        "%Y-%m-%dT%H:%M:%S.0%Z",
-        "%Y-%m-%dT%H:%M:%S%Z",
-        "%Y-%m-%dT%H:%M:%S%z",
-        "%Y-%m-%dT%H:%M:%SZ",
-        "%Y-%m-%dT%H:%M:%S.0Z",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%d %H:%M:%S.0%Z",
-        "%Y-%m-%d %H:%M:%S%Z",
-        "%Y-%m-%d %H:%M:%S%z",
-        "%Y-%m-%d %H:%M:%S.0Z",
-        "%Y-%m-%d %H:%M:%SZ",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d",
-        "%d/%m/%Y",
-    ]
-
-    for t in tries:
-        try:
-            return datetime.datetime.strptime(str, t)
-        except ValueError:
-            pass
-    return datetime.datetime.strptime(str, t)
-
-
 def whois_entityformat(entity):
     ret = ""
     if "organization" in entity:
         ret += entity["organization"]
+    if "organization" in entity and "name" in entity:
+        ret += " "
     if "name" in entity:
         ret += entity["name"]
 
@@ -121,15 +97,38 @@ def cmd_whois(msg):
 
     whois = js["WhoisRecord"]
 
-    res = Response(channel=msg.channel, nomore="No more whois information")
+    res = []
 
-    res.append_message("%s: %s%s%s%s\x03\x02registered by\x03\x02 %s, \x03\x02administrated by\x03\x02 %s, \x03\x02managed by\x03\x02 %s" % (whois["domainName"],
-                                                             whois["status"].replace("\n", ", ") + " " if "status" in whois else "",
-                                                             "\x03\x02created on\x03\x02 " + extractdate(whois["createdDate"]).strftime("%c") + ", " if "createdDate" in whois else "",
-                                                             "\x03\x02updated on\x03\x02 " + extractdate(whois["updatedDate"]).strftime("%c") + ", " if "updatedDate" in whois else "",
-                                                             "\x03\x02expires on\x03\x02 " + extractdate(whois["expiresDate"]).strftime("%c") + ", " if "expiresDate" in whois else "",
-                                                             whois_entityformat(whois["registrant"]) if "registrant" in whois else "unknown",
-                                                             whois_entityformat(whois["administrativeContact"]) if "administrativeContact" in whois else "unknown",
-                                                             whois_entityformat(whois["technicalContact"]) if "technicalContact" in whois else "unknown",
-                                                         ))
-    return res
+    if "registrarName" in whois:
+        res.append("\x03\x02registered by\x03\x02 " + whois["registrarName"])
+
+    if "domainAvailability" in whois:
+        res.append(whois["domainAvailability"])
+
+    if "contactEmail" in whois:
+        res.append("\x03\x02contact email\x03\x02 " + whois["contactEmail"])
+
+    if "audit" in whois:
+        if "createdDate" in whois["audit"] and "$" in whois["audit"]["createdDate"]:
+            res.append("\x03\x02created on\x03\x02 " + whois["audit"]["createdDate"]["$"])
+        if "updatedDate" in whois["audit"] and "$" in whois["audit"]["updatedDate"]:
+            res.append("\x03\x02updated on\x03\x02 " + whois["audit"]["updatedDate"]["$"])
+
+    if "registryData" in whois:
+        if "expiresDateNormalized" in whois["registryData"]:
+            res.append("\x03\x02expire on\x03\x02 " + whois["registryData"]["expiresDateNormalized"])
+        if "registrant" in whois["registryData"]:
+            res.append("\x03\x02registrant:\x03\x02 " + whois_entityformat(whois["registryData"]["registrant"]))
+        if "zoneContact" in whois["registryData"]:
+            res.append("\x03\x02zone contact:\x03\x02 " + whois_entityformat(whois["registryData"]["zoneContact"]))
+        if "technicalContact" in whois["registryData"]:
+            res.append("\x03\x02technical contact:\x03\x02 " + whois_entityformat(whois["registryData"]["technicalContact"]))
+        if "administrativeContact" in whois["registryData"]:
+            res.append("\x03\x02administrative contact:\x03\x02 " + whois_entityformat(whois["registryData"]["administrativeContact"]))
+        if "billingContact" in whois["registryData"]:
+            res.append("\x03\x02billing contact:\x03\x02 " + whois_entityformat(whois["registryData"]["billingContact"]))
+
+    return Response(res,
+                    title=whois["domainName"],
+                    channel=msg.channel,
+                    nomore="No more whois information")
