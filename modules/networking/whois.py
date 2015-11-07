@@ -1,3 +1,5 @@
+# PYTHON STUFFS #######################################################
+
 import datetime
 import urllib
 
@@ -6,10 +8,14 @@ from nemubot.tools.web import getJSON
 
 from more import Response
 
+URL_AVAIL = "https://www.whoisxmlapi.com/whoisserver/WhoisService?cmd=GET_DN_AVAILABILITY&domainName=%%s&outputFormat=json&username=%s&password=%s"
 URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?rid=1&domainName=%%s&outputFormat=json&userName=%s&password=%s"
 
+
+# LOADING #############################################################
+
 def load(CONF, add_hook):
-    global URL_WHOIS
+    global URL_AVAIL, URL_WHOIS
 
     if not CONF or not CONF.hasNode("whoisxmlapi") or "username" not in CONF.getNode("whoisxmlapi") or "password" not in CONF.getNode("whoisxmlapi"):
         raise ImportError("You need a WhoisXML API account in order to use "
@@ -18,13 +24,19 @@ def load(CONF, add_hook):
                           "password=\"XXX\" />\nRegister at "
                           "http://www.whoisxmlapi.com/newaccount.php")
 
+    URL_AVAIL = URL_AVAIL % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
     URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
 
     import nemubot.hooks
     add_hook("in_Command", nemubot.hooks.Command(cmd_whois, "netwhois",
                                                  help="Get whois information about given domains",
                                                  help_usage={"DOMAIN": "Return whois information on the given DOMAIN"}))
+    add_hook("in_Command", nemubot.hooks.Command(cmd_avail, "domain_available",
+                                                 help="Domain availability check using whoisxmlapi.com",
+                                                 help_usage={"DOMAIN": "Check if the given DOMAIN is available or not"}))
 
+
+# MODULE CORE #########################################################
 
 def extractdate(str):
     tries = [
@@ -76,6 +88,24 @@ def whois_entityformat(entity):
         ret = ret.rstrip() + ")"
 
     return ret.lstrip()
+
+def available(dom):
+    js = getJSON(URL_AVAIL % urllib.parse.quote(dom))
+
+    if "ErrorMessage" in js:
+        raise IMException(js["ErrorMessage"]["msg"])
+
+    return js["DomainInfo"]["domainAvailability"] == "AVAILABLE"
+
+
+# MODULE INTERFACE ####################################################
+
+def cmd_avail(msg):
+    if not len(msg.args):
+        raise IMException("Indicate a domain name for having its availability status!")
+
+    return Response(["%s: %s" % (dom, "available" if available(dom) else "unavailable") for dom in msg.args],
+                    channel=msg.channel)
 
 
 def cmd_whois(msg):
