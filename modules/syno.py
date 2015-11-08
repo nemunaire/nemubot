@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Find synonyms"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 from urllib.parse import quote
@@ -9,14 +9,10 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 4.0
-
 from more import Response
 
 
-def help_full():
-    return "!syno [LANG] <word>: give a list of synonyms for <word>."
-
+# LOADING #############################################################
 
 def load(context):
     global lang_binding
@@ -29,6 +25,8 @@ def load(context):
     else:
         lang_binding["en"] = lambda word: get_english_synos(context.config["bighugelabskey"], word)
 
+
+# MODULE CORE #########################################################
 
 def get_french_synos(word):
     url = "http://www.crisco.unicaen.fr/des/synonymes/" + quote(word.encode("ISO-8859-1"))
@@ -72,24 +70,29 @@ def get_english_synos(key, word):
 lang_binding = { 'fr': get_french_synos }
 
 
-@hook.command("synonymes", data="synonymes")
-@hook.command("antonymes", data="antonymes")
+# MODULE INTERFACE ####################################################
+
+@hook.command("synonymes", data="synonymes",
+              help="give a list of synonyms",
+              help_usage={"WORD": "give synonyms of the given WORD"},
+              keywords={
+                  "lang=LANG": "change the dictionnary language: default fr, available: " + ", ".join(lang_binding)
+              })
+@hook.command("antonymes", data="antonymes",
+              help="give a list of antonyms",
+              help_usage={"WORD": "give antonyms of the given WORD"},
+              keywords={
+                  "lang=LANG": "change the dictionnary language: default fr, available: " + ", ".join(lang_binding)
+              })
 def go(msg, what):
     if not len(msg.args):
         raise IMException("de quel mot veux-tu connaître la liste des synonymes ?")
 
-    # Detect lang
-    if msg.args[0] in lang_binding:
-        func = lang_binding[msg.args[0]]
-        word = ' '.join(msg.args[1:])
-    else:
-        func = lang_binding["fr"]
-        word = ' '.join(msg.args)
-        # TODO: depreciate usage without lang
-        #raise IMException("language %s is not handled yet." % msg.args[0])
+    lang = msg.kwargs["lang"] if "lang" in msg.kwargs else "fr"
+    word = ' '.join(msg.args)
 
     try:
-        best, synos, anton = func(word)
+        best, synos, anton = lang_binding[lang](word)
     except:
         best, synos, anton = (list(), list(), list())
 
