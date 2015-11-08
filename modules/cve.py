@@ -1,26 +1,40 @@
+"""Read CVE in your IM client"""
+
+# PYTHON STUFFS #######################################################
+
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 
 from nemubot.hooks import hook
-from nemubot.tools.web import getURLContent
+from nemubot.tools.web import getURLContent, striphtml
+
 from more import Response
 
-"""CVE description"""
+BASEURL_NIST = 'https://web.nvd.nist.gov/view/vuln/detail?vulnId='
 
-nemubotversion = 4.0
 
-BASEURL_MITRE = 'http://cve.mitre.org/cgi-bin/cvename.cgi?name='
-
+# MODULE CORE #########################################################
 
 def get_cve(cve_id):
-    search_url = BASEURL_MITRE + quote(cve_id.upper())
+    search_url = BASEURL_NIST + quote(cve_id.upper())
 
     soup = BeautifulSoup(getURLContent(search_url))
-    desc = soup.body.findAll('td')
+    vuln = soup.body.find(class_="vulnDetail")
+    cvss = vuln.find(class_="cvssDetail")
 
-    return desc[17].text.replace("\n", " ") + " Moar at " + search_url
+    return [
+        "Base score: " + cvss.findAll('div')[0].findAll('a')[0].text.strip(),
+        vuln.findAll('p')[0].text, # description
+        striphtml(vuln.findAll('div')[0].text).strip(), # publication date
+        striphtml(vuln.findAll('div')[1].text).strip(), # last revised
+    ]
 
-@hook.command("cve")
+
+# MODULE INTERFACE ####################################################
+
+@hook.command("cve",
+              help="Display given CVE",
+              help_usage={"CVE_ID": "Display the description of the given CVE"})
 def get_cve_desc(msg):
     res = Response(channel=msg.channel)
 
