@@ -43,7 +43,7 @@ class Abstract:
     """Abstract class for Hook implementation"""
 
     def __init__(self, call, data=None, channels=None, servers=None, mtimes=-1,
-                 end_call=None):
+                 end_call=None, check=None, match=None):
         """Create basis of the hook
 
         Arguments:
@@ -58,12 +58,17 @@ class Abstract:
 
         assert callable(call), call
         assert end_call is None or callable(end_call), end_call
+        assert check is None or callable(check), check
+        assert match is None or callable(match), match
         assert isinstance(channels, list), channels
         assert isinstance(servers, list), servers
         assert type(mtimes) is int, mtimes
 
         self.call = call
         self.data = data
+
+        self.mod_check = check
+        self.mod_match = match
 
         # TODO: find a way to have only one list: a limit is server + channel, not only server or channel
         self.channels = channels
@@ -96,11 +101,11 @@ class Abstract:
 
 
     def check(self, data1):
-        return True
+        return self.mod_check(data1) if self.mod_check is not None else True
 
 
     def match(self, data1):
-        return True
+        return self.mod_match(data1) if self.mod_match is not None else True
 
 
     def run(self, data1, *args):

@@ -46,4 +46,4 @@ class Message(Abstract):
         if not isinstance(msg, nemubot.message.text.Text):
             return False
         else:
-            return self.regexp is None or re.match(self.regexp, msg.message)
+            return (self.regexp is None or re.match(self.regexp, msg.message)) and super().match(msg)

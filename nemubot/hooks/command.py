@@ -17,6 +17,7 @@
 import re
 
 from nemubot.hooks.message import Message
+from nemubot.hooks.abstract import Abstract
 from nemubot.hooks.keywords import NoKeyword
 from nemubot.hooks.keywords.abstract import Abstract as AbstractKeywords
 from nemubot.hooks.keywords.dict import Dict as DictKeywords
@@ -61,5 +62,6 @@ class Command(Message):
         else:
             return (
                 (self.name is None or msg.cmd == self.name) and
-                (self.regexp is None or re.match(self.regexp, msg.cmd))
+                (self.regexp is None or re.match(self.regexp, msg.cmd)) and
+                Abstract.match(self, msg)
             )
