@@ -205,7 +205,9 @@ class Bot(threading.Thread):
                     self.quit()
                 elif action[0] == "loadconf":
                     for path in action[1:]:
+                        logger.debug("Load configuration from %s", path)
                         self.load_file(path)
+                    logger.info("Configurations successfully loaded")
                 self.sync_queue.task_done()
 
 
