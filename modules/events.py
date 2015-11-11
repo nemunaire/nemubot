@@ -1,5 +1,3 @@
-# coding=utf-8
-
 """Create countdowns and reminders"""
 
 import re
@@ -9,11 +7,10 @@ from nemubot import context
 from nemubot.exception import IMException
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
+from nemubot.message import Command
 from nemubot.tools.countdown import countdown_format, countdown
 from nemubot.tools.date import extractDate
 from nemubot.tools.xmlparser.node import ModuleState
-
-nemubotversion = 3.4
 
 from more import Response
 
@@ -169,23 +166,22 @@ def liste(msg):
     else:
         return Response("Compteurs connus : %s." % ", ".join(context.data.index.keys()), channel=msg.channel)
 
-@hook.command()
+@hook.command(match=lambda msg: isinstance(msg, Command) and msg.cmd in context.data.index)
 def parseanswer(msg):
-    if msg.cmd in context.data.index:
-        res = Response(channel=msg.channel)
+    res = Response(channel=msg.channel)
 
-        # Avoid message starting by ! which can be interpreted as command by other bots
-        if msg.cmd[0] == "!":
-            res.nick = msg.nick
+    # Avoid message starting by ! which can be interpreted as command by other bots
+    if msg.cmd[0] == "!":
+        res.nick = msg.nick
 
-        if context.data.index[msg.cmd].name == "strend":
-            if context.data.index[msg.cmd].hasAttribute("end"):
-                res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start")), countdown(context.data.index[msg.cmd].getDate("end") - msg.date)))
-            else:
-                res.append_message("%s commencé il y a %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start"))))
+    if context.data.index[msg.cmd].name == "strend":
+        if context.data.index[msg.cmd].hasAttribute("end"):
+            res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start")), countdown(context.data.index[msg.cmd].getDate("end") - msg.date)))
         else:
-            res.append_message(countdown_format(context.data.index[msg.cmd].getDate("start"), context.data.index[msg.cmd]["msg_before"], context.data.index[msg.cmd]["msg_after"]))
-        return res
+            res.append_message("%s commencé il y a %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start"))))
+    else:
+        res.append_message(countdown_format(context.data.index[msg.cmd].getDate("start"), context.data.index[msg.cmd]["msg_before"], context.data.index[msg.cmd]["msg_after"]))
+    return res
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
 
