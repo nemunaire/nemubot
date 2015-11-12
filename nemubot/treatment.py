@@ -90,7 +90,10 @@ class MessageTreater:
         msg -- message to treat
         """
 
-        for h in self.hm.get_hooks("in", type(msg).__name__):
+        res = False
+
+        hooks = self.hm.get_hooks("in", type(msg).__name__)
+        for h in hooks:
             if h.can_read(msg.to, msg.server) and h.match(msg):
                 res = h.run(msg)
 
@@ -103,6 +106,15 @@ class MessageTreater:
                         res.server = msg.server
 
                     yield res
+
+        from nemubot.message.command import Command as CommandMessage
+        if res is False and isinstance(msg, CommandMessage):
+            from nemubot.hooks import Command as CommandHook
+            from nemubot.exception import IMException
+            from nemubot.tools.human import guess
+            suggest = [s for s in guess(msg.cmd, [h.name for h in hooks if isinstance(h, CommandHook) and h.name is not None])]
+            if len(suggest) >= 1:
+                yield IMException("Unknown command %s. Would you mean: %s?" % (msg.cmd, ", ".join(suggest))).fill_response(msg)
 
 
     def _post_treat(self, msg):
