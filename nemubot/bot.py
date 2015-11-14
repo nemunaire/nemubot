@@ -72,9 +72,11 @@ class Bot(threading.Thread):
 
         import re
         def in_ping(msg):
-            if re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)", msg.message, re.I) is not None:
-                return msg.respond("pong")
-        self.treater.hm.add_hook(nemubot.hooks.Message(in_ping), "in", "DirectAsk")
+            return msg.respond("pong")
+        self.treater.hm.add_hook(nemubot.hooks.Message(in_ping,
+                                                       match=lambda msg: re.match("^ *(m[' ]?entends?[ -]+tu|h?ear me|do you copy|ping)",
+                                                                                  msg.message, re.I)),
+                                 "in", "DirectAsk")
 
         def in_echo(msg):
             from nemubot.message import Text

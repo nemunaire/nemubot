@@ -14,8 +14,10 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 from more import Response
 
+
 def help_full ():
     return "This module store a lot of events: ny, we, " + (", ".join(context.datas.index.keys())) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
+
 
 def load(context):
     #Define the index
@@ -35,6 +37,7 @@ def fini(d, strend):
     context.data.delChild(context.data.index[strend["name"]])
     context.save()
 
+
 @hook.command("goûter")
 def cmd_gouter(msg):
     ndate = datetime.now(timezone.utc)
@@ -44,6 +47,7 @@ def cmd_gouter(msg):
                              "Nous avons %s de retard pour le goûter :("),
                     channel=msg.channel)
 
+
 @hook.command("week-end")
 def cmd_we(msg):
     ndate = datetime.now(timezone.utc) + timedelta(5 - datetime.today().weekday())
@@ -52,6 +56,7 @@ def cmd_we(msg):
                              "Il reste %s avant le week-end, courage ;)",
                              "Youhou, on est en week-end depuis %s."),
                     channel=msg.channel)
+
 
 @hook.command("start")
 def start_countdown(msg):
@@ -132,6 +137,7 @@ def start_countdown(msg):
                             msg.date.strftime("%A %d %B %Y à %H:%M:%S")),
                         nick=msg.frm)
 
+
 @hook.command("end")
 @hook.command("forceend")
 def end_countdown(msg):
@@ -151,6 +157,7 @@ def end_countdown(msg):
     else:
         return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.nick)
 
+
 @hook.command("eventslist")
 def liste(msg):
     """!eventslist: gets list of timer"""
@@ -165,6 +172,7 @@ def liste(msg):
         return Response(" ; ".join(res), channel=msg.channel)
     else:
         return Response("Compteurs connus : %s." % ", ".join(context.data.index.keys()), channel=msg.channel)
+
 
 @hook.command(match=lambda msg: isinstance(msg, Command) and msg.cmd in context.data.index)
 def parseanswer(msg):
@@ -183,59 +191,59 @@ def parseanswer(msg):
         res.append_message(countdown_format(context.data.index[msg.cmd].getDate("start"), context.data.index[msg.cmd]["msg_before"], context.data.index[msg.cmd]["msg_after"]))
     return res
 
+
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
 
-@hook.ask()
+@hook.ask(match=lambda msg: RGXP_ask.match(msg.text))
 def parseask(msg):
-    if RGXP_ask.match(msg.text) is not None:
-        name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
-        if name is None:
-            raise IMException("il faut que tu attribues une commande à l'événement.")
-        if name.group(1) in context.data.index:
-            raise IMException("un événement portant ce nom existe déjà.")
+    name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
+    if name is None:
+        raise IMException("il faut que tu attribues une commande à l'événement.")
+    if name.group(1) in context.data.index:
+        raise IMException("un événement portant ce nom existe déjà.")
 
-        texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
-        if texts is not None and texts.group(3) is not None:
-            extDate = extractDate(msg.text)
-            if extDate is None or extDate == "":
-                raise IMException("la date de l'événement est invalide !")
+    texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
+    if texts is not None and texts.group(3) is not None:
+        extDate = extractDate(msg.text)
+        if extDate is None or extDate == "":
+            raise IMException("la date de l'événement est invalide !")
 
-            if texts.group(1) is not None and (texts.group(1) == "après" or texts.group(1) == "apres" or texts.group(1) == "after"):
-                msg_after = texts.group (2)
-                msg_before = texts.group (5)
-            if (texts.group(4) is not None and (texts.group(4) == "après" or texts.group(4) == "apres" or texts.group(4) == "after")) or texts.group(1) is None:
-                msg_before = texts.group (2)
-                msg_after = texts.group (5)
+        if texts.group(1) is not None and (texts.group(1) == "après" or texts.group(1) == "apres" or texts.group(1) == "after"):
+            msg_after = texts.group(2)
+            msg_before = texts.group(5)
+        if (texts.group(4) is not None and (texts.group(4) == "après" or texts.group(4) == "apres" or texts.group(4) == "after")) or texts.group(1) is None:
+            msg_before = texts.group(2)
+            msg_after = texts.group(5)
 
-            if msg_before.find("%s") == -1 or msg_after.find("%s") == -1:
-                raise IMException("Pour que l'événement soit valide, ajouter %s à"
-                                " l'endroit où vous voulez que soit ajouté le"
-                                " compte à rebours.")
+        if msg_before.find("%s") == -1 or msg_after.find("%s") == -1:
+            raise IMException("Pour que l'événement soit valide, ajouter %s à"
+                            " l'endroit où vous voulez que soit ajouté le"
+                            " compte à rebours.")
 
-            evt = ModuleState("event")
-            evt["server"] = msg.server
-            evt["channel"] = msg.channel
-            evt["proprio"] = msg.nick
-            evt["name"] = name.group(1)
-            evt["start"] = extDate
-            evt["msg_after"] = msg_after
-            evt["msg_before"] = msg_before
-            context.data.addChild(evt)
-            context.save()
-            return Response("Nouvel événement !%s ajouté avec succès." % name.group(1),
-                            channel=msg.channel)
+        evt = ModuleState("event")
+        evt["server"] = msg.server
+        evt["channel"] = msg.channel
+        evt["proprio"] = msg.nick
+        evt["name"] = name.group(1)
+        evt["start"] = extDate
+        evt["msg_after"] = msg_after
+        evt["msg_before"] = msg_before
+        context.data.addChild(evt)
+        context.save()
+        return Response("Nouvel événement !%s ajouté avec succès." % name.group(1),
+                        channel=msg.channel)
 
-        elif texts is not None and texts.group (2) is not None:
-            evt = ModuleState("event")
-            evt["server"] = msg.server
-            evt["channel"] = msg.channel
-            evt["proprio"] = msg.nick
-            evt["name"] = name.group(1)
-            evt["msg_before"] = texts.group (2)
-            context.data.addChild(evt)
-            context.save()
-            return Response("Nouvelle commande !%s ajoutée avec succès." % name.group(1),
-                            channel=msg.channel)
+    elif texts is not None and texts.group(2) is not None:
+        evt = ModuleState("event")
+        evt["server"] = msg.server
+        evt["channel"] = msg.channel
+        evt["proprio"] = msg.nick
+        evt["name"] = name.group(1)
+        evt["msg_before"] = texts.group (2)
+        context.data.addChild(evt)
+        context.save()
+        return Response("Nouvelle commande !%s ajoutée avec succès." % name.group(1),
+                        channel=msg.channel)
 
-        else:
-            raise IMException("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")
+    else:
+        raise IMException("Veuillez indiquez les messages d'attente et d'après événement entre guillemets.")
