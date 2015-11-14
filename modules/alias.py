@@ -253,7 +253,7 @@ def treat_alias(msg):
             args = shlex.split(txt)
         except ValueError:
             args = txt.split(' ')
-        nmsg = Command(args[0], replace_variables(args[1:], msg) + msg.args, **msg.export_args())
+        nmsg = Command(args[0], args=replace_variables(args[1:], msg) + msg.args, kwargs=msg.kwargs, **msg.export_args())
 
         # Avoid infinite recursion
         if msg.cmd != nmsg.cmd:
