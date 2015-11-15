@@ -61,6 +61,7 @@ setup(
 
     packages=[
         'nemubot',
+        'nemubot.config',
         'nemubot.datastore',
         'nemubot.event',
         'nemubot.exception',
