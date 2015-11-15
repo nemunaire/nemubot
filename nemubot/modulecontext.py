@@ -32,8 +32,8 @@ class ModuleContext:
             module_name in context.modules_configuration):
             self.config = context.modules_configuration[module_name]
         else:
-            from nemubot.tools.xmlparser.node import ModuleState
-            self.config = ModuleState("module")
+            from nemubot.config.module import Module
+            self.config = Module(module_name)
 
         self.hooks = list()
         self.events = list()
