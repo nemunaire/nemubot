@@ -474,7 +474,7 @@ class Bot(threading.Thread):
         # Register decorated functions
         import nemubot.hooks
         for s, h in nemubot.hooks.hook.last_registered:
-            module.__nemubot_context__.add_hook(s, h)
+            module.__nemubot_context__.add_hook(h, *s if isinstance(s, list) else s)
         nemubot.hooks.hook.last_registered = []
 
         # Launch the module

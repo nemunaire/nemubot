@@ -14,15 +14,47 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 
 class HooksManager:
 
     """Class to manage hooks"""
 
-    def __init__(self):
+    def __init__(self, name="core"):
         """Initialize the manager"""
 
         self.hooks = dict()
+        self.logger = logging.getLogger("nemubot.hooks.manager." + name)
+
+
+    def _access(self, *triggers):
+        """Access to the given triggers chain"""
+
+        h = self.hooks
+        for t in triggers:
+            if t not in h:
+                h[t] = dict()
+            h = h[t]
+
+        if "__end__" not in h:
+            h["__end__"] = list()
+
+        return h
+
+
+    def _search(self, hook, *where, start=None):
+        """Search all occurence of the given hook"""
+
+        if start is None:
+            start = self.hooks
+
+        for k in start:
+            if k == "__end__":
+                if hook in start[k]:
+                    yield where
+            else:
+                yield from self._search(hook, *where + (k,), start=start[k])
 
 
     def add_hook(self, hook, *triggers):
@@ -33,19 +65,18 @@ class HooksManager:
         triggers -- string that trigger the hook
         """
 
-        trigger = "_".join(triggers)
+        assert hook is not None, hook
 
-        if trigger not in self.hooks:
-            self.hooks[trigger] = list()
+        h = self._access(*triggers)
 
-        self.hooks[trigger].append(hook)
+        h["__end__"].append(hook)
+
+        self.logger.debug("New hook successfully added in %s: %s",
+                           "/".join(triggers), hook)
 
 
-    def del_hook(self, hook=None, *triggers):
+    def del_hooks(self, *triggers, hook=None):
         """Remove the given hook from the manager
-
-        Return:
-        Boolean value reporting the deletion success
 
         Argument:
         triggers -- trigger string to remove
@@ -54,15 +85,20 @@ class HooksManager:
         hook -- a Hook instance to remove from the trigger string
         """
 
-        trigger = "_".join(triggers)
+        assert hook is not None or len(triggers)
 
-        if trigger in self.hooks:
-            if hook is None:
-                del self.hooks[trigger]
+        self.logger.debug("Trying to delete hook in %s: %s",
+                           "/".join(triggers), hook)
+
+        if hook is not None:
+            for h in self._search(hook, *triggers, start=self._access(*triggers)):
+                self._access(*h)["__end__"].remove(hook)
+
+        else:
+            if len(triggers):
+                del self._access(*triggers[:-1])[triggers[-1]]
             else:
-                self.hooks[trigger].remove(hook)
-            return True
-        return False
+                self.hooks = dict()
 
 
     def get_hooks(self, *triggers):
@@ -70,35 +106,29 @@ class HooksManager:
 
         Argument:
         triggers -- the trigger string
-
-        Keyword argument:
-        data -- Data to pass to the hook as argument
         """
 
-        trigger = "_".join(triggers)
-
-        res = list()
-
-        for key in self.hooks:
-            if trigger.find(key) == 0:
-                res += self.hooks[key]
-
-        return res
+        for n in range(len(triggers) + 1):
+            i = self._access(*triggers[:n])
+            for h in i["__end__"]:
+                yield h
 
 
-    def exec_hook(self, *triggers, **data):
-        """Trigger hooks that match the given trigger string
+    def get_reverse_hooks(self, *triggers, exclude_first=False):
+        """Returns list of triggered hooks that are bellow or at the same level
 
         Argument:
-        trigger -- the trigger string
+        triggers -- the trigger string
 
-        Keyword argument:
-        data -- Data to pass to the hook as argument
+        Keyword arguments:
+        exclude_first -- start reporting hook at the next level
         """
 
-        trigger = "_".join(triggers)
-
-        for key in self.hooks:
-            if trigger.find(key) == 0:
-                for hook in self.hooks[key]:
-                    hook.run(**data)
+        h = self._access(*triggers)
+        for k in h:
+            if k == "__end__":
+                if not exclude_first:
+                    for hk in h[k]:
+                        yield hk
+            else:
+                yield from self.get_reverse_hooks(*triggers + (k,))

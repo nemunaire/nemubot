@@ -26,6 +26,8 @@ class ModuleContext:
 
         if module is not None:
             module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+        else:
+            module_name = ""
 
         # Load module configuration if exists
         if (context is not None and
@@ -39,26 +41,23 @@ class ModuleContext:
         self.events = list()
         self.debug = context.verbosity > 0 if context is not None else False
 
+        from nemubot.hooks import Abstract as AbstractHook
+
         # Define some callbacks
         if context is not None:
             # Load module data
             self.data = context.datastore.load(module_name)
 
-            def add_hook(store, hook):
-                self.hooks.append((store, hook))
-                return context.treater.hm.add_hook(hook, store)
-            def del_hook(store, hook):
-                self.hooks.remove((store, hook))
-                return context.treater.hm.del_hook(hook, store)
-            def call_hook(store, msg):
-                for h in context.treater.hm.get_hooks(store):
-                    if h.match(msg):
-                        res = h.run(msg)
-                        if isinstance(res, list):
-                            for i in res:
-                                yield i
-                        else:
-                            yield res
+            def add_hook(hook, *triggers):
+                assert isinstance(hook, AbstractHook), hook
+                self.hooks.append((triggers, hook))
+                return context.treater.hm.add_hook(hook, *triggers)
+
+            def del_hook(hook, *triggers):
+                assert isinstance(hook, AbstractHook), hook
+                self.hooks.remove((triggers, hook))
+                return context.treater.hm.del_hooks(*triggers, hook=hook)
+
             def subtreat(msg):
                 yield from context.treater.treat_msg(msg)
             def add_event(evt, eid=None):
@@ -80,13 +79,12 @@ class ModuleContext:
             from nemubot.tools.xmlparser import module_state
             self.data = module_state.ModuleState("nemubotstate")
 
-            def add_hook(store, hook):
-                self.hooks.append((store, hook))
-            def del_hook(store, hook):
-                self.hooks.remove((store, hook))
-            def call_hook(store, msg):
-                # TODO: what can we do here?
-                return None
+            def add_hook(hook, *triggers):
+                assert isinstance(hook, AbstractHook), hook
+                self.hooks.append((triggers, hook))
+            def del_hook(hook, *triggers):
+                assert isinstance(hook, AbstractHook), hook
+                self.hooks.remove((triggers, hook))
             def subtreat(msg):
                 return None
             def add_event(evt, eid=None):
@@ -106,7 +104,6 @@ class ModuleContext:
         self.del_event = del_event
         self.save = save
         self.send_response = send_response
-        self.call_hook = call_hook
         self.subtreat = subtreat
 
 
@@ -115,7 +112,7 @@ class ModuleContext:
 
         # Remove registered hooks
         for (s, h) in self.hooks:
-            self.del_hook(s, h)
+            self.del_hook(h, *s)
 
         # Remove registered events
         for e in self.events:

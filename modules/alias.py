@@ -242,7 +242,7 @@ def cmd_unalias(msg):
 
 ## Alias replacement
 
-@hook.add("pre_Command")
+@hook.add(["pre","Command"])
 def treat_alias(msg):
     if msg.cmd in context.data.getNode("aliases").index:
         txt = context.data.getNode("aliases").index[msg.cmd]["origin"]

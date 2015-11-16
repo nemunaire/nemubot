@@ -28,12 +28,14 @@ def load(CONF, add_hook):
     URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
 
     import nemubot.hooks
-    add_hook("in_Command", nemubot.hooks.Command(cmd_whois, "netwhois",
-                                                 help="Get whois information about given domains",
-                                                 help_usage={"DOMAIN": "Return whois information on the given DOMAIN"}))
-    add_hook("in_Command", nemubot.hooks.Command(cmd_avail, "domain_available",
-                                                 help="Domain availability check using whoisxmlapi.com",
-                                                 help_usage={"DOMAIN": "Check if the given DOMAIN is available or not"}))
+    add_hook(nemubot.hooks.Command(cmd_whois, "netwhois",
+                                   help="Get whois information about given domains",
+                                   help_usage={"DOMAIN": "Return whois information on the given DOMAIN"}),
+             "in","Command")
+    add_hook(nemubot.hooks.Command(cmd_avail, "domain_available",
+                                   help="Domain availability check using whoisxmlapi.com",
+                                   help_usage={"DOMAIN": "Check if the given DOMAIN is available or not"}),
+             "in","Command")
 
 
 # MODULE CORE #########################################################

@@ -35,19 +35,19 @@ class hook:
     def add(store, *args, **kwargs):
         return hook._add(store, Abstract, *args, **kwargs)
 
-    def ask(*args, store="in_DirectAsk", **kwargs):
+    def ask(*args, store=["in","DirectAsk"], **kwargs):
         return hook._add(store, Message, *args, **kwargs)
 
-    def command(*args, store="in_Command", **kwargs):
+    def command(*args, store=["in","Command"], **kwargs):
         return hook._add(store, Command, *args, **kwargs)
 
-    def message(*args, store="in_Text", **kwargs):
+    def message(*args, store=["in","Text"], **kwargs):
         return hook._add(store, Message, *args, **kwargs)
 
-    def post(*args, store="post", **kwargs):
+    def post(*args, store=["post"], **kwargs):
         return hook._add(store, Abstract, *args, **kwargs)
 
-    def pre(*args, store="pre", **kwargs):
+    def pre(*args, store=["pre"], **kwargs):
         return hook._add(store, Abstract, *args, **kwargs)
 
 

@@ -30,8 +30,8 @@ def load(context):
     context.data.getNode("pics").setIndex("login", "pict")
 
     import nemubot.hooks
-    context.add_hook("in_Command",
-                     nemubot.hooks.Command(cmd_whois, "whois"))
+    context.add_hook(nemubot.hooks.Command(cmd_whois, "whois"),
+                     "in","Command")
 
 class Login:
 
