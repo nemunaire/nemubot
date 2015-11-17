@@ -36,17 +36,29 @@ class MessageTreater:
         """
 
         try:
+            handled = False
+
             # Run pre-treatment: from Message to [ Message ]
             msg_gen = self._pre_treat(msg)
             m = next(msg_gen, None)
 
             # Run in-treatment: from Message to [ Response ]
             while m is not None:
-                for response in self._in_treat(m):
-                    # Run post-treatment: from Response to [ Response ]
-                    yield from self._post_treat(response)
+
+                hook_gen = self._in_hooks(m)
+                hook = next(hook_gen, None)
+                if hook is not None:
+                    handled = True
+
+                    for response in self._in_treat(m, hook, hook_gen):
+                        # Run post-treatment: from Response to [ Response ]
+                        yield from self._post_treat(response)
 
                 m = next(msg_gen, None)
+
+            if not handled:
+                for m in self._in_miss(msg):
+                    yield from self._post_treat(m)
         except BaseException as e:
             logger.exception("Error occurred during the processing of the %s: "
                              "%s", type(msg).__name__, msg)
@@ -83,38 +95,53 @@ class MessageTreater:
             yield msg
 
 
-    def _in_treat(self, msg):
+    def _in_hooks(self, msg):
+        for h in self.hm.get_hooks("in", type(msg).__name__):
+            if h.can_read(msg.to, msg.server) and h.match(msg):
+                yield h
+
+
+    def _in_treat(self, msg, hook, hook_gen):
         """Treats Messages and returns Responses
 
         Arguments:
         msg -- message to treat
         """
 
-        res = False
+        while hook is not None:
+            res = hook.run(msg)
 
-        hooks = self.hm.get_hooks("in", type(msg).__name__)
-        for h in hooks:
-            if h.can_read(msg.to, msg.server) and h.match(msg):
-                res = h.run(msg)
+            if isinstance(res, list):
+                for r in res:
+                    yield r
 
-                if isinstance(res, list):
-                    for r in res:
-                        yield r
+            elif res is not None:
+                if not hasattr(res, "server") or res.server is None:
+                    res.server = msg.server
 
-                elif res is not None:
-                    if not hasattr(res, "server") or res.server is None:
-                        res.server = msg.server
+                yield res
 
-                    yield res
+            hook = next(hook_gen, None)
 
+
+    def _in_miss(self, msg):
         from nemubot.message.command import Command as CommandMessage
-        if res is False and isinstance(msg, CommandMessage):
+        from nemubot.message.directask import DirectAsk as DirectAskMessage
+
+        if isinstance(msg, CommandMessage):
             from nemubot.hooks import Command as CommandHook
-            from nemubot.exception import IMException
             from nemubot.tools.human import guess
+            hooks = self.hm.get_reverse_hooks("in", type(msg).__name__)
             suggest = [s for s in guess(msg.cmd, [h.name for h in hooks if isinstance(h, CommandHook) and h.name is not None])]
             if len(suggest) >= 1:
-                yield IMException("Unknown command %s. Would you mean: %s?" % (msg.cmd, ", ".join(suggest))).fill_response(msg)
+                yield DirectAskMessage(msg.frm,
+                                       "Unknown command %s. Would you mean: %s?" % (msg.cmd, ", ".join(suggest)),
+                                       to=msg.to_response)
+
+        elif isinstance(msg, DirectAskMessage):
+            yield DirectAskMessage(msg.frm,
+                                   "Sorry, I'm just a bot and your sentence is too complex for me :( But feel free to teach me some tricks at https://github.com/nemunaire/nemubot/!",
+                                   to=msg.to_response)
 
 
     def _post_treat(self, msg):
@@ -124,7 +151,7 @@ class MessageTreater:
         msg -- response to treat
         """
 
-        for h in self.hm.get_hooks("post"):
+        for h in self.hm.get_hooks("post", type(msg).__name__):
             if h.can_write(msg.to, msg.server) and h.match(msg):
                 res = h.run(msg)
 
