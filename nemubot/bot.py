@@ -98,19 +98,17 @@ class Bot(threading.Thread):
                     else:
                         res.append_message([str(h) for s,h in self.modules[msg.args[0]].__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
                 elif msg.args[0][0] == "!":
-                    for module in self.modules:
-                        for (s, h) in self.modules[module].__nemubot_context__.hooks:
-                            if s == "in_Command" and (h.name is not None or h.regexp is not None) and ((h.name is not None and msg.args[0][1:] == h.name) or (h.regexp is not None and re.match(h.regexp, msg.args[0][1:]))):
-                                if h.help_usage:
-                                    lp = ["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], (" " + k if k is not None else ""), h.help_usage[k]) for k in h.help_usage]
-                                    jp = h.keywords.help()
-                                    return res.append_message(lp + ([". Moreover, you can provides some optional parameters: "] + jp if len(jp) else []), title="Usage for command %s from module %s" % (msg.args[0], module))
-                                elif h.help:
-                                    return res.append_message("Command %s from module %s: %s" % (msg.args[0], module, h.help))
-                                else:
-                                    return res.append_message("Sorry, there is currently no help for the command %s. Feel free to make a pull request at https://github.com/nemunaire/nemubot/compare" % msg.args[0])
-                    else:
-                        res.append_message("Sorry, there is no command %s" % msg.args[0])
+                    from nemubot.message.command import Command
+                    for h in self.treater._in_hooks(Command(msg.args[0][1:])):
+                        if h.help_usage:
+                            lp = ["\x03\x02%s%s\x03\x02: %s" % (msg.args[0], (" " + k if k is not None else ""), h.help_usage[k]) for k in h.help_usage]
+                            jp = h.keywords.help()
+                            return res.append_message(lp + ([". Moreover, you can provides some optional parameters: "] + jp if len(jp) else []), title="Usage for command %s" % msg.args[0])
+                        elif h.help:
+                            return res.append_message("Command %s: %s" % (msg.args[0], h.help))
+                        else:
+                            return res.append_message("Sorry, there is currently no help for the command %s. Feel free to make a pull request at https://github.com/nemunaire/nemubot/compare" % msg.args[0])
+                    res.append_message("Sorry, there is no command %s" % msg.args[0])
                 else:
                     res.append_message("Sorry, there is no module named %s" % msg.args[0])
             else:
