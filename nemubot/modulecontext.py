@@ -45,8 +45,8 @@ class ModuleContext:
 
         # Define some callbacks
         if context is not None:
-            # Load module data
-            self.data = context.datastore.load(module_name)
+            def load_data():
+                return context.datastore.load(module_name)
 
             def add_hook(hook, *triggers):
                 assert isinstance(hook, AbstractHook), hook
@@ -76,8 +76,9 @@ class ModuleContext:
                     return False
 
         else:  # Used when using outside of nemubot
-            from nemubot.tools.xmlparser import module_state
-            self.data = module_state.ModuleState("nemubotstate")
+            def load_data():
+                from nemubot.tools.xmlparser import module_state
+                return module_state.ModuleState("nemubotstate")
 
             def add_hook(hook, *triggers):
                 assert isinstance(hook, AbstractHook), hook
@@ -98,6 +99,7 @@ class ModuleContext:
         def save():
             context.datastore.save(module_name, self.data)
 
+        self.load_data = load_data
         self.add_hook = add_hook
         self.del_hook = del_hook
         self.add_event = add_event
@@ -105,6 +107,13 @@ class ModuleContext:
         self.save = save
         self.send_response = send_response
         self.subtreat = subtreat
+
+
+    @property
+    def data(self):
+        if not hasattr(self, "_data"):
+            self._data = self.load_data()
+        return self._data
 
 
     def unload(self):
