@@ -33,7 +33,8 @@ def load(context):
 class WFAResults:
 
     def __init__(self, terms):
-        self.wfares = web.getXML(URL_API % quote(terms))
+        self.wfares = web.getXML(URL_API % quote(terms),
+                                 timeout=12)
 
 
     @property
