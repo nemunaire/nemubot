@@ -23,7 +23,7 @@ def default_reducer(url, data):
 def ycc_reducer(url, data):
     return "http://ycc.fr/%s" % default_reducer(url, data)
 
-def framalink_reducer(url, data):
+def lstu_reducer(url, data):
     json_data = json.loads(web.getURLContent(url, "lsturl=" + quote(data),
         header={"Content-Type": "application/x-www-form-urlencoded"}))
     if 'short' in json_data:
@@ -38,7 +38,9 @@ def framalink_reducer(url, data):
 PROVIDERS = {
     "tinyurl": (default_reducer, "http://tinyurl.com/api-create.php?url="),
     "ycc": (ycc_reducer, "http://ycc.fr/redirection/create/"),
-    "framalink": (framalink_reducer, "https://frama.link/a?format=json")
+    "framalink": (lstu_reducer, "https://frama.link/a?format=json"),
+    "huitre": (lstu_reducer, "https://huit.re/a?format=json"),
+    "lstu": (lstu_reducer, "https://lstu.fr/a?format=json"),
 }
 DEFAULT_PROVIDER = "framalink"
 
