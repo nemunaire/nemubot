@@ -14,44 +14,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class GenericNode:
+class ParsingNode:
 
-    def __init__(self, tag, **kwargs):
+    """Allow any kind of subtags, just keep parsed ones
+    """
+
+    def __init__(self, tag=None, **kwargs):
         self.tag = tag
         self.attrs = kwargs
         self.content = ""
         self.children = []
-        self._cur = None
-        self._deep_cur = 0
-
-
-    def startElement(self, name, attrs):
-        if self._cur is None:
-            self._cur = GenericNode(name, **attrs)
-            self._deep_cur = 0
-        else:
-            self._deep_cur += 1
-            self._cur.startElement(name, attrs)
-        return True
 
 
     def characters(self, content):
-        if self._cur is None:
-            self.content += content
-        else:
-            self._cur.characters(content)
+        self.content += content
 
 
-    def endElement(self, name):
-        if name is None:
-            return
-
-        if self._deep_cur:
-            self._deep_cur -= 1
-            self._cur.endElement(name)
-        else:
-            self.children.append(self._cur)
-            self._cur = None
+    def addChild(self, name, child):
+        self.children.append(child)
         return True
 
 
@@ -71,3 +51,44 @@ class GenericNode:
 
     def __contains__(self, item):
         return item in self.attrs
+
+
+class GenericNode(ParsingNode):
+
+    """Consider all subtags as dictionnary
+    """
+
+    def __init__(self, tag, **kwargs):
+        super().__init__(tag, **kwargs)
+        self._cur = None
+        self._deep_cur = 0
+
+
+    def startElement(self, name, attrs):
+        if self._cur is None:
+            self._cur = GenericNode(name, **attrs)
+            self._deep_cur = 0
+        else:
+            self._deep_cur += 1
+            self._cur.startElement(name, attrs)
+        return True
+
+
+    def characters(self, content):
+        if self._cur is None:
+            super().characters(content)
+        else:
+            self._cur.characters(content)
+
+
+    def endElement(self, name):
+        if name is None:
+            return
+
+        if self._deep_cur:
+            self._deep_cur -= 1
+            self._cur.endElement(name)
+        else:
+            self.children.append(self._cur)
+            self._cur = None
+        return True
