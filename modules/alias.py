@@ -267,7 +267,9 @@ def treat_alias(msg):
 def parseask(msg):
     if re.match(".*(register|set|cr[ée]{2}|new|nouvel(le)?) alias.*", msg.text) is not None:
         result = re.match(".*alias !?([^ ]+) ?(pour|for|=|:) ?(.+)$", msg.text)
-        if result.group(1) in context.data.getNode("aliases").index:
+        if result is None:
+            raise IMException("Something is wrong with your alias definition. Hint: spaces are not allowed.")
+        elif result.group(1) in context.data.getNode("aliases").index:
             raise IMException("this alias is already defined.")
         else:
             create_alias(result.group(1),
