@@ -18,8 +18,23 @@
 
 import re
 
+month_binding = {
+    "janvier": 1, "january": 1, "januar": 1,
+    "fevrier": 2, "février": 2, "february": 2,
+    "march": 3, "mars": 3,
+    "avril": 4, "april": 4,
+    "mai": 5, "may": 5, "maï": 5,
+    "juin": 6, "juni": 6, "junni": 6,
+    "juillet": 7, "jully": 7, "july": 7,
+    "aout": 8, "août": 8, "august": 8,
+    "septembre": 9, "september": 9,
+    "october": 10, "oktober": 10, "octobre": 10,
+    "november": 11, "novembre": 11,
+    "decembre": 12, "décembre": 12, "december": 12,
+}
+
 xtrdt = re.compile(r'''^.*? (?P<day>[0-9]{1,4}) .+?
-                            (?P<month>[0-9]{1,2}|janvier|january|fevrier|février|february|mars|march|avril|april|mai|maï|may|juin|juni|juillet|july|jully|august|aout|août|septembre|september|october|octobre|oktober|novembre|november|decembre|décembre|december)
+                            (?P<month>[0-9]{1,2}|"''' + "|".join(month_binding) + '''")
                             (?:.+?(?P<year>[0-9]{1,4}))? (?:[^0-9]+
                             (?:(?P<hour>[0-9]{1,2})[^0-9]*[h':]
                             (?:[^0-9]*(?P<minute>[0-9]{1,2})
@@ -33,30 +48,9 @@ def extractDate(msg):
     if result is not None:
         day = result.group("day")
         month = result.group("month")
-        if month == "janvier" or month == "january" or month == "januar":
-            month = 1
-        elif month == "fevrier" or month == "février" or month == "february":
-            month = 2
-        elif month == "mars" or month == "march":
-            month = 3
-        elif month == "avril" or month == "april":
-            month = 4
-        elif month == "mai" or month == "may" or month == "maï":
-            month = 5
-        elif month == "juin" or month == "juni" or month == "junni":
-            month = 6
-        elif month == "juillet" or month == "jully" or month == "july":
-            month = 7
-        elif month == "aout" or month == "août" or month == "august":
-            month = 8
-        elif month == "september" or month == "septembre":
-            month = 9
-        elif month == "october" or month == "october" or month == "oktober":
-            month = 10
-        elif month == "november" or month == "novembre":
-            month = 11
-        elif month == "december" or month == "decembre" or month == "décembre":
-            month = 12
+
+        if month in month_binding:
+            month = month_binding[month]
 
         year = result.group("year")
 
