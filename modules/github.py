@@ -21,16 +21,14 @@ def help_full():
 
 def info_repos(repo):
     return web.getJSON("https://api.github.com/search/repositories?q=%s" %
-                       quote(repo), timeout=10)
+                       quote(repo))
 
 
 def info_user(username):
-    user = web.getJSON("https://api.github.com/users/%s" % quote(username),
-                       timeout=10)
+    user = web.getJSON("https://api.github.com/users/%s" % quote(username))
 
     user["repos"] = web.getJSON("https://api.github.com/users/%s/"
-                                "repos?sort=updated" % quote(username),
-                                timeout=10)
+                                "repos?sort=updated" % quote(username))
 
     return user
 
