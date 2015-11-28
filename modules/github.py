@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Repositories, users or issues on GitHub"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 from urllib.parse import quote
@@ -9,15 +9,10 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
-
 from more import Response
 
 
-def help_full():
-    return ("!github /repo/: Display information about /repo/.\n"
-            "!github_user /user/: Display information about /user/.")
-
+# MODULE CORE #########################################################
 
 def info_repos(repo):
     return web.getJSON("https://api.github.com/search/repositories?q=%s" %
@@ -63,7 +58,13 @@ def info_commit(repo, commit=None):
                            quote(fullname))
 
 
-@hook.command("github")
+# MODULE INTERFACE ####################################################
+
+@hook.command("github",
+              help="Display information about some repositories",
+              help_usage={
+                  "REPO": "Display information about the repository REPO",
+              })
 def cmd_github(msg):
     if not len(msg.args):
         raise IMException("indicate a repository name to search")
@@ -91,7 +92,11 @@ def cmd_github(msg):
     return res
 
 
-@hook.command("github_user")
+@hook.command("github_user",
+              help="Display information about users",
+              help_usage={
+                  "USERNAME": "Display information about the user USERNAME",
+              })
 def cmd_github_user(msg):
     if not len(msg.args):
         raise IMException("indicate a user name to search")
@@ -124,7 +129,12 @@ def cmd_github_user(msg):
     return res
 
 
-@hook.command("github_issue")
+@hook.command("github_issue",
+              help="Display repository's issues",
+              help_usage={
+                  "REPO": "Display latest issues created on REPO",
+                  "REPO #ISSUE": "Display the issue number #ISSUE for REPO",
+              })
 def cmd_github_issue(msg):
     if not len(msg.args):
         raise IMException("indicate a repository to view its issues")
@@ -162,7 +172,12 @@ def cmd_github_issue(msg):
     return res
 
 
-@hook.command("github_commit")
+@hook.command("github_commit",
+              help="Display repository's commits",
+              help_usage={
+                  "REPO": "Display latest commits on REPO",
+                  "REPO COMMIT": "Display details for the COMMIT on REPO",
+              })
 def cmd_github_commit(msg):
     if not len(msg.args):
         raise IMException("indicate a repository to view its commits")
@@ -183,7 +198,7 @@ def cmd_github_commit(msg):
     commits = info_commit(repo, commit)
 
     if commits is None:
-        raise IMException("Repository not found")
+        raise IMException("Repository or commit not found")
 
     for commit in commits:
         res.append_message("Commit %s by %s on %s: %s" %
