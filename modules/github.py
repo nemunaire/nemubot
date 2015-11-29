@@ -28,6 +28,11 @@ def info_user(username):
     return user
 
 
+def user_keys(username):
+    keys = web.getURLContent("https://github.com/%s.keys" % quote(username))
+    return keys.split('\n')
+
+
 def info_issue(repo, issue=None):
     rp = info_repos(repo)
     if rp["items"]:
@@ -125,6 +130,23 @@ def cmd_github_user(msg):
                             kf))
     else:
         raise IMException("User not found")
+
+    return res
+
+
+@hook.command("github_user_keys",
+              help="Display user SSH keys",
+              help_usage={
+                  "USERNAME": "Show USERNAME's SSH keys",
+              })
+def cmd_github_user_keys(msg):
+    if not len(msg.args):
+        raise IMException("indicate a user name to search")
+
+    res = Response(channel=msg.channel, nomore="No more keys")
+
+    for k in user_keys(" ".join(msg.args)):
+        res.append_message(k)
 
     return res
 
