@@ -192,7 +192,9 @@ class Response:
                 msg += self.title + ": "
 
         elif self.elt > 0:
-            msg += "[…] "
+            msg += "[…]"
+            if self.messages[0][self.elt - 1] == ' ':
+                msg += " "
 
         elts = self.messages[0][self.elt:]
         if isinstance(elts, list):
