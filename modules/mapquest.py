@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Transform name location to GPS coordinates"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 from urllib.parse import quote
@@ -9,11 +9,14 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 4.0
-
 from more import Response
 
+# GLOBALS #############################################################
+
 URL_API = "http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%%s"
+
+
+# LOADING #############################################################
 
 def load(context):
     if not context.config or "apikey" not in context.config:
@@ -25,9 +28,7 @@ def load(context):
     URL_API = URL_API % context.config["apikey"].replace("%", "%%")
 
 
-def help_full():
-    return "!geocode /place/: get coordinate of /place/."
-
+# MODULE CORE #########################################################
 
 def geocode(location):
     obj = web.getJSON(URL_API % quote(location))
@@ -43,7 +44,13 @@ def where(loc):
                   "{adminArea1}".format(**loc)).strip()
 
 
-@hook.command("geocode")
+# MODULE INTERFACE ####################################################
+
+@hook.command("geocode",
+              help="Get GPS coordinates of a place",
+              help_usage={
+                  "PLACE": "Get GPS coordinates of PLACE"
+              })
 def cmd_geocode(msg):
     if not len(msg.args):
         raise IMException("indicate a name")
