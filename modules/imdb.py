@@ -1,6 +1,6 @@
-# coding=utf-8
-
 """Show many information about a movie or serie"""
+
+# PYTHON STUFFS #######################################################
 
 import re
 import urllib.parse
@@ -9,14 +9,10 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-nemubotversion = 3.4
-
 from more import Response
 
 
-def help_full():
-    return "Search a movie title with: !imdbs <approximative title> ; View movie details with !imdb <title>"
-
+# MODULE CORE #########################################################
 
 def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False):
     """Returns the information about the matching movie"""
@@ -68,9 +64,15 @@ def find_movies(title):
         raise IMException("An error occurs during movie search")
 
 
-@hook.command("imdb")
+# MODULE INTERFACE ####################################################
+
+@hook.command("imdb",
+              help="View movie/serie details, using OMDB",
+              help_usage={
+                  "TITLE": "Look for a movie titled TITLE",
+                  "IMDB_ID": "Look for the movie with the given IMDB_ID",
+              })
 def cmd_imdb(msg):
-    """View movie details with !imdb <title>"""
     if not len(msg.args):
         raise IMException("precise a movie/serie title!")
 
@@ -97,9 +99,12 @@ def cmd_imdb(msg):
     return res
 
 
-@hook.command("imdbs")
+@hook.command("imdbs",
+              help="Search a movie/serie by title",
+              help_usage={
+                  "TITLE": "Search a movie/serie by TITLE",
+              })
 def cmd_search(msg):
-    """!imdbs <approximative title> to search a movie title"""
     if not len(msg.args):
         raise IMException("precise a movie/serie title!")
 
