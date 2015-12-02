@@ -1,6 +1,6 @@
-# coding=utf-8
+"""Read manual pages on IRC"""
 
-"Read manual pages on IRC"
+# PYTHON STUFFS #######################################################
 
 import subprocess
 import re
@@ -8,18 +8,22 @@ import os
 
 from nemubot.hooks import hook
 
-nemubotversion = 3.4
-
 from more import Response
 
 
-def help_full():
-    return "!man [0-9] /what/: gives informations about /what/."
+# GLOBALS #############################################################
 
 RGXP_s = re.compile(b'\x1b\\[[0-9]+m')
 
 
-@hook.command("MAN")
+# MODULE INTERFACE ####################################################
+
+@hook.command("MAN",
+              help="Show man pages",
+              help_usage={
+                  "SUBJECT": "Display the default man page for SUBJECT",
+                  "SECTION SUBJECT": "Display the man page in SECTION for SUBJECT"
+              })
 def cmd_man(msg):
     args = ["man"]
     num = None
@@ -52,7 +56,11 @@ def cmd_man(msg):
     return res
 
 
-@hook.command("man")
+@hook.command("man",
+              help="Show man pages synopsis (in one line)",
+              help_usage={
+                  "SUBJECT": "Display man page synopsis for SUBJECT",
+              })
 def cmd_whatis(msg):
     args = ["whatis", " ".join(msg.args)]
 
