@@ -99,6 +99,10 @@ class ModuleContext:
         def save():
             context.datastore.save(module_name, self.data)
 
+        def subparse(orig, cnt):
+            if orig.server in context.servers:
+                return context.servers[orig.server].subparse(orig, cnt)
+
         self.load_data = load_data
         self.add_hook = add_hook
         self.del_hook = del_hook
@@ -107,6 +111,7 @@ class ModuleContext:
         self.save = save
         self.send_response = send_response
         self.subtreat = subtreat
+        self.subparse = subparse
 
 
     @property

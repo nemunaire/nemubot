@@ -268,3 +268,8 @@ class IRC(SocketServer):
         mes = msg.to_bot_message(self)
         if mes is not None:
             yield mes
+
+
+    def subparse(self, orig, cnt):
+        msg = IRCMessage(("@time=%s :%s!user@host.com PRIVMSG %s :%s" % (orig.date.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), orig.frm, ",".join(orig.to), cnt)).encode(self.encoding), self.encoding)
+        return msg.to_bot_message(self)
