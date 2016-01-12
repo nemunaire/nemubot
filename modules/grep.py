@@ -14,7 +14,7 @@ from more import Response
 
 # MODULE CORE #########################################################
 
-def grep(fltr, cmd, args, msg):
+def grep(fltr, cmd, args, msg, only=False):
     """Perform a grep like on known nemubot structures
 
     Arguments:
@@ -22,7 +22,10 @@ def grep(fltr, cmd, args, msg):
     cmd -- The subcommand to execute
     args -- subcommand arguments
     msg -- The original message
+    only -- like the --only-matching parameter of grep
     """
+
+    fltr = re.compile(fltr)
 
     for r in context.subtreat(Command(cmd,
                                       args,
@@ -33,16 +36,26 @@ def grep(fltr, cmd, args, msg):
             for i in range(len(r.messages) - 1, -1, -1):
                 if isinstance(r.messages[i], list):
                     for j in range(len(r.messages[i]) - 1, -1, -1):
-                        if not re.match(fltr, r.messages[i][j]):
+                        res = fltr.match(r.messages[i][j])
+                        if not res:
                             r.messages[i].pop(j)
+                        elif only:
+                            r.messages[i][j] = res.group(1) if fltr.groups else res.group(0)
                     if len(r.messages[i]) <= 0:
                         r.messages.pop(i)
-                elif isinstance(r.messages[i], str) and not re.match(fltr, r.messages[i]):
-                    r.messages.pop(i)
+                elif isinstance(r.messages[i], str):
+                    res = fltr.match(r.messages[i])
+                    if not res:
+                        r.messages.pop(i)
+                    elif only:
+                        r.messages[i] = res.group(1) if fltr.groups else res.group(0)
             yield r
 
         elif isinstance(r, Text):
-            if re.match(fltr, r.message):
+            res = fltr.match(r.message)
+            if res:
+                if only:
+                    r.message = res.group(1) if fltr.groups else res.group(0)
                 yield r
 
         else:
@@ -53,12 +66,18 @@ def grep(fltr, cmd, args, msg):
 
 @hook.command("grep",
               help="Display only lines from a subcommand matching the given pattern",
-              help_usage={"PTRN !SUBCMD": "Filter SUBCMD command using the pattern PTRN"})
+              help_usage={"PTRN !SUBCMD": "Filter SUBCMD command using the pattern PTRN"},
+              keywords={
+                  "only": "Print only the matched parts of a matching line",
+              })
 def cmd_grep(msg):
     if len(msg.args) < 2:
         raise IMException("Please provide a filter and a command")
 
-    return [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*" + msg.args[0] + ".*",
+    only = "only" in msg.kwargs
+
+    return [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
                             msg.args[1][1:] if msg.args[1][0] == "!" else msg.args[1],
                             msg.args[2:],
-                            msg)]
+                            msg,
+                            only=only)]
