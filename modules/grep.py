@@ -76,8 +76,13 @@ def cmd_grep(msg):
 
     only = "only" in msg.kwargs
 
-    return [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
-                            msg.args[1][1:] if msg.args[1][0] == "!" else msg.args[1],
-                            msg.args[2:],
-                            msg,
-                            only=only)]
+    l = [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
+                         msg.args[1][1:] if msg.args[1][0] == "!" else msg.args[1],
+                         msg.args[2:],
+                         msg,
+                         only=only) if m is not None]
+
+    if len(l) <= 0:
+        raise IMException("Pattern not found in output")
+
+    return l
