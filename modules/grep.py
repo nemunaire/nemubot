@@ -14,7 +14,7 @@ from more import Response
 
 # MODULE CORE #########################################################
 
-def grep(fltr, cmd, args, msg, only=False):
+def grep(fltr, cmd, args, msg, icase=False, only=False):
     """Perform a grep like on known nemubot structures
 
     Arguments:
@@ -22,10 +22,11 @@ def grep(fltr, cmd, args, msg, only=False):
     cmd -- The subcommand to execute
     args -- subcommand arguments
     msg -- The original message
+    icase -- like the --ignore-case parameter of grep
     only -- like the --only-matching parameter of grep
     """
 
-    fltr = re.compile(fltr)
+    fltr = re.compile(fltr, re.I if icase else 0)
 
     for r in context.subtreat(Command(cmd,
                                       args,
@@ -68,6 +69,7 @@ def grep(fltr, cmd, args, msg, only=False):
               help="Display only lines from a subcommand matching the given pattern",
               help_usage={"PTRN !SUBCMD": "Filter SUBCMD command using the pattern PTRN"},
               keywords={
+                  "nocase": "Perform case-insensitive matching",
                   "only": "Print only the matched parts of a matching line",
               })
 def cmd_grep(msg):
@@ -80,6 +82,7 @@ def cmd_grep(msg):
                          msg.args[1][1:] if msg.args[1][0] == "!" else msg.args[1],
                          msg.args[2:],
                          msg,
+                         icase="nocase" in msg.kwargs,
                          only=only) if m is not None]
 
     if len(l) <= 0:
