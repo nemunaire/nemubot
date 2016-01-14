@@ -14,13 +14,12 @@ from more import Response
 
 # MODULE CORE #########################################################
 
-def grep(fltr, cmd, args, msg, icase=False, only=False):
+def grep(fltr, cmd, msg, icase=False, only=False):
     """Perform a grep like on known nemubot structures
 
     Arguments:
     fltr -- The filter regexp
     cmd -- The subcommand to execute
-    args -- subcommand arguments
     msg -- The original message
     icase -- like the --ignore-case parameter of grep
     only -- like the --only-matching parameter of grep
@@ -28,11 +27,7 @@ def grep(fltr, cmd, args, msg, icase=False, only=False):
 
     fltr = re.compile(fltr, re.I if icase else 0)
 
-    for r in context.subtreat(Command(cmd,
-                                      args,
-                                      to_response=msg.to_response,
-                                      frm=msg.frm,
-                                      server=msg.server)):
+    for r in context.subtreat(context.subparse(msg, cmd)):
         if isinstance(r, Response):
             for i in range(len(r.messages) - 1, -1, -1):
                 if isinstance(r.messages[i], list):
@@ -79,8 +74,7 @@ def cmd_grep(msg):
     only = "only" in msg.kwargs
 
     l = [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
-                         msg.args[1][1:] if msg.args[1][0] == "!" else msg.args[1],
-                         msg.args[2:],
+                         " ".join(msg.args[1:]),
                          msg,
                          icase="nocase" in msg.kwargs,
                          only=only) if m is not None]
