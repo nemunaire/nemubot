@@ -206,19 +206,31 @@ def cmd_listalias(msg):
 
 
 @hook.command("alias",
-      help="Display the replacement command for a given alias")
+              help="Display or define the replacement command for a given alias",
+              help_usage={
+                  "ALIAS": "Extends the given alias",
+                  "ALIAS COMMAND [ARGS ...]": "Create a new alias named ALIAS as replacement to the given COMMAND and ARGS",
+              })
 def cmd_alias(msg):
     if not len(msg.args):
         raise IMException("!alias takes as argument an alias to extend.")
-    res = list()
-    for alias in msg.args:
+
+    elif len(msg.args) == 1:
+        alias = msg.args[0]
         if alias[0] == "!":
             alias = alias[1:]
         if alias in context.data.getNode("aliases").index:
-            res.append("!%s correspond to %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]))
+            return Response("!%s correspond to %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]), channel=msg.channel, nick=msg.nick)
         else:
-            res.append("!%s is not an alias" % alias)
-    return Response(res, channel=msg.channel, nick=msg.nick)
+            return Response("!%s is not an alias" % alias, channel=msg.channel, nick=msg.nick)
+
+    else:
+        create_alias(msg.args[0],
+                     " ".join(msg.args[1:]),
+                     channel=msg.channel,
+                     creator=msg.nick)
+        return Response("New alias %s successfully registered." %
+                        msg.args[0], channel=msg.channel)
 
 
 @hook.command("unalias",
@@ -261,22 +273,3 @@ def treat_alias(msg):
             return [msg, nmsg]
 
     return msg
-
-
-@hook.ask()
-def parseask(msg):
-    if re.match(".*(register|set|cr[ée]{2}|new|nouvel(le)?) alias.*", msg.text) is not None:
-        result = re.match(".*alias !?([^ ]+) ?(pour|for|=|:) ?(.+)$", msg.text)
-        if result is None:
-            raise IMException("Something is wrong with your alias definition. Hint: spaces are not allowed.")
-        elif result.group(1) in context.data.getNode("aliases").index:
-            raise IMException("this alias is already defined.")
-        else:
-            create_alias(result.group(1),
-                         result.group(3),
-                         channel=msg.channel,
-                         creator=msg.nick)
-            res = Response("New alias %s successfully registered." %
-                           result.group(1), channel=msg.channel)
-            return res
-    return None
