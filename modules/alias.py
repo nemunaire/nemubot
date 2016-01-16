@@ -215,22 +215,24 @@ def cmd_alias(msg):
     if not len(msg.args):
         raise IMException("!alias takes as argument an alias to extend.")
 
-    elif len(msg.args) == 1:
-        alias = msg.args[0]
-        if alias[0] == "!":
-            alias = alias[1:]
-        if alias in context.data.getNode("aliases").index:
-            return Response("!%s correspond to %s" % (alias, context.data.getNode("aliases").index[alias]["origin"]), channel=msg.channel, nick=msg.nick)
-        else:
-            return Response("!%s is not an alias" % alias, channel=msg.channel, nick=msg.nick)
+    alias = context.subparse(msg, msg.args[0])
+    if alias is None or not isinstance(alias, Command):
+        raise IMException("%s is not a valid alias" % msg.args[0])
 
-    else:
-        create_alias(msg.args[0],
+    if alias.cmd in context.data.getNode("aliases").index:
+        return Response("%s corresponds to %s" % (alias.cmd, context.data.getNode("aliases").index[alias.cmd]["origin"]),
+                        channel=msg.channel, nick=msg.nick)
+
+    elif len(msg.args) > 1:
+        create_alias(alias.cmd,
                      " ".join(msg.args[1:]),
                      channel=msg.channel,
                      creator=msg.nick)
-        return Response("New alias %s successfully registered." %
-                        msg.args[0], channel=msg.channel)
+        return Response("New alias %s successfully registered." % alias.cmd,
+                        channel=msg.channel)
+
+    else:
+        raise IMException("%s is not an alias" % msg.args[0])
 
 
 @hook.command("unalias",
@@ -257,19 +259,15 @@ def cmd_unalias(msg):
 @hook.add(["pre","Command"])
 def treat_alias(msg):
     if msg.cmd in context.data.getNode("aliases").index:
-        txt = context.data.getNode("aliases").index[msg.cmd]["origin"]
-        # TODO: for legacy compatibility
-        if txt[0] == "!":
-            txt = txt[1:]
-        try:
-            args = shlex.split(txt)
-        except ValueError:
-            args = txt.split(' ')
-        nmsg = Command(args[0], args=replace_variables(args[1:], msg) + msg.args, kwargs=msg.kwargs, **msg.export_args())
+        origin = context.data.getNode("aliases").index[msg.cmd]["origin"]
+        rpl_cmd = context.subparse(msg, origin)
+        rpl_cmd.args = replace_variables(rpl_cmd.args, msg)
+        rpl_cmd.args += msg.args
+        rpl_cmd.kwargs.update(msg.kwargs)
 
         # Avoid infinite recursion
-        if msg.cmd != nmsg.cmd:
+        if msg.cmd != rpl_cmd.cmd:
             # Also return origin message, if it can be treated as well
-            return [msg, nmsg]
+            return [msg, rpl_cmd]
 
     return msg
