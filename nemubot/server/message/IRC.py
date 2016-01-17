@@ -180,7 +180,7 @@ class IRC(Abstract):
                 for i in range(len(args) - 1, 0, -1):
                     arg = args[i]
                     if len(arg) > 2:
-                        if arg[0:1] == '\\@':
+                        if arg[0:2] == '\\@':
                             args[i] = arg[1:]
                         elif arg[0] == '@':
                             arsp = arg[1:].split("=", 1)
