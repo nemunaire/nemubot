@@ -4,12 +4,12 @@
 
 import re
 from datetime import datetime, timezone
-import shlex
 
 from nemubot import context
 from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.message import Command
+from nemubot.tools.human import guess
 from nemubot.tools.xmlparser.node import ModuleState
 
 from more import Response
@@ -232,7 +232,8 @@ def cmd_alias(msg):
                         channel=msg.channel)
 
     else:
-        raise IMException("%s is not an alias" % msg.args[0])
+        wym = guess(alias.cmd, context.data.getNode("aliases").index)
+        raise IMException(msg.args[0] + " is not an alias." + (" Would you mean: %s?" % ", ".join(wym)) if len(wym) else "")
 
 
 @hook.command("unalias",
