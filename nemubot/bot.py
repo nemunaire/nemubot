@@ -380,11 +380,9 @@ class Bot(threading.Thread):
             self.event_timer.cancel()
 
         if len(self.events):
-            logger.debug("Update timer: next event in %d seconds",
-                         self.events[0].time_left.seconds)
-            self.event_timer = threading.Timer(
-                self.events[0].time_left.seconds + self.events[0].time_left.microseconds / 1000000 if datetime.now(timezone.utc) < self.events[0].current else 0,
-                self._end_event_timer)
+            remaining = self.events[0].time_left.seconds + self.events[0].time_left.microseconds / 1000000
+            logger.debug("Update timer: next event in %d seconds", remaining)
+            self.event_timer = threading.Timer(remaining if remaining > 0 else 0, self._end_event_timer)
             self.event_timer.start()
 
         else:
