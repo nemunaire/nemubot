@@ -26,6 +26,27 @@ class NoKeyword(Abstract):
         return super().check(mkw)
 
 
+class AnyKeyword(Abstract):
+
+    def __init__(self, h):
+        """Class that accepts any passed keywords
+
+        Arguments:
+        h -- Help string
+        """
+
+        super().__init__()
+        self.h = h
+
+
+    def check(self, mkw):
+        return super().check(mkw)
+
+
+    def help(self):
+        return self.h
+
+
 def reload():
     import imp
 
