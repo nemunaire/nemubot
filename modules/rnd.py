@@ -8,7 +8,6 @@ import shlex
 from nemubot import context
 from nemubot.exception import IMException
 from nemubot.hooks import hook
-from nemubot.message import Command
 
 from more import Response
 
@@ -32,8 +31,24 @@ def cmd_choicecmd(msg):
 
     choice = shlex.split(random.choice(msg.args))
 
-    return [x for x in context.subtreat(Command(choice[0][1:],
-                                                choice[1:],
-                                                to_response=msg.to_response,
-                                                frm=msg.frm,
-                                                server=msg.server))]
+    return [x for x in context.subtreat(context.subparse(msg, choice))]
+
+
+@hook.command("choiceres")
+def cmd_choiceres(msg):
+    if not len(msg.args):
+        raise IMException("indicate some command to pick a message from!")
+
+    rl = [x for x in context.subtreat(context.subparse(msg, " ".join(msg.args)))]
+    if len(rl) <= 0:
+        return rl
+
+    r = random.choice(rl)
+
+    if isinstance(r, Response):
+        for i in range(len(r.messages) - 1, -1, -1):
+            if isinstance(r.messages[i], list):
+                r.messages = [ random.choice(random.choice(r.messages)) ]
+            elif isinstance(r.messages[i], str):
+                r.messages = [ random.choice(r.messages) ]
+    return r
