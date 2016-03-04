@@ -262,9 +262,12 @@ def treat_alias(msg):
     if msg.cmd in context.data.getNode("aliases").index:
         origin = context.data.getNode("aliases").index[msg.cmd]["origin"]
         rpl_cmd = context.subparse(msg, origin)
-        rpl_cmd.args = replace_variables(rpl_cmd.args, msg)
-        rpl_cmd.args += msg.args
-        rpl_cmd.kwargs.update(msg.kwargs)
+        if isinstance(rpl_cmd, Command):
+            rpl_cmd.args = replace_variables(rpl_cmd.args, msg)
+            rpl_cmd.args += msg.args
+            rpl_cmd.kwargs.update(msg.kwargs)
+        elif len(msg.args) or len(msg.kwargs):
+            raise IMException("This kind of alias doesn't take any argument (haven't you forgotten the '!'?).")
 
         # Avoid infinite recursion
         if msg.cmd != rpl_cmd.cmd:
