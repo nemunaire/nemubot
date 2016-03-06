@@ -43,7 +43,9 @@ class Bot(threading.Thread):
 
         threading.Thread.__init__(self)
 
-        logger.info("Initiate nemubot v%s", __version__)
+        logger.info("Initiate nemubot v%s (running on Python %s.%s.%s)",
+                    __version__,
+                    sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
 
         self.verbosity = verbosity
         self.stop = None
