@@ -35,7 +35,7 @@ class Socket(AbstractVisitor):
         others = [to for to in msg.to if to != msg.designated]
 
         # Avoid nick starting message when discussing on user channel
-        if len(others) != len(msg.to):
+        if len(others) == 0 or len(others) != len(msg.to):
             res = Text(msg.message,
                        server=msg.server, date=msg.date,
                        to=msg.to, frm=msg.frm)
