@@ -44,7 +44,7 @@ class MessageConsumer:
                 msgs.append(msg)
         except:
             logger.exception("Error occurred during the processing of the %s: "
-                             "%s", type(self.msgs[0]).__name__, self.msgs[0])
+                             "%s", type(self.orig).__name__, self.orig)
 
         if len(msgs) <= 0:
             return
@@ -55,6 +55,8 @@ class MessageConsumer:
         if hasattr(msg, "frm_owner"):
             msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
 
+        from nemubot.server.abstract import AbstractServer
+
         # Treat the message
         for msg in msgs:
             for res in context.treater.treat_msg(msg):
@@ -62,15 +64,19 @@ class MessageConsumer:
                 to_server = None
                 if isinstance(res, str):
                     to_server = self.srv
+                elif not hasattr(res, "server"):
+                    logger.error("No server defined for response of type %s: %s", type(res).__name__, res)
+                    continue
                 elif res.server is None:
                     to_server = self.srv
                     res.server = self.srv.id
                 elif isinstance(res.server, str) and res.server in context.servers:
                     to_server = context.servers[res.server]
+                else:
+                    to_server = res.server
 
-                if to_server is None:
-                    logger.error("The server defined in this response doesn't "
-                                 "exist: %s", res.server)
+                if to_server is None or not hasattr(to_server, "send_response") or not callable(to_server.send_response):
+                    logger.error("The server defined in this response doesn't exist: %s", res.server)
                     continue
 
                 # Sent the message only if treat_post authorize it
