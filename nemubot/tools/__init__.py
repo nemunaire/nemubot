@@ -13,29 +13,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-def reload():
-    import imp
-
-    import nemubot.tools.config
-    imp.reload(nemubot.tools.config)
-
-    import nemubot.tools.countdown
-    imp.reload(nemubot.tools.countdown)
-
-    import nemubot.tools.feed
-    imp.reload(nemubot.tools.feed)
-
-    import nemubot.tools.date
-    imp.reload(nemubot.tools.date)
-
-    import nemubot.tools.human
-    imp.reload(nemubot.tools.human)
-
-    import nemubot.tools.web
-    imp.reload(nemubot.tools.web)
-
-    import nemubot.tools.xmlparser
-    imp.reload(nemubot.tools.xmlparser)
-    import nemubot.tools.xmlparser.node
-    imp.reload(nemubot.tools.xmlparser.node)

@@ -158,23 +158,9 @@ def main():
 
     def sighuphandler(signum, frame):
         """On SIGHUP, perform a deep reload"""
-        import imp
-        nonlocal nemubot, context, module_finder
+        nonlocal context
 
         logger.debug("SIGHUP receive, iniate reload procedure...")
-
-        # Reload nemubot Python modules
-        imp.reload(nemubot)
-        nemubot.reload()
-
-        # Hotswap context
-        import nemubot.bot
-        context = nemubot.bot.hotswap(context)
-
-        # Reload ModuleFinder
-        sys.meta_path.remove(module_finder)
-        module_finder = ModuleFinder(context.modules_paths, context.add_module)
-        sys.meta_path.append(module_finder)
 
         # Reload configuration file
         for path in args.files:

@@ -13,12 +13,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-def reload():
-    import imp
-
-    import nemubot.message.printer.IRC
-    imp.reload(nemubot.message.printer.IRC)
-
-    import nemubot.message.printer.socket
-    imp.reload(nemubot.message.printer.socket)

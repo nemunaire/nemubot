@@ -32,10 +32,3 @@ class IMException(Exception):
             from nemubot.message import Text
             return Text(*self.args,
                         server=msg.server, to=msg.to_response)
-
-
-def reload():
-    import imp
-
-    import nemubot.exception.Keyword
-    imp.reload(nemubot.exception.printer.IRC)

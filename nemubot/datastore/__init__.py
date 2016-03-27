@@ -16,16 +16,3 @@
 
 from nemubot.datastore.abstract import Abstract
 from nemubot.datastore.xml import XML
-
-
-def reload():
-    global Abstract, XML
-    import imp
-
-    import nemubot.datastore.abstract
-    imp.reload(nemubot.datastore.abstract)
-    Abstract = nemubot.datastore.abstract.Abstract
-
-    import nemubot.datastore.xml
-    imp.reload(nemubot.datastore.xml)
-    XML = nemubot.datastore.xml.XML

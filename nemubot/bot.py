@@ -564,22 +564,3 @@ class Bot(threading.Thread):
                     del store[hook.name]
             elif isinstance(store, list):
                 store.remove(hook)
-
-
-def hotswap(bak):
-    bak.stop = True
-    if bak.event_timer is not None:
-        bak.event_timer.cancel()
-
-    # Unload modules
-    for mod in [k for k in bak.modules.keys()]:
-        bak.unload_module(mod)
-
-    # Save datastore
-    bak.datastore.close()
-
-    new = Bot(str(bak.ip), bak.modules_paths, bak.datastore)
-    new.servers = bak.servers
-
-    new._update_event_timer()
-    return new

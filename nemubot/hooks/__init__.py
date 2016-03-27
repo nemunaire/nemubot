@@ -49,23 +49,3 @@ class hook:
 
     def pre(*args, store=["pre"], **kwargs):
         return hook._add(store, Abstract, *args, **kwargs)
-
-
-def reload():
-    import imp
-
-    import nemubot.hooks.abstract
-    imp.reload(nemubot.hooks.abstract)
-
-    import nemubot.hooks.command
-    imp.reload(nemubot.hooks.command)
-
-    import nemubot.hooks.message
-    imp.reload(nemubot.hooks.message)
-
-    import nemubot.hooks.keywords
-    imp.reload(nemubot.hooks.keywords)
-    nemubot.hooks.keywords.reload()
-
-    import nemubot.hooks.manager
-    imp.reload(nemubot.hooks.manager)

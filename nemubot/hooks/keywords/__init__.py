@@ -45,13 +45,3 @@ class AnyKeyword(Abstract):
 
     def help(self):
         return self.h
-
-
-def reload():
-    import imp
-
-    import nemubot.hooks.keywords.abstract
-    imp.reload(nemubot.hooks.keywords.abstract)
-
-    import nemubot.hooks.keywords.dict
-    imp.reload(nemubot.hooks.keywords.dict)

@@ -19,27 +19,3 @@ from nemubot.message.text import Text
 from nemubot.message.directask import DirectAsk
 from nemubot.message.command import Command
 from nemubot.message.command import OwnerCommand
-
-
-def reload():
-    global Abstract, Text, DirectAsk, Command, OwnerCommand
-    import imp
-
-    import nemubot.message.abstract
-    imp.reload(nemubot.message.abstract)
-    Abstract = nemubot.message.abstract.Abstract
-    imp.reload(nemubot.message.text)
-    Text = nemubot.message.text.Text
-    imp.reload(nemubot.message.directask)
-    DirectAsk = nemubot.message.directask.DirectAsk
-    imp.reload(nemubot.message.command)
-    Command = nemubot.message.command.Command
-    OwnerCommand = nemubot.message.command.OwnerCommand
-
-    import nemubot.message.visitor
-    imp.reload(nemubot.message.visitor)
-
-    import nemubot.message.printer
-    imp.reload(nemubot.message.printer)
-
-    nemubot.message.printer.reload()

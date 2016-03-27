@@ -68,21 +68,3 @@ def factory(uri, **init_args):
         return IRCServer(**args)
     else:
         return None
-
-
-def reload():
-    import imp
-
-    import nemubot.server.abstract
-    imp.reload(nemubot.server.abstract)
-
-    import nemubot.server.socket
-    imp.reload(nemubot.server.socket)
-
-    import nemubot.server.IRC
-    imp.reload(nemubot.server.IRC)
-
-    import nemubot.server.message
-    imp.reload(nemubot.server.message)
-
-    nemubot.server.message.reload()

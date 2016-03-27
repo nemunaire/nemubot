@@ -24,24 +24,3 @@ from nemubot.config.include import Include
 from nemubot.config.module import Module
 from nemubot.config.nemubot import Nemubot
 from nemubot.config.server import Server
-
-def reload():
-    global Include, Module, Nemubot, Server
-
-    import imp
-
-    import nemubot.config.include
-    imp.reload(nemubot.config.include)
-    Include = nemubot.config.include.Include
-
-    import nemubot.config.module
-    imp.reload(nemubot.config.module)
-    Module = nemubot.config.module.Module
-
-    import nemubot.config.nemubot
-    imp.reload(nemubot.config.nemubot)
-    Nemubot = nemubot.config.nemubot.Nemubot
-
-    import nemubot.config.server
-    imp.reload(nemubot.config.server)
-    Server = nemubot.config.server.Server
