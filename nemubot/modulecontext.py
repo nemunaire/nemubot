@@ -26,15 +26,14 @@ class _ModuleContext:
 
         self.hooks = list()
         self.events = list()
+        self.extendtags = dict()
         self.debug = False
 
         from nemubot.config.module import Module
         self.config = Module(self.module_name)
 
-
     def load_data(self):
-        from nemubot.tools.xmlparser import module_state
-        return module_state.ModuleState("nemubotstate")
+        return None
 
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
@@ -64,7 +63,9 @@ class _ModuleContext:
        self.module.logger.info("Send response: %s", res)
 
     def save(self):
-        self.context.datastore.save(self.module_name, self.data)
+        # Don't save if no data has been access
+        if hasattr(self, "_data"):
+            context.datastore.save(self.module_name, self.data)
 
     def subparse(self, orig, cnt):
         if orig.server in self.context.servers:
@@ -75,6 +76,21 @@ class _ModuleContext:
         if not hasattr(self, "_data"):
             self._data = self.load_data()
         return self._data
+
+    @data.setter
+    def data(self, value):
+        assert value is not None
+
+        self._data = value
+
+
+    def register_tags(self, **tags):
+        self.extendtags.update(tags)
+
+
+    def unregister_tags(self, *tags):
+        for t in tags:
+            del self.extendtags[t]
 
 
     def unload(self):
@@ -112,7 +128,7 @@ class ModuleContext(_ModuleContext):
 
 
     def load_data(self):
-        return self.context.datastore.load(self.module_name)
+        return self.context.datastore.load(self.module_name, extendsTags=self.extendtags)
 
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook

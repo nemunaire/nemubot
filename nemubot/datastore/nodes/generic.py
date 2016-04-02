@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from nemubot.datastore.nodes.serializable import Serializable
+
+
 class ParsingNode:
 
     """Allow any kind of subtags, just keep parsed ones
@@ -51,6 +54,47 @@ class ParsingNode:
 
     def __contains__(self, item):
         return item in self.attrs
+
+
+    def serialize_node(node, **def_kwargs):
+        """Serialize any node or basic data to a ParsingNode instance"""
+
+        if isinstance(node, Serializable):
+            node = node.serialize()
+
+        if isinstance(node, str):
+            from nemubot.datastore.nodes.python import StringNode
+            pn = StringNode(**def_kwargs)
+            pn.value = node
+            return pn
+
+        elif isinstance(node, int):
+            from nemubot.datastore.nodes.python import IntNode
+            pn = IntNode(**def_kwargs)
+            pn.value = node
+            return pn
+
+        elif isinstance(node, float):
+            from nemubot.datastore.nodes.python import FloatNode
+            pn = FloatNode(**def_kwargs)
+            pn.value = node
+            return pn
+
+        elif isinstance(node, list):
+            from nemubot.datastore.nodes.basic import ListNode
+            pn = ListNode(**def_kwargs)
+            pn.items = node
+            return pn.serialize()
+
+        elif isinstance(node, dict):
+            from nemubot.datastore.nodes.basic import DictNode
+            pn = DictNode(**def_kwargs)
+            pn.items = node
+            return pn.serialize()
+
+        else:
+            assert isinstance(node, ParsingNode)
+            return node
 
 
 class GenericNode(ParsingNode):

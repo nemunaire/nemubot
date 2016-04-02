@@ -14,13 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.config import get_boolean
-from nemubot.datastore.nodes.generic import GenericNode
 
+class Serializable:
 
-class Module(GenericNode):
-
-    def __init__(self, name, autoload=True, **kwargs):
-        super().__init__(None, **kwargs)
-        self.name = name
-        self.autoload = get_boolean(autoload)
+    def serialize(self):
+        # Implementations of this function should return ParsingNode items
+        return NotImplemented

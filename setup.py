@@ -63,6 +63,7 @@ setup(
         'nemubot',
         'nemubot.config',
         'nemubot.datastore',
+        'nemubot.datastore.nodes',
         'nemubot.event',
         'nemubot.exception',
         'nemubot.hooks',

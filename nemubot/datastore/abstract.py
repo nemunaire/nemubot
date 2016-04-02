@@ -23,8 +23,7 @@ class Abstract:
         """Initialize a new empty storage tree
         """
 
-        from nemubot.tools.xmlparser import module_state
-        return module_state.ModuleState("nemubotstate")
+        return None
 
     def open(self):
         return

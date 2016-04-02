@@ -14,10 +14,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class ListNode:
+from nemubot.datastore.nodes.serializable import Serializable
+
+
+class ListNode(Serializable):
 
     """XML node representing a Python dictionnnary
     """
+
+    serializetag = "list"
 
     def __init__(self, **kwargs):
         self.items = list()
@@ -26,6 +31,9 @@ class ListNode:
     def addChild(self, name, child):
         self.items.append(child)
         return True
+
+    def parsedForm(self):
+        return self.items
 
 
     def __len__(self):
@@ -44,10 +52,20 @@ class ListNode:
         return self.items.__repr__()
 
 
-class DictNode:
+    def serialize(self):
+        from nemubot.datastore.nodes.generic import ParsingNode
+        node = ParsingNode(tag=self.serializetag)
+        for i in self.items:
+            node.children.append(ParsingNode.serialize_node(i))
+        return node
+
+
+class DictNode(Serializable):
 
     """XML node representing a Python dictionnnary
     """
+
+    serializetag = "dict"
 
     def __init__(self, **kwargs):
         self.items = dict()
@@ -56,43 +74,19 @@ class DictNode:
 
     def startElement(self, name, attrs):
         if self._cur is None and "key" in attrs:
-            self._cur = (attrs["key"], "")
-            return True
+            self._cur = attrs["key"]
         return False
-
-
-    def characters(self, content):
-        if self._cur is not None:
-            key, cnt = self._cur
-            if isinstance(cnt, str):
-                cnt += content
-                self._cur = key, cnt
-
-
-    def endElement(self, name):
-        if name is None or self._cur is None:
-            return
-
-        key, cnt = self._cur
-        if isinstance(cnt, list) and len(cnt) == 1:
-            self.items[key] = cnt
-        else:
-            self.items[key] = cnt
-
-        self._cur = None
-        return True
-
 
     def addChild(self, name, child):
         if self._cur is None:
             return False
 
-        key, cnt = self._cur
-        if not isinstance(cnt, list):
-            cnt = []
-        cnt.append(child)
-        self._cur = key, cnt
+        self.items[self._cur] = child
+        self._cur = None
         return True
+
+    def parsedForm(self):
+        return self.items
 
 
     def __getitem__(self, item):
@@ -106,3 +100,13 @@ class DictNode:
 
     def __repr__(self):
         return self.items.__repr__()
+
+
+    def serialize(self):
+        from nemubot.datastore.nodes.generic import ParsingNode
+        node = ParsingNode(tag=self.serializetag)
+        for k in self.items:
+            chld = ParsingNode.serialize_node(self.items[k])
+            chld.attrs["key"] = k
+            node.children.append(chld)
+        return node

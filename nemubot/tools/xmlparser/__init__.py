@@ -51,11 +51,13 @@ class XMLParser:
     def __init__(self, knodes):
         self.knodes = knodes
 
+    def _reset(self):
         self.stack = list()
         self.child = 0
 
 
     def parse_file(self, path):
+        self._reset()
         p = xml.parsers.expat.ParserCreate()
 
         p.StartElementHandler = self.startElement
@@ -69,6 +71,7 @@ class XMLParser:
 
 
     def parse_string(self, s):
+        self._reset()
         p = xml.parsers.expat.ParserCreate()
 
         p.StartElementHandler = self.startElement
@@ -126,10 +129,13 @@ class XMLParser:
         if hasattr(self.current, "endElement"):
             self.current.endElement(None)
 
+        if hasattr(self.current, "parsedForm") and callable(self.current.parsedForm):
+            self.stack[-1] = self.current.parsedForm()
+
         # Don't remove root
         if len(self.stack) > 1:
             last = self.stack.pop()
-            if hasattr(self.current, "addChild"):
+            if hasattr(self.current, "addChild") and callable(self.current.addChild):
                 if self.current.addChild(name, last):
                     return
             raise TypeError(name + " tag not expected in " + self.display_stack())
