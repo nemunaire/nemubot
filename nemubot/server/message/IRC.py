@@ -175,20 +175,23 @@ class IRC(Abstract):
                 except ValueError:
                     args = text.split(' ')
 
-                # Extract explicit named arguments: @key=value or just @key
+                # Extract explicit named arguments: @key=value or just @key, only at begening
                 kwargs = {}
-                for i in range(len(args) - 1, 0, -1):
-                    arg = args[i]
+                while len(args) > 1:
+                    arg = args[1]
                     if len(arg) > 2:
                         if arg[0:2] == '\\@':
-                            args[i] = arg[1:]
+                            args[1] = arg[1:]
                         elif arg[0] == '@':
                             arsp = arg[1:].split("=", 1)
                             if len(arsp) == 2:
                                 kwargs[arsp[0]] = arsp[1]
                             else:
                                 kwargs[arg[1:]] = None
-                            args.pop(i)
+                            args.pop(1)
+                            continue
+                    # Futher argument are considered as normal argument (this helps for subcommand treatment)
+                    break
 
                 return message.Command(cmd=args[0],
                                        args=args[1:],
