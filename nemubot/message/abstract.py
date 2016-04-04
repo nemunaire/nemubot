@@ -16,10 +16,15 @@
 
 from datetime import datetime, timezone
 
+from nemubot.datastore.nodes import Serializable
 
-class Abstract:
+
+class Abstract(Serializable):
 
     """This class represents an abstract message"""
+
+    serializetag = "nemubotAMessage"
+
 
     def __init__(self, server=None, date=None, to=None, to_response=None, frm=None, frm_owner=False):
         """Initialize an abstract message
@@ -87,3 +92,8 @@ class Abstract:
                 del ret[w]
 
         return ret
+
+
+    def serialize(self):
+        from nemubot.datastore.nodes import ParsingNode
+        return ParsingNode(tag=Abstract.serializetag, **self.export_args())

@@ -120,6 +120,7 @@ class XML(Abstract):
             from nemubot.tools.xmlparser import XMLParser
             from nemubot.datastore.nodes import basic as basicNodes
             from nemubot.datastore.nodes import python as pythonNodes
+            from nemubot.message.command import Command
 
             d = {
                 basicNodes.ListNode.serializetag: basicNodes.ListNode,
@@ -127,6 +128,7 @@ class XML(Abstract):
                 pythonNodes.IntNode.serializetag: pythonNodes.IntNode,
                 pythonNodes.FloatNode.serializetag: pythonNodes.FloatNode,
                 pythonNodes.StringNode.serializetag: pythonNodes.StringNode,
+                Command.serializetag: Command,
             }
             d.update(extendsTags)
 
