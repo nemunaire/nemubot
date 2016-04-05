@@ -70,6 +70,14 @@ class Abstract(Serializable):
         return self.frm
 
 
+    @property
+    def scope(self):
+        from nemubot.scope import Scope
+        return Scope(server=self.server,
+                     channel=self.to_response[0],
+                     nick=self.frm)
+
+
     def accept(self, visitor):
         visitor.visit(self)
 
