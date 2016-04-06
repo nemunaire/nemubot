@@ -232,8 +232,8 @@ def cmd_alias(msg):
                         channel=msg.channel)
 
     else:
-        wym = guess(alias.cmd, context.data.getNode("aliases").index)
-        raise IMException(msg.args[0] + " is not an alias." + (" Would you mean: %s?" % ", ".join(wym)) if len(wym) else "")
+        wym = [m for m in guess(alias.cmd, context.data.getNode("aliases").index)]
+        raise IMException(msg.args[0] + " is not an alias." + (" Would you mean: %s?" % ", ".join(wym) if len(wym) else ""))
 
 
 @hook.command("unalias",
