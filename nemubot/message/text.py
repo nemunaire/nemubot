@@ -28,7 +28,7 @@ class Text(Abstract):
         message -- the parsed message
         """
 
-        Abstract.__init__(self, *args, **kargs)
+        super().__init__(*args, **kargs)
 
         self.message = message
 

@@ -22,4 +22,4 @@ class IRC(SocketPrinter):
 
     def visit_Text(self, msg):
         self.pp += "PRIVMSG %s :" % ",".join(msg.to)
-        SocketPrinter.visit_Text(self, msg)
+        super().visit_Text(msg)

@@ -31,7 +31,7 @@ PORTS = list()
 
 class DCC(server.AbstractServer):
     def __init__(self, srv, dest, socket=None):
-        server.Server.__init__(self)
+        super().__init__(self)
 
         self.error = False # An error has occur, closing the connection?
         self.messages = list() # Message queued before connexion

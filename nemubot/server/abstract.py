@@ -32,6 +32,8 @@ class AbstractServer(io.IOBase):
         send_callback -- Callback when developper want to send a message
         """
 
+        super().__init__()
+
         if not hasattr(self, "id"):
             raise Exception("No id defined for this server. Please set one!")
 

@@ -14,26 +14,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from nemubot.message.text import Text
+from nemubot.message.abstract import Abstract
 
 
-class DirectAsk(Text):
+class Response(Abstract):
 
-    """This class represents a message to this bot"""
+    def __init__(self, cmd, args=None, *nargs, **kargs):
+        super().__init__(*nargs, **kargs)
 
-    def __init__(self, designated, *args, **kargs):
-        """Initialize a message to a specific person
+        self.cmd = cmd
+        self.args = args if args is not None else list()
 
-        Argument:
-        designated -- the user designated by the message
-        """
+    def __str__(self):
+        return self.cmd + " @" + ",@".join(self.args)
 
-        super().__init__(*args, **kargs)
-
-        self.designated = designated
-
-    def respond(self, message):
-        return DirectAsk(self.frm,
-                         message,
-                         server=self.server,
-                         to=self.to_response)
+    @property
+    def cmds(self):
+        # TODO: this is for legacy modules
+        return [self.cmd] + self.args

@@ -55,7 +55,7 @@ class IRC(SocketServer):
         self.realname = realname
 
         self.id       = self.username + "@" + host + ":" + str(port)
-        SocketServer.__init__(self, host=host, port=port, ssl=ssl)
+        super().__init__(host=host, port=port, ssl=ssl)
         self.printer  = IRCPrinter
 
         self.encoding = encoding
@@ -232,8 +232,8 @@ class IRC(SocketServer):
 
     # Open/close
 
-    def _open(self):
-        if SocketServer._open(self):
+    def open(self):
+        if super().open():
             if self.password is not None:
                 self.write("PASS :" + self.password)
             if self.capabilities is not None:
@@ -244,9 +244,10 @@ class IRC(SocketServer):
         return False
 
 
-    def _close(self):
-        if self.connected: self.write("QUIT")
-        return SocketServer._close(self)
+    def close(self):
+        if not self.closed:
+            self.write("QUIT")
+        return super().close()
 
 
     # Writes: as inherited
@@ -254,7 +255,7 @@ class IRC(SocketServer):
     # Read
 
     def read(self):
-        for line in SocketServer.read(self):
+        for line in super().read():
             # PING should be handled here, so start parsing here :/
             msg = IRCMessage(line, self.encoding)
 
