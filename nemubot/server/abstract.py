@@ -25,24 +25,31 @@ class AbstractServer(io.IOBase):
 
     """An abstract server: handle communication with an IM server"""
 
-    def __init__(self, send_callback=None):
+    def __init__(self, name=None, send_callback=None):
         """Initialize an abstract server
 
         Keyword argument:
         send_callback -- Callback when developper want to send a message
         """
 
+        self._name = name
+
         super().__init__()
 
-        if not hasattr(self, "id"):
-            raise Exception("No id defined for this server. Please set one!")
-
-        self.logger = logging.getLogger("nemubot.server." + self.id)
+        self.logger = logging.getLogger("nemubot.server." + self.name)
         self._sending_queue = queue.Queue()
         if send_callback is not None:
             self._send_callback = send_callback
         else:
             self._send_callback = self._write_select
+
+
+    @property
+    def name(self):
+        if self._name is not None:
+            return self._name
+        else:
+            return self.fileno()
 
 
     # Open/close
@@ -151,4 +158,4 @@ class AbstractServer(io.IOBase):
     def exception(self):
         """Exception occurs in fd"""
         self.logger.warning("Unhandle file descriptor exception on server %s",
-                            self.id)
+                            self.name)

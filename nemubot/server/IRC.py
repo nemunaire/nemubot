@@ -54,8 +54,7 @@ class IRC(SocketServer):
         self.owner    = owner
         self.realname = realname
 
-        self.id       = self.username + "@" + host + ":" + str(port)
-        super().__init__(host=host, port=port, ssl=ssl)
+        super().__init__(host=host, port=port, ssl=ssl, name=self.username + "@" + host + ":" + str(port))
         self.printer  = IRCPrinter
 
         self.encoding = encoding

@@ -146,7 +146,7 @@ class IRC(Abstract):
             receivers = self.decode(self.params[0]).split(',')
 
             common_args = {
-                "server": srv.id,
+                "server": srv.name,
                 "date": self.tags["time"],
                 "to": receivers,
                 "to_response": [r if r != srv.nick else self.nick for r in receivers],

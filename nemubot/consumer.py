@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2015  Mercier Pierre-Olivier
+# Copyright (C) 2012-2016  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -38,7 +38,7 @@ class MessageConsumer:
 
         msgs = []
 
-        # Parse the message
+        # Parse message
         try:
             for msg in self.srv.parse(self.orig):
                 msgs.append(msg)
@@ -46,21 +46,10 @@ class MessageConsumer:
             logger.exception("Error occurred during the processing of the %s: "
                              "%s", type(self.orig).__name__, self.orig)
 
-        if len(msgs) <= 0:
-            return
-
-        # Qualify the message
-        if not hasattr(msg, "server") or msg.server is None:
-            msg.server = self.srv.id
-        if hasattr(msg, "frm_owner"):
-            msg.frm_owner = (not hasattr(self.srv, "owner") or self.srv.owner == msg.frm)
-
-        from nemubot.server.abstract import AbstractServer
-
-        # Treat the message
+        # Treat message
         for msg in msgs:
             for res in context.treater.treat_msg(msg):
-                # Identify the destination
+                # Identify destination
                 to_server = None
                 if isinstance(res, str):
                     to_server = self.srv
@@ -69,8 +58,8 @@ class MessageConsumer:
                     continue
                 elif res.server is None:
                     to_server = self.srv
-                    res.server = self.srv.id
-                elif isinstance(res.server, str) and res.server in context.servers:
+                    res.server = self.srv.fileno()
+                elif res.server in context.servers:
                     to_server = context.servers[res.server]
                 else:
                     to_server = res.server
@@ -79,7 +68,7 @@ class MessageConsumer:
                     logger.error("The server defined in this response doesn't exist: %s", res.server)
                     continue
 
-                # Sent the message only if treat_post authorize it
+                # Sent message
                 to_server.send_response(res)
 
 
@@ -116,7 +105,7 @@ class Consumer(threading.Thread):
     def __init__(self, context):
         self.context = context
         self.stop = False
-        threading.Thread.__init__(self)
+        super().__init__(name="Nemubot consumer")
 
 
     def run(self):

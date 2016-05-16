@@ -255,9 +255,9 @@ class Bot(threading.Thread):
             srv = server.server(config)
             # Add the server in the context
             if self.add_server(srv, server.autoconnect):
-                logger.info("Server '%s' successfully added." % srv.id)
+                logger.info("Server '%s' successfully added." % srv.name)
             else:
-                logger.error("Can't add server '%s'." % srv.id)
+                logger.error("Can't add server '%s'." % srv.name)
 
         # Load module and their configuration
         for mod in config.modules:
@@ -306,7 +306,7 @@ class Bot(threading.Thread):
         if type(eid) is uuid.UUID:
             evt.id = str(eid)
         else:
-            # Ok, this is quite useless...
+            # Ok, this is quiet useless...
             try:
                 evt.id = str(uuid.UUID(eid))
             except ValueError:
@@ -414,8 +414,10 @@ class Bot(threading.Thread):
         autoconnect -- connect after add?
         """
 
-        if srv.id not in self.servers:
-            self.servers[srv.id] = srv
+        fileno = srv.fileno()
+        if fileno not in self.servers:
+            self.servers[fileno] = srv
+            self.servers[srv.name] = srv
             if autoconnect and not hasattr(self, "noautoconnect"):
                 srv.open()
             return True

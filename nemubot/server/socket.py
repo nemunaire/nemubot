@@ -23,18 +23,43 @@ class SocketServer(AbstractServer):
 
     """Concrete implementation of a socket connexion (can be wrapped with TLS)"""
 
-    def __init__(self, sock_location=None, host=None, port=None, ssl=False, socket=None, id=None):
-        if id is not None:
-            self.id = id
-        super().__init__()
-        if sock_location is not None:
-            self.filename = sock_location
-        elif host is not None:
-            self.host = host
-            self.port = int(port)
+    def __init__(self, sock_location=None,
+                 host=None, port=None,
+                 sock=None,
+                 ssl=False,
+                 name=None):
+        """Create a server socket
+
+        Keyword arguments:
+        sock_location -- Path to the UNIX socket
+        host -- Hostname of the INET socket
+        port -- Port of the INET socket
+        sock -- Already connected socket
+        ssl -- Should TLS connection enabled
+        name -- Convinience name
+        """
+
+        import socket
+
+        assert(sock is None or isinstance(sock, socket.SocketType))
+        assert(port is None or isinstance(port, int))
+
+        super().__init__(name=name)
+
+        if sock is None:
+            if sock_location is not None:
+                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.connect_to = sock_location
+            elif host is not None:
+                for af, socktype, proto, canonname, sa in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+                    self.socket = socket.socket(af, socktype, proto)
+                    self.connect_to = sa
+                    break
+        else:
+            self.socket = sock
+
         self.ssl = ssl
 
-        self.socket = socket
         self.readbuffer = b''
         self.printer  = SocketPrinter
 
@@ -46,33 +71,22 @@ class SocketServer(AbstractServer):
     @property
     def closed(self):
         """Indicator of the connection aliveness"""
-        return self.socket is None
+        return self.socket._closed
 
 
     # Open/close
 
     def open(self):
-        import socket
-
         if not self.closed:
             return True
 
         try:
-            if hasattr(self, "filename"):
-                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                self.socket.connect(self.filename)
-                self.logger.info("Connected to %s", self.filename)
-            else:
-                self.socket = socket.create_connection((self.host, self.port))
-                self.logger.info("Connected to %s:%d", self.host, self.port)
+            self.socket.connect(self.connect_to)
+            self.logger.info("Connected to %s", self.connect_to)
         except:
-            self.socket = None
-            if hasattr(self, "filename"):
-                self.logger.exception("Unable to connect to %s",
-                                      self.filename)
-            else:
-                self.logger.exception("Unable to connect to %s:%d",
-                                      self.host, self.port)
+            self.socket.close()
+            self.logger.exception("Unable to connect to %s",
+                                  self.connect_to)
             return False
 
         # Wrap the socket for SSL
@@ -87,18 +101,19 @@ class SocketServer(AbstractServer):
     def close(self):
         import socket
 
+        # Flush the sending queue before close
         from nemubot.server import _lock
         _lock.release()
         self._sending_queue.join()
         _lock.acquire()
+
         if not self.closed:
             try:
                 self.socket.shutdown(socket.SHUT_RDWR)
-                self.socket.close()
             except socket.error:
                 pass
 
-            self.socket = None
+            self.socket.close()
 
         return super().close()
 
@@ -142,14 +157,13 @@ class SocketServer(AbstractServer):
         except ValueError:
             args = line.split(' ')
 
-        yield message.Command(cmd=args[0], args=args[1:], server=self.id, to=["you"], frm="you")
+        yield message.Command(cmd=args[0], args=args[1:], server=self.name, to=["you"], frm="you")
 
 
 class SocketListener(AbstractServer):
 
-    def __init__(self, new_server_cb, id, sock_location=None, host=None, port=None, ssl=None):
-        self.id = id
-        super().__init__()
+    def __init__(self, new_server_cb, name, sock_location=None, host=None, port=None, ssl=None):
+        super().__init__(name=name)
         self.new_server_cb = new_server_cb
         self.sock_location = sock_location
         self.host = host
@@ -210,7 +224,7 @@ class SocketListener(AbstractServer):
 
         conn, addr = self.socket.accept()
         self.nb_son += 1
-        ss = SocketServer(id=self.id + "#" + str(self.nb_son), socket=conn)
+        ss = SocketServer(name=self.name + "#" + str(self.nb_son), socket=conn)
         self.new_server_cb(ss)
 
         return []
