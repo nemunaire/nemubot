@@ -37,8 +37,9 @@ class Bot(threading.Thread):
 
         Keyword arguments:
         ip -- The external IP of the bot (default: 127.0.0.1)
-        modules_paths -- Paths to all directories where looking for module
+        modules_paths -- Paths to all directories where looking for modules
         data_store -- An instance of the nemubot datastore for bot's modules
+        verbosity -- verbosity level
         """
 
         threading.Thread.__init__(self)
