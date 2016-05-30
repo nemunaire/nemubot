@@ -16,7 +16,9 @@
 
 from datetime import datetime, timezone
 import logging
+from multiprocessing import JoinableQueue
 import threading
+import select
 import sys
 
 from nemubot import __version__
@@ -25,6 +27,11 @@ from nemubot import datastore
 import nemubot.hooks
 
 logger = logging.getLogger("nemubot")
+
+sync_queue = JoinableQueue()
+
+def sync_act(*args):
+    sync_queue.put(list(args))
 
 
 class Bot(threading.Thread):
@@ -42,7 +49,7 @@ class Bot(threading.Thread):
         verbosity -- verbosity level
         """
 
-        threading.Thread.__init__(self)
+        super().__init__(name="Nemubot main")
 
         logger.info("Initiate nemubot v%s (running on Python %s.%s.%s)",
                     __version__,
@@ -61,6 +68,7 @@ class Bot(threading.Thread):
         self.datastore.open()
 
         # Keep global context: servers and modules
+        self._poll = select.poll()
         self.servers = dict()
         self.modules = dict()
         self.modules_configuration = dict()
@@ -138,60 +146,72 @@ class Bot(threading.Thread):
         self.cnsr_queue     = Queue()
         self.cnsr_thrd      = list()
         self.cnsr_thrd_size = -1
-        # Synchrone actions to be treated by main thread
-        self.sync_queue     = Queue()
 
 
     def run(self):
-        from select import select
-        from nemubot.server import _lock, _rlist, _wlist, _xlist
+        self._poll.register(sync_queue._reader, select.POLLIN | select.POLLPRI)
 
         logger.info("Starting main loop")
         self.stop = False
         while not self.stop:
-            with _lock:
-                try:
-                    rl, wl, xl = select(_rlist, _wlist, _xlist, 0.1)
-                except:
-                    logger.error("Something went wrong in select")
-                    fnd_smth = False
-                    # Looking for invalid server
-                    for r in _rlist:
-                        if not hasattr(r, "fileno") or not isinstance(r.fileno(), int) or r.fileno() < 0:
-                            _rlist.remove(r)
-                            logger.error("Found invalid object in _rlist: " + str(r))
-                            fnd_smth = True
-                    for w in _wlist:
-                        if not hasattr(w, "fileno") or not isinstance(w.fileno(), int) or w.fileno() < 0:
-                            _wlist.remove(w)
-                            logger.error("Found invalid object in _wlist: " + str(w))
-                            fnd_smth = True
-                    for x in _xlist:
-                        if not hasattr(x, "fileno") or not isinstance(x.fileno(), int) or x.fileno() < 0:
-                            _xlist.remove(x)
-                            logger.error("Found invalid object in _xlist: " + str(x))
-                            fnd_smth = True
-                    if not fnd_smth:
-                        logger.exception("Can't continue, sorry")
-                        self.quit()
-                    continue
+            for fd, flag in self._poll.poll():
+                # Handle internal socket passing orders
+                if fd != sync_queue._reader.fileno() and fd in self.servers:
+                    srv = self.servers[fd]
 
-                for x in xl:
-                    try:
-                        x.exception()
-                    except:
-                        logger.exception("Uncatched exception on server exception")
-                for w in wl:
-                    try:
-                        w.write_select()
-                    except:
-                        logger.exception("Uncatched exception on server write")
-                for r in rl:
-                    for i in r.read():
+                    if flag & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
                         try:
-                            self.receive_message(r, i)
+                            srv.exception(flag)
                         except:
-                            logger.exception("Uncatched exception on server read")
+                            logger.exception("Uncatched exception on server exception")
+
+                    if srv.fileno() > 0:
+                        if flag & (select.POLLOUT):
+                            try:
+                                srv.async_write()
+                            except:
+                                logger.exception("Uncatched exception on server write")
+
+                        if flag & (select.POLLIN | select.POLLPRI):
+                            try:
+                                for i in srv.async_read():
+                                    self.receive_message(srv, i)
+                            except:
+                                logger.exception("Uncatched exception on server read")
+
+                    else:
+                        del self.servers[fd]
+
+
+                # Always check the sync queue
+                while not sync_queue.empty():
+                    args = sync_queue.get()
+                    action = args.pop(0)
+
+                    if action == "sckt" and len(args) >= 2:
+                        try:
+                            if args[0] == "write":
+                                self._poll.modify(int(args[1]), select.POLLOUT | select.POLLIN | select.POLLPRI)
+                            elif args[0] == "unwrite":
+                                self._poll.modify(int(args[1]), select.POLLIN | select.POLLPRI)
+
+                            elif args[0] == "register":
+                                self._poll.register(int(args[1]), select.POLLIN | select.POLLPRI)
+                            elif args[0] == "unregister":
+                                self._poll.unregister(int(args[1]))
+                        except:
+                            logger.exception("Unhandled excpetion during action:")
+
+                    elif action == "exit":
+                        self.quit()
+
+                    elif action == "loadconf":
+                        for path in args:
+                            logger.debug("Load configuration from %s", path)
+                            self.load_file(path)
+                            logger.info("Configurations successfully loaded")
+
+                    sync_queue.task_done()
 
 
             # Launch new consumer threads if necessary
@@ -202,17 +222,6 @@ class Bot(threading.Thread):
                 c = Consumer(self)
                 self.cnsr_thrd.append(c)
                 c.start()
-
-            while self.sync_queue.qsize() > 0:
-                action = self.sync_queue.get_nowait()
-                if action[0] == "exit":
-                    self.quit()
-                elif action[0] == "loadconf":
-                    for path in action[1:]:
-                        logger.debug("Load configuration from %s", path)
-                        self.load_file(path)
-                    logger.info("Configurations successfully loaded")
-                self.sync_queue.task_done()
         logger.info("Ending main loop")
 
 
@@ -419,7 +428,7 @@ class Bot(threading.Thread):
             self.servers[fileno] = srv
             self.servers[srv.name] = srv
             if autoconnect and not hasattr(self, "noautoconnect"):
-                srv.open()
+                srv.connect()
             return True
 
         else:
@@ -532,28 +541,28 @@ class Bot(threading.Thread):
     def quit(self):
         """Save and unload modules and disconnect servers"""
 
-        self.datastore.close()
-
         if self.event_timer is not None:
             logger.info("Stop the event timer...")
             self.event_timer.cancel()
+
+        logger.info("Save and unload all modules...")
+        for mod in self.modules.items():
+            self.unload_module(mod)
+
+        logger.info("Close all servers connection...")
+        for srv in [self.servers[k] for k in self.servers]:
+            srv.close()
 
         logger.info("Stop consumers")
         k = self.cnsr_thrd
         for cnsr in k:
             cnsr.stop = True
 
-        logger.info("Save and unload all modules...")
-        k = list(self.modules.keys())
-        for mod in k:
-            self.unload_module(mod)
-
-        logger.info("Close all servers connection...")
-        k = list(self.servers.keys())
-        for srv in k:
-            self.servers[srv].close()
+        self.datastore.close()
 
         self.stop = True
+        sync_act("end")
+        sync_queue.join()
 
 
     # Treatment

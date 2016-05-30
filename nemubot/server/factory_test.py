@@ -22,34 +22,30 @@ class TestFactory(unittest.TestCase):
 
     def test_IRC1(self):
         from nemubot.server.IRC import IRC as IRCServer
+        from nemubot.server.IRC import IRC_secure as IRCSServer
 
         # <host>: If omitted, the client must connect to a prespecified default IRC server.
         server = factory("irc:///")
         self.assertIsInstance(server, IRCServer)
         self.assertEqual(server.host, "localhost")
-        self.assertFalse(server.ssl)
 
         server = factory("ircs:///")
-        self.assertIsInstance(server, IRCServer)
+        self.assertIsInstance(server, IRCSServer)
         self.assertEqual(server.host, "localhost")
-        self.assertTrue(server.ssl)
 
         server = factory("irc://host1")
         self.assertIsInstance(server, IRCServer)
         self.assertEqual(server.host, "host1")
-        self.assertFalse(server.ssl)
 
         server = factory("irc://host2:6667")
         self.assertIsInstance(server, IRCServer)
         self.assertEqual(server.host, "host2")
         self.assertEqual(server.port, 6667)
-        self.assertFalse(server.ssl)
 
         server = factory("ircs://host3:194/")
-        self.assertIsInstance(server, IRCServer)
+        self.assertIsInstance(server, IRCSServer)
         self.assertEqual(server.host, "host3")
         self.assertEqual(server.port, 194)
-        self.assertTrue(server.ssl)
 
 
 if __name__ == '__main__':
