@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2015  Mercier Pierre-Olivier
+# Copyright (C) 2012-2016  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -14,33 +14,36 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading
 
-_lock = threading.Lock()
-
-# Lists for select
-_rlist = []
-_wlist = []
-_xlist = []
-
-
-def factory(uri, **init_args):
+def factory(uri, ssl=False, **init_args):
     from urllib.parse import urlparse, unquote
     o = urlparse(uri)
+
+    srv = None
 
     if o.scheme == "irc" or o.scheme == "ircs":
         # http://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
         # http://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
         args = init_args
 
-        modifiers = o.path.split(",")
-        target = unquote(modifiers.pop(0)[1:])
-
-        if o.scheme == "ircs": args["ssl"] = True
+        if o.scheme == "ircs": ssl = True
         if o.hostname is not None: args["host"] = o.hostname
         if o.port is not None: args["port"] = o.port
         if o.username is not None: args["username"] = o.username
         if o.password is not None: args["password"] = o.password
+
+        if ssl:
+            try:
+                from ssl import create_default_context
+                args["_context"] = create_default_context()
+            except ImportError:
+                # Python 3.3 compat
+                from ssl import SSLContext, PROTOCOL_TLSv1
+                args["_context"] = SSLContext(PROTOCOL_TLSv1)
+            args["server_hostname"] = o.hostname
+
+        modifiers = o.path.split(",")
+        target = unquote(modifiers.pop(0)[1:])
 
         queries = o.query.split("&")
         for q in queries:
@@ -64,7 +67,11 @@ def factory(uri, **init_args):
         if "channels" not in args and "isnick" not in modifiers:
             args["channels"] = [ target ]
 
-        from nemubot.server.IRC import IRC as IRCServer
-        return IRCServer(**args)
-    else:
-        return None
+        if ssl:
+            from nemubot.server.IRC import IRC_secure as SecureIRCServer
+            srv = SecureIRCServer(**args)
+        else:
+            from nemubot.server.IRC import IRC as IRCServer
+            srv = IRCServer(**args)
+
+    return srv

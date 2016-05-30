@@ -9,6 +9,8 @@ Requirements
 
 *nemubot* requires at least Python 3.3 to work.
 
+Connecting to SSL server requires [this patch](http://bugs.python.org/issue27629).
+
 Some modules (like `cve`, `nextstop` or `laposte`) require the
 [BeautifulSoup module](http://www.crummy.com/software/BeautifulSoup/),
 but the core and framework has no dependency.

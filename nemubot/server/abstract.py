@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2015  Mercier Pierre-Olivier
+# Copyright (C) 2012-2016  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -14,34 +14,30 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import io
 import logging
 import queue
 
-from nemubot.server import _lock, _rlist, _wlist, _xlist
+from nemubot.bot import sync_act
 
-# Extends from IOBase in order to be compatible with select function
-class AbstractServer(io.IOBase):
+
+class AbstractServer:
 
     """An abstract server: handle communication with an IM server"""
 
-    def __init__(self, name=None, send_callback=None):
+    def __init__(self, name=None, **kwargs):
         """Initialize an abstract server
 
         Keyword argument:
-        send_callback -- Callback when developper want to send a message
+        name -- Identifier of the socket, for convinience
         """
 
         self._name = name
 
-        super().__init__()
+        super().__init__(**kwargs)
 
-        self.logger = logging.getLogger("nemubot.server." + self.name)
+        self.logger = logging.getLogger("nemubot.server." + str(self.name))
+        self._readbuffer = b''
         self._sending_queue = queue.Queue()
-        if send_callback is not None:
-            self._send_callback = send_callback
-        else:
-            self._send_callback = self._write_select
 
 
     @property
@@ -54,40 +50,28 @@ class AbstractServer(io.IOBase):
 
     # Open/close
 
-    def __enter__(self):
-        self.open()
-        return self
+    def connect(self, *args, **kwargs):
+        """Register the server in _poll"""
+
+        self.logger.info("Opening connection")
+
+        super().connect(*args, **kwargs)
+
+        self._on_connect()
+
+    def _on_connect(self):
+        sync_act("sckt", "register", self.fileno())
 
 
-    def __exit__(self, type, value, traceback):
-        self.close()
+    def close(self, *args, **kwargs):
+        """Unregister the server from _poll"""
 
+        self.logger.info("Closing connection")
 
-    def open(self):
-        """Generic open function that register the server un _rlist in case
-        of successful _open"""
-        self.logger.info("Opening connection to %s", self.id)
-        if not hasattr(self, "_open") or self._open():
-            _rlist.append(self)
-            _xlist.append(self)
-            return True
-        return False
+        if self.fileno() > 0:
+            sync_act("sckt", "unregister", self.fileno())
 
-
-    def close(self):
-        """Generic close function that register the server un _{r,w,x}list in
-        case of successful _close"""
-        self.logger.info("Closing connection to %s", self.id)
-        with _lock:
-            if not hasattr(self, "_close") or self._close():
-                if self in _rlist:
-                    _rlist.remove(self)
-                if self in _wlist:
-                    _wlist.remove(self)
-                if self in _xlist:
-                    _xlist.remove(self)
-                return True
-        return False
+        super().close(*args, **kwargs)
 
 
     # Writes
@@ -99,32 +83,22 @@ class AbstractServer(io.IOBase):
         message -- message to send
         """
 
-        self._send_callback(message)
+        self._sending_queue.put(self.format(message))
+        self.logger.debug("Message '%s' appended to write queue", message)
+        sync_act("sckt", "write", self.fileno())
 
 
-    def write_select(self):
-        """Internal function used by the select function"""
+    def async_write(self):
+        """Internal function used when the file descriptor is writable"""
+
         try:
-            _wlist.remove(self)
+            sync_act("sckt", "unwrite", self.fileno())
             while not self._sending_queue.empty():
                 self._write(self._sending_queue.get_nowait())
                 self._sending_queue.task_done()
 
         except queue.Empty:
             pass
-
-
-    def _write_select(self, message):
-        """Send a message to the server safely through select
-
-        Argument:
-        message -- message to send
-        """
-
-        self._sending_queue.put(self.format(message))
-        self.logger.debug("Message '%s' appended to write queue", message)
-        if self not in _wlist:
-            _wlist.append(self)
 
 
     def send_response(self, response):
@@ -149,13 +123,39 @@ class AbstractServer(io.IOBase):
 
     # Read
 
+    def async_read(self):
+        """Internal function used when the file descriptor is readable
+
+        Returns:
+        A list of fully received messages
+        """
+
+        ret, self._readbuffer = self.lex(self._readbuffer + self.read())
+
+        for r in ret:
+            yield r
+
+
+    def lex(self, buf):
+        """Assume lexing in default case is per line
+
+        Argument:
+        buf -- buffer to lex
+        """
+
+        msgs = buf.split(b'\r\n')
+        partial = msgs.pop()
+
+        return msgs, partial
+
+
     def parse(self, msg):
         raise NotImplemented
 
 
     # Exceptions
 
-    def exception(self):
-        """Exception occurs in fd"""
-        self.logger.warning("Unhandle file descriptor exception on server %s",
-                            self.name)
+    def exception(self, flags):
+        """Exception occurs on fd"""
+
+        self.close()

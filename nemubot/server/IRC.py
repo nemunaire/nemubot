@@ -20,17 +20,17 @@ import re
 from nemubot.channel import Channel
 from nemubot.message.printer.IRC import IRC as IRCPrinter
 from nemubot.server.message.IRC import IRC as IRCMessage
-from nemubot.server.socket import SocketServer
+from nemubot.server.socket import SocketServer, SecureSocketServer
 
 
-class IRC(SocketServer):
+class _IRC:
 
     """Concrete implementation of a connexion to an IRC server"""
 
-    def __init__(self, host="localhost", port=6667, ssl=False, owner=None,
+    def __init__(self, host="localhost", port=6667, owner=None,
                  nick="nemubot", username=None, password=None,
                  realname="Nemubot", encoding="utf-8", caps=None,
-                 channels=list(), on_connect=None):
+                 channels=list(), on_connect=None, **kwargs):
         """Prepare a connection with an IRC server
 
         Keyword arguments:
@@ -54,7 +54,8 @@ class IRC(SocketServer):
         self.owner    = owner
         self.realname = realname
 
-        super().__init__(host=host, port=port, ssl=ssl, name=self.username + "@" + host + ":" + str(port))
+        super().__init__(name=self.username + "@" + host + ":" + str(port),
+                         host=host, port=port, **kwargs)
         self.printer  = IRCPrinter
 
         self.encoding = encoding
@@ -231,20 +232,19 @@ class IRC(SocketServer):
 
     # Open/close
 
-    def open(self):
-        if super().open():
-            if self.password is not None:
-                self.write("PASS :" + self.password)
-            if self.capabilities is not None:
-                self.write("CAP LS")
-            self.write("NICK :" + self.nick)
-            self.write("USER %s %s bla :%s" % (self.username, self.host, self.realname))
-            return True
-        return False
+    def connect(self):
+        super().connect()
+
+        if self.password is not None:
+            self.write("PASS :" + self.password)
+        if self.capabilities is not None:
+            self.write("CAP LS")
+        self.write("NICK :" + self.nick)
+        self.write("USER %s %s bla :%s" % (self.username, self.host, self.realname))
 
 
     def close(self):
-        if not self.closed:
+        if not self._closed:
             self.write("QUIT")
         return super().close()
 
@@ -253,8 +253,8 @@ class IRC(SocketServer):
 
     # Read
 
-    def read(self):
-        for line in super().read():
+    def async_read(self):
+        for line in super().async_read():
             # PING should be handled here, so start parsing here :/
             msg = IRCMessage(line, self.encoding)
 
@@ -273,3 +273,10 @@ class IRC(SocketServer):
     def subparse(self, orig, cnt):
         msg = IRCMessage(("@time=%s :%s!user@host.com PRIVMSG %s :%s" % (orig.date.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), orig.frm, ",".join(orig.to), cnt)).encode(self.encoding), self.encoding)
         return msg.to_bot_message(self)
+
+
+class IRC(_IRC, SocketServer):
+    pass
+
+class IRC_secure(_IRC, SecureSocketServer):
+    pass

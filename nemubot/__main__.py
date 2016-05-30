@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2015  Mercier Pierre-Olivier
+# Copyright (C) 2012-2016  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -125,7 +125,7 @@ def main():
 
     # Create bot context
     from nemubot import datastore
-    from nemubot.bot import Bot
+    from nemubot.bot import Bot, sync_act
     context = Bot(modules_paths=modules_paths,
                   data_store=datastore.XML(args.data_path),
                   verbosity=args.verbose)
@@ -141,7 +141,7 @@ def main():
     # Load requested configuration files
     for path in args.files:
         if os.path.isfile(path):
-            context.sync_queue.put_nowait(["loadconf", path])
+            sync_act("loadconf", path)
         else:
             logger.error("%s is not a readable file", path)
 
@@ -165,22 +165,28 @@ def main():
         # Reload configuration file
         for path in args.files:
             if os.path.isfile(path):
-                context.sync_queue.put_nowait(["loadconf", path])
+                sync_act("loadconf", path)
     signal.signal(signal.SIGHUP, sighuphandler)
 
     def sigusr1handler(signum, frame):
         """On SIGHUSR1, display stacktraces"""
-        import traceback
+        import threading, traceback
         for threadId, stack in sys._current_frames().items():
-            logger.debug("########### Thread %d:\n%s",
-                         threadId,
+            thName = "#%d" % threadId
+            for th in threading.enumerate():
+                if th.ident == threadId:
+                    thName = th.name
+                    break
+            logger.debug("########### Thread %s:\n%s",
+                         thName,
                          "".join(traceback.format_stack(stack)))
     signal.signal(signal.SIGUSR1, sigusr1handler)
 
     if args.socketfile:
-        from nemubot.server.socket import SocketListener
-        context.add_server(SocketListener(context.add_server, "master_socket",
-                                          sock_location=args.socketfile))
+        from nemubot.server.socket import UnixSocketListener
+        context.add_server(UnixSocketListener(new_server_cb=context.add_server,
+                                              location=args.socketfile,
+                                              name="master_socket"))
 
     # context can change when performing an hotswap, always join the latest context
     oldcontext = None
