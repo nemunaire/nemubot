@@ -19,8 +19,8 @@ def get_cve(cve_id):
     search_url = BASEURL_NIST + quote(cve_id.upper())
 
     soup = BeautifulSoup(getURLContent(search_url))
-    vuln = soup.body.find(class_="vulnDetail")
-    cvss = vuln.find(class_="cvssDetail")
+    vuln = soup.body.find(class_="vuln-detail")
+    cvss = vuln.findAll('div')[4]
 
     return [
         "Base score: " + cvss.findAll('div')[0].findAll('a')[0].text.strip(),
