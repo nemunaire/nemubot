@@ -191,6 +191,8 @@ def main():
 
     # Wait for consumers
     logger.info("Waiting for other threads shuts down...")
+    if args.debug:
+        sigusr1handler(0, None)
     sys.exit(0)
 
 if __name__ == "__main__":
