@@ -70,6 +70,14 @@ class _Socket(AbstractServer):
             yield message.Command(cmd=args[0], args=args[1:], server=self.fileno(), to=["you"], frm="you")
 
 
+    def subparse(self, orig, cnt):
+        for m in self.parse(cnt):
+            m.to = orig.to
+            m.frm = orig.frm
+            m.date = orig.date
+            yield m
+
+
 class _SocketServer(_Socket):
 
     def __init__(self, host, port, bind=None, **kwargs):
