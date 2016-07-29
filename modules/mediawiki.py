@@ -16,10 +16,10 @@ from more import Response
 
 # MEDIAWIKI REQUESTS ##################################################
 
-def get_namespaces(site, ssl=False):
+def get_namespaces(site, ssl=False, path="/w/api.php"):
     # Built URL
-    url = "http%s://%s/w/api.php?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
-        "s" if ssl else "", site)
+    url = "http%s://%s%s?format=json&action=query&meta=siteinfo&siprop=namespaces" % (
+        "s" if ssl else "", site, path)
 
     # Make the request
     data = web.getJSON(url)
@@ -30,10 +30,10 @@ def get_namespaces(site, ssl=False):
     return namespaces
 
 
-def get_raw_page(site, term, ssl=False):
+def get_raw_page(site, term, ssl=False, path="/w/api.php"):
     # Built URL
-    url = "http%s://%s/w/api.php?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (
-        "s" if ssl else "", site, urllib.parse.quote(term))
+    url = "http%s://%s%s?format=json&redirects&action=query&prop=revisions&rvprop=content&titles=%s" % (
+        "s" if ssl else "", site, path, urllib.parse.quote(term))
 
     # Make the request
     data = web.getJSON(url)
@@ -45,10 +45,10 @@ def get_raw_page(site, term, ssl=False):
             raise IMException("article not found")
 
 
-def get_unwikitextified(site, wikitext, ssl=False):
+def get_unwikitextified(site, wikitext, ssl=False, path="/w/api.php"):
     # Built URL
-    url = "http%s://%s/w/api.php?format=json&action=expandtemplates&text=%s" % (
-        "s" if ssl else "", site, urllib.parse.quote(wikitext))
+    url = "http%s://%s%s?format=json&action=expandtemplates&text=%s" % (
+        "s" if ssl else "", site, path, urllib.parse.quote(wikitext))
 
     # Make the request
     data = web.getJSON(url)
@@ -58,10 +58,10 @@ def get_unwikitextified(site, wikitext, ssl=False):
 
 ## Search
 
-def opensearch(site, term, ssl=False):
+def opensearch(site, term, ssl=False, path="/w/api.php"):
     # Built URL
-    url = "http%s://%s/w/api.php?format=json&action=opensearch&search=%s" % (
-        "s" if ssl else "", site, urllib.parse.quote(term))
+    url = "http%s://%s%s?format=json&action=opensearch&search=%s" % (
+        "s" if ssl else "", site, path, urllib.parse.quote(term))
 
     # Make the request
     response = web.getJSON(url)
@@ -73,10 +73,10 @@ def opensearch(site, term, ssl=False):
                    response[3][k])
 
 
-def search(site, term, ssl=False):
+def search(site, term, ssl=False, path="/w/api.php"):
     # Built URL
-    url = "http%s://%s/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
-        "s" if ssl else "", site, urllib.parse.quote(term))
+    url = "http%s://%s%s?format=json&action=query&list=search&srsearch=%s&srprop=titlesnippet|snippet" % (
+        "s" if ssl else "", site, path, urllib.parse.quote(term))
 
     # Make the request
     data = web.getJSON(url)
@@ -108,9 +108,9 @@ def strip_model(cnt):
     return cnt
 
 
-def parse_wikitext(site, cnt, namespaces=dict(), ssl=False):
+def parse_wikitext(site, cnt, namespaces=dict(), **kwargs):
     for i, _, _, _ in re.findall(r"({{([^{]|\s|({{(.|\s|{{.*?}})*?}})*?)*?}})", cnt):
-        cnt = cnt.replace(i, get_unwikitextified(site, i, ssl), 1)
+        cnt = cnt.replace(i, get_unwikitextified(site, i, **kwargs), 1)
 
     # Strip [[...]]
     for full, args, lnk in re.findall(r"(\[\[(.*?|)?([^|]*?)\]\])", cnt):
@@ -139,8 +139,8 @@ def irc_format(cnt):
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
 
 
-def get_page(site, term, ssl=False, subpart=None):
-    raw = get_raw_page(site, term, ssl)
+def get_page(site, term, subpart=None, **kwargs):
+    raw = get_raw_page(site, term, **kwargs)
 
     if subpart is not None:
         subpart = subpart.replace("_", " ")
@@ -151,50 +151,62 @@ def get_page(site, term, ssl=False, subpart=None):
 
 # NEMUBOT #############################################################
 
-def mediawiki_response(site, term, to):
-    ns = get_namespaces(site)
+def mediawiki_response(site, term, to, **kwargs):
+    ns = get_namespaces(site, **kwargs)
 
     terms = term.split("#", 1)
 
     try:
         # Print the article if it exists
-        return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None),
+        return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None, **kwargs),
                         line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
                         channel=to)
     except:
         pass
 
     # Try looking at opensearch
-    os = [x for x, _, _ in opensearch(site, terms[0])]
+    os = [x for x, _, _ in opensearch(site, terms[0], **kwargs)]
     print(os)
     # Fallback to global search
     if not len(os):
-        os = [x for x, _ in search(site, terms[0]) if x is not None and x != ""]
+        os = [x for x, _ in search(site, terms[0], **kwargs) if x is not None and x != ""]
     return Response(os,
                     channel=to,
                     title="Article not found, would you mean")
 
 
-@hook.command("mediawiki")
+@hook.command("mediawiki",
+              help="Read an article on a MediaWiki",
+              keywords={
+                  "ssl": "query over https instead of http",
+                  "path=PATH": "absolute path to the API",
+              })
 def cmd_mediawiki(msg):
-    """Read an article on a MediaWiki"""
     if len(msg.args) < 2:
         raise IMException("indicate a domain and a term to search")
 
     return mediawiki_response(msg.args[0],
                               " ".join(msg.args[1:]),
-                              msg.to_response)
+                              msg.to_response,
+                              ssl="ssl" in msg.kwargs,
+                              path=msg.kwargs["path"] if "path" in msg.kwargs else "/w/api.php")
 
 
-@hook.command("search_mediawiki")
+@hook.command("search_mediawiki",
+              help="Search an article on a MediaWiki",
+              keywords={
+                  "ssl": "query over https instead of http",
+                  "path=PATH": "absolute path to the API",
+              })
 def cmd_srchmediawiki(msg):
-    """Search an article on a MediaWiki"""
     if len(msg.args) < 2:
         raise IMException("indicate a domain and a term to search")
 
     res = Response(channel=msg.to_response, nomore="No more results", count=" (%d more results)")
 
-    for r in search(msg.args[0], " ".join(msg.args[1:])):
+    for r in search(msg.args[0], " ".join(msg.args[1:]),
+                    ssl="ssl" in msg.kwargs,
+                    path=msg.kwargs["path"] if "path" in msg.kwargs else "/w/api.php"):
         res.append_message("%s: %s" % r)
 
     return res
