@@ -95,7 +95,7 @@ class ModuleEvent:
         """Return the time left before/after the near check"""
         if self.current is not None:
             return self.current - datetime.now(timezone.utc)
-        return 99999  # TODO: 99999 is not a valid time to return
+        return timedelta.max
 
     def check(self):
         """Run a check and realized the event if this is time"""

@@ -133,7 +133,7 @@ def prettify(match):
         if match["status"] == "completed":
             msg += "Match (%s) du %s terminé : " % (match["match_number"], matchdate.strftime("%A %d à %H:%M"))
         else:
-            msg += "Match en cours (%s) depuis %d minutes : " % (match["match_number"], (datetime.now(matchdate.tzinfo) - matchdate_local).seconds / 60)
+            msg += "Match en cours (%s) depuis %d minutes : " % (match["match_number"], (datetime.now(matchdate.tzinfo) - matchdate_local).total_seconds() / 60)
 
         msg += "%s %d - %d %s" % (match["home_team"]["country"], match["home_team"]["goals"], match["away_team"]["goals"], match["away_team"]["country"])
 

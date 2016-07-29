@@ -331,7 +331,7 @@ class Bot(threading.Thread):
             module_src.__nemubot_context__.events.append(evt.id)
         evt.module_src = module_src
 
-        logger.info("New event registered: %s -> %s", evt.id, evt)
+        logger.info("New event registered in %d position: %s", i, t)
         return evt.id
 
 
@@ -382,7 +382,7 @@ class Bot(threading.Thread):
             self.event_timer.cancel()
 
         if len(self.events):
-            remaining = self.events[0].time_left.seconds + self.events[0].time_left.microseconds / 1000000
+            remaining = self.events[0].time_left.total_seconds()
             logger.debug("Update timer: next event in %d seconds", remaining)
             self.event_timer = threading.Timer(remaining if remaining > 0 else 0, self._end_event_timer)
             self.event_timer.start()
