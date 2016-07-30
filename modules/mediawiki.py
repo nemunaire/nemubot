@@ -89,6 +89,11 @@ def search(site, term, ssl=False, path="/w/api.php"):
 
 # PARSING FUNCTIONS ###################################################
 
+def get_model(cnt, model="Infobox"):
+    for full in re.findall(r"(\{\{" + model + " .*?(?:\{\{.*?}}.*?)*}})", cnt, flags=re.DOTALL):
+        return full[3 + len(model):-2].replace("\n", " ").strip()
+
+
 def strip_model(cnt):
     # Strip models at begin: mostly useless
     cnt = re.sub(r"^(({{([^{]|\s|({{([^{]|\s|{{.*?}})*?}})*?)*?}}|\[\[([^[]|\s|\[\[.*?\]\])*?\]\])\s*)+", "", cnt, flags=re.DOTALL)
@@ -139,6 +144,14 @@ def irc_format(cnt):
     return cnt.replace("'''", "\x03\x02").replace("''", "\x03\x1f")
 
 
+def parse_infobox(cnt):
+    for v in cnt.split("|"):
+        try:
+            yield re.sub(r"^\s*([^=]*[^=\s])\s*=\s*(.+)\s*$", "\x03\x02" + r"\1" + ":\x03\x02 " + r"\2", v).replace("<br />", ", ").replace("<br/>", ", ").strip()
+        except:
+            yield re.sub(r"^\s+(.+)\s+$", "\x03\x02" + r"\1" + "\x03\x02", v).replace("<br />", ", ").replace("<br/>", ", ").strip()
+
+
 def get_page(site, term, subpart=None, **kwargs):
     raw = get_raw_page(site, term, **kwargs)
 
@@ -146,7 +159,7 @@ def get_page(site, term, subpart=None, **kwargs):
         subpart = subpart.replace("_", " ")
         raw = re.sub(r"^.*(?P<title>==+)\s*(" + subpart + r")\s*(?P=title)", r"\1 \2 \1", raw, flags=re.DOTALL)
 
-    return strip_model(raw)
+    return raw
 
 
 # NEMUBOT #############################################################
@@ -158,8 +171,8 @@ def mediawiki_response(site, term, to, **kwargs):
 
     try:
         # Print the article if it exists
-        return Response(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None, **kwargs),
-                        line_treat=lambda line: irc_format(parse_wikitext(site, line, ns)),
+        return Response(strip_model(get_page(site, terms[0], subpart=terms[1] if len(terms) > 1 else None, **kwargs)),
+                        line_treat=lambda line: irc_format(parse_wikitext(site, line, ns, **kwargs)),
                         channel=to)
     except:
         pass
@@ -188,11 +201,10 @@ def cmd_mediawiki(msg):
     return mediawiki_response(msg.args[0],
                               " ".join(msg.args[1:]),
                               msg.to_response,
-                              ssl="ssl" in msg.kwargs,
-                              path=msg.kwargs["path"] if "path" in msg.kwargs else "/w/api.php")
+                              **msg.kwargs)
 
 
-@hook.command("search_mediawiki",
+@hook.command("mediawiki_search",
               help="Search an article on a MediaWiki",
               keywords={
                   "ssl": "query over https instead of http",
@@ -204,12 +216,27 @@ def cmd_srchmediawiki(msg):
 
     res = Response(channel=msg.to_response, nomore="No more results", count=" (%d more results)")
 
-    for r in search(msg.args[0], " ".join(msg.args[1:]),
-                    ssl="ssl" in msg.kwargs,
-                    path=msg.kwargs["path"] if "path" in msg.kwargs else "/w/api.php"):
+    for r in search(msg.args[0], " ".join(msg.args[1:]), **msg.kwargs):
         res.append_message("%s: %s" % r)
 
     return res
+
+
+@hook.command("mediawiki_infobox",
+              help="Highlight information from an article on a MediaWiki",
+              keywords={
+                  "ssl": "query over https instead of http",
+                  "path=PATH": "absolute path to the API",
+              })
+def cmd_infobox(msg):
+    if len(msg.args) < 2:
+        raise IMException("indicate a domain and a term to search")
+
+    ns = get_namespaces(msg.args[0], **msg.kwargs)
+
+    return Response(", ".join([x for x in parse_infobox(get_model(get_page(msg.args[0], " ".join(msg.args[1:]), **msg.kwargs), "Infobox"))]),
+                    line_treat=lambda line: irc_format(parse_wikitext(msg.args[0], line, ns, **msg.kwargs)),
+                    channel=msg.to_response)
 
 
 @hook.command("wikipedia")
