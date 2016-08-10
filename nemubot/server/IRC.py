@@ -16,6 +16,7 @@
 
 from datetime import datetime
 import re
+import socket
 
 from nemubot.channel import Channel
 from nemubot.message.printer.IRC import IRC as IRCPrinter
@@ -240,7 +241,7 @@ class _IRC:
         if self.capabilities is not None:
             self.write("CAP LS")
         self.write("NICK :" + self.nick)
-        self.write("USER %s %s bla :%s" % (self.username, self.host, self.realname))
+        self.write("USER %s %s bla :%s" % (self.username, socket.getfqdn(), self.realname))
 
 
     def close(self):
