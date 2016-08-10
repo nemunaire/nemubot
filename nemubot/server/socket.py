@@ -81,29 +81,20 @@ class _Socket(AbstractServer):
 class _SocketServer(_Socket):
 
     def __init__(self, host, port, bind=None, **kwargs):
-        super().__init__(family=socket.AF_INET, **kwargs)
-
-        assert(host is not None)
-        assert(isinstance(port, int))
+        (family, type, proto, canonname, sockaddr) = socket.getaddrinfo(host, port)[0]
 
         if isinstance(self, ssl.SSLSocket) and "server_hostname" not in kwargs:
             kwargs["server_hostname"] = host
 
         super().__init__(family=family, type=type, proto=proto, **kwargs)
 
-        self._host = host
-        self._port = port
+        self._sockaddr = sockaddr
         self._bind = bind
 
 
-    @property
-    def host(self):
-        return self._host
-
-
     def connect(self):
-        self.logger.info("Connection to %s:%d", self._host, self._port)
-        super().connect((self._host, self._port))
+        self.logger.info("Connection to %s:%d", *self._sockaddr[:2])
+        super().connect(self._sockaddr)
 
         if self._bind:
             super().bind(self._bind)

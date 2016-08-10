@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import socket
 import unittest
 
 from nemubot.server import factory
@@ -27,25 +28,31 @@ class TestFactory(unittest.TestCase):
         # <host>: If omitted, the client must connect to a prespecified default IRC server.
         server = factory("irc:///")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "localhost")
+        self.assertEqual(server._sockaddr,
+                         socket.getaddrinfo("localhost", 6667, proto=socket.IPPROTO_TCP)[0][4])
 
         server = factory("ircs:///")
         self.assertIsInstance(server, IRCSServer)
-        self.assertEqual(server.host, "localhost")
+        self.assertEqual(server._sockaddr,
+                         socket.getaddrinfo("localhost", 6667, proto=socket.IPPROTO_TCP)[0][4])
 
-        server = factory("irc://host1")
+        server = factory("irc://freenode.net")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "host1")
+        self.assertEqual(server._sockaddr,
+                         socket.getaddrinfo("freenode.net", 6667, proto=socket.IPPROTO_TCP)[0][4])
 
-        server = factory("irc://host2:6667")
+        server = factory("irc://freenode.org:1234")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "host2")
-        self.assertEqual(server.port, 6667)
+        self.assertEqual(server._sockaddr,
+                         socket.getaddrinfo("freenode.org", 1234, proto=socket.IPPROTO_TCP)[0][4])
 
-        server = factory("ircs://host3:194/")
+        server = factory("ircs://nemunai.re:194/")
         self.assertIsInstance(server, IRCSServer)
-        self.assertEqual(server.host, "host3")
-        self.assertEqual(server.port, 194)
+        self.assertEqual(server._sockaddr,
+                         socket.getaddrinfo("nemunai.re", 194, proto=socket.IPPROTO_TCP)[0][4])
+
+        with self.assertRaises(socket.gaierror):
+            factory("irc://_nonexistent.nemunai.re")
 
 
 if __name__ == '__main__':
