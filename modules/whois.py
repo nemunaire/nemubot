@@ -49,7 +49,7 @@ class Login:
     def get_photo(self):
         if self.login in context.data.getNode("pics").index:
             return context.data.getNode("pics").index[self.login]["url"]
-        for url in [ "https://static.acu.epita.fr/photos/%s", "https://static.acu.epita.fr/photos/%s/%%s" % self.gid, "https://intra-bocal.epitech.eu/trombi/%s.jpg", "http://whois.23.tf/p/%s/%%s.jpg" % self.gid ]:
+        for url in [ "https://photos.cri.epita.net/%s", "https://static.acu.epita.fr/photos/%s", "https://static.acu.epita.fr/photos/%s/%%s" % self.gid, "https://intra-bocal.epitech.eu/trombi/%s.jpg", "http://whois.23.tf/p/%s/%%s.jpg" % self.gid ]:
             url = url % self.login
             try:
                 _, status, _, _ = headers(url)
