@@ -394,7 +394,13 @@ class Bot(threading.Thread):
             self.event_timer.cancel()
 
         if len(self.events):
-            remaining = self.events[0].time_left.total_seconds()
+            try:
+                remaining = self.events[0].time_left.total_seconds()
+            except:
+                logger.exception("An error occurs during event time calculation:")
+                self.events.pop(0)
+                return self._update_event_timer()
+
             logger.debug("Update timer: next event in %d seconds", remaining)
             self.event_timer = threading.Timer(remaining if remaining > 0 else 0, self._end_event_timer)
             self.event_timer.start()
