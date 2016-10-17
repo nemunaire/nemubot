@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import types
 
 logger = logging.getLogger("nemubot.treatment")
 
@@ -116,10 +117,18 @@ class MessageTreater:
                     yield r
 
             elif res is not None:
-                if not hasattr(res, "server") or res.server is None:
-                    res.server = msg.server
+                if isinstance(res, types.GeneratorType):
+                    for r in res:
+                        if not hasattr(r, "server") or r.server is None:
+                            r.server = msg.server
 
-                yield res
+                        yield r
+
+                else:
+                    if not hasattr(res, "server") or res.server is None:
+                        res.server = msg.server
+
+                    yield res
 
             hook = next(hook_gen, None)
 
