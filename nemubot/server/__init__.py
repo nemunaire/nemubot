@@ -16,7 +16,7 @@
 
 
 def factory(uri, ssl=False, **init_args):
-    from urllib.parse import urlparse, unquote
+    from urllib.parse import urlparse, unquote, parse_qs
     o = urlparse(uri)
 
     srv = None
@@ -45,25 +45,26 @@ def factory(uri, ssl=False, **init_args):
         modifiers = o.path.split(",")
         target = unquote(modifiers.pop(0)[1:])
 
-        queries = o.query.split("&")
-        for q in queries:
-            if "=" in q:
-                key, val = tuple(q.split("=", 1))
-            else:
-                key, val = q, ""
-            if key == "msg":
-                if "on_connect" not in args:
-                    args["on_connect"] = []
-                args["on_connect"].append("PRIVMSG %s :%s" % (target, unquote(val)))
-            elif key == "key":
-                if "channels" not in args:
-                    args["channels"] = []
-                args["channels"].append((target, unquote(val)))
-            elif key == "pass":
-                args["password"] = unquote(val)
-            elif key == "charset":
-                args["encoding"] = unquote(val)
+        # Read query string
+        params = parse_qs(o.query)
 
+        if "msg" in params:
+            if "on_connect" not in args:
+                args["on_connect"] = []
+            args["on_connect"].append("PRIVMSG %s :%s" % (target, params["msg"]))
+
+        if "key" in params:
+            if "channels" not in args:
+                args["channels"] = []
+            args["channels"].append((target, params["key"]))
+
+        if "pass" in params:
+            args["password"] = params["pass"]
+
+        if "charset" in params:
+            args["encoding"] = params["charset"]
+
+        #
         if "channels" not in args and "isnick" not in modifiers:
             args["channels"] = [ target ]
 
