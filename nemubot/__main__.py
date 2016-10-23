@@ -71,8 +71,8 @@ def main():
     args.pidfile = os.path.abspath(os.path.expanduser(args.pidfile))
     args.socketfile = os.path.abspath(os.path.expanduser(args.socketfile))
     args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
-    args.files = [ x for x in map(os.path.abspath, args.files)]
-    args.modules_path = [ x for x in map(os.path.abspath, args.modules_path)]
+    args.files = [x for x in map(os.path.abspath, args.files)]
+    args.modules_path = [x for x in map(os.path.abspath, args.modules_path)]
 
     # Check if an instance is already launched
     if args.pidfile is not None and os.path.isfile(args.pidfile):
@@ -96,7 +96,7 @@ def main():
         with open(args.pidfile, "w+") as f:
             f.write(str(os.getpid()))
 
-    # Setup loggin interface
+    # Setup logging interface
     import logging
     logger = logging.getLogger("nemubot")
     logger.setLevel(logging.DEBUG)
@@ -200,6 +200,7 @@ def main():
     if args.debug:
         sigusr1handler(0, None)
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
