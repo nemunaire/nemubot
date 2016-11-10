@@ -1,6 +1,6 @@
 # coding=utf-8
 
-"""The weather module"""
+"""The weather module. Powered by Dark Sky <https://darksky.net/poweredby/>"""
 
 import datetime
 import re
@@ -17,7 +17,7 @@ nemubotversion = 4.0
 
 from more import Response
 
-URL_DSAPI = "https://api.forecast.io/forecast/%s/%%s,%%s"
+URL_DSAPI = "https://api.darksky.net/forecast/%s/%%s,%%s?lang=%%s&units=%%s"
 
 def load(context):
     if not context.config or "darkskyapikey" not in context.config:
@@ -30,34 +30,19 @@ def load(context):
     URL_DSAPI = URL_DSAPI % context.config["darkskyapikey"]
 
 
-def help_full ():
-    return "!weather /city/: Display the current weather in /city/."
-
-
-def fahrenheit2celsius(temp):
-    return int((temp - 32) * 50/9)/10
-
-
-def mph2kmph(speed):
-    return int(speed * 160.9344)/100
-
-
-def inh2mmh(size):
-    return int(size * 254)/10
-
-
 def format_wth(wth):
-    return ("%s °C %s; precipitation (%s %% chance) intensity: %s mm/h; relative humidity: %s %%; wind speed: %s km/h %s°; cloud coverage: %s %%; pressure: %s hPa; ozone: %s DU" %
+    return ("%s °C %s; precipitation (%s %% chance) intensity: %s mm/h; relative humidity: %s %%; wind speed: %s m/s %s°; cloud coverage: %s %%; pressure: %s hPa; visibility: %s km; ozone: %s DU" %
            (
-               fahrenheit2celsius(wth["temperature"]),
+               wth["temperature"],
                wth["summary"],
                int(wth["precipProbability"] * 100),
-               inh2mmh(wth["precipIntensity"]),
+               wth["precipIntensity"],
                int(wth["humidity"] * 100),
-               mph2kmph(wth["windSpeed"]),
+               wth["windSpeed"],
                wth["windBearing"],
                int(wth["cloudCover"] * 100),
                int(wth["pressure"]),
+               int(wth["visibility"]),
                int(wth["ozone"])
            ))
 
@@ -66,7 +51,7 @@ def format_forecast_daily(wth):
     return ("%s; between %s-%s °C; precipitation (%s %% chance) intensity: maximum %s mm/h; relative humidity: %s %%; wind speed: %s km/h %s°; cloud coverage: %s %%; pressure: %s hPa; ozone: %s DU" %
            (
                wth["summary"],
-               fahrenheit2celsius(wth["temperatureMin"]), fahrenheit2celsius(wth["temperatureMax"]),
+               wth["temperatureMin"], wth["temperatureMax"],
                int(wth["precipProbability"] * 100),
                inh2mmh(wth["precipIntensityMax"]),
                int(wth["humidity"] * 100),
@@ -126,8 +111,8 @@ def treat_coord(msg):
         raise IMException("indique-moi un nom de ville ou des coordonnées.")
 
 
-def get_json_weather(coords):
-    wth = web.getJSON(URL_DSAPI % (float(coords[0]), float(coords[1])))
+def get_json_weather(coords, lang="en", units="auto"):
+    wth = web.getJSON(URL_DSAPI % (float(coords[0]), float(coords[1]), lang, units))
 
     # First read flags
     if wth is None or "darksky-unavailable" in wth["flags"]:
@@ -149,10 +134,16 @@ def cmd_coordinates(msg):
     return Response("Les coordonnées de %s sont %s,%s" % (msg.args[0], coords["lat"], coords["long"]), channel=msg.channel)
 
 
-@hook.command("alert")
+@hook.command("alert",
+              keywords={
+                  "lang=LANG": "change the output language of weather sumarry; default: en",
+                  "units=UNITS": "return weather conditions in the requested units; default: auto",
+              })
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
-    wth = get_json_weather(coords)
+    wth = get_json_weather(coords,
+                           lang=msg.kwargs["lang"] if "lang" in msg.kwargs else "en",
+                           units=msg.kwargs["units"] if "units" in msg.kwargs else "auto")
 
     res = Response(channel=msg.channel, nomore="No more weather alert", count=" (%d more alerts)")
 
@@ -166,10 +157,20 @@ def cmd_alert(msg):
     return res
 
 
-@hook.command("météo")
+@hook.command("météo",
+              help="Display current weather and previsions",
+              help_usage={
+                  "CITY": "Display the current weather and previsions in CITY",
+              },
+              keywords={
+                  "lang=LANG": "change the output language of weather sumarry; default: en",
+                  "units=UNITS": "return weather conditions in the requested units; default: auto",
+              })
 def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
-    wth = get_json_weather(coords)
+    wth = get_json_weather(coords,
+                           lang=msg.kwargs["lang"] if "lang" in msg.kwargs else "en",
+                           units=msg.kwargs["units"] if "units" in msg.kwargs else "auto")
 
     res = Response(channel=msg.channel, nomore="No more weather information")
 
@@ -243,3 +244,7 @@ def parseask(msg):
         context.save()
         return Response("ok, j'ai bien noté les coordonnées de %s" % res.group("city"),
                         msg.channel, msg.nick)
+
+
+if __name__ == "__main__":
+      sys.exit(main())
