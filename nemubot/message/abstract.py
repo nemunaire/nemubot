@@ -21,7 +21,7 @@ class Abstract:
 
     """This class represents an abstract message"""
 
-    def __init__(self, server=None, date=None, to=None, to_response=None, frm=None):
+    def __init__(self, server=None, date=None, to=None, to_response=None, frm=None, frm_owner=False):
         """Initialize an abstract message
 
         Arguments:
@@ -40,7 +40,7 @@ class Abstract:
                              else [ to_response ])
         self.frm = frm  # None allowed when it designate this bot
 
-        self.frm_owner = False  # Filled later, in consumer
+        self.frm_owner = frm_owner
 
 
     @property
@@ -78,7 +78,8 @@ class Abstract:
             "date": self.date,
             "to": self.to,
             "to_response": self._to_response,
-            "frm": self.frm
+            "frm": self.frm,
+            "frm_owner": self.frm_owner,
         }
 
         for w in without:
