@@ -109,6 +109,9 @@ class MessageTreater:
         msg -- message to treat
         """
 
+        if hasattr(msg, "frm_owner"):
+            msg.frm_owner = (not hasattr(msg.server, "owner") or msg.server.owner == msg.frm)
+
         while hook is not None:
             res = hook.run(msg)
 

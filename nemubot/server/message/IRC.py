@@ -150,7 +150,8 @@ class IRC(Abstract):
                 "date": self.tags["time"],
                 "to": receivers,
                 "to_response": [r if r != srv.nick else self.nick for r in receivers],
-                "frm": self.nick
+                "frm": self.nick,
+                "frm_owner": self.nick == srv.owner
             }
 
             # If CTCP, remove 0x01
