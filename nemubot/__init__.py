@@ -53,41 +53,50 @@ def attach(pid, socketfile):
         sys.stderr.write("\n")
         return 1
 
-    from select import select
+    import select
+    mypoll = select.poll()
+
+    mypoll.register(sys.stdin.fileno(), select.POLLIN | select.POLLPRI)
+    mypoll.register(sock.fileno(), select.POLLIN | select.POLLPRI)
     try:
         while True:
-            rl, wl, xl = select([sys.stdin, sock], [], [])
+            for fd, flag in mypoll.poll():
+                if flag & (select.POLLERR | select.POLLHUP | select.POLLNVAL):
+                    sock.close()
+                    print("Connection closed.")
+                    return 1
 
-            if sys.stdin in rl:
-                line = sys.stdin.readline().strip()
-                if line == "exit" or line == "quit":
-                    return 0
-                elif line == "reload":
-                    import os, signal
-                    os.kill(pid, signal.SIGHUP)
-                    print("Reload signal sent. Please wait...")
+                if fd == sys.stdin.fileno():
+                    line = sys.stdin.readline().strip()
+                    if line == "exit" or line == "quit":
+                        return 0
+                    elif line == "reload":
+                        import os, signal
+                        os.kill(pid, signal.SIGHUP)
+                        print("Reload signal sent. Please wait...")
 
-                elif line == "shutdown":
-                    import os, signal
-                    os.kill(pid, signal.SIGTERM)
-                    print("Shutdown signal sent. Please wait...")
+                    elif line == "shutdown":
+                        import os, signal
+                        os.kill(pid, signal.SIGTERM)
+                        print("Shutdown signal sent. Please wait...")
 
-                elif line == "kill":
-                    import os, signal
-                    os.kill(pid, signal.SIGKILL)
-                    print("Signal sent...")
-                    return 0
+                    elif line == "kill":
+                        import os, signal
+                        os.kill(pid, signal.SIGKILL)
+                        print("Signal sent...")
+                        return 0
 
-                elif line == "stack" or line == "stacks":
-                    import os, signal
-                    os.kill(pid, signal.SIGUSR1)
-                    print("Debug signal sent. Consult logs.")
+                    elif line == "stack" or line == "stacks":
+                        import os, signal
+                        os.kill(pid, signal.SIGUSR1)
+                        print("Debug signal sent. Consult logs.")
 
-                else:
-                    sock.send(line.encode() + b'\r\n')
+                    else:
+                        sock.send(line.encode() + b'\r\n')
 
-            if sock in rl:
-                sys.stdout.write(sock.recv(2048).decode())
+                if fd == sock.fileno():
+                    sys.stdout.write(sock.recv(2048).decode())
+
     except KeyboardInterrupt:
         pass
     except:
