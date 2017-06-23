@@ -125,9 +125,15 @@ class UnixSocket:
         super().connect(self._socket_path)
 
 
+class SocketClient(_Socket, socket.socket):
+
+    def read(self):
+        return self.recv()
+
+
 class _Listener:
 
-    def __init__(self, new_server_cb, instanciate=_Socket, **kwargs):
+    def __init__(self, new_server_cb, instanciate=SocketClient, **kwargs):
         super().__init__(**kwargs)
 
         self._instanciate = instanciate
