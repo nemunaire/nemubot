@@ -149,6 +149,8 @@ class Bot(threading.Thread):
 
 
     def run(self):
+        global sync_queue
+
         self._poll.register(sync_queue._reader, select.POLLIN | select.POLLPRI)
 
         logger.info("Starting main loop")
@@ -222,6 +224,7 @@ class Bot(threading.Thread):
                 c = Consumer(self)
                 self.cnsr_thrd.append(c)
                 c.start()
+        sync_queue = None
         logger.info("Ending main loop")
 
 
@@ -566,9 +569,10 @@ class Bot(threading.Thread):
 
         self.datastore.close()
 
-        self.stop = True
-        sync_act("end")
-        sync_queue.join()
+        if self.stop is False or sync_queue is not None:
+            self.stop = True
+            sync_act("end")
+            sync_queue.join()
 
 
     # Treatment
