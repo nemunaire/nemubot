@@ -148,7 +148,7 @@ def main():
     # Daemonize
     if not args.debug:
         from nemubot import daemonize
-        daemonize()
+        daemonize(args.socketfile)
 
     # Signals handling
     def sigtermhandler(signum, frame):

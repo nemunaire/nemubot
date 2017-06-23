@@ -106,12 +106,24 @@ def attach(pid, socketfile):
     return 0
 
 
-def daemonize():
+def daemonize(socketfile=None):
     """Detach the running process to run as a daemon
     """
 
     import os
     import sys
+
+    if socketfile is not None:
+        try:
+            pid = os.fork()
+            if pid > 0:
+                import time
+                os.waitpid(pid, 0)
+                time.sleep(1)
+                sys.exit(attach(pid, socketfile))
+        except OSError as err:
+            sys.stderr.write("Unable to fork: %s\n" % err)
+            sys.exit(1)
 
     try:
         pid = os.fork()
