@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2016  Mercier Pierre-Olivier
+# Copyright (C) 2012-2017  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -74,28 +74,6 @@ def main():
     args.files = [x for x in map(os.path.abspath, args.files)]
     args.modules_path = [x for x in map(os.path.abspath, args.modules_path)]
 
-    # Check if an instance is already launched
-    if args.pidfile is not None and os.path.isfile(args.pidfile):
-        with open(args.pidfile, "r") as f:
-            pid = int(f.readline())
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            pass
-        else:
-            from nemubot import attach
-            sys.exit(attach(pid, args.socketfile))
-
-    # Daemonize
-    if not args.debug:
-        from nemubot import daemonize
-        daemonize()
-
-    # Store PID to pidfile
-    if args.pidfile is not None:
-        with open(args.pidfile, "w+") as f:
-            f.write(str(os.getpid()))
-
     # Setup logging interface
     import logging
     logger = logging.getLogger("nemubot")
@@ -114,6 +92,18 @@ def main():
     fh = logging.FileHandler(args.logfile)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
+
+    # Check if an instance is already launched
+    if args.pidfile is not None and os.path.isfile(args.pidfile):
+        with open(args.pidfile, "r") as f:
+            pid = int(f.readline())
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            pass
+        else:
+            from nemubot import attach
+            sys.exit(attach(pid, args.socketfile))
 
     # Add modules dir paths
     modules_paths = list()
@@ -149,6 +139,17 @@ def main():
         for module in args.module:
             __import__(module)
 
+    if args.socketfile:
+        from nemubot.server.socket import UnixSocketListener
+        context.add_server(UnixSocketListener(new_server_cb=context.add_server,
+                                              location=args.socketfile,
+                                              name="master_socket"))
+
+    # Daemonize
+    if not args.debug:
+        from nemubot import daemonize
+        daemonize()
+
     # Signals handling
     def sigtermhandler(signum, frame):
         """On SIGTERM and SIGINT, quit nicely"""
@@ -182,11 +183,10 @@ def main():
                          "".join(traceback.format_stack(stack)))
     signal.signal(signal.SIGUSR1, sigusr1handler)
 
-    if args.socketfile:
-        from nemubot.server.socket import UnixSocketListener
-        context.add_server(UnixSocketListener(new_server_cb=context.add_server,
-                                              location=args.socketfile,
-                                              name="master_socket"))
+    # Store PID to pidfile
+    if args.pidfile is not None:
+        with open(args.pidfile, "w+") as f:
+            f.write(str(os.getpid()))
 
     # context can change when performing an hotswap, always join the latest context
     oldcontext = None
