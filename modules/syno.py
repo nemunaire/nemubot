@@ -29,7 +29,7 @@ def load(context):
 # MODULE CORE #########################################################
 
 def get_french_synos(word):
-    url = "http://www.crisco.unicaen.fr/des/synonymes/" + quote(word.encode("ISO-8859-1"))
+    url = "http://www.crisco.unicaen.fr/des/synonymes/" + quote(word)
     page = web.getURLContent(url)
 
     best = list(); synos = list(); anton = list()
