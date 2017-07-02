@@ -108,6 +108,30 @@ def get_laposte_info(laposte_id):
                 poste_location, poste_date)
 
 
+def get_postnl_info(postnl_id):
+    data = urllib.parse.urlencode({'barcodes': postnl_id})
+    postnl_baseurl = "http://www.postnl.post/details/"
+
+    postnl_data = urllib.request.urlopen(postnl_baseurl,
+                                         data.encode('utf-8'))
+    soup = BeautifulSoup(postnl_data)
+    if (soup.find(id='datatables')
+            and soup.find(id='datatables').tbody
+            and soup.find(id='datatables').tbody.tr):
+        search_res = soup.find(id='datatables').tbody.tr
+        if len(search_res.find_all('td')) >= 3:
+            field = field.find_next('td')
+            post_date = field.get_text()
+
+            field = field.find_next('td')
+            post_status = field.get_text()
+
+            field = field.find_next('td')
+            post_destination = field.get_text()
+
+            return (post_status.lower(), post_destination, post_date)
+
+
 # TRACKING HANDLERS ###################################################
 
 def handle_tnt(tracknum):
@@ -131,6 +155,15 @@ def handle_laposte(tracknum):
                 "\x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F"
                 ")." % (poste_type, poste_id, poste_status,
                         poste_location, poste_date))
+
+
+def handle_postnl(tracknum):
+    info = get_postnl_info(tracknum)
+    if info:
+        post_status, post_destination, post_date = info
+        return ("PostNL \x02%s\x0F est actuellement "
+                "\x02%s\x0F vers le pays \x02%s\x0F (Mis à jour le \x02%s\x0F"
+                ")." % (tracknum, post_status, post_destination, post_date))
 
 
 def handle_colissimo(tracknum):
@@ -158,6 +191,7 @@ def handle_coliprive(tracknum):
 
 TRACKING_HANDLERS = {
     'laposte': handle_laposte,
+    'postnl': handle_postnl,
     'colissimo': handle_colissimo,
     'chronopost': handle_chronopost,
     'coliprive': handle_coliprive,
