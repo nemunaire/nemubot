@@ -1,5 +1,5 @@
 # Nemubot is a smart and modulable IM bot.
-# Copyright (C) 2012-2015  Mercier Pierre-Olivier
+# Copyright (C) 2012-2017  Mercier Pierre-Olivier
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -14,105 +14,61 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-class ModuleContext:
+class _ModuleContext:
 
-    def __init__(self, context, module):
-        """Initialize the module context
-
-        arguments:
-        context -- the bot context
-        module -- the module
-        """
+    def __init__(self, module=None):
+        self.module = module
 
         if module is not None:
-            module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+            self.module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
         else:
-            module_name = ""
-
-        # Load module configuration if exists
-        if (context is not None and
-            module_name in context.modules_configuration):
-            self.config = context.modules_configuration[module_name]
-        else:
-            from nemubot.config.module import Module
-            self.config = Module(module_name)
+            self.module_name = ""
 
         self.hooks = list()
         self.events = list()
-        self.debug = context.verbosity > 0 if context is not None else False
+        self.debug = False
 
+        from nemubot.config.module import Module
+        self.config = Module(self.module_name)
+
+
+    def load_data(self):
+        from nemubot.tools.xmlparser import module_state
+        return module_state.ModuleState("nemubotstate")
+
+    def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
+        assert isinstance(hook, AbstractHook), hook
+        self.hooks.append((triggers, hook))
 
-        # Define some callbacks
-        if context is not None:
-            def load_data():
-                return context.datastore.load(module_name)
+    def del_hook(self, hook, *triggers):
+        from nemubot.hooks import Abstract as AbstractHook
+        assert isinstance(hook, AbstractHook), hook
+        self.hooks.remove((triggers, hook))
 
-            def add_hook(hook, *triggers):
-                assert isinstance(hook, AbstractHook), hook
-                self.hooks.append((triggers, hook))
-                return context.treater.hm.add_hook(hook, *triggers)
+    def subtreat(self, msg):
+        return None
 
-            def del_hook(hook, *triggers):
-                assert isinstance(hook, AbstractHook), hook
-                self.hooks.remove((triggers, hook))
-                return context.treater.hm.del_hooks(*triggers, hook=hook)
+    def add_event(self, evt, eid=None):
+        return self.events.append((evt, eid))
 
-            def subtreat(msg):
-                yield from context.treater.treat_msg(msg)
-            def add_event(evt, eid=None):
-                return context.add_event(evt, eid, module_src=module)
-            def del_event(evt):
-                return context.del_event(evt, module_src=module)
+    def del_event(self, evt):
+        for i in self.events:
+            e, eid = i
+            if e == evt:
+                self.events.remove(i)
+                return True
+        return False
 
-            def send_response(server, res):
-                if server in context.servers:
-                    if res.server is not None:
-                        return context.servers[res.server].send_response(res)
-                    else:
-                        return context.servers[server].send_response(res)
-                else:
-                    module.logger.error("Try to send a message to the unknown server: %s", server)
-                    return False
+    def send_response(self, server, res):
+       self.module.logger.info("Send response: %s", res)
 
-        else:  # Used when using outside of nemubot
-            def load_data():
-                from nemubot.tools.xmlparser import module_state
-                return module_state.ModuleState("nemubotstate")
+    def save(self):
+        self.context.datastore.save(self.module_name, self.data)
 
-            def add_hook(hook, *triggers):
-                assert isinstance(hook, AbstractHook), hook
-                self.hooks.append((triggers, hook))
-            def del_hook(hook, *triggers):
-                assert isinstance(hook, AbstractHook), hook
-                self.hooks.remove((triggers, hook))
-            def subtreat(msg):
-                return None
-            def add_event(evt, eid=None):
-                return context.add_event(evt, eid, module_src=module)
-            def del_event(evt):
-                return context.del_event(evt, module_src=module)
-
-            def send_response(server, res):
-                module.logger.info("Send response: %s", res)
-
-        def save():
-            context.datastore.save(module_name, self.data)
-
-        def subparse(orig, cnt):
-            if orig.server in context.servers:
-                return context.servers[orig.server].subparse(orig, cnt)
-
-        self.load_data = load_data
-        self.add_hook = add_hook
-        self.del_hook = del_hook
-        self.add_event = add_event
-        self.del_event = del_event
-        self.save = save
-        self.send_response = send_response
-        self.subtreat = subtreat
-        self.subparse = subparse
-
+    def subparse(self, orig, cnt):
+        if orig.server in self.context.servers:
+            return self.context.servers[orig.server].subparse(orig, cnt)
 
     @property
     def data(self):
@@ -129,7 +85,62 @@ class ModuleContext:
             self.del_hook(h, *s)
 
         # Remove registered events
-        for e in self.events:
-            self.del_event(e)
+        for evt, eid, module_src in self.events:
+            self.del_event(evt)
 
         self.save()
+
+
+class ModuleContext(_ModuleContext):
+
+    def __init__(self, context, *args, **kwargs):
+        """Initialize the module context
+
+        arguments:
+        context -- the bot context
+        module -- the module
+        """
+
+        super().__init__(*args, **kwargs)
+
+        # Load module configuration if exists
+        if self.module_name in context.modules_configuration:
+            self.config = context.modules_configuration[self.module_name]
+
+        self.context = context
+        self.debug = context.verbosity > 0
+
+
+    def load_data(self):
+        return self.context.datastore.load(self.module_name)
+
+    def add_hook(self, hook, *triggers):
+        from nemubot.hooks import Abstract as AbstractHook
+        assert isinstance(hook, AbstractHook), hook
+        self.hooks.append((triggers, hook))
+        return self.context.treater.hm.add_hook(hook, *triggers)
+
+    def del_hook(self, hook, *triggers):
+        from nemubot.hooks import Abstract as AbstractHook
+        assert isinstance(hook, AbstractHook), hook
+        self.hooks.remove((triggers, hook))
+        return self.context.treater.hm.del_hooks(*triggers, hook=hook)
+
+    def subtreat(self, msg):
+        yield from self.context.treater.treat_msg(msg)
+
+    def add_event(self, evt, eid=None):
+        return self.context.add_event(evt, eid, module_src=self.module)
+
+    def del_event(self, evt):
+        return self.context.del_event(evt, module_src=self.module)
+
+    def send_response(self, server, res):
+        if server in self.context.servers:
+            if res.server is not None:
+                return self.context.servers[res.server].send_response(res)
+            else:
+                return self.context.servers[server].send_response(res)
+        else:
+            self.module.logger.error("Try to send a message to the unknown server: %s", server)
+            return False

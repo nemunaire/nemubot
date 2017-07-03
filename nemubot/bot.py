@@ -478,7 +478,7 @@ class Bot(threading.Thread):
         module.print = prnt
 
         # Create module context
-        from nemubot.modulecontext import ModuleContext
+        from nemubot.modulecontext import _ModuleContext, ModuleContext
         module.__nemubot_context__ = ModuleContext(self, module)
 
         if not hasattr(module, "logger"):
@@ -486,7 +486,7 @@ class Bot(threading.Thread):
 
         # Replace imported context by real one
         for attr in module.__dict__:
-            if attr != "__nemubot_context__" and type(module.__dict__[attr]) == ModuleContext:
+            if attr != "__nemubot_context__" and type(module.__dict__[attr]) == _ModuleContext:
                 module.__dict__[attr] = module.__nemubot_context__
 
         # Register decorated functions
