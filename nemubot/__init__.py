@@ -17,9 +17,9 @@
 __version__ = '4.0.dev3'
 __author__  = 'nemunaire'
 
-from nemubot.modulecontext import ModuleContext
+from nemubot.modulecontext import _ModuleContext
 
-context = ModuleContext(None, None)
+context = _ModuleContext()
 
 
 def requires_version(min=None, max=None):
