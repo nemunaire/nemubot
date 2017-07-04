@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urllib.parse import urlparse, urlsplit, urlunsplit
+from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
 
 from nemubot.exception import IMException
 
@@ -156,7 +156,11 @@ def getURLContent(url, body=None, timeout=7, header=None):
     elif ((res.status == http.client.FOUND or
            res.status == http.client.MOVED_PERMANENTLY) and
           res.getheader("Location") != url):
-        return getURLContent(res.getheader("Location"), timeout=timeout)
+        return getURLContent(
+            urljoin(url, res.getheader("Location")),
+            body=body,
+            timeout=timeout,
+            header=header)
     else:
         raise IMException("A HTTP error occurs: %d - %s" %
                            (res.status, http.client.responses[res.status]))
