@@ -162,15 +162,13 @@ def getURLContent(url, body=None, timeout=7, header=None):
                            (res.status, http.client.responses[res.status]))
 
 
-def getXML(url, timeout=7):
+def getXML(*args, **kwargs):
     """Get content page and return XML parsed content
 
-    Arguments:
-    url -- the URL to get
-    timeout -- maximum number of seconds to wait before returning an exception
+    Arguments: same as getURLContent
     """
 
-    cnt = getURLContent(url, timeout=timeout)
+    cnt = getURLContent(*args, **kwargs)
     if cnt is None:
         return None
     else:
@@ -178,15 +176,13 @@ def getXML(url, timeout=7):
         return parseString(cnt)
 
 
-def getJSON(url, timeout=7):
+def getJSON(*args, **kwargs):
     """Get content page and return JSON content
 
-    Arguments:
-    url -- the URL to get
-    timeout -- maximum number of seconds to wait before returning an exception
+    Arguments: same as getURLContent
     """
 
-    cnt = getURLContent(url, timeout=timeout)
+    cnt = getURLContent(*args, **kwargs)
     if cnt is None:
         return None
     else:
