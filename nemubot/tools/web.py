@@ -108,6 +108,9 @@ def getURLContent(url, body=None, timeout=7, header=None):
     elif "User-agent" not in header:
         header["User-agent"] = "Nemubot v%s" % __version__
 
+    if body is not None and "Content-Type" not in header:
+        header["Content-Type"] = "application/x-www-form-urlencoded"
+
     import socket
     try:
         if o.query != '':
