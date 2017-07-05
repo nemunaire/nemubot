@@ -30,7 +30,7 @@ def load(context):
     context.data.getNode("pics").setIndex("login", "pict")
 
     import nemubot.hooks
-    context.add_hook(nemubot.hooks.Command(cmd_whois, "whois"),
+    context.add_hook(nemubot.hooks.Command(cmd_whois, "whois", keywords={"lookup": "Perform a lookup of the begining of the login instead of an exact search."}),
                      "in","Command")
 
 class Login:
@@ -60,31 +60,38 @@ class Login:
         return None
 
 
-def found_login(login):
+def found_login(login, search=False):
     if login in context.data.getNode("aliases").index:
         login = context.data.getNode("aliases").index[login]["to"]
 
-    login_ = login + ":"
+    login_ = login + (":" if not search else "")
     lsize = len(login_)
 
     with open(PASSWD_FILE, encoding="iso-8859-15") as f:
         for l in f.readlines():
             if l[:lsize] == login_:
-                return Login(l.strip())
-    return None
+                yield Login(l.strip())
 
 def cmd_whois(msg):
     if len(msg.args) < 1:
         raise IMException("Provide a name")
 
-    res = Response(channel=msg.channel, count=" (%d more logins)")
-    for srch in msg.args:
-        l = found_login(srch)
-        if l is not None:
+    def format_response(t):
+        srch, l = t
+        if type(l) is Login:
             pic = l.get_photo()
-            res.append_message("%s is %s (%s %s): %s%s" % (srch, l.cn.capitalize(), l.login, l.uid, l.get_promo(), " and looks like %s" % pic if pic is not None else ""))
+            return "%s is %s (%s %s): %s%s" % (srch, l.cn.capitalize(), l.login, l.uid, l.get_promo(), " and looks like %s" % pic if pic is not None else "")
         else:
-            res.append_message("Unknown %s :(" % srch)
+            return l % srch
+
+    res = Response(channel=msg.channel, count=" (%d more logins)", line_treat=format_response)
+    for srch in msg.args:
+        found = False
+        for l in found_login(srch, "lookup" in msg.kwargs):
+            found = True
+            res.append_message((srch, l))
+        if not found:
+            res.append_message((srch, "Unknown %s :("))
     return res
 
 @hook.command("nicks")
