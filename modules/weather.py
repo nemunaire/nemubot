@@ -158,7 +158,10 @@ def cmd_alert(msg):
 
     if "alerts" in wth:
         for alert in wth["alerts"]:
-            res.append_message("\x03\x02%s\x03\x02 (see %s expire on %s): %s" % (alert["title"], alert["uri"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"]), alert["description"].replace("\n", " ")))
+            if "expires" in alert:
+                res.append_message("\x03\x02%s\x03\x02 (see %s expire on %s): %s" % (alert["title"], alert["uri"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"]), alert["description"].replace("\n", " ")))
+            else:
+                res.append_message("\x03\x02%s\x03\x02 (see %s): %s" % (alert["title"], alert["uri"], alert["description"].replace("\n", " ")))
 
     return res
 
@@ -173,7 +176,10 @@ def cmd_weather(msg):
     if "alerts" in wth:
         alert_msgs = list()
         for alert in wth["alerts"]:
-            alert_msgs.append("\x03\x02%s\x03\x02 expire on %s" % (alert["title"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"])))
+            if "expires" in alert:
+                alert_msgs.append("\x03\x02%s\x03\x02 expire on %s" % (alert["title"], format_timestamp(int(alert["expires"]), wth["timezone"], wth["offset"])))
+            else:
+                alert_msgs.append("\x03\x02%s\x03\x02" % (alert["title"]))
         res.append_message("\x03\x16\x03\x02/!\\\x03\x02 Alert%s:\x03\x16 " % ("s" if len(alert_msgs) > 1 else "") + ", ".join(alert_msgs))
 
     if specific is not None:
