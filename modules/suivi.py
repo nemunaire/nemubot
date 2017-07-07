@@ -17,8 +17,7 @@ from more import Response
 
 def get_tnt_info(track_id):
     values = []
-    data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/'
-                         'visubontransport.do?bonTransport=%s' % track_id)
+    data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/visubontransport.do?bonTransport=%s' % track_id)
     soup = BeautifulSoup(data)
     status_list = soup.find('div', class_='result__content')
     if not status_list:
@@ -32,8 +31,7 @@ def get_tnt_info(track_id):
 
 
 def get_colissimo_info(colissimo_id):
-    colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/"
-                                   "suivre.do?colispart=%s" % colissimo_id)
+    colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/suivre.do?colispart=%s" % colissimo_id)
     soup = BeautifulSoup(colissimo_data)
 
     dataArray = soup.find(class_='dataArray')
@@ -47,9 +45,8 @@ def get_colissimo_info(colissimo_id):
 
 def get_chronopost_info(track_id):
     data = urllib.parse.urlencode({'listeNumeros': track_id})
-    track_baseurl = "http://www.chronopost.fr/expedier/" \
-        "inputLTNumbersNoJahia.do?lang=fr_FR"
-    track_data = urllib.request.urlopen(track_baseurl, data.encode('utf-8'))
+    track_baseurl = "http://www.chronopost.fr/expedier/inputLTNumbersNoJahia.do?lang=fr_FR"
+    track_data = getURLContent(track_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(track_data)
 
     infoClass = soup.find(class_='numeroColi2')
@@ -65,9 +62,8 @@ def get_chronopost_info(track_id):
 
 def get_colisprive_info(track_id):
     data = urllib.parse.urlencode({'numColis': track_id})
-    track_baseurl = "https://www.colisprive.com/moncolis/pages/" \
-        "detailColis.aspx"
-    track_data = urllib.request.urlopen(track_baseurl, data.encode('utf-8'))
+    track_baseurl = "https://www.colisprive.com/moncolis/pages/detailColis.aspx"
+    track_data = getURLContent(track_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(track_data)
 
     dataArray = soup.find(class_='BandeauInfoColis')
@@ -82,8 +78,7 @@ def get_laposte_info(laposte_id):
     data = urllib.parse.urlencode({'id': laposte_id})
     laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
 
-    laposte_data = urllib.request.urlopen(laposte_baseurl,
-                                          data.encode('utf-8'))
+    laposte_data = getURLContent(laposte_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(laposte_data)
     search_res = soup.find(class_='resultat_rech_simple_table').tbody.tr
     if (soup.find(class_='resultat_rech_simple_table').thead
@@ -112,8 +107,7 @@ def get_postnl_info(postnl_id):
     data = urllib.parse.urlencode({'barcodes': postnl_id})
     postnl_baseurl = "http://www.postnl.post/details/"
 
-    postnl_data = urllib.request.urlopen(postnl_baseurl,
-                                         data.encode('utf-8'))
+    postnl_data = getURLContent(postnl_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(postnl_data)
     if (soup.find(id='datatables')
             and soup.find(id='datatables').tbody
