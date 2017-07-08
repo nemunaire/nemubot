@@ -2,14 +2,14 @@
 
 # PYTHON STUFF ############################################
 
-import urllib.request
+import json
 import urllib.parse
 from bs4 import BeautifulSoup
 import re
 
 from nemubot.hooks import hook
 from nemubot.exception import IMException
-from nemubot.tools.web import getURLContent
+from nemubot.tools.web import getURLContent, getJSON
 from more import Response
 
 
@@ -126,6 +126,42 @@ def get_postnl_info(postnl_id):
             return (post_status.lower(), post_destination, post_date)
 
 
+def get_fedex_info(fedex_id, lang="en_US"):
+    data = urllib.parse.urlencode({
+        'data': json.dumps({
+            "TrackPackagesRequest": {
+                "appType": "WTRK",
+                "appDeviceType": "DESKTOP",
+                "uniqueKey": "",
+                "processingParameters": {},
+                "trackingInfoList": [
+                    {
+                        "trackNumberInfo": {
+                            "trackingNumber": str(fedex_id),
+                            "trackingQualifier": "",
+                            "trackingCarrier": ""
+                        }
+                    }
+                ]
+            }
+        }),
+        'action': "trackpackages",
+        'locale': lang,
+        'version': 1,
+        'format': "json"
+    })
+    fedex_baseurl = "https://www.fedex.com/trackingCal/track"
+
+    fedex_data = getJSON(fedex_baseurl, data.encode('utf-8'))
+
+    if ("TrackPackagesResponse" in fedex_data and
+        "packageList" in fedex_data["TrackPackagesResponse"] and
+        len(fedex_data["TrackPackagesResponse"]["packageList"]) and
+        not fedex_data["TrackPackagesResponse"]["packageList"][0]["isInvalid"]
+    ):
+        return fedex_data["TrackPackagesResponse"]["packageList"][0]
+
+
 # TRACKING HANDLERS ###################################################
 
 def handle_tnt(tracknum):
@@ -183,6 +219,17 @@ def handle_coliprive(tracknum):
         return ("Colis Privé: \x02%s\x0F : \x02%s\x0F." % (tracknum, info))
 
 
+def handle_fedex(tracknum):
+    info = get_fedex_info(tracknum)
+    if info:
+        if info["displayActDeliveryDateTime"] != "":
+            return ("{trackingCarrierDesc}: \x02{statusWithDetails}\x0F: in \x02{statusLocationCity}, {statusLocationCntryCD}\x0F, delivered on: {displayActDeliveryDateTime}.".format(**info))
+        elif info["statusLocationCity"] != "":
+            return ("{trackingCarrierDesc}: \x02{statusWithDetails}\x0F: estimated delivery: {displayEstDeliveryDateTime}.".format(**info))
+        else:
+            return ("{trackingCarrierDesc}: \x02{statusWithDetails}\x0F: in \x02{statusLocationCity}, {statusLocationCntryCD}\x0F, estimated delivery: {displayEstDeliveryDateTime}.".format(**info))
+
+
 TRACKING_HANDLERS = {
     'laposte': handle_laposte,
     'postnl': handle_postnl,
@@ -190,6 +237,7 @@ TRACKING_HANDLERS = {
     'chronopost': handle_chronopost,
     'coliprive': handle_coliprive,
     'tnt': handle_tnt,
+    'fedex': handle_fedex,
 }
 
 
