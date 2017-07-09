@@ -15,7 +15,7 @@ from more import Response
 
 # LOADING #############################################################
 
-URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&appid=%s"
+URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&format=plaintext&appid=%s"
 
 def load(context):
     global URL_API
