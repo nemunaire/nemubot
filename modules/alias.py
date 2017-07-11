@@ -76,7 +76,7 @@ def get_variable(name, msg=None):
     elif name in context.data.getNode("variables").index:
         return context.data.getNode("variables").index[name]["value"]
     else:
-        return ""
+        return None
 
 
 def list_variables(user=None):
@@ -108,12 +108,12 @@ def set_variable(name, value, creator):
     context.save()
 
 
-def replace_variables(cnts, msg=None):
+def replace_variables(cnts, msg):
     """Replace variables contained in the content
 
     Arguments:
     cnt -- content where search variables
-    msg -- optional message where pick some variables
+    msg -- Message where pick some variables
     """
 
     unsetCnt = list()
@@ -122,12 +122,12 @@ def replace_variables(cnts, msg=None):
     resultCnt = list()
 
     for cnt in cnts:
-        for res in re.findall("\\$\{(?P<name>[a-zA-Z0-9:]+)\}", cnt):
-            rv = re.match("([0-9]+)(:([0-9]*))?", res)
+        for res, name, default in re.findall("\\$\{(([a-zA-Z0-9:]+)(?:-([^}]+))?)\}", cnt):
+            rv = re.match("([0-9]+)(:([0-9]*))?", name)
             if rv is not None:
                 varI = int(rv.group(1)) - 1
-                if varI > len(msg.args):
-                    cnt = cnt.replace("${%s}" % res, "", 1)
+                if varI >= len(msg.args):
+                    cnt = cnt.replace("${%s}" % res, default, 1)
                 elif rv.group(2) is not None:
                     if rv.group(3) is not None and len(rv.group(3)):
                         varJ = int(rv.group(3)) - 1
@@ -142,9 +142,10 @@ def replace_variables(cnts, msg=None):
                     cnt = cnt.replace("${%s}" % res, msg.args[varI], 1)
                     unsetCnt.append(varI)
             else:
-                cnt = cnt.replace("${%s}" % res, get_variable(res), 1)
+                cnt = cnt.replace("${%s}" % res, get_variable(name) or default, 1)
         resultCnt.append(cnt)
 
+    # Remove used content
     for u in sorted(set(unsetCnt), reverse=True):
         msg.args.pop(u)
 
