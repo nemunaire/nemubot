@@ -79,7 +79,7 @@ def parselisten(msg):
 def parseresponse(msg):
     global LAST_SUBS
 
-    if hasattr(msg, "text") and msg.text:
+    if hasattr(msg, "text") and msg.text and type(msg.text) == str:
         urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.text)
         for url in urls:
             for recv in msg.to:
