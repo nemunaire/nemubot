@@ -260,7 +260,7 @@ def cmd_unalias(msg):
 
 @hook.add(["pre","Command"])
 def treat_alias(msg):
-    if msg.cmd in context.data.getNode("aliases").index:
+    if context.data.getNode("aliases") is not None and msg.cmd in context.data.getNode("aliases").index:
         origin = context.data.getNode("aliases").index[msg.cmd]["origin"]
         rpl_msg = context.subparse(msg, origin)
         if isinstance(rpl_msg, Command):
