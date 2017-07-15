@@ -37,6 +37,9 @@ def main():
                         default=["./modules/"],
                         help="directory to use as modules store")
 
+    parser.add_argument("-A", "--no-attach", action="store_true",
+                        help="don't attach after fork")
+
     parser.add_argument("-d", "--debug", action="store_true",
                         help="don't deamonize, keep in foreground")
 
@@ -148,7 +151,7 @@ def main():
     # Daemonize
     if not args.debug:
         from nemubot import daemonize
-        daemonize(args.socketfile)
+        daemonize(args.socketfile, not args.no_attach)
 
     # Signals handling
     def sigtermhandler(signum, frame):
