@@ -151,6 +151,11 @@ class Bot(threading.Thread):
     def run(self):
         global sync_queue
 
+        # Rewrite the sync_queue, as the daemonization process tend to disturb it
+        old_sync_queue, sync_queue = sync_queue, JoinableQueue()
+        while not old_sync_queue.empty():
+            sync_queue.put_nowait(old_sync_queue.get())
+
         self._poll.register(sync_queue._reader, select.POLLIN | select.POLLPRI)
 
         logger.info("Starting main loop")
@@ -189,6 +194,8 @@ class Bot(threading.Thread):
                 while not sync_queue.empty():
                     args = sync_queue.get()
                     action = args.pop(0)
+
+                    logger.debug("Executing sync_queue action %s%s", action, args)
 
                     if action == "sckt" and len(args) >= 2:
                         try:
