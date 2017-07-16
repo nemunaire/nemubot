@@ -207,6 +207,9 @@ class Bot(threading.Thread):
                     elif action == "exit":
                         self.quit()
 
+                    elif action == "launch_consumer":
+                        pass  # This is treated after the loop
+
                     elif action == "loadconf":
                         for path in args:
                             logger.debug("Load configuration from %s", path)
@@ -418,6 +421,7 @@ class Bot(threading.Thread):
         while len(self.events) > 0 and datetime.now(timezone.utc) >= self.events[0].current:
             evt = self.events.pop(0)
             self.cnsr_queue.put_nowait(EventConsumer(evt))
+            sync_act("launch_consumer")
 
         self._update_event_timer()
 
