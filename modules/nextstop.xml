@@ -1,4 +1,0 @@
-<?xml version="1.0" ?>
-<nemubotmodule name="nextstop">
-  <message type="cmd" name="ratp" call="ask_ratp" />
-</nemubotmodule>
