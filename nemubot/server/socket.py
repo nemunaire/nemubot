@@ -81,7 +81,7 @@ class _Socket(AbstractServer):
 class _SocketServer(_Socket):
 
     def __init__(self, host, port, bind=None, **kwargs):
-        (family, type, proto, canonname, sockaddr) = socket.getaddrinfo(host, port)[0]
+        (family, type, proto, canonname, sockaddr) = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)[0]
 
         super().__init__(family=family, type=type, proto=proto, **kwargs)
 
