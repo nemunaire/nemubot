@@ -194,17 +194,17 @@ def parseanswer(msg):
 
 RGXP_ask = re.compile(r"^.*((create|new)\s+(a|an|a\s*new|an\s*other)?\s*(events?|commande?)|(nouvel(le)?|ajoute|cr[ée]{1,3})\s+(un)?\s*([eé]v[ée]nements?|commande?)).*$", re.I)
 
-@hook.ask(match=lambda msg: RGXP_ask.match(msg.text))
+@hook.ask(match=lambda msg: RGXP_ask.match(msg.message))
 def parseask(msg):
-    name = re.match("^.*!([^ \"'@!]+).*$", msg.text)
+    name = re.match("^.*!([^ \"'@!]+).*$", msg.message)
     if name is None:
         raise IMException("il faut que tu attribues une commande à l'événement.")
     if name.group(1) in context.data.index:
         raise IMException("un événement portant ce nom existe déjà.")
 
-    texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.text, re.I)
+    texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.message, re.I)
     if texts is not None and texts.group(3) is not None:
-        extDate = extractDate(msg.text)
+        extDate = extractDate(msg.message)
         if extDate is None or extDate == "":
             raise IMException("la date de l'événement est invalide !")
 

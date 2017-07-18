@@ -203,7 +203,7 @@ gps_ask = re.compile(r"^\s*(?P<city>.*\w)\s*(?:(?:se|est)\s+(?:trouve|situ[ée]*
 
 @hook.ask()
 def parseask(msg):
-    res = gps_ask.match(msg.text)
+    res = gps_ask.match(msg.message)
     if res is not None:
         city_name = res.group("city").lower()
         gps_lat = res.group("lat").replace(",", ".")

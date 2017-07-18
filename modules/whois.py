@@ -147,7 +147,7 @@ def cmd_nicks(msg):
 
 @hook.ask()
 def parseask(msg):
-    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)\s+([a-zA-Z0-9_-]{3,8})$", msg.text, re.I)
+    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)\s+([a-zA-Z0-9_-]{3,8})$", msg.message, re.I)
     if res is not None:
         nick = res.group(1)
         login = res.group(3)
