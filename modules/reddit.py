@@ -71,8 +71,15 @@ def cmd_subreddit(msg):
 
 @hook.message()
 def parselisten(msg):
-    parseresponse(msg)
-    return None
+    global LAST_SUBS
+
+    if hasattr(msg, "message") and msg.message and type(msg.message) == str:
+        urls = re.findall("www.reddit.com(/\w/\w+/?)", msg.message)
+        for url in urls:
+            for recv in msg.to:
+                if recv not in LAST_SUBS:
+                    LAST_SUBS[recv] = list()
+                LAST_SUBS[recv].append(url)
 
 
 @hook.post()

@@ -84,8 +84,22 @@ LAST_URLS = dict()
 
 @hook.message()
 def parselisten(msg):
-    parseresponse(msg)
-    return None
+    global LAST_URLS
+    if hasattr(msg, "message") and isinstance(msg.message, str):
+        urls = re.findall("([a-zA-Z0-9+.-]+:(?://)?(?:[^ :/]+:[0-9]+)?[^ :]+)",
+                          msg.message)
+        for url in urls:
+            o = urlparse(web._getNormalizedURL(url), "http")
+
+            # Skip short URLs
+            if (o.netloc == "" or o.netloc in PROVIDERS or
+                    len(o.netloc) + len(o.path) < 17):
+                continue
+
+            for recv in msg.to:
+                if recv not in LAST_URLS:
+                    LAST_URLS[recv] = list()
+                LAST_URLS[recv].append(url)
 
 
 @hook.post()

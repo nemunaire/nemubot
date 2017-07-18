@@ -106,10 +106,10 @@ def cmd_age(msg):
 
 @hook.ask()
 def parseask(msg):
-    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.text, re.I)
+    res = re.match(r"^(\S+)\s*('s|suis|est|is|was|were)?\s+(birthday|geburtstag|née? |nee? le|born on).*$", msg.message, re.I)
     if res is not None:
         try:
-            extDate = extractDate(msg.text)
+            extDate = extractDate(msg.message)
             if extDate is None or extDate.year > datetime.now().year:
                 return Response("la date de naissance ne paraît pas valide...",
                                 msg.channel,
