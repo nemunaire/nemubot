@@ -178,25 +178,13 @@ def main():
         daemonize(args.socketfile, not args.no_attach)
 
     # Signals handling
-    def sigtermhandler(signum, frame):
+    def sigtermhandler():
         """On SIGTERM and SIGINT, quit nicely"""
         context.quit()
-    signal.signal(signal.SIGINT, sigtermhandler)
-    signal.signal(signal.SIGTERM, sigtermhandler)
+    context.loop.add_signal_handler(signal.SIGINT, sigtermhandler)
+    context.loop.add_signal_handler(signal.SIGTERM, sigtermhandler)
 
-    def sighuphandler(signum, frame):
-        """On SIGHUP, perform a deep reload"""
-        nonlocal context
-
-        logger.debug("SIGHUP receive, iniate reload procedure...")
-
-        # Reload configuration file
-        for path in args.files:
-            if os.path.isfile(path):
-                sync_act("loadconf", path)
-    signal.signal(signal.SIGHUP, sighuphandler)
-
-    def sigusr1handler(signum, frame):
+    def sigusr1handler():
         """On SIGHUSR1, display stacktraces"""
         import threading, traceback
         for threadId, stack in sys._current_frames().items():
@@ -208,24 +196,21 @@ def main():
             logger.debug("########### Thread %s:\n%s",
                          thName,
                          "".join(traceback.format_stack(stack)))
-    signal.signal(signal.SIGUSR1, sigusr1handler)
+    context.loop.add_signal_handler(signal.SIGUSR1, sigusr1handler)
 
     # Store PID to pidfile
     if args.pidfile is not None:
         with open(args.pidfile, "w+") as f:
             f.write(str(os.getpid()))
 
-    # context can change when performing an hotswap, always join the latest context
-    oldcontext = None
-    while oldcontext != context:
-        oldcontext = context
-        context.start()
-        context.join()
+    context.start()
+    context.loop.run_forever()
+    context.join()
 
     # Wait for consumers
     logger.info("Waiting for other threads shuts down...")
     if args.debug:
-        sigusr1handler(0, None)
+        sigusr1handler()
     sys.exit(0)
 
 

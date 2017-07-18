@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 from datetime import datetime, timezone
 import logging
 from multiprocessing import JoinableQueue
@@ -40,7 +41,7 @@ class Bot(threading.Thread):
     """Class containing the bot context and ensuring key goals"""
 
     def __init__(self, ip="127.0.0.1", modules_paths=list(),
-                 data_store=datastore.Abstract(), debug=False):
+                 data_store=datastore.Abstract(), debug=False, loop=None):
         """Initialize the bot context
 
         Keyword arguments:
@@ -58,6 +59,9 @@ class Bot(threading.Thread):
 
         self.debug = debug
         self.stop = None
+
+        #
+        self.loop = loop if loop is not None else asyncio.get_event_loop()
 
         # External IP for accessing this bot
         import ipaddress
@@ -521,6 +525,9 @@ class Bot(threading.Thread):
         k = self.cnsr_thrd
         for cnsr in k:
             cnsr.stop = True
+
+        logger.info("Closing event loop")
+        self.loop.stop()
 
         if self.stop is False or sync_queue is not None:
             self.stop = True
