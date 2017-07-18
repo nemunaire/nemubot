@@ -40,14 +40,14 @@ class Bot(threading.Thread):
     """Class containing the bot context and ensuring key goals"""
 
     def __init__(self, ip="127.0.0.1", modules_paths=list(),
-                 data_store=datastore.Abstract(), verbosity=0):
+                 data_store=datastore.Abstract(), debug=False):
         """Initialize the bot context
 
         Keyword arguments:
         ip -- The external IP of the bot (default: 127.0.0.1)
         modules_paths -- Paths to all directories where looking for modules
         data_store -- An instance of the nemubot datastore for bot's modules
-        verbosity -- verbosity level
+        debug -- enable debug
         """
 
         super().__init__(name="Nemubot main")
@@ -56,7 +56,7 @@ class Bot(threading.Thread):
                     __version__,
                     sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
 
-        self.verbosity = verbosity
+        self.debug = debug
         self.stop = None
 
         # External IP for accessing this bot
@@ -149,6 +149,10 @@ class Bot(threading.Thread):
         self.cnsr_thrd_size = -1
 
 
+    def __del__(self):
+        self.datastore.close()
+
+
     def run(self):
         global sync_queue
 
@@ -218,12 +222,6 @@ class Bot(threading.Thread):
                     elif action == "launch_consumer":
                         pass  # This is treated after the loop
 
-                    elif action == "loadconf":
-                        for path in args:
-                            logger.debug("Load configuration from %s", path)
-                            self.load_file(path)
-                            logger.info("Configurations successfully loaded")
-
                     sync_queue.task_done()
 
 
@@ -238,64 +236,6 @@ class Bot(threading.Thread):
         sync_queue = None
         logger.info("Ending main loop")
 
-
-
-    # Config methods
-
-    def load_file(self, filename):
-        """Load a configuration file
-
-        Arguments:
-        filename -- the path to the file to load
-        """
-
-        import os
-
-        # Unexisting file, assume a name was passed, import the module!
-        if not os.path.isfile(filename):
-            return self.import_module(filename)
-
-        from nemubot.channel import Channel
-        from nemubot import config
-        from nemubot.tools.xmlparser import XMLParser
-
-        try:
-            p = XMLParser({
-                "nemubotconfig": config.Nemubot,
-                "server": config.Server,
-                "channel": Channel,
-                "module": config.Module,
-                "include": config.Include,
-            })
-            config = p.parse_file(filename)
-        except:
-            logger.exception("Can't load `%s'; this is not a valid nemubot "
-                             "configuration file." % filename)
-            return False
-
-        # Preset each server in this file
-        for server in config.servers:
-            srv = server.server(config)
-            # Add the server in the context
-            if self.add_server(srv, server.autoconnect):
-                logger.info("Server '%s' successfully added." % srv.name)
-            else:
-                logger.error("Can't add server '%s'." % srv.name)
-
-        # Load module and their configuration
-        for mod in config.modules:
-            self.modules_configuration[mod.name] = mod
-            if mod.autoload:
-                try:
-                    __import__(mod.name)
-                except:
-                    logger.exception("Exception occurs when loading module"
-                                     " '%s'", mod.name)
-
-
-        # Load files asked by the configuration file
-        for load in config.includes:
-            self.load_file(load.path)
 
 
     # Events methods
@@ -580,8 +520,6 @@ class Bot(threading.Thread):
         k = self.cnsr_thrd
         for cnsr in k:
             cnsr.stop = True
-
-        self.datastore.close()
 
         if self.stop is False or sync_queue is not None:
             self.stop = True

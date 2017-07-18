@@ -108,7 +108,7 @@ class ModuleContext(_ModuleContext):
             self.config = context.modules_configuration[self.module_name]
 
         self.context = context
-        self.debug = context.verbosity > 0
+        self.debug = context.debug
 
 
     def load_data(self):
