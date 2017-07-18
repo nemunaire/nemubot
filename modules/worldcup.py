@@ -32,7 +32,7 @@ def start_watch(msg):
     w = ModuleState("watch")
     w["server"] = msg.server
     w["channel"] = msg.channel
-    w["proprio"] = msg.nick
+    w["proprio"] = msg.frm
     w["start"] = datetime.now(timezone.utc)
     context.data.addChild(w)
     context.save()

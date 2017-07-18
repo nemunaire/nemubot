@@ -152,7 +152,7 @@ def parseask(msg):
         nick = res.group(1)
         login = res.group(3)
         if nick == "my" or nick == "I" or nick == "i" or nick == "je" or nick == "mon" or nick == "ma":
-            nick = msg.nick
+            nick = msg.frm
         if nick in context.data.getNode("aliases").index:
             context.data.getNode("aliases").index[nick]["to"] = login
         else:
@@ -164,4 +164,4 @@ def parseask(msg):
         return Response("ok, c'est noté, %s est %s"
                         % (nick, login),
                         channel=msg.channel,
-                        nick=msg.nick)
+                        nick=msg.frm)

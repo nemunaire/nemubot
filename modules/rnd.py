@@ -21,7 +21,7 @@ def cmd_choice(msg):
 
     return Response(random.choice(msg.args),
                     channel=msg.channel,
-                    nick=msg.nick)
+                    nick=msg.frm)
 
 
 @hook.command("choicecmd")

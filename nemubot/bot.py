@@ -92,7 +92,7 @@ class Bot(threading.Thread):
 
         def in_echo(msg):
             from nemubot.message import Text
-            return Text(msg.nick + ": " + " ".join(msg.args), to=msg.to_response)
+            return Text(msg.frm + ": " + " ".join(msg.args), to=msg.to_response)
         self.treater.hm.add_hook(nemubot.hooks.Command(in_echo, "echo"), "in", "Command")
 
         def _help_msg(msg):

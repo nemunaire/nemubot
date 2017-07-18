@@ -220,4 +220,4 @@ def parseask(msg):
             context.data.addChild(ms)
         context.save()
         return Response("ok, j'ai bien noté les coordonnées de %s" % res.group("city"),
-                        msg.channel, msg.nick)
+                        msg.channel, msg.frm)

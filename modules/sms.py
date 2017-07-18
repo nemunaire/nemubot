@@ -73,9 +73,9 @@ def cmd_sms(msg):
             fails.append( "%s: %s" % (u, test) )
 
     if len(fails) > 0:
-        return Response("quelque chose ne s'est pas bien passé durant l'envoi du SMS : " + ", ".join(fails), msg.channel, msg.nick)
+        return Response("quelque chose ne s'est pas bien passé durant l'envoi du SMS : " + ", ".join(fails), msg.channel, msg.frm)
     else:
-        return Response("le SMS a bien été envoyé", msg.channel, msg.nick)
+        return Response("le SMS a bien été envoyé", msg.channel, msg.frm)
 
 apiuser_ask = re.compile(r"(utilisateur|user|numéro|numero|compte|abonne|abone|abonné|account)\s+(est|is)\s+(?P<user>[0-9]{7,})", re.IGNORECASE)
 apikey_ask = re.compile(r"(clef|key|password|mot de passe?)\s+(?:est|is)?\s+(?P<key>[a-zA-Z0-9]{10,})", re.IGNORECASE)
@@ -94,18 +94,18 @@ def parseask(msg):
             test = send_sms("nemubot", apiuser, apikey,
                             "Vous avez enregistré vos codes d'authentification dans nemubot, félicitation !")
             if test is not None:
-                return Response("je n'ai pas pu enregistrer tes identifiants : %s" % test, msg.channel, msg.nick)
+                return Response("je n'ai pas pu enregistrer tes identifiants : %s" % test, msg.channel, msg.frm)
 
-            if msg.nick in context.data.index:
-                context.data.index[msg.nick]["user"] = apiuser
-                context.data.index[msg.nick]["key"] = apikey
+            if msg.frm in context.data.index:
+                context.data.index[msg.frm]["user"] = apiuser
+                context.data.index[msg.frm]["key"] = apikey
             else:
                 ms = ModuleState("phone")
-                ms.setAttribute("name", msg.nick)
+                ms.setAttribute("name", msg.frm)
                 ms.setAttribute("user", apiuser)
                 ms.setAttribute("key", apikey)
                 ms.setAttribute("lastuse", 0)
                 context.data.addChild(ms)
             context.save()
             return Response("ok, c'est noté. Je t'ai envoyé un SMS pour tester ;)",
-                            msg.channel, msg.nick)
+                            msg.channel, msg.frm)

@@ -185,7 +185,7 @@ def cmd_listvars(msg):
 def cmd_set(msg):
     if len(msg.args) < 2:
         raise IMException("!set take two args: the key and the value.")
-    set_variable(msg.args[0], " ".join(msg.args[1:]), msg.nick)
+    set_variable(msg.args[0], " ".join(msg.args[1:]), msg.frm)
     return Response("Variable $%s successfully defined." % msg.args[0],
                     channel=msg.channel)
 
@@ -222,13 +222,13 @@ def cmd_alias(msg):
 
     if alias.cmd in context.data.getNode("aliases").index:
         return Response("%s corresponds to %s" % (alias.cmd, context.data.getNode("aliases").index[alias.cmd]["origin"]),
-                        channel=msg.channel, nick=msg.nick)
+                        channel=msg.channel, nick=msg.frm)
 
     elif len(msg.args) > 1:
         create_alias(alias.cmd,
                      " ".join(msg.args[1:]),
                      channel=msg.channel,
-                     creator=msg.nick)
+                     creator=msg.frm)
         return Response("New alias %s successfully registered." % alias.cmd,
                         channel=msg.channel)
 
