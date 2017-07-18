@@ -27,8 +27,3 @@ class Response(Abstract):
 
     def __str__(self):
         return self.cmd + " @" + ",@".join(self.args)
-
-    @property
-    def cmds(self):
-        # TODO: this is for legacy modules
-        return [self.cmd] + self.args
