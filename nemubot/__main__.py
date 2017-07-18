@@ -118,10 +118,10 @@ def main():
 
     # Create bot context
     from nemubot import datastore
-    from nemubot.bot import Bot, sync_act
+    from nemubot.bot import Bot
     context = Bot(modules_paths=modules_paths,
                   data_store=datastore.XML(args.data_path),
-                  verbosity=args.verbose)
+                  debug=args.verbose > 0)
 
     if args.no_connect:
         context.noautoconnect = True
@@ -133,10 +133,34 @@ def main():
 
     # Load requested configuration files
     for path in args.files:
-        if os.path.isfile(path):
-            sync_act("loadconf", path)
-        else:
+        if not os.path.isfile(path):
             logger.error("%s is not a readable file", path)
+            continue
+
+        config = load_config(path)
+
+        # Preset each server in this file
+        for server in config.servers:
+            srv = server.server(config)
+            # Add the server in the context
+            if context.add_server(srv):
+                logger.info("Server '%s' successfully added.", srv.name)
+            else:
+                logger.error("Can't add server '%s'.", srv.name)
+
+        # Load module and their configuration
+        for mod in config.modules:
+            context.modules_configuration[mod.name] = mod
+            if mod.autoload:
+                try:
+                    __import__(mod.name)
+                except:
+                    logger.exception("Exception occurs when loading module"
+                                     " '%s'", mod.name)
+
+        # Load files asked by the configuration file
+        args.files += config.includes
+
 
     if args.module:
         for module in args.module:
@@ -203,6 +227,32 @@ def main():
     if args.debug:
         sigusr1handler(0, None)
     sys.exit(0)
+
+
+def load_config(filename):
+    """Load a configuration file
+
+    Arguments:
+    filename -- the path to the file to load
+    """
+
+    from nemubot.channel import Channel
+    from nemubot import config
+    from nemubot.tools.xmlparser import XMLParser
+
+    try:
+        p = XMLParser({
+            "nemubotconfig": config.Nemubot,
+            "server": config.Server,
+            "channel": Channel,
+            "module": config.Module,
+            "include": config.Include,
+        })
+        return p.parse_file(filename)
+    except:
+        logger.exception("Can't load `%s'; this is not a valid nemubot "
+                         "configuration file.", filename)
+    return None
 
 
 if __name__ == "__main__":
