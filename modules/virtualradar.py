@@ -80,7 +80,7 @@ def cmd_flight(msg):
     if not len(msg.args):
         raise IMException("please indicate a flight")
 
-    res = Response(channel=msg.channel, nick=msg.nick,
+    res = Response(channel=msg.channel, nick=msg.frm,
                    nomore="No more flights", count=" (%s more flights)")
 
     for param in msg.args:

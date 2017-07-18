@@ -52,11 +52,11 @@ class Channel:
         elif cmd == "MODE":
             self.mode(msg)
         elif cmd == "JOIN":
-            self.join(msg.nick)
+            self.join(msg.frm)
         elif cmd == "NICK":
-            self.nick(msg.nick, msg.text)
+            self.nick(msg.frm, msg.text)
         elif cmd == "PART" or cmd == "QUIT":
-            self.part(msg.nick)
+            self.part(msg.frm)
         elif cmd == "TOPIC":
             self.topic = self.text
 
@@ -120,17 +120,17 @@ class Channel:
             else:
                 self.password = msg.text[1]
         elif msg.text[0] == "+o":
-            self.people[msg.nick] |= 4
+            self.people[msg.frm] |= 4
         elif msg.text[0] == "-o":
-            self.people[msg.nick] &= ~4
+            self.people[msg.frm] &= ~4
         elif msg.text[0] == "+h":
-            self.people[msg.nick] |= 2
+            self.people[msg.frm] |= 2
         elif msg.text[0] == "-h":
-            self.people[msg.nick] &= ~2
+            self.people[msg.frm] &= ~2
         elif msg.text[0] == "+v":
-            self.people[msg.nick] |= 1
+            self.people[msg.frm] |= 1
         elif msg.text[0] == "-v":
-            self.people[msg.nick] &= ~1
+            self.people[msg.frm] &= ~1
 
     def parse332(self, msg):
         """Parse RPL_TOPIC message

@@ -64,15 +64,15 @@ def cmd_spell(msg):
             raise IMException("Je n'ai pas le dictionnaire `%s' :(" % lang)
 
         if r == True:
-            add_score(msg.nick, "correct")
+            add_score(msg.frm, "correct")
             res.append_message("l'orthographe de `%s' est correcte" % word)
 
         elif len(r) > 0:
-            add_score(msg.nick, "bad")
+            add_score(msg.frm, "bad")
             res.append_message(r, title="suggestions pour `%s'" % word)
 
         else:
-            add_score(msg.nick, "bad")
+            add_score(msg.frm, "bad")
             res.append_message("aucune suggestion pour `%s'" % word)
 
     return res

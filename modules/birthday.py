@@ -27,7 +27,7 @@ def load(context):
 def findName(msg):
     if (not len(msg.args) or msg.args[0].lower() == "moi" or
         msg.args[0].lower() == "me"):
-        name = msg.nick.lower()
+        name = msg.frm.lower()
     else:
         name = msg.args[0].lower()
 
@@ -77,7 +77,7 @@ def cmd_anniv(msg):
     else:
         return Response("désolé, je ne connais pas la date d'anniversaire"
                         " de %s. Quand est-il né ?" % name,
-                        msg.channel, msg.nick)
+                        msg.channel, msg.frm)
 
 
 @hook.command("age",
@@ -98,7 +98,7 @@ def cmd_age(msg):
                         msg.channel)
     else:
         return Response("désolé, je ne connais pas l'âge de %s."
-                        " Quand est-il né ?" % name, msg.channel, msg.nick)
+                        " Quand est-il né ?" % name, msg.channel, msg.frm)
     return True
 
 
@@ -113,11 +113,11 @@ def parseask(msg):
             if extDate is None or extDate.year > datetime.now().year:
                 return Response("la date de naissance ne paraît pas valide...",
                                 msg.channel,
-                                msg.nick)
+                                msg.frm)
             else:
                 nick = res.group(1)
                 if nick == "my" or nick == "I" or nick == "i" or nick == "je" or nick == "mon" or nick == "ma":
-                    nick = msg.nick
+                    nick = msg.frm
                 if nick.lower() in context.data.index:
                     context.data.index[nick.lower()]["born"] = extDate
                 else:
@@ -129,6 +129,6 @@ def parseask(msg):
                 return Response("ok, c'est noté, %s est né le %s"
                                 % (nick, extDate.strftime("%A %d %B %Y à %H:%M")),
                                 msg.channel,
-                                msg.nick)
+                                msg.frm)
         except:
             raise IMException("la date de naissance ne paraît pas valide.")

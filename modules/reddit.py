@@ -64,7 +64,7 @@ def cmd_subreddit(msg):
                                         channel=msg.channel))
         else:
             all_res.append(Response("%s is not a valid subreddit" % osub,
-                                    channel=msg.channel, nick=msg.nick))
+                                    channel=msg.channel, nick=msg.frm))
 
     return all_res
 

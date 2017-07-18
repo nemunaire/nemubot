@@ -174,10 +174,10 @@ class _IRC:
 
             for chname in msg.params[0].split(b","):
                 if chname in self.channels:
-                    if msg.nick == self.nick:
+                    if msg.frm == self.nick:
                         del self.channels[chname]
-                    elif msg.nick in self.channels[chname].people:
-                        del self.channels[chname].people[msg.nick]
+                    elif msg.frm in self.channels[chname].people:
+                        del self.channels[chname].people[msg.frm]
         self.hookscmd["PART"] = _on_part
         # Respond to 331/RPL_NOTOPIC,332/RPL_TOPIC,TOPIC
         def _on_topic(msg):
@@ -227,7 +227,7 @@ class _IRC:
             else:
                 res = "ERRMSG Unknown or unimplemented CTCP request"
             if res is not None:
-                self.write("NOTICE %s :\x01%s\x01" % (msg.nick, res))
+                self.write("NOTICE %s :\x01%s\x01" % (msg.frm, res))
         self.hookscmd["PRIVMSG"] = _on_ctcp
 
 

@@ -55,7 +55,7 @@ def cmd_geocode(msg):
     if not len(msg.args):
         raise IMException("indicate a name")
 
-    res = Response(channel=msg.channel, nick=msg.nick,
+    res = Response(channel=msg.channel, nick=msg.frm,
                    nomore="No more geocode", count=" (%s more geocode)")
 
     for loc in geocode(' '.join(msg.args)):

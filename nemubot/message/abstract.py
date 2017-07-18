@@ -59,12 +59,6 @@ class Abstract:
         else:
             return None
 
-    @property
-    def nick(self):
-        # TODO: this is for legacy modules
-        return self.frm
-
-
     def accept(self, visitor):
         visitor.visit(self)
 

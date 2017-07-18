@@ -69,7 +69,7 @@ def start_countdown(msg):
     strnd = ModuleState("strend")
     strnd["server"] = msg.server
     strnd["channel"] = msg.channel
-    strnd["proprio"] = msg.nick
+    strnd["proprio"] = msg.frm
     strnd["start"] = msg.date
     strnd["name"] = msg.args[0]
     context.data.addChild(strnd)
@@ -145,17 +145,17 @@ def end_countdown(msg):
         raise IMException("quel événement terminer ?")
 
     if msg.args[0] in context.data.index:
-        if context.data.index[msg.args[0]]["proprio"] == msg.nick or (msg.cmd == "forceend" and msg.frm_owner):
+        if context.data.index[msg.args[0]]["proprio"] == msg.frm or (msg.cmd == "forceend" and msg.frm_owner):
             duration = countdown(msg.date - context.data.index[msg.args[0]].getDate("start"))
             context.del_event(context.data.index[msg.args[0]]["_id"])
             context.data.delChild(context.data.index[msg.args[0]])
             context.save()
             return Response("%s a duré %s." % (msg.args[0], duration),
-                            channel=msg.channel, nick=msg.nick)
+                            channel=msg.channel, nick=msg.frm)
         else:
             raise IMException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data.index[msg.args[0]]["proprio"]))
     else:
-        return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.nick)
+        return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.frm)
 
 
 @hook.command("eventslist")
@@ -180,7 +180,7 @@ def parseanswer(msg):
 
     # Avoid message starting by ! which can be interpreted as command by other bots
     if msg.cmd[0] == "!":
-        res.nick = msg.nick
+        res.nick = msg.frm
 
     if context.data.index[msg.cmd].name == "strend":
         if context.data.index[msg.cmd].hasAttribute("end"):
@@ -223,7 +223,7 @@ def parseask(msg):
         evt = ModuleState("event")
         evt["server"] = msg.server
         evt["channel"] = msg.channel
-        evt["proprio"] = msg.nick
+        evt["proprio"] = msg.frm
         evt["name"] = name.group(1)
         evt["start"] = extDate
         evt["msg_after"] = msg_after
@@ -237,7 +237,7 @@ def parseask(msg):
         evt = ModuleState("event")
         evt["server"] = msg.server
         evt["channel"] = msg.channel
-        evt["proprio"] = msg.nick
+        evt["proprio"] = msg.frm
         evt["name"] = name.group(1)
         evt["msg_before"] = texts.group (2)
         context.data.addChild(evt)
