@@ -16,6 +16,7 @@
 
 import logging
 import queue
+import traceback
 
 from nemubot.bot import sync_act
 
@@ -84,7 +85,7 @@ class AbstractServer:
         """
 
         self._sending_queue.put(self.format(message))
-        self._logger.debug("Message '%s' appended to write queue", message)
+        self._logger.debug("Message '%s' appended to write queue coming from %s:%d in %s", message, *traceback.extract_stack(limit=3)[0][:3])
         sync_act("sckt", "write", self._fd.fileno())
 
 
