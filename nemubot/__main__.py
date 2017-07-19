@@ -204,6 +204,7 @@ def main():
             f.write(str(os.getpid()))
 
     context.start()
+    context.loop.set_debug(args.verbose > 0)
     context.loop.run_forever()
     context.join()
 
