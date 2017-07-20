@@ -65,37 +65,28 @@ class ModuleEvent:
         # Store times
         self.offset = timedelta(seconds=offset)  # Time to wait before the first check
         self.interval = timedelta(seconds=interval)
-        self._end = None  # Cache
+        self._next = None  # Cache
 
         # How many times do this event?
         self.times = times
 
-    @property
-    def current(self):
-        """Return the date of the near check"""
-        if self.times != 0:
-            if self._end is None:
-                self._end = datetime.now(timezone.utc) + self.offset + self.interval
-            return self._end
-        return None
 
-    @property
+    def start(self, loop):
+        if self._next is None:
+            self._next = loop.time() + self.offset.total_seconds() + self.interval.total_seconds()
+
+
+    def schedule(self, end):
+        self.interval = timedelta(seconds=0)
+        self.offset = end - datetime.now(timezone.utc)
+
+
     def next(self):
-        """Return the date of the next check"""
         if self.times != 0:
-            if self._end is None:
-                return self.current
-            elif self._end < datetime.now(timezone.utc):
-                self._end += self.interval
-            return self._end
-        return None
+            self._next += self.interval.total_seconds()
+            return True
+        return False
 
-    @property
-    def time_left(self):
-        """Return the time left before/after the near check"""
-        if self.current is not None:
-            return self.current - datetime.now(timezone.utc)
-        return timedelta.max
 
     def check(self):
         """Run a check and realized the event if this is time"""

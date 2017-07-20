@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 import logging
 from multiprocessing import JoinableQueue
 import threading
+import traceback
 import select
 import sys
 import weakref
@@ -77,10 +78,6 @@ class Bot(threading.Thread):
         self.servers = dict()
         self.modules = dict()
         self.modules_configuration = dict()
-
-        # Events
-        self.events      = list()
-        self.event_timer = None
 
         # Own hooks
         from nemubot.treatment import MessageTreater
@@ -245,7 +242,7 @@ class Bot(threading.Thread):
 
     # Events methods
 
-    def add_event(self, evt, eid=None, module_src=None):
+    def add_event(self, evt):
         """Register an event and return its identifiant for futur update
 
         Return:
@@ -254,129 +251,31 @@ class Bot(threading.Thread):
 
         Argument:
         evt -- The event object to add
-
-        Keyword arguments:
-        eid -- The desired event ID (object or string UUID)
-        module_src -- The module to which the event is attached to
         """
 
-        if hasattr(self, "stop") and self.stop:
-            logger.warn("The bot is stopped, can't register new events")
-            return
+        if hasattr(evt, "handle") and evt.handle is not None:
+            raise Exception("Try to launch an already launched event.")
 
-        import uuid
+        def _end_event_timer(event):
+            """Function called at the end of the event timer"""
 
-        # Generate the event id if no given
-        if eid is None:
-            eid = uuid.uuid1()
-
-        # Fill the id field of the event
-        if type(eid) is uuid.UUID:
-            evt.id = str(eid)
-        else:
-            # Ok, this is quiet useless...
-            try:
-                evt.id = str(uuid.UUID(eid))
-            except ValueError:
-                evt.id = eid
-
-        # TODO: mutex here plz
-
-        # Add the event in its place
-        t = evt.current
-        i = 0 # sentinel
-        for i in range(0, len(self.events)):
-            if self.events[i].current > t:
-                break
-        self.events.insert(i, evt)
-
-        if i == 0:
-            # First event changed, reset timer
-            self._update_event_timer()
-            if len(self.events) <= 0 or self.events[i] != evt:
-                # Our event has been executed and removed from queue
-                return None
-
-        # Register the event in the source module
-        if module_src is not None:
-            module_src.__nemubot_context__.events.append(evt.id)
-        evt.module_src = module_src
-
-        logger.info("New event registered in %d position: %s", i, t)
-        return evt.id
-
-
-    def del_event(self, evt, module_src=None):
-        """Find and remove an event from list
-
-        Return:
-        True if the event has been found and removed, False else
-
-        Argument:
-        evt -- The ModuleEvent object to remove or just the event identifier
-
-        Keyword arguments:
-        module_src -- The module to which the event is attached to (ignored if evt is a ModuleEvent)
-        """
-
-        logger.info("Removing event: %s from %s", evt, module_src)
-
-        from nemubot.event import ModuleEvent
-        if type(evt) is ModuleEvent:
-            id = evt.id
-            module_src = evt.module_src
-        else:
-            id = evt
-
-        if len(self.events) > 0 and id == self.events[0].id:
-            self.events.remove(self.events[0])
-            self._update_event_timer()
-            if module_src is not None:
-                module_src.__nemubot_context__.events.remove(id)
-            return True
-
-        for evt in self.events:
-            if evt.id == id:
-                self.events.remove(evt)
-
-                if module_src is not None:
-                    module_src.__nemubot_context__.events.remove(evt.id)
-                return True
-        return False
-
-
-    def _update_event_timer(self):
-        """(Re)launch the timer to end with the closest event"""
-
-        # Reset the timer if this is the first item
-        if self.event_timer is not None:
-            self.event_timer.cancel()
-
-        if len(self.events):
-            try:
-                remaining = self.events[0].time_left.total_seconds()
-            except:
-                logger.exception("An error occurs during event time calculation:")
-                self.events.pop(0)
-                return self._update_event_timer()
-
-            logger.debug("Update timer: next event in %d seconds", remaining)
-            self.event_timer = threading.Timer(remaining if remaining > 0 else 0, self._end_event_timer)
-            self.event_timer.start()
-
-        else:
-            logger.debug("Update timer: no timer left")
-
-
-    def _end_event_timer(self):
-        """Function called at the end of the event timer"""
-
-        while len(self.events) > 0 and datetime.now(timezone.utc) >= self.events[0].current:
-            evt = self.events.pop(0)
-            self.cnsr_queue.put_nowait(EventConsumer(evt))
+            logger.debug("Trigering event")
+            event.handle = None
+            self.cnsr_queue.put_nowait(EventConsumer(event))
             sync_act("launch_consumer")
 
-        self._update_event_timer()
+        evt.start(self.loop)
+
+        @asyncio.coroutine
+        def _add_event():
+            return self.loop.call_at(evt._next, _end_event_timer, evt)
+        future = asyncio.run_coroutine_threadsafe(_add_event(), loop=self.loop)
+        evt.handle = future.result()
+
+        logger.debug("New event registered in %ss", evt._next - self.loop.time())
+
+        return evt.handle
+
 
 
     # Consumers methods
@@ -508,10 +407,6 @@ class Bot(threading.Thread):
 
     def quit(self):
         """Save and unload modules and disconnect servers"""
-
-        if self.event_timer is not None:
-            logger.info("Stop the event timer...")
-            self.event_timer.cancel()
 
         logger.info("Save and unload all modules...")
         for mod in [m for m in self.modules.keys()]:

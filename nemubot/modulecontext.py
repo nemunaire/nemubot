@@ -14,6 +14,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+
+class _FakeHandle:
+
+    def __init__(self, true_handle, callback):
+        self.handle = true_handle
+        self.callback = callback
+
+    def cancel(self):
+        self.handle.cancel()
+        if self.callback:
+            return self.callback()
+
 class _ModuleContext:
 
     def __init__(self, module=None):
@@ -24,8 +37,8 @@ class _ModuleContext:
         else:
             self.module_name = ""
 
-        self.hooks = list()
         self.events = list()
+        self.hooks = list()
         self.debug = False
 
         from nemubot.config.module import Module
@@ -35,6 +48,7 @@ class _ModuleContext:
     def load_data(self):
         from nemubot.tools.xmlparser import module_state
         return module_state.ModuleState("nemubotstate")
+
 
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
@@ -46,19 +60,17 @@ class _ModuleContext:
         assert isinstance(hook, AbstractHook), hook
         self.hooks.remove((triggers, hook))
 
+
     def subtreat(self, msg):
         return None
 
-    def add_event(self, evt, eid=None):
-        return self.events.append((evt, eid))
+
+    def add_event(self, evt):
+        return self.events.append(evt)
 
     def del_event(self, evt):
-        for i in self.events:
-            e, eid = i
-            if e == evt:
-                self.events.remove(i)
-                return True
-        return False
+        return self.events.remove(evt)
+
 
     def send_response(self, server, res):
        self.module.logger.info("Send response: %s", res)
@@ -114,6 +126,10 @@ class ModuleContext(_ModuleContext):
     def load_data(self):
         return self.context.datastore.load(self.module_name)
 
+    def save(self):
+        self.context.datastore.save(self.module_name, self.data)
+
+
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
         assert isinstance(hook, AbstractHook), hook
@@ -126,14 +142,29 @@ class ModuleContext(_ModuleContext):
         self.hooks.remove((triggers, hook))
         return self.context.treater.hm.del_hooks(*triggers, hook=hook)
 
+
     def subtreat(self, msg):
         yield from self.context.treater.treat_msg(msg)
 
-    def add_event(self, evt, eid=None):
-        return self.context.add_event(evt, eid, module_src=self.module)
+
+    def add_event(self, evt):
+        if evt in self.events:
+            return None
+
+        def _cancel_event():
+            logger.debug("Cancel event")
+            evt.handle = None
+            return super().del_event(evt)
+
+        hd = self.context.add_event(evt)
+        evt.handle = _FakeHandle(hd, _cancel_event)
+
+        return super().add_event(evt)
 
     def del_event(self, evt):
-        return self.context.del_event(evt, module_src=self.module)
+        # Call to super().del_event is done in the _FakeHandle.cancel
+        return evt.handle.cancel()
+
 
     def send_response(self, server, res):
         if server in self.context.servers:

@@ -26,10 +26,8 @@ def load(context):
     for evt in context.data.index.keys():
         if context.data.index[evt].hasAttribute("end"):
             event = ModuleEvent(call=fini, call_data=dict(strend=context.data.index[evt]))
-            event._end = context.data.index[evt].getDate("end")
-            idt = context.add_event(event)
-            if idt is not None:
-                context.data.index[evt]["_id"] = idt
+            event.schedule(context.data.index[evt].getDate("end"))
+            context.add_event(event)
 
 
 def fini(d, strend):
@@ -100,8 +98,8 @@ def start_countdown(msg):
                     strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec, timezone.utc)
                   else:
                     strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
-                evt._end = strnd.getDate("end")
-                strnd["_id"] = context.add_event(evt)
+                evt.schedule(strnd.getDate("end"))
+                context.add_event(evt)
             except:
                 context.data.delChild(strnd)
                 raise IMException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
@@ -121,10 +119,8 @@ def start_countdown(msg):
                     strnd["end"] += timedelta(days=int(t)*365)
                 else:
                     strnd["end"] += timedelta(seconds=int(t))
-            evt._end = strnd.getDate("end")
-            eid = context.add_event(evt)
-            if eid is not None:
-                strnd["_id"] = eid
+            evt.schedule(strnd.getDate("end"))
+            context.add_event(evt)
 
     context.save()
     if "end" in strnd:
@@ -147,7 +143,7 @@ def end_countdown(msg):
     if msg.args[0] in context.data.index:
         if context.data.index[msg.args[0]]["proprio"] == msg.frm or (msg.cmd == "forceend" and msg.frm_owner):
             duration = countdown(msg.date - context.data.index[msg.args[0]].getDate("start"))
-            context.del_event(context.data.index[msg.args[0]]["_id"])
+            context.del_event(context.data.index[msg.args[0]])
             context.data.delChild(context.data.index[msg.args[0]])
             context.save()
             return Response("%s a duré %s." % (msg.args[0], duration),
