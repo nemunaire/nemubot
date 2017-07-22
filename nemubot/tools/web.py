@@ -68,13 +68,14 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, body=None, timeout=7, header=None):
+def getURLContent(url, body=None, timeout=7, header=None, decode_error=False):
     """Return page content corresponding to URL or None if any error occurs
 
     Arguments:
     url -- the URL to get
     body -- Data to send as POST content
     timeout -- maximum number of seconds to wait before returning an exception
+    decode_error -- raise exception on non-200 pages or ignore it
     """
 
     o = urlparse(_getNormalizedURL(url), "http")
@@ -166,7 +167,10 @@ def getURLContent(url, body=None, timeout=7, header=None):
             urljoin(url, res.getheader("Location")),
             body=body,
             timeout=timeout,
-            header=header)
+            header=header,
+            decode_error=decode_error)
+    elif decode_error:
+        return data.decode(charset).strip()
     else:
         raise IMException("A HTTP error occurs: %d - %s" %
                            (res.status, http.client.responses[res.status]))
