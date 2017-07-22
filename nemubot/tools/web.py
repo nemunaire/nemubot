@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
+import socket
 
 from nemubot.exception import IMException
 
@@ -123,6 +124,8 @@ def getURLContent(url, body=None, timeout=7, header=None):
                          o.path,
                          body,
                          header)
+    except socket.timeout as e:
+        raise IMException(e)
     except OSError as e:
         raise IMException(e.strerror)
 
