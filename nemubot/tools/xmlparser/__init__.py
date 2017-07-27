@@ -134,6 +134,21 @@ class XMLParser:
                     return
             raise TypeError(name + " tag not expected in " + self.display_stack())
 
+    def saveDocument(self, f=None, header=True, short_empty_elements=False):
+        if f is None:
+            import io
+            f = io.StringIO()
+
+        import xml.sax.saxutils
+        gen = xml.sax.saxutils.XMLGenerator(f, "utf-8", short_empty_elements=short_empty_elements)
+        if header:
+            gen.startDocument()
+        self.root.saveElement(gen)
+        if header:
+            gen.endDocument()
+
+        return f
+
 
 def parse_file(filename):
     p = xml.parsers.expat.ParserCreate()

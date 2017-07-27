@@ -53,6 +53,14 @@ class ParsingNode:
         return item in self.attrs
 
 
+    def saveElement(self, store, tag=None):
+        store.startElement(tag if tag is not None else self.tag, self.attrs)
+        for child in self.children:
+            child.saveElement(store)
+        store.characters(self.content)
+        store.endElement(tag if tag is not None else self.tag)
+
+
 class GenericNode(ParsingNode):
 
     """Consider all subtags as dictionnary
