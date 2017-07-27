@@ -44,6 +44,13 @@ class ListNode:
         return self.items.__repr__()
 
 
+    def saveElement(self, store, tag="list"):
+        store.startElement(tag, {})
+        for i in self.items:
+            i.saveElement(store)
+        store.endElement(tag)
+
+
 class DictNode:
 
     """XML node representing a Python dictionnnary
@@ -106,3 +113,10 @@ class DictNode:
 
     def __repr__(self):
         return self.items.__repr__()
+
+
+    def saveElement(self, store, tag="dict"):
+        store.startElement(tag, {})
+        for k, v in self.items.items():
+            v.saveElement(store)
+        store.endElement(tag)
