@@ -196,7 +196,7 @@ class ModuleState:
         if self.index_fieldname is not None:
             self.setIndex(self.index_fieldname, self.index_tagname)
 
-    def save_node(self, gen):
+    def saveElement(self, gen):
         """Serialize this node as a XML node"""
         from datetime import datetime
         attribs = {}
@@ -221,23 +221,3 @@ class ModuleState:
         except:
             logger.exception("Error occured when saving the following "
                              "XML node: %s with %s", self.name, attrs)
-
-    def save(self, filename):
-        """Save the current node as root node in a XML file
-
-        Argument:
-        filename -- location of the file to create/erase
-        """
-
-        import tempfile
-        _, tmpath = tempfile.mkstemp()
-        with open(tmpath, "w") as f:
-            import xml.sax.saxutils
-            gen = xml.sax.saxutils.XMLGenerator(f, "utf-8")
-            gen.startDocument()
-            self.save_node(gen)
-            gen.endDocument()
-
-        # Atomic save
-        import shutil
-        shutil.move(tmpath, filename)
