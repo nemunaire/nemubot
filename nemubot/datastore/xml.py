@@ -143,4 +143,15 @@ class XML(Abstract):
         if self.rotate:
             self._rotate(path)
 
-        return data.save(path)
+        import tempfile
+        _, tmpath = tempfile.mkstemp()
+        with open(tmpath, "w") as f:
+            import xml.sax.saxutils
+            gen = xml.sax.saxutils.XMLGenerator(f, "utf-8")
+            gen.startDocument()
+            data.saveElement(gen)
+            gen.endDocument()
+
+        # Atomic save
+        import shutil
+        shutil.move(tmpath, path)
