@@ -569,7 +569,7 @@ class Bot(threading.Thread):
             self.event_timer.cancel()
 
         logger.info("Save and unload all modules...")
-        for mod in self.modules.items():
+        for mod in [m for m in self.modules.keys()]:
             self.unload_module(mod)
 
         logger.info("Close all servers connection...")
