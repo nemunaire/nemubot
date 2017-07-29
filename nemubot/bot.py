@@ -20,6 +20,7 @@ from multiprocessing import JoinableQueue
 import threading
 import select
 import sys
+import weakref
 
 from nemubot import __version__
 from nemubot.consumer import Consumer, EventConsumer, MessageConsumer
@@ -99,15 +100,15 @@ class Bot(threading.Thread):
             from more import Response
             res = Response(channel=msg.to_response)
             if len(msg.args) >= 1:
-                if msg.args[0] in self.modules:
-                    if hasattr(self.modules[msg.args[0]], "help_full"):
-                        hlp = self.modules[msg.args[0]].help_full()
+                if msg.args[0] in self.modules and self.modules[msg.args[0]]() is not None:
+                    if hasattr(self.modules[msg.args[0]](), "help_full"):
+                        hlp = self.modules[msg.args[0]]().help_full()
                         if isinstance(hlp, Response):
                             return hlp
                         else:
                             res.append_message(hlp)
                     else:
-                        res.append_message([str(h) for s,h in self.modules[msg.args[0]].__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
+                        res.append_message([str(h) for s,h in self.modules[msg.args[0]]().__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
                 elif msg.args[0][0] == "!":
                     from nemubot.message.command import Command
                     for h in self.treater._in_hooks(Command(msg.args[0][1:])):
@@ -137,7 +138,7 @@ class Bot(threading.Thread):
                 res.append_message(title="Pour plus de détails sur un module, "
                                    "envoyez \"!help nomdumodule\". Voici la liste"
                                    " de tous les modules disponibles localement",
-                                   message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im].__doc__) for im in self.modules if self.modules[im].__doc__])
+                                   message=["\x03\x02%s\x03\x02 (%s)" % (im, self.modules[im]().__doc__) for im in self.modules if self.modules[im]() is not None and self.modules[im]().__doc__])
             return res
         self.treater.hm.add_hook(nemubot.hooks.Command(_help_msg, "help"), "in", "Command")
 
@@ -518,18 +519,20 @@ class Bot(threading.Thread):
                 raise
 
         # Save a reference to the module
-        self.modules[module_name] = module
+        self.modules[module_name] = weakref.ref(module)
+        logger.info("Module '%s' successfully loaded.", module_name)
 
 
     def unload_module(self, name):
         """Unload a module"""
-        if name in self.modules:
-            self.modules[name].print("Unloading module %s" % name)
+        if name in self.modules and self.modules[name]() is not None:
+            module = self.modules[name]()
+            module.print("Unloading module %s" % name)
 
             # Call the user defined unload method
-            if hasattr(self.modules[name], "unload"):
-                self.modules[name].unload(self)
-            self.modules[name].__nemubot_context__.unload()
+            if hasattr(module, "unload"):
+                module.unload(self)
+            module.__nemubot_context__.unload()
 
             # Remove from the nemubot dict
             del self.modules[name]
