@@ -21,7 +21,7 @@ def default_reducer(url, data):
 
 
 def ycc_reducer(url, data):
-    return "http://ycc.fr/%s" % default_reducer(url, data)
+    return "https://ycc.fr/%s" % default_reducer(url, data)
 
 def lstu_reducer(url, data):
     json_data = json.loads(web.getURLContent(url, "lsturl=" + quote(data),
@@ -36,8 +36,8 @@ def lstu_reducer(url, data):
 # MODULE VARIABLES ####################################################
 
 PROVIDERS = {
-    "tinyurl": (default_reducer, "http://tinyurl.com/api-create.php?url="),
-    "ycc": (ycc_reducer, "http://ycc.fr/redirection/create/"),
+    "tinyurl": (default_reducer, "https://tinyurl.com/api-create.php?url="),
+    "ycc": (ycc_reducer, "https://ycc.fr/redirection/create/"),
     "framalink": (lstu_reducer, "https://frama.link/a?format=json"),
     "huitre": (lstu_reducer, "https://huit.re/a?format=json"),
     "lstu": (lstu_reducer, "https://lstu.fr/a?format=json"),
