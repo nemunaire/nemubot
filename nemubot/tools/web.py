@@ -68,7 +68,8 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, body=None, timeout=7, header=None, decode_error=False):
+def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
+                  max_size=524288):
     """Return page content corresponding to URL or None if any error occurs
 
     Arguments:
@@ -76,6 +77,7 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False):
     body -- Data to send as POST content
     timeout -- maximum number of seconds to wait before returning an exception
     decode_error -- raise exception on non-200 pages or ignore it
+    max_size -- maximal size allow for the content
     """
 
     o = urlparse(_getNormalizedURL(url), "http")
@@ -135,7 +137,7 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False):
         size = int(res.getheader("Content-Length", 524288))
         cntype = res.getheader("Content-Type")
 
-        if size > 524288 or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
+        if size > max_size or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
             raise IMException("Content too large to be retrieved")
 
         data = res.read(size)
@@ -168,7 +170,8 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False):
             body=body,
             timeout=timeout,
             header=header,
-            decode_error=decode_error)
+            decode_error=decode_error,
+            max_size=max_size)
     elif decode_error:
         return data.decode(charset).strip()
     else:
