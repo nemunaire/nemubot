@@ -163,6 +163,15 @@ def get_fedex_info(fedex_id, lang="en_US"):
         return fedex_data["TrackPackagesResponse"]["packageList"][0]
 
 
+def get_dhl_info(dhl_id, lang="en"):
+    dhl_parcelurl = "http://www.dhl.com/shipmentTracking?" + urllib.parse.urlencode({'AWB': dhl_id})
+
+    dhl_data = getJSON(dhl_parcelurl)
+
+    if "results" in dhl_data and dhl_data["results"]:
+        return dhl_data["results"][0]
+
+
 # TRACKING HANDLERS ###################################################
 
 def handle_tnt(tracknum):
@@ -231,6 +240,12 @@ def handle_fedex(tracknum):
             return ("{trackingCarrierDesc}: \x02{statusWithDetails}\x0F: in \x02{statusLocationCity}, {statusLocationCntryCD}\x0F, estimated delivery: {displayEstDeliveryDateTime}.".format(**info))
 
 
+def handle_dhl(tracknum):
+    info = get_dhl_info(tracknum)
+    if info:
+        return "DHL {label} {id}: \x02{description}\x0F".format(**info)
+
+
 TRACKING_HANDLERS = {
     'laposte': handle_laposte,
     'postnl': handle_postnl,
@@ -239,6 +254,7 @@ TRACKING_HANDLERS = {
     'coliprive': handle_coliprive,
     'tnt': handle_tnt,
     'fedex': handle_fedex,
+    'dhl': handle_dhl,
 }
 
 
