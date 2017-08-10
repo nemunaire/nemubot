@@ -126,6 +126,24 @@ def get_postnl_info(postnl_id):
             return (post_status.lower(), post_destination, post_date)
 
 
+def get_usps_info(usps_id):
+    usps_parcelurl = "https://tools.usps.com/go/TrackConfirmAction_input?" + urllib.parse.urlencode({'qtc_tLabels1': usps_id})
+
+    usps_data = getURLContent(usps_parcelurl)
+    soup = BeautifulSoup(usps_data)
+    if (soup.find(class_="tracking_history")
+            and soup.find(class_="tracking_history").find(class_="row_notification")
+            and soup.find(class_="tracking_history").find(class_="row_top").find_all("td")):
+        notification = soup.find(class_="tracking_history").find(class_="row_notification").text.strip()
+        date = re.sub(r"\s+", " ", soup.find(class_="tracking_history").find(class_="row_top").find_all("td")[0].text.strip())
+        status = soup.find(class_="tracking_history").find(class_="row_top").find_all("td")[1].text.strip()
+        last_location = soup.find(class_="tracking_history").find(class_="row_top").find_all("td")[2].text.strip()
+
+        print(notification)
+
+        return (notification, date, status, last_location)
+
+
 def get_fedex_info(fedex_id, lang="en_US"):
     data = urllib.parse.urlencode({
         'data': json.dumps({
@@ -206,6 +224,13 @@ def handle_postnl(tracknum):
                 ")." % (tracknum, post_status, post_destination, post_date))
 
 
+def handle_usps(tracknum):
+    info = get_usps_info(tracknum)
+    if info:
+        notif, last_date, last_status, last_location = info
+        return ("USPS \x02{tracknum}\x0F is {last_status} in \x02{last_location}\x0F as of {last_date}: {notif}".format(tracknum=tracknum, notif=notif, last_date=last_date, last_status=last_status.lower(), last_location=last_location))
+
+
 def handle_colissimo(tracknum):
     info = get_colissimo_info(tracknum)
     if info:
@@ -255,6 +280,7 @@ TRACKING_HANDLERS = {
     'tnt': handle_tnt,
     'fedex': handle_fedex,
     'dhl': handle_dhl,
+    'usps': handle_usps,
 }
 
 
