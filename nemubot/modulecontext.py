@@ -16,7 +16,7 @@
 
 class _ModuleContext:
 
-    def __init__(self, module=None):
+    def __init__(self, module=None, knodes=None):
         self.module = module
 
         if module is not None:
@@ -30,11 +30,15 @@ class _ModuleContext:
 
         from nemubot.config.module import Module
         self.config = Module(self.module_name)
+        self._knodes = knodes
 
 
     def load_data(self):
         from nemubot.tools.xmlparser import module_state
         return module_state.ModuleState("nemubotstate")
+
+    def set_knodes(self, knodes):
+        self._knodes = knodes
 
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
@@ -112,7 +116,7 @@ class ModuleContext(_ModuleContext):
 
 
     def load_data(self):
-        return self.context.datastore.load(self.module_name)
+        return self.context.datastore.load(self.module_name, self._knodes)
 
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook

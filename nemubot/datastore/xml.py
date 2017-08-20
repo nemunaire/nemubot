@@ -83,27 +83,38 @@ class XML(Abstract):
 
         return os.path.join(self.basedir, module + ".xml")
 
-    def load(self, module):
+    def load(self, module, knodes):
         """Load data for the given module
 
         Argument:
         module -- the module name of data to load
+        knodes -- the schema to use to load the datas
         """
 
         data_file = self._get_data_file_path(module)
 
+        if knodes is None:
+            from nemubot.tools.xmlparser import parse_file
+            def _true_load(path):
+                return parse_file(path)
+
+        else:
+            from nemubot.tools.xmlparser import XMLParser
+            p = XMLParser(knodes)
+            def _true_load(path):
+                return p.parse_file(path)
+
         # Try to load original file
         if os.path.isfile(data_file):
-            from nemubot.tools.xmlparser import parse_file
             try:
-                return parse_file(data_file)
+                return _true_load(data_file)
             except xml.parsers.expat.ExpatError:
                 # Try to load from backup
                 for i in range(10):
                     path = data_file + "." + str(i)
                     if os.path.isfile(path):
                         try:
-                            cnt = parse_file(path)
+                            cnt = _true_load(path)
 
                             logger.warn("Restoring from backup: %s", path)
 
@@ -112,7 +123,7 @@ class XML(Abstract):
                             continue
 
         # Default case: initialize a new empty datastore
-        return Abstract.load(self, module)
+        return super().load(module, knodes)
 
     def _rotate(self, path):
         """Backup given path
@@ -142,6 +153,9 @@ class XML(Abstract):
 
         if self.rotate:
             self._rotate(path)
+
+        if data is None:
+            return
 
         import tempfile
         _, tmpath = tempfile.mkstemp()
