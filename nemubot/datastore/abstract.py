@@ -32,15 +32,19 @@ class Abstract:
     def close(self):
         return
 
-    def load(self, module):
+    def load(self, module, knodes):
         """Load data for the given module
 
         Argument:
         module -- the module name of data to load
+        knodes -- the schema to use to load the datas
 
         Return:
         The loaded data
         """
+
+        if knodes is not None:
+            return None
 
         return self.new()
 
