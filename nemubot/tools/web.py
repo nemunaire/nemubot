@@ -193,7 +193,7 @@ def getXML(*args, **kwargs):
         return parseString(cnt)
 
 
-def getJSON(*args, **kwargs):
+def getJSON(*args, remove_callback=False, **kwargs):
     """Get content page and return JSON content
 
     Arguments: same as getURLContent
@@ -204,6 +204,9 @@ def getJSON(*args, **kwargs):
         return None
     else:
         import json
+        if remove_callback:
+            import re
+            cnt = re.sub(r"^[^(]+\((.*)\)$", r"\1", cnt)
         return json.loads(cnt)
 
 
