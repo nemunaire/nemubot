@@ -5,6 +5,8 @@
 import re
 import urllib.parse
 
+from bs4 import BeautifulSoup
+
 from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
@@ -14,54 +16,46 @@ from more import Response
 
 # MODULE CORE #########################################################
 
-def get_movie(title=None, year=None, imdbid=None, fullplot=True, tomatoes=False):
+def get_movie_by_id(imdbid):
     """Returns the information about the matching movie"""
 
-    # Built URL
-    url = "http://www.omdbapi.com/?"
-    if title is not None:
-        url += "t=%s&" % urllib.parse.quote(title)
-    if year is not None:
-        url += "y=%s&" % urllib.parse.quote(year)
-    if imdbid is not None:
-        url += "i=%s&" % urllib.parse.quote(imdbid)
-    if fullplot:
-        url += "plot=full&"
-    if tomatoes:
-        url += "tomatoes=true&"
+    url = "http://www.imdb.com/title/" + urllib.parse.quote(imdbid)
+    soup = BeautifulSoup(web.getURLContent(url))
 
-    # Make the request
-    data = web.getJSON(url)
+    return {
+        "imdbID": imdbid,
+        "Title": soup.body.find(attrs={"itemprop": "name"}).next_element.strip(),
+        "Year": soup.body.find(id="titleYear").find("a").text.strip() if soup.body.find(id="titleYear") else ", ".join([y.text.strip() for y in soup.body.find(attrs={"class": "seasons-and-year-nav"}).find_all("div")[3].find_all("a")[:-1]]),
+        "Duration": soup.body.find_all(attrs={"itemprop": "duration"})[-1].text.strip(),
+        "imdbRating": soup.body.find(attrs={"itemprop": "ratingValue"}).text.strip(),
+        "imdbVotes": soup.body.find(attrs={"itemprop": "ratingCount"}).text.strip(),
+        "Plot": re.sub(r"\s+", " ", soup.body.find(id="titleStoryLine").find(attrs={"itemprop": "description"}).text).strip(),
 
-    # Return data
-    if "Error" in data:
-        raise IMException(data["Error"])
-
-    elif "Response" in data and data["Response"] == "True":
-        return data
-
-    else:
-        raise IMException("An error occurs during movie search")
+        "Type": "TV Series" if soup.find(attrs={"class": "np_episode_guide"}) else "Movie",
+        "Country": ", ".join([c.find("a").text.strip() for c in soup.body.find(id="titleDetails").find_all(attrs={"class": "txt-block"}) if c.text.find("Country") != -1]),
+        "Released": soup.body.find(attrs={"itemprop": "datePublished"}).attrs["content"] if "content" in soup.body.find(attrs={"itemprop": "datePublished"}).attrs else "N\A",
+        "Genre": ", ".join([g.text.strip() for g in soup.body.find_all(attrs={"itemprop": "genre"})[:-1]]),
+        "Director": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "director"})]),
+        "Writer": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "creator"})]),
+        "Actors": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "actors"})]),
+    }
 
 
-def find_movies(title):
+def find_movies(title, year=None):
     """Find existing movies matching a approximate title"""
 
+    title = title.lower()
+
     # Built URL
-    url = "http://www.omdbapi.com/?s=%s" % urllib.parse.quote(title)
+    url = "https://v2.sg.media-imdb.com/suggests/%s/%s.json" % (urllib.parse.quote(title[0]), urllib.parse.quote(title.replace(" ", "_")))
 
     # Make the request
-    data = web.getJSON(url)
+    data = web.getJSON(url, remove_callback=True)
 
-    # Return data
-    if "Error" in data:
-        raise IMException(data["Error"])
-
-    elif "Search" in data:
-        return data
-
+    if year is None:
+        return data["d"]
     else:
-        raise IMException("An error occurs during movie search")
+        return [d for d in data["d"] if "y" in d and str(d["y"]) == year]
 
 
 # MODULE INTERFACE ####################################################
@@ -79,23 +73,28 @@ def cmd_imdb(msg):
     title = ' '.join(msg.args)
 
     if re.match("^tt[0-9]{7}$", title) is not None:
-        data = get_movie(imdbid=title)
+        data = get_movie_by_id(imdbid=title)
     else:
         rm = re.match(r"^(.+)\s\(([0-9]{4})\)$", title)
         if rm is not None:
-            data = get_movie(title=rm.group(1), year=rm.group(2))
+            data = find_movies(rm.group(1), year=rm.group(2))
         else:
-            data = get_movie(title=title)
+            data = find_movies(title)
+
+        if not data:
+            raise IMException("Movie/series not found")
+
+        data = get_movie_by_id(data[0]["id"])
 
     res = Response(channel=msg.channel,
                    title="%s (%s)" % (data['Title'], data['Year']),
                    nomore="No more information, more at http://www.imdb.com/title/%s" % data['imdbID'])
 
-    res.append_message("\x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
-                       (data['imdbRating'], data['imdbVotes'], data['Plot']))
+    res.append_message("%s \x02genre:\x0F %s; \x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
+                       (data['Type'], data['Genre'], data['imdbRating'], data['imdbVotes'], data['Plot']))
 
-    res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02genre:\x0F %s; \x02directed by:\x0F %s; \x02written by:\x0F %s; \x02main actors:\x0F %s"
-                       % (data['Type'], data['Country'], data['Released'], data['Genre'], data['Director'], data['Writer'], data['Actors']))
+    res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02directed by:\x0F %s; \x02written by:\x0F %s; \x02main actors:\x0F %s"
+                       % (data['Type'], data['Country'], data['Released'], data['Director'], data['Writer'], data['Actors']))
     return res
 
 
@@ -111,7 +110,7 @@ def cmd_search(msg):
     data = find_movies(' '.join(msg.args))
 
     movies = list()
-    for m in data['Search']:
-        movies.append("\x02%s\x0F (%s of %s)" % (m['Title'], m['Type'], m['Year']))
+    for m in data:
+        movies.append("\x02%s\x0F%s with %s" % (m['l'], (" (" + str(m['y']) + ")") if "y" in m else "", m['s']))
 
     return Response(movies, title="Titles found", channel=msg.channel)
