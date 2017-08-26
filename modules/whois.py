@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import json
 import re
 
 from nemubot import context
@@ -13,13 +14,26 @@ from more import Response
 from networking.page import headers
 
 PASSWD_FILE = None
+# You can get one with: curl -b "sessionid=YOURSESSIONID" 'https://accounts.cri.epita.net/api/users/' > users.json
+APIEXTRACT_FILE = None
 
 def load(context):
     global PASSWD_FILE
     if not context.config or "passwd" not in context.config:
         print("No passwd file given")
+    else:
+        PASSWD_FILE = context.config["passwd"]
+        print("passwd file loaded:", PASSWD_FILE)
+
+    global APIEXTRACT_FILE
+    if not context.config or "apiextract" not in context.config:
+        print("No passwd file given")
+    else:
+        APIEXTRACT_FILE = context.config["apiextract"]
+        print("JSON users file loaded:", APIEXTRACT_FILE)
+
+    if PASSWD_FILE is None and APIEXTRACT_FILE is None:
         return None
-    PASSWD_FILE = context.config["passwd"]
 
     if not context.data.hasNode("aliases"):
         context.data.addChild(ModuleState("aliases"))
@@ -35,16 +49,26 @@ def load(context):
 
 class Login:
 
-    def __init__(self, line):
-        s = line.split(":")
-        self.login = s[0]
-        self.uid = s[2]
-        self.gid = s[3]
-        self.cn = s[4]
-        self.home = s[5]
+    def __init__(self, line=None, login=None, uidNumber=None, cn=None, promo=None, **kwargs):
+        if line is not None:
+            s = line.split(":")
+            self.login = s[0]
+            self.uid = s[2]
+            self.gid = s[3]
+            self.cn = s[4]
+            self.home = s[5]
+        else:
+            self.login = login
+            self.uid = uidNumber
+            self.promo = promo
+            self.cn = cn
+            self.gid = "epita" + promo
 
     def get_promo(self):
-        return self.home.split("/")[2].replace("_", " ")
+        if hasattr(self, "promo"):
+            return self.promo
+        if hasattr(self, "home"):
+            return self.home.split("/")[2].replace("_", " ")
 
     def get_photo(self):
         if self.login in context.data.getNode("pics").index:
@@ -60,17 +84,25 @@ class Login:
         return None
 
 
-def found_login(login, search=False):
+def login_lookup(login, search=False):
     if login in context.data.getNode("aliases").index:
         login = context.data.getNode("aliases").index[login]["to"]
+
+    if APIEXTRACT_FILE:
+        with open(APIEXTRACT_FILE, encoding="utf-8") as f:
+            api = json.load(f)
+            for l in api:
+                if (not search and l["login"] == login) or (search and (("login" in l and l["login"].find(login) != -1) or ("cn" in l and l["cn"].find(login) != -1) or ("uid" in l and str(l["uid"]) == login))):
+                    yield Login(**l)
 
     login_ = login + (":" if not search else "")
     lsize = len(login_)
 
-    with open(PASSWD_FILE, encoding="iso-8859-15") as f:
-        for l in f.readlines():
-            if l[:lsize] == login_:
-                yield Login(l.strip())
+    if PASSWD_FILE:
+        with open(PASSWD_FILE, encoding="iso-8859-15") as f:
+            for l in f.readlines():
+                if l[:lsize] == login_:
+                    yield Login(l.strip())
 
 def cmd_whois(msg):
     if len(msg.args) < 1:
@@ -87,7 +119,7 @@ def cmd_whois(msg):
     res = Response(channel=msg.channel, count=" (%d more logins)", line_treat=format_response)
     for srch in msg.args:
         found = False
-        for l in found_login(srch, "lookup" in msg.kwargs):
+        for l in login_lookup(srch, "lookup" in msg.kwargs):
             found = True
             res.append_message((srch, l))
         if not found:
@@ -98,7 +130,7 @@ def cmd_whois(msg):
 def cmd_nicks(msg):
     if len(msg.args) < 1:
         raise IMException("Provide a login")
-    nick = found_login(msg.args[0])
+    nick = login_lookup(msg.args[0])
     if nick is None:
         nick = msg.args[0]
     else:
