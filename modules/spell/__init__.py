@@ -10,7 +10,7 @@ from nemubot.tools.xmlparser.node import ModuleState
 from .pyaspell import Aspell
 from .pyaspell import AspellError
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # LOADING #############################################################

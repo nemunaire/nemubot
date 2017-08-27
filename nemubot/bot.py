@@ -97,18 +97,19 @@ class Bot(threading.Thread):
 
         def _help_msg(msg):
             """Parse and response to help messages"""
-            from more import Response
+            from nemubot.module.more import Response
             res = Response(channel=msg.to_response)
             if len(msg.args) >= 1:
-                if msg.args[0] in self.modules and self.modules[msg.args[0]]() is not None:
-                    if hasattr(self.modules[msg.args[0]](), "help_full"):
-                        hlp = self.modules[msg.args[0]]().help_full()
+                if "nemubot.module." + msg.args[0] in self.modules and self.modules["nemubot.module." + msg.args[0]]() is not None:
+                    mname = "nemubot.module." + msg.args[0]
+                    if hasattr(self.modules[mname](), "help_full"):
+                        hlp = self.modules[mname]().help_full()
                         if isinstance(hlp, Response):
                             return hlp
                         else:
                             res.append_message(hlp)
                     else:
-                        res.append_message([str(h) for s,h in self.modules[msg.args[0]]().__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
+                        res.append_message([str(h) for s,h in self.modules[mname]().__nemubot_context__.hooks], title="Available commands for module " + msg.args[0])
                 elif msg.args[0][0] == "!":
                     from nemubot.message.command import Command
                     for h in self.treater._in_hooks(Command(msg.args[0][1:])):

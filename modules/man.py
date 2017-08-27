@@ -8,7 +8,7 @@ import os
 
 from nemubot.hooks import hook
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # GLOBALS #############################################################

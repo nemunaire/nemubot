@@ -12,7 +12,7 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools import web
 
-from more import Response
+from nemubot.module.more import Response
 from nemubot.tools.feed import Feed, AtomEntry
 
 

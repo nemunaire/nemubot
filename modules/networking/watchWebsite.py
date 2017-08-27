@@ -12,7 +12,7 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 logger = logging.getLogger("nemubot.module.networking.watchWebsite")
 
-from more import Response
+from nemubot.module.more import Response
 
 from . import page
 

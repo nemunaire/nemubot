@@ -11,7 +11,7 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.web import striphtml
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # GLOBALS #############################################################

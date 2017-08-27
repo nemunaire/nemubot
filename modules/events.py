@@ -12,7 +12,7 @@ from nemubot.tools.countdown import countdown_format, countdown
 from nemubot.tools.date import extractDate
 from nemubot.tools.xmlparser.node import ModuleState
 
-from more import Response
+from nemubot.module.more import Response
 
 
 def help_full ():

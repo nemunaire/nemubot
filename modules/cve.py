@@ -9,7 +9,7 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.web import getURLContent, striphtml
 
-from more import Response
+from nemubot.module.more import Response
 
 BASEURL_NIST = 'https://nvd.nist.gov/vuln/detail/'
 

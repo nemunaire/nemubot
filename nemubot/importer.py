@@ -29,16 +29,16 @@ class ModuleFinder(Finder):
         self.add_module = add_module
 
     def find_module(self, fullname, path=None):
-        # Search only for new nemubot modules (packages init)
-        if path is None:
+        if path is not None and fullname.startswith("nemubot.module."):
+            module_name = fullname.split(".", 2)[2]
             for mpath in self.modules_paths:
-                if os.path.isfile(os.path.join(mpath, fullname + ".py")):
+                if os.path.isfile(os.path.join(mpath, module_name + ".py")):
                     return ModuleLoader(self.add_module, fullname,
-                                        os.path.join(mpath, fullname + ".py"))
-                elif os.path.isfile(os.path.join(os.path.join(mpath, fullname), "__init__.py")):
+                                        os.path.join(mpath, module_name + ".py"))
+                elif os.path.isfile(os.path.join(os.path.join(mpath, module_name), "__init__.py")):
                     return ModuleLoader(self.add_module, fullname,
                                         os.path.join(
-                                            os.path.join(mpath, fullname),
+                                            os.path.join(mpath, module_name),
                                             "__init__.py"))
         return None
 
@@ -53,17 +53,17 @@ class ModuleLoader(SourceFileLoader):
     def _load(self, module, name):
         # Add the module to the global modules list
         self.add_module(module)
-        logger.info("Module '%s' successfully loaded.", name)
+        logger.info("Module '%s' successfully imported from %s.", name.split(".", 2)[2], self.path)
         return module
 
 
     # Python 3.4
     def exec_module(self, module):
-        super(ModuleLoader, self).exec_module(module)
+        super().exec_module(module)
         self._load(module, module.__spec__.name)
 
 
     # Python 3.3
     def load_module(self, fullname):
-        module = super(ModuleLoader, self).load_module(fullname)
+        module = super().load_module(fullname)
         return self._load(module, module.__name__)

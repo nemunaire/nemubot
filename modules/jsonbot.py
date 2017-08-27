@@ -1,7 +1,7 @@
 from nemubot.hooks import hook
 from nemubot.exception import IMException
 from nemubot.tools import web
-from more import Response
+from nemubot.module.more import Response
 import json
 
 nemubotversion = 3.4

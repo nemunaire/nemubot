@@ -8,7 +8,7 @@ from nemubot.tools.web import getJSON
 
 nemubotversion = 4.0
 
-from more import Response
+from nemubot.module.more import Response
 
 URL_TPBAPI = None
 

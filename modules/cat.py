@@ -7,7 +7,7 @@ from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.message import Command, DirectAsk, Text
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # MODULE CORE #########################################################

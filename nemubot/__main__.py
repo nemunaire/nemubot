@@ -153,7 +153,7 @@ def main():
             context.modules_configuration[mod.name] = mod
             if mod.autoload:
                 try:
-                    __import__(mod.name)
+                    __import__("nemubot.module." + mod.name)
                 except:
                     logger.exception("Exception occurs when loading module"
                                      " '%s'", mod.name)
@@ -164,7 +164,7 @@ def main():
 
     if args.module:
         for module in args.module:
-            __import__(module)
+            __import__("nemubot.module." + module)
 
     if args.socketfile:
         from nemubot.server.socket import UnixSocketListener

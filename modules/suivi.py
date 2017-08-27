@@ -10,7 +10,7 @@ import re
 from nemubot.hooks import hook
 from nemubot.exception import IMException
 from nemubot.tools.web import getURLContent, getJSON
-from more import Response
+from nemubot.module.more import Response
 
 
 # POSTAGE SERVICE PARSERS ############################################
