@@ -16,7 +16,7 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 
-from more import Response
+from nemubot.module.more import Response
 
 def load(context):
     context.data.setIndex("name", "phone")

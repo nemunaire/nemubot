@@ -6,7 +6,7 @@ import urllib
 from nemubot.exception import IMException
 from nemubot.tools.web import getJSON
 
-from more import Response
+from nemubot.module.more import Response
 
 URL_AVAIL = "https://www.whoisxmlapi.com/whoisserver/WhoisService?cmd=GET_DN_AVAILABILITY&domainName=%%s&outputFormat=json&username=%s&password=%s"
 URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?da=2&domainName=%%s&outputFormat=json&userName=%s&password=%s"

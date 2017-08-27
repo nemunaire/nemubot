@@ -11,7 +11,7 @@ from nemubot.tools import web
 
 nemubotversion = 3.4
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # MEDIAWIKI REQUESTS ##################################################

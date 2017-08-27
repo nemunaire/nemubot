@@ -11,11 +11,11 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 from nemubot.tools.xmlparser.node import ModuleState
 
-import mapquest
+from nemubot.module import mapquest
 
 nemubotversion = 4.0
 
-from more import Response
+from nemubot.module.more import Response
 
 URL_DSAPI = "https://api.darksky.net/forecast/%s/%%s,%%s?lang=%%s&units=%%s"
 

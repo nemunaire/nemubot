@@ -12,7 +12,7 @@ from nemubot.tools import web
 
 nemubotversion = 4.0
 
-from more import Response
+from nemubot.module.more import Response
 
 
 def help_full():

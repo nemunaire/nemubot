@@ -8,7 +8,7 @@ from nemubot import context
 from nemubot.exception import IMException
 from nemubot.hooks import hook
 
-from more import Response
+from nemubot.module.more import Response
 
 DB = None
 
