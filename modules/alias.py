@@ -12,7 +12,7 @@ from nemubot.message import Command
 from nemubot.tools.human import guess
 from nemubot.tools.xmlparser.node import ModuleState
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # LOADING #############################################################

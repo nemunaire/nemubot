@@ -10,7 +10,7 @@ from nemubot.hooks import hook
 
 nemubotversion = 3.4
 
-from more import Response
+from nemubot.module.more import Response
 
 
 def help_full():

@@ -15,7 +15,7 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 
-from more import Response
+from nemubot.module.more import Response
 
 API_URL="http://worldcup.sfg.io/%s"
 

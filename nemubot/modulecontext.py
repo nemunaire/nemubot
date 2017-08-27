@@ -20,7 +20,7 @@ class _ModuleContext:
         self.module = module
 
         if module is not None:
-            self.module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
+            self.module_name = (module.__spec__.name if hasattr(module, "__spec__") else module.__name__).replace("nemubot.module.", "")
         else:
             self.module_name = ""
 

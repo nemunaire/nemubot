@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from nemubot.hooks import hook
 from nemubot.tools.web import getURLContent, striphtml
-from more import Response
+from nemubot.module.more import Response
 
 
 # GLOBALS #############################################################

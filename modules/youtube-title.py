@@ -4,7 +4,7 @@ import re, json, subprocess
 from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.web import _getNormalizedURL, getURLContent
-from more import Response
+from nemubot.module.more import Response
 
 """Get information of youtube videos"""
 

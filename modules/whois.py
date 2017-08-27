@@ -10,8 +10,8 @@ from nemubot.tools.xmlparser.node import ModuleState
 
 nemubotversion = 3.4
 
-from more import Response
-from networking.page import headers
+from nemubot.module.more import Response
+from nemubot.module.networking.page import headers
 
 PASSWD_FILE = None
 # You can get one with: curl -b "sessionid=YOURSESSIONID" 'https://accounts.cri.epita.net/api/users/' > users.json

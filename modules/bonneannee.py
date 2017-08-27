@@ -4,12 +4,11 @@
 
 from datetime import datetime, timezone
 
-from nemubot import context
 from nemubot.event import ModuleEvent
 from nemubot.hooks import hook
 from nemubot.tools.countdown import countdown_format
 
-from more import Response
+from nemubot.module.more import Response
 
 
 # GLOBALS #############################################################
