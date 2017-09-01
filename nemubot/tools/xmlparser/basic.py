@@ -77,12 +77,12 @@ class DictNode:
 
 
     def endElement(self, name):
-        if name is None or self._cur is None:
+        if name is not None or self._cur is None:
             return
 
         key, cnt = self._cur
         if isinstance(cnt, list) and len(cnt) == 1:
-            self.items[key] = cnt
+            self.items[key] = cnt[0]
         else:
             self.items[key] = cnt
 
@@ -122,7 +122,32 @@ class DictNode:
             if isinstance(v, str):
                 store.characters(v)
             else:
-                for i in v:
-                    i.saveElement(store)
+                if hasattr(v, "__iter__"):
+                    for i in v:
+                        i.saveElement(store)
+                else:
+                    v.saveElement(store)
             store.endElement("item")
         store.endElement(tag)
+
+
+    def __contain__(self, i):
+        return i in self.items
+
+    def __getitem__(self, i):
+        return self.items[i]
+
+    def __setitem__(self, i, c):
+        self.items[i] = c
+
+    def __delitem__(self, k):
+        del self.items[k]
+
+    def __iter__(self):
+        return self.items.__iter__()
+
+    def keys(self):
+        return self.items.keys()
+
+    def items(self):
+        return self.items.items()
