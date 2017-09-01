@@ -291,12 +291,7 @@ class Bot(threading.Thread):
             sync_act("launch_consumer")
 
         evt.start(self.loop)
-
-        @asyncio.coroutine
-        def _add_event():
-            return self.loop.call_at(evt._next, _end_event_timer, evt)
-        future = asyncio.run_coroutine_threadsafe(_add_event(), loop=self.loop)
-        evt.handle = future.result()
+        evt.handle = call_at(evt._next, _end_event_timer, evt)
 
         logger.debug("New event registered in %ss", evt._next - self.loop.time())
 
@@ -344,6 +339,17 @@ class Bot(threading.Thread):
     def add_module(self, module):
         """Add a module to the context, if already exists, unload the
         old one before"""
+
+        import nemubot.hooks
+
+        self.loop.call_soon_threadsafe(self._add_module,
+                                       module,
+                                       nemubot.hooks.hook.last_registered)
+
+        nemubot.hooks.hook.last_registered = []
+
+
+    def _add_module(self, module, registered_functions):
         module_name = module.__spec__.name if hasattr(module, "__spec__") else module.__name__
 
         if hasattr(self, "stop") and self.stop:
@@ -375,10 +381,8 @@ class Bot(threading.Thread):
                 module.__dict__[attr] = module.__nemubot_context__
 
         # Register decorated functions
-        import nemubot.hooks
-        for s, h in nemubot.hooks.hook.last_registered:
+        for s, h in registered_functions:
             module.__nemubot_context__.add_hook(h, *s if isinstance(s, list) else s)
-        nemubot.hooks.hook.last_registered = []
 
         # Launch the module
         if hasattr(module, "load"):
