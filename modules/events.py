@@ -1,7 +1,9 @@
 """Create countdowns and reminders"""
 
-import re
+import calendar
 from datetime import datetime, timedelta, timezone
+from functools import partial
+import re
 
 from nemubot import context
 from nemubot.exception import IMException
@@ -10,29 +12,84 @@ from nemubot.hooks import hook
 from nemubot.message import Command
 from nemubot.tools.countdown import countdown_format, countdown
 from nemubot.tools.date import extractDate
-from nemubot.tools.xmlparser.node import ModuleState
+from nemubot.tools.xmlparser.basic import DictNode
 
 from nemubot.module.more import Response
 
 
+class Event:
+
+    def __init__(self, server, channel, creator, start_time, end_time=None):
+        self._server = server
+        self._channel = channel
+        self._creator = creator
+        self._start = datetime.utcfromtimestamp(float(start_time)).replace(tzinfo=timezone.utc) if not isinstance(start_time, datetime) else start_time
+        self._end = datetime.utcfromtimestamp(float(end_time)).replace(tzinfo=timezone.utc) if end_time else None
+        self._evt = None
+
+
+    def __del__(self):
+        if self._evt is not None:
+            context.del_event(self._evt)
+            self._evt = None
+
+
+    def saveElement(self, store, tag="event"):
+        attrs = {
+            "server": str(self._server),
+            "channel": str(self._channel),
+            "creator": str(self._creator),
+            "start_time": str(calendar.timegm(self._start.timetuple())),
+        }
+        if self._end:
+            attrs["end_time"] = str(calendar.timegm(self._end.timetuple()))
+        store.startElement(tag, attrs)
+        store.endElement(tag)
+
+    @property
+    def creator(self):
+        return self._creator
+
+    @property
+    def start(self):
+        return self._start
+
+    @property
+    def end(self):
+        return self._end
+
+    @end.setter
+    def end(self, c):
+        self._end = c
+
+    @end.deleter
+    def end(self):
+        self._end = None
+
+
 def help_full ():
-    return "This module store a lot of events: ny, we, " + (", ".join(context.datas.index.keys() if hasattr(context, "datas") else [])) + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
+    return "This module store a lot of events: ny, we, " + (", ".join(context.datas.keys()) if hasattr(context, "datas") else "") + "\n!eventslist: gets list of timer\n!start /something/: launch a timer"
 
 
 def load(context):
-    #Define the index
-    context.data.setIndex("name")
+    context.set_knodes({
+        "dict": DictNode,
+        "event": Event,
+    })
 
-    for evt in context.data.index.keys():
-        if context.data.index[evt].hasAttribute("end"):
-            event = ModuleEvent(call=fini, call_data=dict(strend=context.data.index[evt]))
-            event.schedule(context.data.index[evt].getDate("end"))
-            context.add_event(event)
+    if context.data is None:
+        context.data = DictNode()
+
+    # Relaunch all timers
+    for kevt in context.data:
+        if context.data[kevt].end:
+            context.data[kevt]._evt = context.call_at(context.data[kevt].end, partial(fini, kevt, context.data[kevt]))
 
 
-def fini(d, strend):
-    context.send_response(strend["server"], Response("%s arrivé à échéance." % strend["name"], channel=strend["channel"], nick=strend["proprio"]))
-    context.data.delChild(context.data.index[strend["name"]])
+def fini(name, evt):
+    context.send_response(evt._server, Response("%s arrivé à échéance." % name, channel=evt._channel, nick=evt.creator))
+    evt._evt = None
+    del context.data[name]
     context.save()
 
 
@@ -61,18 +118,10 @@ def start_countdown(msg):
     """!start /something/: launch a timer"""
     if len(msg.args) < 1:
         raise IMException("indique le nom d'un événement à chronométrer")
-    if msg.args[0] in context.data.index:
+    if msg.args[0] in context.data:
         raise IMException("%s existe déjà." % msg.args[0])
 
-    strnd = ModuleState("strend")
-    strnd["server"] = msg.server
-    strnd["channel"] = msg.channel
-    strnd["proprio"] = msg.frm
-    strnd["start"] = msg.date
-    strnd["name"] = msg.args[0]
-    context.data.addChild(strnd)
-
-    evt = ModuleEvent(call=fini, call_data=dict(strend=strnd))
+    evt = Event(server=msg.server, channel=msg.channel, creator=msg.frm, start_time=msg.date)
 
     if len(msg.args) > 1:
         result1 = re.findall("([0-9]+)([smhdjwyaSMHDJWYA])?", msg.args[1])
@@ -90,48 +139,48 @@ def start_countdown(msg):
                 if result2 is None or result2.group(4) is None: yea = now.year
                 else: yea = int(result2.group(4))
                 if result2 is not None and result3 is not None:
-                    strnd["end"] = datetime(yea, int(result2.group(3)), int(result2.group(2)), hou, minu, sec, timezone.utc)
+                    evt.end = datetime(yea, int(result2.group(3)), int(result2.group(2)), hou, minu, sec, timezone.utc)
                 elif result2 is not None:
-                    strnd["end"] = datetime(int(result2.group(4)), int(result2.group(3)), int(result2.group(2)), 0, 0, 0, timezone.utc)
+                    evt.end = datetime(int(result2.group(4)), int(result2.group(3)), int(result2.group(2)), 0, 0, 0, timezone.utc)
                 elif result3 is not None:
                   if hou * 3600 + minu * 60 + sec > now.hour * 3600 + now.minute * 60 + now.second:
-                    strnd["end"] = datetime(now.year, now.month, now.day, hou, minu, sec, timezone.utc)
+                    evt.end = datetime(now.year, now.month, now.day, hou, minu, sec, timezone.utc)
                   else:
-                    strnd["end"] = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
-                evt.schedule(strnd.getDate("end"))
-                context.add_event(evt)
+                    evt.end = datetime(now.year, now.month, now.day + 1, hou, minu, sec, timezone.utc)
             except:
-                context.data.delChild(strnd)
                 raise IMException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
 
         elif result1 is not None and len(result1) > 0:
-            strnd["end"] = msg.date
+            evt.end = msg.date
             for (t, g) in result1:
                 if g is None or g == "" or g == "m" or g == "M":
-                    strnd["end"] += timedelta(minutes=int(t))
+                    evt.end += timedelta(minutes=int(t))
                 elif g == "h" or g == "H":
-                    strnd["end"] += timedelta(hours=int(t))
+                    evt.end += timedelta(hours=int(t))
                 elif g == "d" or g == "D" or g == "j" or g == "J":
-                    strnd["end"] += timedelta(days=int(t))
+                    evt.end += timedelta(days=int(t))
                 elif g == "w" or g == "W":
-                    strnd["end"] += timedelta(days=int(t)*7)
+                    evt.end += timedelta(days=int(t)*7)
                 elif g == "y" or g == "Y" or g == "a" or g == "A":
-                    strnd["end"] += timedelta(days=int(t)*365)
+                    evt.end += timedelta(days=int(t)*365)
                 else:
-                    strnd["end"] += timedelta(seconds=int(t))
-            evt.schedule(strnd.getDate("end"))
-            context.add_event(evt)
+                    evt.end += timedelta(seconds=int(t))
 
+    context.data[msg.args[0]] = evt
     context.save()
-    if "end" in strnd:
+
+    if evt.end is not None:
+        context.add_event(ModuleEvent(partial(fini, msg.args[0], evt),
+                                      offset=evt.end - datetime.now(timezone.utc),
+                                      interval=0))
         return Response("%s commencé le %s et se terminera le %s." %
                         (msg.args[0], msg.date.strftime("%A %d %B %Y à %H:%M:%S"),
-                         strnd.getDate("end").strftime("%A %d %B %Y à %H:%M:%S")),
-                        nick=msg.frm)
+                         evt.end.strftime("%A %d %B %Y à %H:%M:%S")),
+                        channel=msg.channel)
     else:
         return Response("%s commencé le %s"% (msg.args[0],
                             msg.date.strftime("%A %d %B %Y à %H:%M:%S")),
-                        nick=msg.frm)
+                        channel=msg.channel)
 
 
 @hook.command("end")
@@ -140,16 +189,15 @@ def end_countdown(msg):
     if len(msg.args) < 1:
         raise IMException("quel événement terminer ?")
 
-    if msg.args[0] in context.data.index:
-        if context.data.index[msg.args[0]]["proprio"] == msg.frm or (msg.cmd == "forceend" and msg.frm_owner):
-            duration = countdown(msg.date - context.data.index[msg.args[0]].getDate("start"))
-            context.del_event(context.data.index[msg.args[0]])
-            context.data.delChild(context.data.index[msg.args[0]])
+    if msg.args[0] in context.data:
+        if context.data[msg.args[0]].creator == msg.frm or (msg.cmd == "forceend" and msg.frm_owner):
+            duration = countdown(msg.date - context.data[msg.args[0]].start)
+            del context.data[msg.args[0]]
             context.save()
             return Response("%s a duré %s." % (msg.args[0], duration),
                             channel=msg.channel, nick=msg.frm)
         else:
-            raise IMException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data.index[msg.args[0]]["proprio"]))
+            raise IMException("Vous ne pouvez pas terminer le compteur %s, créé par %s." % (msg.args[0], context.data[msg.args[0]].creator))
     else:
         return Response("%s n'est pas un compteur connu."% (msg.args[0]), channel=msg.channel, nick=msg.frm)
 
@@ -158,19 +206,19 @@ def end_countdown(msg):
 def liste(msg):
     """!eventslist: gets list of timer"""
     if len(msg.args):
-        res = list()
+        res = Response(channel=msg.channel)
         for user in msg.args:
-            cmptr = [x["name"] for x in context.data.index.values() if x["proprio"] == user]
+            cmptr = [k for k in context.data if context.data[k].creator == user]
             if len(cmptr) > 0:
-                res.append("Compteurs créés par %s : %s" % (user, ", ".join(cmptr)))
+                res.append_message(cmptr, title="Events created by %s" % user)
             else:
-                res.append("%s n'a pas créé de compteur" % user)
-        return Response(" ; ".join(res), channel=msg.channel)
+                res.append_message("%s doesn't have any counting events" % user)
+        return res
     else:
-        return Response("Compteurs connus : %s." % ", ".join(context.data.index.keys()), channel=msg.channel)
+        return Response(list(context.data.keys()), channel=msg.channel, title="Known events")
 
 
-@hook.command(match=lambda msg: isinstance(msg, Command) and msg.cmd in context.data.index)
+@hook.command(match=lambda msg: isinstance(msg, Command) and msg.cmd in context.data)
 def parseanswer(msg):
     res = Response(channel=msg.channel)
 
@@ -178,13 +226,13 @@ def parseanswer(msg):
     if msg.cmd[0] == "!":
         res.nick = msg.frm
 
-    if context.data.index[msg.cmd].name == "strend":
-        if context.data.index[msg.cmd].hasAttribute("end"):
-            res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start")), countdown(context.data.index[msg.cmd].getDate("end") - msg.date)))
+    if msg.cmd in context.data:
+        if context.data[msg.cmd].end:
+            res.append_message("%s commencé il y a %s et se terminera dans %s." % (msg.cmd, countdown(msg.date - context.data[msg.cmd].start), countdown(context.data[msg.cmd].end - msg.date)))
         else:
-            res.append_message("%s commencé il y a %s." % (msg.cmd, countdown(msg.date - context.data.index[msg.cmd].getDate("start"))))
+            res.append_message("%s commencé il y a %s." % (msg.cmd, countdown(msg.date - context.data[msg.cmd].start)))
     else:
-        res.append_message(countdown_format(context.data.index[msg.cmd].getDate("start"), context.data.index[msg.cmd]["msg_before"], context.data.index[msg.cmd]["msg_after"]))
+        res.append_message(countdown_format(context.data[msg.cmd].start, context.data[msg.cmd]["msg_before"], context.data[msg.cmd]["msg_after"]))
     return res
 
 
@@ -195,7 +243,7 @@ def parseask(msg):
     name = re.match("^.*!([^ \"'@!]+).*$", msg.message)
     if name is None:
         raise IMException("il faut que tu attribues une commande à l'événement.")
-    if name.group(1) in context.data.index:
+    if name.group(1) in context.data:
         raise IMException("un événement portant ce nom existe déjà.")
 
     texts = re.match("^[^\"]*(avant|après|apres|before|after)?[^\"]*\"([^\"]+)\"[^\"]*((avant|après|apres|before|after)?.*\"([^\"]+)\".*)?$", msg.message, re.I)
