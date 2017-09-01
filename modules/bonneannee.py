@@ -37,10 +37,8 @@ def load(context):
                 chan = sayon["channel"]
                 context.send_response(srv, Response(txt, chan))
 
-    d = datetime(yrn, 1, 1, 0, 0, 0, 0,
-                 timezone.utc) - datetime.now(timezone.utc)
-    context.add_event(ModuleEvent(interval=0, offset=d.total_seconds(),
-                                  call=bonneannee))
+    context.call_at(datetime(yrn, 1, 1, 0, 0, 0, 0, timezone.utc),
+                    bonneannee)
 
 
 # MODULE INTERFACE ####################################################

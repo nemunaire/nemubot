@@ -16,6 +16,13 @@
 
 import asyncio
 
+
+class _TinyEvent:
+
+    def __init__(self, handle):
+        self.handle = handle
+
+
 class _FakeHandle:
 
     def __init__(self, true_handle, callback):
@@ -27,9 +34,10 @@ class _FakeHandle:
         if self.callback:
             return self.callback()
 
+
 class _ModuleContext:
 
-    def __init__(self, module=None):
+    def __init__(self, module=None, knodes=None):
         self.module = module
 
         if module is not None:
@@ -43,6 +51,7 @@ class _ModuleContext:
 
         from nemubot.config.module import Module
         self.config = Module(self.module_name)
+        self._knodes = knodes
 
 
     def load_data(self):
@@ -65,8 +74,13 @@ class _ModuleContext:
         return None
 
 
+    def set_knodes(self, knodes):
+        self._knodes = knodes
+
+
     def add_event(self, evt):
-        return self.events.append(evt)
+        self.events.append(evt)
+        return evt
 
     def del_event(self, evt):
         return self.events.remove(evt)
@@ -88,6 +102,15 @@ class _ModuleContext:
             self._data = self.load_data()
         return self._data
 
+    @data.setter
+    def data(self, data):
+        self._data = data
+        return self._data
+
+    @data.deleter
+    def data(self):
+        self._data = None
+
 
     def unload(self):
         """Perform actions for unloading the module"""
@@ -97,7 +120,7 @@ class _ModuleContext:
             self.del_hook(h, *s)
 
         # Remove registered events
-        for evt, eid, module_src in self.events:
+        for evt in self.events:
             self.del_event(evt)
 
         self.save()
@@ -124,7 +147,7 @@ class ModuleContext(_ModuleContext):
 
 
     def load_data(self):
-        return self.context.datastore.load(self.module_name)
+        return self.context.datastore.load(self.module_name, self._knodes)
 
     def save(self):
         self.context.datastore.save(self.module_name, self.data)
@@ -147,19 +170,31 @@ class ModuleContext(_ModuleContext):
         yield from self.context.treater.treat_msg(msg)
 
 
-    def add_event(self, evt):
+    def _add_event(self, evt, call_add, *args, **kwargs):
         if evt in self.events:
             return None
 
         def _cancel_event():
-            logger.debug("Cancel event")
+            self.module.logger.debug("Cancel event")
             evt.handle = None
-            return super().del_event(evt)
+            return super(ModuleContext, self).del_event(evt)
 
-        hd = self.context.add_event(evt)
+        hd = call_add(*args, **kwargs)
         evt.handle = _FakeHandle(hd, _cancel_event)
 
         return super().add_event(evt)
+
+
+    def add_event(self, evt):
+        return self._add_event(evt, self.context.add_event, evt)
+
+    def call_at(self, *args, **kwargs):
+        evt = _TinyEvent(None)
+        return self._add_event(evt, self.context.call_at, *args, **kwargs)
+
+    def call_later(self, *args, **kwargs):
+        evt = _TinyEvent(None)
+        return self._add_event(evt, self.context.call_later, *args, **kwargs)
 
     def del_event(self, evt):
         # Call to super().del_event is done in the _FakeHandle.cancel

@@ -64,6 +64,13 @@ class Bot(threading.Thread):
         #
         self.loop = loop if loop is not None else asyncio.get_event_loop()
 
+        # Those events are used to ensure there is always one event in the next 24h, else overflow can occurs on loop timeout
+        def event_sentinel(offset=43210):
+            logger.debug("Defining new event sentinelle in %ss", 43210 + offset)
+            self.loop.call_later(43210 + offset, event_sentinel)
+        event_sentinel(0)
+        event_sentinel(43210)
+
         # External IP for accessing this bot
         import ipaddress
         self.ip = ipaddress.ip_address(ip)
@@ -241,6 +248,25 @@ class Bot(threading.Thread):
 
 
     # Events methods
+
+    @asyncio.coroutine
+    def _call_at(self, when, *args, **kwargs):
+        @asyncio.coroutine
+        def _add_event():
+            return self.loop.call_at(when, *args, **kwargs)
+        future = yield from asyncio.run_coroutine_threadsafe(_add_event(), loop=self.loop)
+        logger.debug("New event registered, scheduled in %ss", when - self.loop.time())
+        return future.result()
+
+
+    def call_at(self, when, *args, **kwargs):
+        delay = (when - datetime.now(timezone.utc)).total_seconds()
+        return self._call_at(self.loop.time() + delay, *args, **kwargs)
+
+
+    def call_delay(self, delay, *args, **kwargs):
+        return self._call_at(self.loop.time() + delay, *args, **kwargs)
+
 
     def add_event(self, evt):
         """Register an event and return its identifiant for futur update
