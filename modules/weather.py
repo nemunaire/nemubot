@@ -19,6 +19,41 @@ from nemubot.module.more import Response
 
 URL_DSAPI = "https://api.darksky.net/forecast/%s/%%s,%%s?lang=%%s&units=%%s"
 
+UNITS = {
+    "ca": {
+        "temperature": "°C",
+        "distance": "km",
+        "precipIntensity": "mm/h",
+        "precip": "cm",
+        "speed": "km/h",
+        "pressure": "hPa",
+    },
+    "uk2": {
+        "temperature": "°C",
+        "distance": "mi",
+        "precipIntensity": "mm/h",
+        "precip": "cm",
+        "speed": "mi/h",
+        "pressure": "hPa",
+    },
+    "us": {
+        "temperature": "°F",
+        "distance": "mi",
+        "precipIntensity": "in/h",
+        "precip": "in",
+        "speed": "mi/h",
+        "pressure": "mbar",
+    },
+    "si": {
+        "temperature": "°C",
+        "distance": "km",
+        "precipIntensity": "mm/h",
+        "precip": "cm",
+        "speed": "m/s",
+        "pressure": "hPa",
+    },
+}
+
 def load(context):
     if not context.config or "darkskyapikey" not in context.config:
         raise ImportError("You need a Dark-Sky API key in order to use this "
@@ -30,14 +65,17 @@ def load(context):
     URL_DSAPI = URL_DSAPI % context.config["darkskyapikey"]
 
 
-def format_wth(wth):
-    return ("{temperature} °C {summary}; precipitation ({precipProbability:.0%} chance) intensity: {precipIntensity} mm/h; relative humidity: {humidity:.0%}; wind speed: {windSpeed} km/s {windBearing}°; cloud coverage: {cloudCover:.0%}; pressure: {pressure} hPa; ozone: {ozone} DU"
-            .format(**wth)
+def format_wth(wth, flags):
+    units = UNITS[flags["units"] if "units" in flags and flags["units"] in UNITS else "si"]
+    return ("{temperature} {units[temperature]} {summary}; precipitation ({precipProbability:.0%} chance) intensity: {precipIntensity} {units[precipIntensity]}; relative humidity: {humidity:.0%}; wind speed: {windSpeed} {units[speed]} {windBearing}°; cloud coverage: {cloudCover:.0%}; pressure: {pressure} {units[pressure]}; ozone: {ozone} DU"
+            .format(units=units, **wth)
            )
 
 
-def format_forecast_daily(wth):
-    return ("{summary}; between {temperatureMin}-{temperatureMax} °C; precipitation ({precipProbability:.0%} chance) intensity: maximum {precipIntensity} mm/h; relative humidity: {humidity:.0%}; wind speed: {windSpeed} km/h {windBearing}°; cloud coverage: {cloudCover:.0%}; pressure: {pressure} hPa; ozone: {ozone} DU".format(**wth))
+def format_forecast_daily(wth, flags):
+    units = UNITS[flags["units"] if "units" in flags and flags["units"] in UNITS else "si"]
+    print(units)
+    return ("{summary}; between {temperatureMin}-{temperatureMax} {units[temperature]}; precipitation ({precipProbability:.0%} chance) intensity: maximum {precipIntensity} {units[precipIntensity]}; relative humidity: {humidity:.0%}; wind speed: {windSpeed} {units[speed]} {windBearing}°; cloud coverage: {cloudCover:.0%}; pressure: {pressure} {units[pressure]}; ozone: {ozone} DU".format(units=units, **wth))
 
 
 def format_timestamp(timestamp, tzname, tzoffset, format="%c"):
@@ -88,7 +126,7 @@ def treat_coord(msg):
         raise IMException("indique-moi un nom de ville ou des coordonnées.")
 
 
-def get_json_weather(coords, lang="en", units="auto"):
+def get_json_weather(coords, lang="en", units="ca"):
     wth = web.getJSON(URL_DSAPI % (float(coords[0]), float(coords[1]), lang, units))
 
     # First read flags
@@ -114,13 +152,13 @@ def cmd_coordinates(msg):
 @hook.command("alert",
               keywords={
                   "lang=LANG": "change the output language of weather sumarry; default: en",
-                  "units=UNITS": "return weather conditions in the requested units; default: auto",
+                  "units=UNITS": "return weather conditions in the requested units; default: ca",
               })
 def cmd_alert(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords,
                            lang=msg.kwargs["lang"] if "lang" in msg.kwargs else "en",
-                           units=msg.kwargs["units"] if "units" in msg.kwargs else "auto")
+                           units=msg.kwargs["units"] if "units" in msg.kwargs else "ca")
 
     res = Response(channel=msg.channel, nomore="No more weather alert", count=" (%d more alerts)")
 
@@ -141,13 +179,13 @@ def cmd_alert(msg):
               },
               keywords={
                   "lang=LANG": "change the output language of weather sumarry; default: en",
-                  "units=UNITS": "return weather conditions in the requested units; default: auto",
+                  "units=UNITS": "return weather conditions in the requested units; default: ca",
               })
 def cmd_weather(msg):
     loc, coords, specific = treat_coord(msg)
     wth = get_json_weather(coords,
                            lang=msg.kwargs["lang"] if "lang" in msg.kwargs else "en",
-                           units=msg.kwargs["units"] if "units" in msg.kwargs else "auto")
+                           units=msg.kwargs["units"] if "units" in msg.kwargs else "ca")
 
     res = Response(channel=msg.channel, nomore="No more weather information")
 
@@ -169,17 +207,17 @@ def cmd_weather(msg):
 
         if gr.group(2).lower() == "h" and gr1 < len(wth["hourly"]["data"]):
             hour = wth["hourly"]["data"][gr1]
-            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (format_timestamp(int(hour["time"]), wth["timezone"], wth["offset"], '%H'), format_wth(hour)))
+            res.append_message("\x03\x02At %sh:\x03\x02 %s" % (format_timestamp(int(hour["time"]), wth["timezone"], wth["offset"], '%H'), format_wth(hour, wth["flags"])))
 
         elif gr.group(2).lower() == "d" and gr1 < len(wth["daily"]["data"]):
             day = wth["daily"]["data"][gr1]
-            res.append_message("\x03\x02On %s:\x03\x02 %s" % (format_timestamp(int(day["time"]), wth["timezone"], wth["offset"], '%A'), format_forecast_daily(day)))
+            res.append_message("\x03\x02On %s:\x03\x02 %s" % (format_timestamp(int(day["time"]), wth["timezone"], wth["offset"], '%A'), format_forecast_daily(day, wth["flags"])))
 
         else:
             res.append_message("I don't understand %s or information is not available" % specific)
 
     else:
-        res.append_message("\x03\x02Currently:\x03\x02 " + format_wth(wth["currently"]))
+        res.append_message("\x03\x02Currently:\x03\x02 " + format_wth(wth["currently"], wth["flags"]))
 
         nextres = "\x03\x02Today:\x03\x02 %s " % wth["daily"]["data"][0]["summary"]
         if "minutely" in wth:
@@ -189,11 +227,11 @@ def cmd_weather(msg):
 
         for hour in wth["hourly"]["data"][1:4]:
             res.append_message("\x03\x02At %sh:\x03\x02 %s" % (format_timestamp(int(hour["time"]), wth["timezone"], wth["offset"], '%H'),
-                                                               format_wth(hour)))
+                                                               format_wth(hour, wth["flags"])))
 
         for day in wth["daily"]["data"][1:]:
             res.append_message("\x03\x02On %s:\x03\x02 %s" % (format_timestamp(int(day["time"]), wth["timezone"], wth["offset"], '%A'),
-                                                              format_forecast_daily(day)))
+                                                              format_forecast_daily(day, wth["flags"])))
 
     return res
 
