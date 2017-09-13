@@ -32,10 +32,11 @@ class AbstractServer:
         """
 
         self._name = name
+        self._socket = socket
 
         super().__init__(**kwargs)
 
-        self.logger = logging.getLogger("nemubot.server." + str(self.name))
+        self._logger = logging.getLogger("nemubot.server." + str(self.name))
         self._readbuffer = b''
         self._sending_queue = queue.Queue()
 
@@ -53,7 +54,7 @@ class AbstractServer:
     def connect(self, *args, **kwargs):
         """Register the server in _poll"""
 
-        self.logger.info("Opening connection")
+        self._logger.info("Opening connection")
 
         super().connect(*args, **kwargs)
 
@@ -66,7 +67,7 @@ class AbstractServer:
     def close(self, *args, **kwargs):
         """Unregister the server from _poll"""
 
-        self.logger.info("Closing connection")
+        self._logger.info("Closing connection")
 
         if self.fileno() > 0:
             sync_act("sckt", "unregister", self.fileno())
@@ -84,7 +85,7 @@ class AbstractServer:
         """
 
         self._sending_queue.put(self.format(message))
-        self.logger.debug("Message '%s' appended to write queue", message)
+        self._logger.debug("Message '%s' appended to write queue", message)
         sync_act("sckt", "write", self.fileno())
 
 
