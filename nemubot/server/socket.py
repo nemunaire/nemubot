@@ -90,7 +90,7 @@ class _SocketServer(_Socket):
 
 
     def connect(self):
-        self.logger.info("Connection to %s:%d", *self._sockaddr[:2])
+        self._logger.info("Connection to %s:%d", *self._sockaddr[:2])
         super().connect(self._sockaddr)
 
         if self._bind:
@@ -114,7 +114,7 @@ class UnixSocket:
 
 
     def connect(self):
-        self.logger.info("Connection to unix://%s", self._socket_path)
+        self._logger.info("Connection to unix://%s", self._socket_path)
         super().connect(self._socket_path)
 
 
@@ -136,7 +136,7 @@ class _Listener:
     def read(self):
         conn, addr = self.accept()
         fileno = conn.fileno()
-        self.logger.info("Accept new connection from %s (fd=%d)", addr, fileno)
+        self._logger.info("Accept new connection from %s (fd=%d)", addr, fileno)
 
         ss = self._instanciate(name=self.name + "#" + str(fileno), fileno=conn.detach())
         ss.connect = ss._on_connect
@@ -152,7 +152,7 @@ class UnixSocketListener(_Listener, UnixSocket, _Socket, socket.socket):
 
 
     def connect(self):
-        self.logger.info("Creating Unix socket at unix://%s", self._socket_path)
+        self._logger.info("Creating Unix socket at unix://%s", self._socket_path)
 
         try:
             os.remove(self._socket_path)
@@ -161,7 +161,7 @@ class UnixSocketListener(_Listener, UnixSocket, _Socket, socket.socket):
 
         self.bind(self._socket_path)
         self.listen(5)
-        self.logger.info("Socket ready for accepting new connections")
+        self._logger.info("Socket ready for accepting new connections")
 
         self._on_connect()
 

@@ -84,13 +84,13 @@ class _IRC:
             except:
                 return "ERRMSG invalid parameters provided as DCC CTCP request"
 
-            self.logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
+            self._logger.info("Receive DCC connection request from %s to %s:%d", conn.sender, ip, port)
 
             if conn.accept_user(ip, port):
                 srv.dcc_clients[conn.sender] = conn
                 conn.send_dcc("Hello %s!" % conn.nick)
             else:
-                self.logger.error("DCC: unable to connect to %s:%d", ip, port)
+                self._logger.error("DCC: unable to connect to %s:%d", ip, port)
                 return "ERRMSG unable to connect to %s:%d" % (ip, port)
 
         import nemubot
@@ -109,7 +109,7 @@ class _IRC:
         # TODO: Temporary fix, waiting for hook based CTCP management
         self.ctcp_capabilities["TYPING"] = lambda msg, cmds: None
 
-        self.logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
+        self._logger.debug("CTCP capabilities setup: %s", ", ".join(self.ctcp_capabilities))
 
 
         # Register hooks on some IRC CMD
