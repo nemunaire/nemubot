@@ -24,17 +24,16 @@ class AbstractServer:
 
     """An abstract server: handle communication with an IM server"""
 
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name, fdClass, **kwargs):
         """Initialize an abstract server
 
         Keyword argument:
         name -- Identifier of the socket, for convinience
+        fdClass -- Class to instantiate as support file
         """
 
         self._name = name
-        self._socket = socket
-
-        super().__init__(**kwargs)
+        self._fd = fdClass(**kwargs)
 
         self._logger = logging.getLogger("nemubot.server." + str(self.name))
         self._readbuffer = b''
@@ -46,7 +45,7 @@ class AbstractServer:
         if self._name is not None:
             return self._name
         else:
-            return self.fileno()
+            return self._fd.fileno()
 
 
     # Open/close
@@ -56,12 +55,12 @@ class AbstractServer:
 
         self._logger.info("Opening connection")
 
-        super().connect(*args, **kwargs)
+        self._fd.connect(*args, **kwargs)
 
         self._on_connect()
 
     def _on_connect(self):
-        sync_act("sckt", "register", self.fileno())
+        sync_act("sckt", "register", self._fd.fileno())
 
 
     def close(self, *args, **kwargs):
@@ -69,10 +68,10 @@ class AbstractServer:
 
         self._logger.info("Closing connection")
 
-        if self.fileno() > 0:
-            sync_act("sckt", "unregister", self.fileno())
+        if self._fd.fileno() > 0:
+            sync_act("sckt", "unregister", self._fd.fileno())
 
-        super().close(*args, **kwargs)
+        self._fd.close(*args, **kwargs)
 
 
     # Writes
@@ -86,14 +85,14 @@ class AbstractServer:
 
         self._sending_queue.put(self.format(message))
         self._logger.debug("Message '%s' appended to write queue", message)
-        sync_act("sckt", "write", self.fileno())
+        sync_act("sckt", "write", self._fd.fileno())
 
 
     def async_write(self):
         """Internal function used when the file descriptor is writable"""
 
         try:
-            sync_act("sckt", "unwrite", self.fileno())
+            sync_act("sckt", "unwrite", self._fd.fileno())
             while not self._sending_queue.empty():
                 self._write(self._sending_queue.get_nowait())
                 self._sending_queue.task_done()
@@ -131,7 +130,7 @@ class AbstractServer:
         A list of fully received messages
         """
 
-        ret, self._readbuffer = self.lex(self._readbuffer + self.read())
+        ret, self._readbuffer = self.lex(self._readbuffer + self._fd.read())
 
         for r in ret:
             yield r
@@ -159,4 +158,9 @@ class AbstractServer:
     def exception(self, flags):
         """Exception occurs on fd"""
 
-        self.close()
+        self._fd.close()
+
+    # Proxy
+
+    def fileno(self):
+        return self._fd.fileno()
