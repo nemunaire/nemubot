@@ -21,10 +21,10 @@ import socket
 from nemubot.channel import Channel
 from nemubot.message.printer.IRC import IRC as IRCPrinter
 from nemubot.server.message.IRC import IRC as IRCMessage
-from nemubot.server.socket import SocketServer, SecureSocketServer
+from nemubot.server.socket import SocketServer
 
 
-class _IRC:
+class IRC(SocketServer):
 
     """Concrete implementation of a connexion to an IRC server"""
 
@@ -245,7 +245,7 @@ class _IRC:
 
 
     def close(self):
-        if not self._closed:
+        if not self._fd._closed:
             self.write("QUIT")
         return super().close()
 
@@ -274,10 +274,3 @@ class _IRC:
     def subparse(self, orig, cnt):
         msg = IRCMessage(("@time=%s :%s!user@host.com PRIVMSG %s :%s" % (orig.date.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), orig.frm, ",".join(orig.to), cnt)).encode(self.encoding), self.encoding)
         return msg.to_bot_message(self)
-
-
-class IRC(_IRC, SocketServer):
-    pass
-
-class IRC_secure(_IRC, SecureSocketServer):
-    pass

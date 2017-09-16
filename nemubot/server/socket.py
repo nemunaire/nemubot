@@ -16,7 +16,6 @@
 
 import os
 import socket
-import ssl
 
 import nemubot.message as message
 from nemubot.message.printer.socket import Socket as SocketPrinter
@@ -40,7 +39,7 @@ class _Socket(AbstractServer):
     # Write
 
     def _write(self, cnt):
-        self.sendall(cnt)
+        self._fd.sendall(cnt)
 
 
     def format(self, txt):
@@ -52,8 +51,8 @@ class _Socket(AbstractServer):
 
     # Read
 
-    def recv(self, n=1024):
-        return super().recv(n)
+    def recv(self, *args, **kwargs):
+        return self._fd.recv(*args, **kwargs)
 
 
     def parse(self, line):
@@ -67,7 +66,7 @@ class _Socket(AbstractServer):
             args = line.split(' ')
 
         if len(args):
-            yield message.Command(cmd=args[0], args=args[1:], server=self.fileno(), to=["you"], frm="you")
+            yield message.Command(cmd=args[0], args=args[1:], server=self._fd.fileno(), to=["you"], frm="you")
 
 
     def subparse(self, orig, cnt):
@@ -78,50 +77,46 @@ class _Socket(AbstractServer):
             yield m
 
 
-class _SocketServer(_Socket):
+class SocketServer(_Socket):
 
     def __init__(self, host, port, bind=None, **kwargs):
-        (family, type, proto, canonname, sockaddr) = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)[0]
+        (family, type, proto, canonname, self._sockaddr) = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)[0]
 
-        super().__init__(family=family, type=type, proto=proto, **kwargs)
+        super().__init__(fdClass=socket.socket, family=family, type=type, proto=proto, **kwargs)
 
-        self._sockaddr = sockaddr
         self._bind = bind
 
 
     def connect(self):
-        self._logger.info("Connection to %s:%d", *self._sockaddr[:2])
+        self._logger.info("Connecting to %s:%d", *self._sockaddr[:2])
         super().connect(self._sockaddr)
+        self._logger.info("Connected to %s:%d", *self._sockaddr[:2])
 
         if self._bind:
-            super().bind(self._bind)
-
-
-class SocketServer(_SocketServer, socket.socket):
-    pass
-
-
-class SecureSocketServer(_SocketServer, ssl.SSLSocket):
-    pass
+            self._fd.bind(self._bind)
 
 
 class UnixSocket:
 
     def __init__(self, location, **kwargs):
-        super().__init__(family=socket.AF_UNIX, **kwargs)
+        super().__init__(fdClass=socket.socket, family=socket.AF_UNIX, **kwargs)
 
         self._socket_path = location
 
 
     def connect(self):
         self._logger.info("Connection to unix://%s", self._socket_path)
-        super().connect(self._socket_path)
+        self.connect(self._socket_path)
 
 
-class SocketClient(_Socket, socket.socket):
+class SocketClient(_Socket):
+
+    def __init__(self, **kwargs):
+        super().__init__(fdClass=socket.socket, **kwargs)
+
 
     def read(self):
-        return self.recv()
+        return self._fd.recv()
 
 
 class _Listener:
@@ -134,7 +129,7 @@ class _Listener:
 
 
     def read(self):
-        conn, addr = self.accept()
+        conn, addr = self._fd.accept()
         fileno = conn.fileno()
         self._logger.info("Accept new connection from %s (fd=%d)", addr, fileno)
 
@@ -145,11 +140,7 @@ class _Listener:
         return b''
 
 
-class UnixSocketListener(_Listener, UnixSocket, _Socket, socket.socket):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+class UnixSocketListener(_Listener, UnixSocket, _Socket):
 
     def connect(self):
         self._logger.info("Creating Unix socket at unix://%s", self._socket_path)
@@ -159,8 +150,8 @@ class UnixSocketListener(_Listener, UnixSocket, _Socket, socket.socket):
         except FileNotFoundError:
             pass
 
-        self.bind(self._socket_path)
-        self.listen(5)
+        self._fd.bind(self._socket_path)
+        self._fd.listen(5)
         self._logger.info("Socket ready for accepting new connections")
 
         self._on_connect()
@@ -171,7 +162,7 @@ class UnixSocketListener(_Listener, UnixSocket, _Socket, socket.socket):
         import socket
 
         try:
-            self.shutdown(socket.SHUT_RDWR)
+            self._fd.shutdown(socket.SHUT_RDWR)
         except socket.error:
             pass
 
