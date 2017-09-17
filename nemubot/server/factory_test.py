@@ -22,30 +22,32 @@ class TestFactory(unittest.TestCase):
 
     def test_IRC1(self):
         from nemubot.server.IRC import IRC as IRCServer
-        from nemubot.server.IRC import IRC_secure as IRCSServer
+        import socket
+        import ssl
 
         # <host>: If omitted, the client must connect to a prespecified default IRC server.
         server = factory("irc:///")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "localhost")
+        self.assertIsInstance(server._fd, socket.socket)
+        self.assertIn(server._sockaddr[0], ["127.0.0.1", "::1"])
 
-        server = factory("ircs:///")
-        self.assertIsInstance(server, IRCSServer)
-        self.assertEqual(server.host, "localhost")
-
-        server = factory("irc://host1")
+        server = factory("irc://2.2.2.2")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "host1")
+        self.assertEqual(server._sockaddr[0], "2.2.2.2")
 
-        server = factory("irc://host2:6667")
+        server = factory("ircs://1.2.1.2")
         self.assertIsInstance(server, IRCServer)
-        self.assertEqual(server.host, "host2")
-        self.assertEqual(server.port, 6667)
+        self.assertIsInstance(server._fd, ssl.SSLSocket)
 
-        server = factory("ircs://host3:194/")
-        self.assertIsInstance(server, IRCSServer)
-        self.assertEqual(server.host, "host3")
-        self.assertEqual(server.port, 194)
+        server = factory("irc://1.2.3.4:6667")
+        self.assertIsInstance(server, IRCServer)
+        self.assertEqual(server._sockaddr[0], "1.2.3.4")
+        self.assertEqual(server._sockaddr[1], 6667)
+
+        server = factory("ircs://4.3.2.1:194/")
+        self.assertIsInstance(server, IRCServer)
+        self.assertEqual(server._sockaddr[0], "4.3.2.1")
+        self.assertEqual(server._sockaddr[1], 194)
 
 
 if __name__ == '__main__':
