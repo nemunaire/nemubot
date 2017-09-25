@@ -51,8 +51,8 @@ class _Socket(AbstractServer):
 
     # Read
 
-    def recv(self, *args, **kwargs):
-        return self._fd.recv(*args, **kwargs)
+    def read(self, bufsize=1024, *args, **kwargs):
+        return self._fd.recv(bufsize, *args, **kwargs)
 
 
     def parse(self, line):
@@ -113,10 +113,6 @@ class SocketClient(_Socket):
 
     def __init__(self, **kwargs):
         super().__init__(fdClass=socket.socket, **kwargs)
-
-
-    def read(self):
-        return self._fd.recv()
 
 
 class _Listener:
