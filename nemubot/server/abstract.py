@@ -130,7 +130,7 @@ class AbstractServer:
         A list of fully received messages
         """
 
-        ret, self._readbuffer = self.lex(self._readbuffer + self._fd.read())
+        ret, self._readbuffer = self.lex(self._readbuffer + self.read())
 
         for r in ret:
             yield r
