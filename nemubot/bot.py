@@ -296,7 +296,7 @@ class Bot(threading.Thread):
 
         # Register the event in the source module
         if module_src is not None:
-            module_src.__nemubot_context__.events.append(evt.id)
+            module_src.__nemubot_context__.events.append((evt, evt.id))
         evt.module_src = module_src
 
         logger.info("New event registered in %d position: %s", i, t)
@@ -326,10 +326,10 @@ class Bot(threading.Thread):
             id = evt
 
         if len(self.events) > 0 and id == self.events[0].id:
+            if module_src is not None:
+                module_src.__nemubot_context__.events.remove((self.events[0], id))
             self.events.remove(self.events[0])
             self._update_event_timer()
-            if module_src is not None:
-                module_src.__nemubot_context__.events.remove(id)
             return True
 
         for evt in self.events:
@@ -337,7 +337,7 @@ class Bot(threading.Thread):
                 self.events.remove(evt)
 
                 if module_src is not None:
-                    module_src.__nemubot_context__.events.remove(evt.id)
+                    module_src.__nemubot_context__.events.remove((evt, evt.id))
                 return True
         return False
 
