@@ -17,7 +17,7 @@ from nemubot.module.more import Response
 
 def get_tnt_info(track_id):
     values = []
-    data = getURLContent('www.tnt.fr/public/suivi_colis/recherche/visubontransport.do?bonTransport=%s' % track_id)
+    data = getURLContent('https://www.tnt.fr/public/suivi_colis/recherche/visubontransport.do?bonTransport=%s' % track_id)
     soup = BeautifulSoup(data)
     status_list = soup.find('div', class_='result__content')
     if not status_list:
@@ -46,7 +46,7 @@ def get_colissimo_info(colissimo_id):
 
 def get_chronopost_info(track_id):
     data = urllib.parse.urlencode({'listeNumeros': track_id})
-    track_baseurl = "http://www.chronopost.fr/expedier/inputLTNumbersNoJahia.do?lang=fr_FR"
+    track_baseurl = "https://www.chronopost.fr/expedier/inputLTNumbersNoJahia.do?lang=fr_FR"
     track_data = getURLContent(track_baseurl, data.encode('utf-8'))
     soup = BeautifulSoup(track_data)
 
