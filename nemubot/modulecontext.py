@@ -85,7 +85,7 @@ class _ModuleContext:
             self.del_hook(h, *s)
 
         # Remove registered events
-        for evt, eid, module_src in self.events:
+        for evt, eid in self.events:
             self.del_event(evt)
 
         self.save()
