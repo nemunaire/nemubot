@@ -77,6 +77,20 @@ def main():
     args.files = [x for x in map(os.path.abspath, args.files)]
     args.modules_path = [x for x in map(os.path.abspath, args.modules_path)]
 
+    # Prepare the attached client, before setting other stuff
+    if not args.debug and not args.no_attach and args.socketfile is not None and args.pidfile is not None:
+        try:
+            pid = os.fork()
+            if pid > 0:
+                import time
+                os.waitpid(pid, 0)
+                time.sleep(1)
+                from nemubot import attach
+                sys.exit(attach(args.pidfile, args.socketfile))
+        except OSError as err:
+            sys.stderr.write("Unable to fork: %s\n" % err)
+            sys.exit(1)
+
     # Setup logging interface
     import logging
     logger = logging.getLogger("nemubot")
@@ -106,7 +120,7 @@ def main():
             pass
         else:
             from nemubot import attach
-            sys.exit(attach(pid, args.socketfile))
+            sys.exit(attach(args.pidfile, args.socketfile))
 
     # Add modules dir paths
     modules_paths = list()
@@ -175,7 +189,7 @@ def main():
     # Daemonize
     if not args.debug:
         from nemubot import daemonize
-        daemonize(args.socketfile, not args.no_attach)
+        daemonize(args.socketfile)
 
     # Signals handling
     def sigtermhandler(signum, frame):
