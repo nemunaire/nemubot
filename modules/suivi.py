@@ -31,16 +31,17 @@ def get_tnt_info(track_id):
 
 
 def get_colissimo_info(colissimo_id):
-    colissimo_data = getURLContent("http://www.colissimo.fr/portail_colissimo/suivre.do?colispart=%s" % colissimo_id)
+    colissimo_data = getURLContent("https://www.laposte.fr/particulier/outils/suivre-vos-envois?code=%s" % colissimo_id)
     soup = BeautifulSoup(colissimo_data)
 
-    dataArray = soup.find(class_='dataArray')
-    if dataArray and dataArray.tbody and dataArray.tbody.tr:
-        date = dataArray.tbody.tr.find(headers="Date").get_text()
-        libelle = re.sub(r'[\n\t\r]', '',
-                         dataArray.tbody.tr.find(headers="Libelle").get_text())
-        site = dataArray.tbody.tr.find(headers="site").get_text().strip()
-        return (date, libelle, site.strip())
+    dataArray = soup.find(class_='results-suivi')
+    if dataArray and dataArray.table and dataArray.table.tbody and dataArray.table.tbody.tr:
+        td = dataArray.table.tbody.tr.find_all('td')
+        if len(td) > 2:
+            date = td[0].get_text()
+            libelle = re.sub(r'[\n\t\r]', '', td[1].get_text())
+            site = td[2].get_text().strip()
+            return (date, libelle, site.strip())
 
 
 def get_chronopost_info(track_id):
