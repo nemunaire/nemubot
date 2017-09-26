@@ -176,7 +176,8 @@ def get_fedex_info(fedex_id, lang="en_US"):
     if ("TrackPackagesResponse" in fedex_data and
         "packageList" in fedex_data["TrackPackagesResponse"] and
         len(fedex_data["TrackPackagesResponse"]["packageList"]) and
-        not fedex_data["TrackPackagesResponse"]["errorList"][0]["code"] and
+        (not fedex_data["TrackPackagesResponse"]["errorList"][0]["code"] or
+        fedex_data["TrackPackagesResponse"]["errorList"][0]["code"] == '0') and
         not fedex_data["TrackPackagesResponse"]["packageList"][0]["errorList"][0]["code"]
     ):
         return fedex_data["TrackPackagesResponse"]["packageList"][0]
