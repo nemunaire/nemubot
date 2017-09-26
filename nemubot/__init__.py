@@ -39,9 +39,13 @@ def requires_version(min=None, max=None):
                           "but this is nemubot v%s." % (str(max), __version__))
 
 
-def attach(pid, socketfile):
+def attach(pidfile, socketfile):
     import socket
     import sys
+
+    # Read PID from pidfile
+    with open(pidfile, "r") as f:
+        pid = int(f.readline())
 
     print("nemubot is launched with PID %d. Attaching to Unix socket at: %s" % (pid, socketfile))
 
@@ -106,27 +110,12 @@ def attach(pid, socketfile):
     return 0
 
 
-def daemonize(socketfile=None, autoattach=True):
+def daemonize(socketfile=None):
     """Detach the running process to run as a daemon
     """
 
     import os
     import sys
-
-    if socketfile is not None:
-        try:
-            pid = os.fork()
-            if pid > 0:
-                if autoattach:
-                    import time
-                    os.waitpid(pid, 0)
-                    time.sleep(1)
-                    sys.exit(attach(pid, socketfile))
-                else:
-                    sys.exit(0)
-        except OSError as err:
-            sys.stderr.write("Unable to fork: %s\n" % err)
-            sys.exit(1)
 
     try:
         pid = os.fork()
