@@ -230,7 +230,7 @@ def handle_usps(tracknum):
     info = get_usps_info(tracknum)
     if info:
         notif, last_date, last_status, last_location = info
-        return ("USPS \x02{tracknum}\x0F is {last_status} in \x02{last_location}\x0F as of {last_date}: {notif}".format(tracknum=tracknum, notif=notif, last_date=last_date, last_status=last_status.lower(), last_location=last_location))
+        return ("USPS \x02{tracknum}\x0F: {last_status} in \x02{last_location}\x0F as of {last_date}: {notif}".format(tracknum=tracknum, notif=notif, last_date=last_date, last_status=last_status.lower(), last_location=last_location))
 
 
 def handle_colissimo(tracknum):
