@@ -73,7 +73,7 @@ def cmd_grep(msg):
 
     only = "only" in msg.kwargs
 
-    l = [m for m in grep(msg.args[0] if msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
+    l = [m for m in grep(msg.args[0] if len(msg.args[0]) and msg.args[0][0] == "^" else ".*?(" + msg.args[0] + ").*?",
                          " ".join(msg.args[1:]),
                          msg,
                          icase="nocase" in msg.kwargs,
