@@ -13,7 +13,7 @@ from nemubot.module.more import Response
 
 # GLOBALS #############################################################
 
-URL_API = "http://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%%s"
+URL_API = "https://open.mapquestapi.com/geocoding/v1/address?key=%s&location=%%s"
 
 
 # LOADING #############################################################
@@ -23,7 +23,7 @@ def load(context):
         raise ImportError("You need a MapQuest API key in order to use this "
                           "module. Add it to the module configuration file:\n"
                           "<module name=\"mapquest\" key=\"XXXXXXXXXXXXXXXX\" "
-                          "/>\nRegister at http://developer.mapquest.com/")
+                          "/>\nRegister at https://developer.mapquest.com/")
     global URL_API
     URL_API = URL_API % context.config["apikey"].replace("%", "%%")
 

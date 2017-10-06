@@ -17,7 +17,7 @@ def validator(url):
         raise IMException("Indicate a valid URL!")
 
     try:
-        req = urllib.request.Request("http://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "Nemubot v%s" % __version__})
+        req = urllib.request.Request("https://validator.w3.org/check?uri=%s&output=json" % (urllib.parse.quote(o.geturl())), headers={ 'User-Agent' : "Nemubot v%s" % __version__})
         raw = urllib.request.urlopen(req, timeout=10)
     except urllib.error.HTTPError as e:
         raise IMException("HTTP error occurs: %s %s" % (e.code, e.reason))

@@ -40,7 +40,7 @@ def cmd_subreddit(msg):
             else:
                 where = "r"
 
-            sbr = web.getJSON("http://www.reddit.com/%s/%s/about.json" %
+            sbr = web.getJSON("https://www.reddit.com/%s/%s/about.json" %
                               (where, sub.group(2)))
 
             if sbr is None:

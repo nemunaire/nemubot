@@ -22,8 +22,8 @@ def factory(uri, ssl=False, **init_args):
     srv = None
 
     if o.scheme == "irc" or o.scheme == "ircs":
-        # http://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
-        # http://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
+        # https://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
+        # https://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
         args = init_args
 
         if o.scheme == "ircs": ssl = True

@@ -135,7 +135,7 @@ class Bot(threading.Thread):
                                    "Vous pouvez le consulter, le dupliquer, "
                                    "envoyer des rapports de bogues ou bien "
                                    "contribuer au projet sur GitHub : "
-                                   "http://github.com/nemunaire/nemubot/")
+                                   "https://github.com/nemunaire/nemubot/")
                 res.append_message(title="Pour plus de détails sur un module, "
                                    "envoyez \"!help nomdumodule\". Voici la liste"
                                    " de tous les modules disponibles localement",

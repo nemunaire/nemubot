@@ -53,7 +53,7 @@ def get_french_synos(word):
 
 
 def get_english_synos(key, word):
-    cnt = web.getJSON("http://words.bighugelabs.com/api/2/%s/%s/json" %
+    cnt = web.getJSON("https://words.bighugelabs.com/api/2/%s/%s/json" %
                       (quote(key), quote(word.encode("ISO-8859-1"))))
 
     best = list(); synos = list(); anton = list()

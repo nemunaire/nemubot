@@ -36,7 +36,7 @@ for k, v in s:
 # MODULE CORE #########################################################
 
 def get_conjug(verb, stringTens):
-    url = ("http://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
+    url = ("https://leconjugueur.lefigaro.fr/conjugaison/verbe/%s.html" %
            quote(verb.encode("ISO-8859-1")))
     page = web.getURLContent(url)
 

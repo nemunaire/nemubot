@@ -15,7 +15,7 @@ from nemubot.module import mapquest
 
 # GLOBALS #############################################################
 
-URL_API = "http://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?fcallC=%s"
+URL_API = "https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?fcallC=%s"
 
 SPEED_TYPES = {
         0: 'Ground speed',
