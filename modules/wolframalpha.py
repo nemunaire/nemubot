@@ -15,7 +15,7 @@ from nemubot.module.more import Response
 
 # LOADING #############################################################
 
-URL_API = "http://api.wolframalpha.com/v2/query?input=%%s&format=plaintext&appid=%s"
+URL_API = "https://api.wolframalpha.com/v2/query?input=%%s&format=plaintext&appid=%s"
 
 def load(context):
     global URL_API
@@ -24,7 +24,7 @@ def load(context):
                            "this module. Add it to the module configuration: "
                            "\n<module name=\"wolframalpha\" "
                            "apikey=\"XXXXXX-XXXXXXXXXX\" />\n"
-                           "Register at http://products.wolframalpha.com/api/")
+                           "Register at https://products.wolframalpha.com/api/")
     URL_API = URL_API % quote(context.config["apikey"]).replace("%", "%%")
 
 

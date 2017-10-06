@@ -59,7 +59,7 @@ def load(context):
         raise ImportError("You need a Dark-Sky API key in order to use this "
                           "module. Add it to the module configuration file:\n"
                           "<module name=\"weather\" darkskyapikey=\"XXX\" />\n"
-                          "Register at http://developer.forecast.io/")
+                          "Register at https://developer.forecast.io/")
     context.data.setIndex("name", "city")
     global URL_DSAPI
     URL_DSAPI = URL_DSAPI % context.config["darkskyapikey"]

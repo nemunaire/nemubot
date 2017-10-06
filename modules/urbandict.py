@@ -14,7 +14,7 @@ from nemubot.module.more import Response
 
 def search(terms):
     return web.getJSON(
-        "http://api.urbandictionary.com/v0/define?term=%s"
+        "https://api.urbandictionary.com/v0/define?term=%s"
         % quote(' '.join(terms)))
 
 

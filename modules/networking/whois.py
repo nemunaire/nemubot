@@ -9,7 +9,7 @@ from nemubot.tools.web import getJSON
 from nemubot.module.more import Response
 
 URL_AVAIL = "https://www.whoisxmlapi.com/whoisserver/WhoisService?cmd=GET_DN_AVAILABILITY&domainName=%%s&outputFormat=json&username=%s&password=%s"
-URL_WHOIS = "http://www.whoisxmlapi.com/whoisserver/WhoisService?da=2&domainName=%%s&outputFormat=json&userName=%s&password=%s"
+URL_WHOIS = "https://www.whoisxmlapi.com/whoisserver/WhoisService?da=2&domainName=%%s&outputFormat=json&userName=%s&password=%s"
 
 
 # LOADING #############################################################
@@ -22,7 +22,7 @@ def load(CONF, add_hook):
                           "the !netwhois feature. Add it to the module "
                           "configuration file:\n<whoisxmlapi username=\"XX\" "
                           "password=\"XXX\" />\nRegister at "
-                          "http://www.whoisxmlapi.com/newaccount.php")
+                          "https://www.whoisxmlapi.com/newaccount.php")
 
     URL_AVAIL = URL_AVAIL % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))
     URL_WHOIS = URL_WHOIS % (urllib.parse.quote(CONF.getNode("whoisxmlapi")["username"]), urllib.parse.quote(CONF.getNode("whoisxmlapi")["password"]))

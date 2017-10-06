@@ -25,7 +25,7 @@ def cmd_tcode(msg):
         raise IMException("indicate a transaction code or "
                            "a keyword to search!")
 
-    url = ("http://www.tcodesearch.com/tcodes/search?q=%s" %
+    url = ("https://www.tcodesearch.com/tcodes/search?q=%s" %
            urllib.parse.quote(msg.args[0]))
 
     page = web.getURLContent(url)
