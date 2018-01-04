@@ -63,8 +63,14 @@ class ModuleEvent:
             self.call_data = func_data
 
         # Store times
-        self.offset = timedelta(seconds=offset)  # Time to wait before the first check
-        self.interval = timedelta(seconds=interval)
+        if isinstance(offset, timedelta):
+            self.offset = offset  # Time to wait before the first check
+        else:
+            self.offset = timedelta(seconds=offset)  # Time to wait before the first check
+        if isinstance(interval, timedelta):
+            self.interval = interval
+        else:
+            self.interval = timedelta(seconds=interval)
         self._end = None  # Cache
 
         # How many times do this event?
