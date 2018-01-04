@@ -40,6 +40,11 @@ class _ModuleContext:
     def set_knodes(self, knodes):
         self._knodes = knodes
 
+    def set_default(self, default):
+        # Access to data will trigger the load of data
+        if self.data is None:
+            self._data = default
+
     def add_hook(self, hook, *triggers):
         from nemubot.hooks import Abstract as AbstractHook
         assert isinstance(hook, AbstractHook), hook
