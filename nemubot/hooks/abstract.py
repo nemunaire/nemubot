@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import types
+
 def call_game(call, *args, **kargs):
     """With given args, try to determine the right call to make
 
@@ -119,10 +121,18 @@ class Abstract:
         try:
             if self.check(data1):
                 ret = call_game(self.call, data1, self.data, *args)
+            if isinstance(ret, types.GeneratorType):
+                for r in ret:
+                    yield r
+                ret = None
         except IMException as e:
             ret = e.fill_response(data1)
         finally:
             if self.times == 0:
                 self.call_end(ret)
 
-        return ret
+        if isinstance(ret, list):
+            for r in ret:
+                yield ret
+        elif ret is not None:
+            yield ret

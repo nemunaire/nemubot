@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import types
 
 logger = logging.getLogger("nemubot.treatment")
 
@@ -79,19 +78,12 @@ class MessageTreater:
 
         for h in self.hm.get_hooks("pre", type(msg).__name__):
             if h.can_read(msg.to, msg.server) and h.match(msg):
-                res = h.run(msg)
+                for res in flatify(h.run(msg)):
+                    if res is not None and res != msg:
+                        yield from self._pre_treat(res)
 
-                if isinstance(res, list):
-                    for i in range(len(res)):
-                        # Avoid infinite loop
-                        if res[i] != msg:
-                            yield from self._pre_treat(res[i])
-
-                elif res is not None and res != msg:
-                    yield from self._pre_treat(res)
-
-                elif res is None or res is False:
-                    break
+                    elif res is None or res is False:
+                        break
         else:
             yield msg
 
@@ -113,25 +105,10 @@ class MessageTreater:
             msg.frm_owner = (not hasattr(msg.server, "owner") or msg.server.owner == msg.frm)
 
         while hook is not None:
-            res = hook.run(msg)
-
-            if isinstance(res, list):
-                for r in res:
-                    yield r
-
-            elif res is not None:
-                if isinstance(res, types.GeneratorType):
-                    for r in res:
-                        if not hasattr(r, "server") or r.server is None:
-                            r.server = msg.server
-
-                        yield r
-
-                else:
-                    if not hasattr(res, "server") or res.server is None:
-                        res.server = msg.server
-
-                    yield res
+            for res in flatify(hook.run(msg)):
+                if not hasattr(res, "server") or res.server is None:
+                    res.server = msg.server
+                yield res
 
             hook = next(hook_gen, None)
 
@@ -165,19 +142,20 @@ class MessageTreater:
 
         for h in self.hm.get_hooks("post", type(msg).__name__):
             if h.can_write(msg.to, msg.server) and h.match(msg):
-                res = h.run(msg)
+                for res in flatify(h.run(msg)):
+                    if res is not None and res != msg:
+                        yield from self._post_treat(res)
 
-                if isinstance(res, list):
-                    for i in range(len(res)):
-                        # Avoid infinite loop
-                        if res[i] != msg:
-                            yield from self._post_treat(res[i])
-
-                elif res is not None and res != msg:
-                    yield from self._post_treat(res)
-
-                elif res is None or res is False:
-                    break
+                    elif res is None or res is False:
+                        break
 
         else:
             yield msg
+
+
+def flatify(g):
+    if hasattr(g, "__iter__"):
+        for i in g:
+            yield from flatify(i)
+    else:
+        yield g

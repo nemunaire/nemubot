@@ -272,7 +272,6 @@ def treat_alias(msg):
 
         # Avoid infinite recursion
         if not isinstance(rpl_msg, Command) or msg.cmd != rpl_msg.cmd:
-            # Also return origin message, if it can be treated as well
-            return [msg, rpl_msg]
+            return rpl_msg
 
     return msg
