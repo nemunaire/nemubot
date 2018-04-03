@@ -46,29 +46,22 @@ def send_sms(frm, api_usr, api_key, content):
 
     return None
 
-
-@hook.command("sms")
-def cmd_sms(msg):
-    if not len(msg.args):
-        raise IMException("À qui veux-tu envoyer ce SMS ?")
-
-    # Check dests
-    cur_epoch = time.mktime(time.localtime());
-    for u in msg.args[0].split(","):
+def check_sms_dests(dests, cur_epoch):
+    """Raise exception if one of the dest is not known or has already receive a SMS recently
+    """
+    for u in dests:
         if u not in context.data.index:
             raise IMException("Désolé, je sais pas comment envoyer de SMS à %s." % u)
         elif cur_epoch - float(context.data.index[u]["lastuse"]) < 42:
             raise IMException("Un peu de calme, %s a déjà reçu un SMS il n'y a pas si longtemps." % u)
+    return True
 
-    # Go!
+
+def send_sms_to_list(msg, frm, dests, content, cur_epoch):
     fails = list()
-    for u in msg.args[0].split(","):
+    for u in dests:
         context.data.index[u]["lastuse"] = cur_epoch
-        if msg.to_response[0] == msg.frm:
-            frm = msg.frm
-        else:
-            frm = msg.frm + "@" + msg.to[0]
-        test = send_sms(frm, context.data.index[u]["user"], context.data.index[u]["key"], " ".join(msg.args[1:]))
+        test = send_sms(frm, context.data.index[u]["user"], context.data.index[u]["key"], content)
         if test is not None:
             fails.append( "%s: %s" % (u, test) )
 
@@ -76,6 +69,55 @@ def cmd_sms(msg):
         return Response("quelque chose ne s'est pas bien passé durant l'envoi du SMS : " + ", ".join(fails), msg.channel, msg.frm)
     else:
         return Response("le SMS a bien été envoyé", msg.channel, msg.frm)
+
+
+@hook.command("sms")
+def cmd_sms(msg):
+    if not len(msg.args):
+        raise IMException("À qui veux-tu envoyer ce SMS ?")
+
+    cur_epoch = time.mktime(time.localtime())
+    dests = msg.args[0].split(",")
+    frm = msg.frm if msg.to_response[0] == msg.frm else msg.frm + "@" + msg.to[0]
+    content = " ".join(msg.args[1:])
+
+    check_sms_dests(dests, cur_epoch)
+    return send_sms_to_list(msg, frm, dests, content, cur_epoch)
+
+
+@hook.command("smscmd")
+def cmd_smscmd(msg):
+    if not len(msg.args):
+        raise IMException("À qui veux-tu envoyer ce SMS ?")
+
+    cur_epoch = time.mktime(time.localtime())
+    dests = msg.args[0].split(",")
+    frm = msg.frm if msg.to_response[0] == msg.frm else msg.frm + "@" + msg.to[0]
+    cmd = " ".join(msg.args[1:])
+
+    content = None
+    for r in context.subtreat(context.subparse(msg, cmd)):
+        if isinstance(r, Response):
+            for m in r.messages:
+                if isinstance(m, list):
+                    for n in m:
+                        content = n
+                        break
+                    if content is not None:
+                        break
+                elif isinstance(m, str):
+                    content = m
+                    break
+
+        elif isinstance(r, Text):
+            content = r.message
+
+    if content is None:
+        raise IMException("Aucun SMS envoyé : le résultat de la commande n'a pas retourné de contenu.")
+
+    check_sms_dests(dests, cur_epoch)
+    return send_sms_to_list(msg, frm, dests, content, cur_epoch)
+
 
 apiuser_ask = re.compile(r"(utilisateur|user|numéro|numero|compte|abonne|abone|abonné|account)\s+(est|is)\s+(?P<user>[0-9]{7,})", re.IGNORECASE)
 apikey_ask = re.compile(r"(clef|key|password|mot de passe?)\s+(?:est|is)?\s+(?P<key>[a-zA-Z0-9]{10,})", re.IGNORECASE)
