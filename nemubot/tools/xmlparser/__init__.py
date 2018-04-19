@@ -83,7 +83,7 @@ class XMLParser:
     @property
     def root(self):
         if len(self.stack):
-            return self.stack[0]
+            return self.stack[0][0]
         else:
             return None
 
@@ -91,13 +91,13 @@ class XMLParser:
     @property
     def current(self):
         if len(self.stack):
-            return self.stack[-1]
+            return self.stack[-1][0]
         else:
             return None
 
 
     def display_stack(self):
-        return " in ".join([str(type(s).__name__) for s in reversed(self.stack)])
+        return " in ".join([str(type(s).__name__) for s,c in reversed(self.stack)])
 
 
     def startElement(self, name, attrs):
@@ -105,7 +105,8 @@ class XMLParser:
             if name not in self.knodes:
                 raise TypeError(name + " is not a known type to decode")
             else:
-                self.stack.append(self.knodes[name](**attrs))
+                self.stack.append((self.knodes[name](**attrs), self.child))
+                self.child = 0
         else:
             self.child += 1
 
@@ -116,19 +117,15 @@ class XMLParser:
 
 
     def endElement(self, name):
-        if self.child:
-            self.child -= 1
-
-            if hasattr(self.current, "endElement"):
-                self.current.endElement(name)
-            return
-
         if hasattr(self.current, "endElement"):
             self.current.endElement(None)
 
+        if self.child:
+            self.child -= 1
+
         # Don't remove root
-        if len(self.stack) > 1:
-            last = self.stack.pop()
+        elif len(self.stack) > 1:
+            last, self.child = self.stack.pop()
             if hasattr(self.current, "addChild"):
                 if self.current.addChild(name, last):
                     return
