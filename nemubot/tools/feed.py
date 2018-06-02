@@ -105,13 +105,13 @@ class Feed:
         self.updated = None
         self.entries = list()
 
-        if self.feed.tagName == "rss":
+        if self.feed.tagName == "rdf:RDF":
             self._parse_rss_feed()
         elif self.feed.tagName == "feed":
             self._parse_atom_feed()
         else:
             from nemubot.exception import IMException
-            raise IMException("This is not a valid Atom or RSS feed")
+            raise IMException("This is not a valid Atom or RSS feed.")
 
 
     def _parse_atom_feed(self):
