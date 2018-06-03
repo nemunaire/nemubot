@@ -166,6 +166,9 @@ def start_countdown(msg):
                 else:
                     evt.end += timedelta(seconds=int(t))
 
+        else:
+            raise IMException("Mauvais format de date pour l'événement %s. Il n'a pas été créé." % msg.args[0])
+
     context.data[msg.args[0]] = evt
     context.save()
 
