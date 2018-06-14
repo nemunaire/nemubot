@@ -1,6 +1,6 @@
 # coding=utf-8
 
-"""The 2014 football worldcup module"""
+"""The 2014,2018 football worldcup module"""
 
 from datetime import datetime, timezone
 import json
@@ -9,6 +9,7 @@ from urllib.parse import quote
 from urllib.request import urlopen
 
 from nemubot import context
+from nemubot.event import ModuleEvent
 from nemubot.exception import IMException
 from nemubot.hooks import hook
 from nemubot.tools.xmlparser.node import ModuleState
@@ -20,7 +21,6 @@ from nemubot.module.more import Response
 API_URL="http://worldcup.sfg.io/%s"
 
 def load(context):
-    from nemubot.event import ModuleEvent
     context.add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
 
 
@@ -65,10 +65,10 @@ def cmd_watch(msg):
             context.save()
             raise IMException("This channel will not anymore receives world cup events.")
 
-def current_match_new_action(match_str, osef):
-    context.add_event(ModuleEvent(func=lambda url: urlopen(url).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
-
-    matches = json.loads(match_str)
+def current_match_new_action(matches, osef):
+    def cmp(om, nm):
+        return len(nm) and (len(om) == 0 or len(nm[0]["home_team_events"]) != len(om[0]["home_team_events"]) or len(nm[0]["away_team_events"]) != len(om[0]["away_team_events"]))
+    context.add_event(ModuleEvent(func=lambda url: json.loads(urlopen(url).read().decode()), func_data=API_URL % "matches/current?by_date=DESC", cmp=cmp, call=current_match_new_action, interval=30))
 
     for match in matches:
         if is_valid(match):
@@ -120,20 +120,19 @@ def detail_event(evt):
     return evt + " par"
 
 def txt_event(e):
-    return "%se minutes : %s %s (%s)" % (e["time"], detail_event(e["type_of_event"]), e["player"], e["team"]["code"])
+    return "%s minute : %s %s (%s)" % (e["time"], detail_event(e["type_of_event"]), e["player"], e["team"]["code"])
 
 def prettify(match):
-    matchdate_local = datetime.strptime(match["datetime"].replace(':', ''), "%Y-%m-%dT%H%M%S.%f%z")
-    matchdate = matchdate_local - (matchdate_local.utcoffset() - datetime.timedelta(hours=2))
+    matchdate = datetime.strptime(match["datetime"].replace(':', ''), "%Y-%m-%dT%H%M%SZ").replace(tzinfo=timezone.utc)
     if match["status"] == "future":
-        return ["Match à venir (%s) le %s : %s vs. %s" % (match["match_number"], matchdate.strftime("%A %d à %H:%M"), match["home_team"]["country"], match["away_team"]["country"])]
+        return ["Match à venir (%s) le %s : %s vs. %s" % (match["fifa_id"], matchdate.strftime("%A %d à %H:%M"), match["home_team"]["country"], match["away_team"]["country"])]
     else:
         msgs = list()
         msg = ""
         if match["status"] == "completed":
-            msg += "Match (%s) du %s terminé : " % (match["match_number"], matchdate.strftime("%A %d à %H:%M"))
+            msg += "Match (%s) du %s terminé : " % (match["fifa_id"], matchdate.strftime("%A %d à %H:%M"))
         else:
-            msg += "Match en cours (%s) depuis %d minutes : " % (match["match_number"], (datetime.now(matchdate.tzinfo) - matchdate_local).total_seconds() / 60)
+            msg += "Match en cours (%s) depuis %d minutes : " % (match["fifa_id"], (datetime.now(tz=timezone.utc) - matchdate).total_seconds() / 60)
 
         msg += "%s %d - %d %s" % (match["home_team"]["country"], match["home_team"]["goals"], match["away_team"]["goals"], match["away_team"]["country"])
 
@@ -163,7 +162,7 @@ def is_valid(match):
 def get_match(url, matchid):
     allm = get_matches(url)
     for m in allm:
-        if int(m["match_number"]) == matchid:
+        if int(m["fifa_id"]) == matchid:
             return [ m ]
 
 def get_matches(url):
@@ -192,7 +191,7 @@ def cmd_worldcup(msg):
         elif len(msg.args[0]) == 3:
             url = "matches/country?fifa_code=%s&by_date=DESC" % msg.args[0]
         elif is_int(msg.args[0]):
-            url = int(msg.arg[0])
+            url = int(msg.args[0])
         else:
             raise IMException("unrecognized request; choose between 'today', 'tomorrow', a FIFA country code or a match identifier")
 
