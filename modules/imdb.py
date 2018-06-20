@@ -52,7 +52,9 @@ def find_movies(title, year=None):
     # Make the request
     data = web.getJSON(url, remove_callback=True)
 
-    if year is None:
+    if "d" not in data:
+        return None
+    elif year is None:
         return data["d"]
     else:
         return [d for d in data["d"] if "y" in d and str(d["y"]) == year]
