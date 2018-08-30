@@ -105,7 +105,7 @@ class Feed:
         self.updated = None
         self.entries = list()
 
-        if self.feed.tagName == "rdf:RDF":
+        if self.feed.tagName == "rdf:RDF" or self.feed.tagName == "rss":
             self._parse_rss_feed()
         elif self.feed.tagName == "feed":
             self._parse_atom_feed()
