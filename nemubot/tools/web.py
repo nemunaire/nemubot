@@ -138,6 +138,21 @@ def _URLConn(cb, url, body=None, timeout=7, header=None, follow_redir=True):
     finally:
         conn.close()
 
+
+def getURLHeaders(url, body=None, timeout=7, header=None, follow_redir=True):
+    """Return page headers corresponding to URL or None if any error occurs
+
+    Arguments:
+    url -- the URL to get
+    body -- Data to send as POST content
+    timeout -- maximum number of seconds to wait before returning an exception
+    """
+
+    def next(res):
+        return res.status, res.getheaders()
+    return _URLConn(next, url=url, body=body, timeout=timeout, header=header, follow_redir=follow_redir)
+
+
 def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
                   max_size=524288):
     """Return page content corresponding to URL or None if any error occurs
