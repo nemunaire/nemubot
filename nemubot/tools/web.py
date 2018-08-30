@@ -68,18 +68,7 @@ def getPassword(url):
 
 # Get real pages
 
-def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
-                  max_size=524288):
-    """Return page content corresponding to URL or None if any error occurs
-
-    Arguments:
-    url -- the URL to get
-    body -- Data to send as POST content
-    timeout -- maximum number of seconds to wait before returning an exception
-    decode_error -- raise exception on non-200 pages or ignore it
-    max_size -- maximal size allow for the content
-    """
-
+def _URLConn(cb, url, body=None, timeout=7, header=None):
     o = urlparse(_getNormalizedURL(url), "http")
 
     import http.client
@@ -134,6 +123,27 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
 
     try:
         res = conn.getresponse()
+        return cb(res)
+    except http.client.BadStatusLine:
+        raise IMException("Invalid HTTP response")
+    finally:
+        conn.close()
+
+def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
+                  max_size=524288):
+    """Return page content corresponding to URL or None if any error occurs
+
+    Arguments:
+    url -- the URL to get
+    body -- Data to send as POST content
+    timeout -- maximum number of seconds to wait before returning an exception
+    decode_error -- raise exception on non-200 pages or ignore it
+    max_size -- maximal size allow for the content
+    """
+
+    import http.client
+
+    def next(res):
         size = int(res.getheader("Content-Length", 524288))
         cntype = res.getheader("Content-Type")
 
@@ -155,28 +165,25 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
                             charset = cha[1]
                         else:
                             charset = cha[0]
-    except http.client.BadStatusLine:
-        raise IMException("Invalid HTTP response")
-    finally:
-        conn.close()
 
-    if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
-        return data.decode(charset).strip()
-    elif ((res.status == http.client.FOUND or
-           res.status == http.client.MOVED_PERMANENTLY) and
-          res.getheader("Location") != url):
-        return getURLContent(
-            urljoin(url, res.getheader("Location")),
-            body=body,
-            timeout=timeout,
-            header=header,
-            decode_error=decode_error,
-            max_size=max_size)
-    elif decode_error:
-        return data.decode(charset).strip()
-    else:
-        raise IMException("A HTTP error occurs: %d - %s" %
-                           (res.status, http.client.responses[res.status]))
+        if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
+            return data.decode(charset).strip()
+        elif ((res.status == http.client.FOUND or
+               res.status == http.client.MOVED_PERMANENTLY) and
+              res.getheader("Location") != url):
+            return getURLContent(
+                urljoin(url, res.getheader("Location")),
+                body=body,
+                timeout=timeout,
+                header=header,
+                decode_error=decode_error,
+                max_size=max_size)
+        elif decode_error:
+            return data.decode(charset).strip()
+        else:
+            raise IMException("A HTTP error occurs: %d - %s" %
+                              (res.status, http.client.responses[res.status]))
+    return _URLConn(next, url=url, body=body, timeout=timeout)
 
 
 def getXML(*args, **kwargs):
