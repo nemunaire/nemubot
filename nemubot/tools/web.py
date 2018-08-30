@@ -68,7 +68,7 @@ def getPassword(url):
 
 # Get real pages
 
-def _URLConn(cb, url, body=None, timeout=7, header=None):
+def _URLConn(cb, url, body=None, timeout=7, header=None, follow_redir=True):
     o = urlparse(_getNormalizedURL(url), "http")
 
     import http.client
@@ -123,6 +123,15 @@ def _URLConn(cb, url, body=None, timeout=7, header=None):
 
     try:
         res = conn.getresponse()
+        if follow_redir and ((res.status == http.client.FOUND or
+                              res.status == http.client.MOVED_PERMANENTLY) and
+                             res.getheader("Location") != url):
+            return _URLConn(cb,
+                            url=urljoin(url, res.getheader("Location")),
+                            body=body,
+                            timeout=timeout,
+                            header=header,
+                            follow_redir=follow_redir)
         return cb(res)
     except http.client.BadStatusLine:
         raise IMException("Invalid HTTP response")
@@ -141,13 +150,11 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
     max_size -- maximal size allow for the content
     """
 
-    import http.client
-
-    def next(res):
+    def _nextURLContent(res):
         size = int(res.getheader("Content-Length", 524288))
         cntype = res.getheader("Content-Type")
 
-        if size > max_size or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl"):
+        if max_size >= 0 and (size > max_size or (cntype is not None and cntype[:4] != "text" and cntype[:4] != "appl")):
             raise IMException("Content too large to be retrieved")
 
         data = res.read(size)
@@ -166,24 +173,17 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
                         else:
                             charset = cha[0]
 
+        import http.client
+
         if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
             return data.decode(charset).strip()
-        elif ((res.status == http.client.FOUND or
-               res.status == http.client.MOVED_PERMANENTLY) and
-              res.getheader("Location") != url):
-            return getURLContent(
-                urljoin(url, res.getheader("Location")),
-                body=body,
-                timeout=timeout,
-                header=header,
-                decode_error=decode_error,
-                max_size=max_size)
         elif decode_error:
             return data.decode(charset).strip()
         else:
             raise IMException("A HTTP error occurs: %d - %s" %
                               (res.status, http.client.responses[res.status]))
-    return _URLConn(next, url=url, body=body, timeout=timeout)
+
+    return _URLConn(_nextURLContent, url=url, body=body, timeout=timeout, header=header)
 
 
 def getXML(*args, **kwargs):
