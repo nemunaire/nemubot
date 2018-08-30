@@ -24,20 +24,17 @@ def get_movie_by_id(imdbid):
 
     return {
         "imdbID": imdbid,
-        "Title": soup.body.find(attrs={"itemprop": "name"}).next_element.strip(),
+        "Title": soup.body.find('h1').next_element.strip(),
         "Year": soup.body.find(id="titleYear").find("a").text.strip() if soup.body.find(id="titleYear") else ", ".join([y.text.strip() for y in soup.body.find(attrs={"class": "seasons-and-year-nav"}).find_all("div")[3].find_all("a")[:-1]]),
-        "Duration": soup.body.find_all(attrs={"itemprop": "duration"})[-1].text.strip(),
-        "imdbRating": soup.body.find(attrs={"itemprop": "ratingValue"}).text.strip(),
-        "imdbVotes": soup.body.find(attrs={"itemprop": "ratingCount"}).text.strip(),
-        "Plot": re.sub(r"\s+", " ", soup.body.find(id="titleStoryLine").find(attrs={"itemprop": "description"}).text).strip(),
+        "Duration": soup.body.find(attrs={"class": "subtext"}).find("time").text.strip(),
+        "imdbRating": soup.body.find(attrs={"class": "ratingValue"}).find("strong").text.strip(),
+        "imdbVotes": soup.body.find(attrs={"class": "imdbRating"}).find("a").text.strip(),
+        "Plot": re.sub(r"\s+", " ", soup.body.find(attrs={"class": "summary_text"}).text).strip(),
 
-        "Type": "TV Series" if soup.find(attrs={"class": "np_episode_guide"}) else "Movie",
-        "Country": ", ".join([c.find("a").text.strip() for c in soup.body.find(id="titleDetails").find_all(attrs={"class": "txt-block"}) if c.text.find("Country") != -1]),
-        "Released": soup.body.find(attrs={"itemprop": "datePublished"}).attrs["content"] if "content" in soup.body.find(attrs={"itemprop": "datePublished"}).attrs else "N\A",
-        "Genre": ", ".join([g.text.strip() for g in soup.body.find_all(attrs={"itemprop": "genre"})[:-1]]),
-        "Director": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "director"})]),
-        "Writer": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "creator"})]),
-        "Actors": ", ".join([d.find(attrs={"itemprop": "name"}).text.strip() for d in soup.body.find_all(attrs={"itemprop": "actors"})]),
+        "Type": "TV Series" if soup.find(id="title-episode-widget") else "Movie",
+        "Genre": ", ".join([x.text.strip() for x in soup.body.find(id="titleStoryLine").find_all("a") if x.get("href") is not None and x.get("href")[:7] == "/genre/"]),
+        "Country": ", ".join([x.text.strip() for x in soup.body.find(id="titleDetails").find_all("a") if x.get("href") is not None and x.get("href")[:32] == "/search/title?country_of_origin="]),
+        "Credits": " ; ".join([x.find("h4").text.strip() + " " + (", ".join([y.text.strip() for y in x.find_all("a") if y.get("href") is not None and y.get("href")[:6] == "/name/"])) for x in soup.body.find_all(attrs={"class": "credit_summary_item"})]),
     }
 
 
@@ -94,9 +91,9 @@ def cmd_imdb(msg):
 
     res.append_message("%s \x02genre:\x0F %s; \x02rating\x0F: %s (%s votes); \x02plot\x0F: %s" %
                        (data['Type'], data['Genre'], data['imdbRating'], data['imdbVotes'], data['Plot']))
+    res.append_message("%s \x02from\x0F %s; %s"
+                       % (data['Type'], data['Country'], data['Credits']))
 
-    res.append_message("%s \x02from\x0F %s \x02released on\x0F %s; \x02directed by:\x0F %s; \x02written by:\x0F %s; \x02main actors:\x0F %s"
-                       % (data['Type'], data['Country'], data['Released'], data['Director'], data['Writer'], data['Actors']))
     return res
 
 
