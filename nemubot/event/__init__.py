@@ -138,9 +138,12 @@ class ModuleEvent:
                     self.call()
                 else:
                     self.call(d_init)
+            elif d_init is None:
+                if isinstance(self.call_data, dict):
+                    self.call(**self.call_data)
+                else:
+                    self.call(self.call_data)
             elif isinstance(self.call_data, dict):
                 self.call(d_init, **self.call_data)
-            elif d_init is None:
-                self.call(self.call_data)
             else:
                 self.call(d_init, self.call_data)
