@@ -14,7 +14,7 @@ from nemubot.module.more import Response
 
 # GLOBALS #############################################################
 
-URL_API = "https://api.smmry.com/?SM_API_KEY=%s&SM_WITH_ENCODE"
+URL_API = "https://api.smmry.com/?SM_API_KEY=%s"
 
 
 # LOADING #############################################################
