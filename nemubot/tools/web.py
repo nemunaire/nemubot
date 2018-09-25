@@ -23,7 +23,7 @@ from nemubot.exception import IMException
 def isURL(url):
     """Return True if the URL can be parsed"""
     o = urlparse(_getNormalizedURL(url))
-    return o.netloc == "" and o.path == ""
+    return o.netloc != "" and o.path != ""
 
 
 def _getNormalizedURL(url):
