@@ -43,7 +43,7 @@ class Dict(Abstract):
 
     def check(self, mkw):
         for k in mkw:
-            if (mkw[k] and k not in self.chk_args) or (not mkw[k] and k not in self.chk_noarg):
+            if ((k + "?") not in self.chk_args) and ((mkw[k] and k not in self.chk_args) or (not mkw[k] and k not in self.chk_noarg)):
                 if mkw[k] and k in self.chk_noarg:
                     raise KeywordException("Keyword %s doesn't take value." % k)
                 elif not mkw[k] and k in self.chk_args:
