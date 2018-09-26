@@ -38,6 +38,7 @@ def load(context):
                   "WORDS/CMD": ""
               },
               keywords={
+                  "keywords?=X": "Returns keywords instead of summary (count optional)",
                   "length=7": "The number of sentences returned, default 7",
                   "break": "inserts the string [BREAK] between sentences",
                   "ignore_length": "returns summary regardless of quality or length",
@@ -64,6 +65,7 @@ def cmd_smmry(msg):
     if "quote_avoid" in msg.kwargs: URL += "&SM_QUOTE_AVOID"
     if "question_avoid" in msg.kwargs: URL += "&SM_QUESTION_AVOID"
     if "exclamation_avoid" in msg.kwargs: URL += "&SM_EXCLAMATION_AVOID"
+    if "keywords" in msg.kwargs and msg.kwargs["keywords"] is not None and int(msg.kwargs["keywords"]) > 0: URL += "&SM_KEYWORD_COUNT=" + msg.kwargs["keywords"]
 
     res = Response(channel=msg.channel)
 
@@ -102,6 +104,9 @@ def cmd_smmry(msg):
         else:
             title = "Unknown error"
         raise IMException(title + ": " + smmry['sm_api_message'].lower())
+
+    if "keywords" in msg.kwargs:
+        smmry["sm_api_content"] = ", ".join(smmry["sm_api_keyword_array"])
 
     if "sm_api_title" in smmry and smmry["sm_api_title"] != "":
         res.append_message(smmry["sm_api_content"], title=smmry["sm_api_title"])
