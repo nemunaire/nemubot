@@ -36,6 +36,14 @@ def load(context):
               help="Summarize the following words/command return",
               help_usage={
                   "WORDS/CMD": ""
+              },
+              keywords={
+                  "length=7": "The number of sentences returned, default 7",
+                  "break": "inserts the string [BREAK] between sentences",
+                  "ignore_length": "returns summary regardless of quality or length",
+                  "quote_avoid": "sentences with quotations will be excluded",
+                  "question_avoid": "sentences with question will be excluded",
+                  "exclamation_avoid": "sentences with exclamation marks will be excluded",
               })
 def cmd_smmry(msg):
     if not len(msg.args):
@@ -45,10 +53,22 @@ def cmd_smmry(msg):
         else:
             raise IMException("I have no more URL to sum up.")
 
+    URL = URL_API
+    if "length" in msg.kwargs:
+        if int(msg.kwargs["length"]) > 0 :
+            URL += "&SM_LENGTH=" + msg.kwargs["length"]
+        else:
+            msg.kwargs["ignore_length"] = True
+    if "break" in msg.kwargs: URL += "&SM_WITH_BREAK"
+    if "ignore_length" in msg.kwargs: URL += "&SM_IGNORE_LENGTH"
+    if "quote_avoid" in msg.kwargs: URL += "&SM_QUOTE_AVOID"
+    if "question_avoid" in msg.kwargs: URL += "&SM_QUESTION_AVOID"
+    if "exclamation_avoid" in msg.kwargs: URL += "&SM_EXCLAMATION_AVOID"
+
     res = Response(channel=msg.channel)
 
     if web.isURL(" ".join(msg.args)):
-        smmry = web.getJSON(URL_API + "&SM_URL=" + quote(" ".join(msg.args)), timeout=23)
+        smmry = web.getJSON(URL + "&SM_URL=" + quote(" ".join(msg.args)), timeout=23)
     else:
         cnt = ""
         for r in context.subtreat(context.subparse(msg, " ".join(msg.args))):
@@ -68,7 +88,7 @@ def cmd_smmry(msg):
             else:
                 cnt += str(r) + "\n"
 
-        smmry = web.getJSON(URL_API, body="sm_api_input=" + quote(cnt), timeout=23)
+        smmry = web.getJSON(URL, body="sm_api_input=" + quote(cnt), timeout=23)
 
     if "sm_api_error" in smmry:
         if smmry["sm_api_error"] == 0:
