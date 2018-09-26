@@ -10,6 +10,7 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 
 from nemubot.module.more import Response
+from nemubot.module.urlreducer import LAST_URLS
 
 
 # GLOBALS #############################################################
@@ -38,7 +39,11 @@ def load(context):
               })
 def cmd_smmry(msg):
     if not len(msg.args):
-        raise IMException("indicate a text to sum up")
+        global LAST_URLS
+        if msg.channel in LAST_URLS and len(LAST_URLS[msg.channel]) > 0:
+            msg.args.append(LAST_URLS[msg.channel].pop())
+        else:
+            raise IMException("I have no more URL to sum up.")
 
     res = Response(channel=msg.channel)
 
