@@ -24,7 +24,7 @@ def get_movie_by_id(imdbid):
 
     return {
         "imdbID": imdbid,
-        "Title": soup.body.find('h1').next_element.strip(),
+        "Title": soup.body.find('h1').contents[0].strip(),
         "Year": soup.body.find(id="titleYear").find("a").text.strip() if soup.body.find(id="titleYear") else ", ".join([y.text.strip() for y in soup.body.find(attrs={"class": "seasons-and-year-nav"}).find_all("div")[3].find_all("a")[:-1]]),
         "Duration": soup.body.find(attrs={"class": "subtext"}).find("time").text.strip(),
         "imdbRating": soup.body.find(attrs={"class": "ratingValue"}).find("strong").text.strip(),
@@ -32,7 +32,7 @@ def get_movie_by_id(imdbid):
         "Plot": re.sub(r"\s+", " ", soup.body.find(attrs={"class": "summary_text"}).text).strip(),
 
         "Type": "TV Series" if soup.find(id="title-episode-widget") else "Movie",
-        "Genre": ", ".join([x.text.strip() for x in soup.body.find(id="titleStoryLine").find_all("a") if x.get("href") is not None and x.get("href")[:7] == "/genre/"]),
+        "Genre": ", ".join([x.text.strip() for x in soup.body.find(id="titleStoryLine").find_all("a") if x.get("href") is not None and x.get("href")[:21] == "/search/title?genres="]),
         "Country": ", ".join([x.text.strip() for x in soup.body.find(id="titleDetails").find_all("a") if x.get("href") is not None and x.get("href")[:32] == "/search/title?country_of_origin="]),
         "Credits": " ; ".join([x.find("h4").text.strip() + " " + (", ".join([y.text.strip() for y in x.find_all("a") if y.get("href") is not None and y.get("href")[:6] == "/name/"])) for x in soup.body.find_all(attrs={"class": "credit_summary_item"})]),
     }
