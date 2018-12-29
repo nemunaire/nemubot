@@ -3,6 +3,7 @@
 """The 2014,2018 football worldcup module"""
 
 from datetime import datetime, timezone
+from functools import partial
 import json
 import re
 from urllib.parse import quote
@@ -21,7 +22,7 @@ from nemubot.module.more import Response
 API_URL="http://worldcup.sfg.io/%s"
 
 def load(context):
-    context.add_event(ModuleEvent(func=lambda url: urlopen(url, timeout=10).read().decode(), func_data=API_URL % "matches/current?by_date=DESC", call=current_match_new_action, interval=30))
+    context.add_event(ModuleEvent(func=partial(lambda url: urlopen(url, timeout=10).read().decode(), API_URL % "matches/current?by_date=DESC"), call=current_match_new_action, interval=30))
 
 
 def help_full ():
@@ -65,10 +66,10 @@ def cmd_watch(msg):
             context.save()
             raise IMException("This channel will not anymore receives world cup events.")
 
-def current_match_new_action(matches, osef):
+def current_match_new_action(matches):
     def cmp(om, nm):
         return len(nm) and (len(om) == 0 or len(nm[0]["home_team_events"]) != len(om[0]["home_team_events"]) or len(nm[0]["away_team_events"]) != len(om[0]["away_team_events"]))
-    context.add_event(ModuleEvent(func=lambda url: json.loads(urlopen(url).read().decode()), func_data=API_URL % "matches/current?by_date=DESC", cmp=cmp, call=current_match_new_action, interval=30))
+    context.add_event(ModuleEvent(func=partial(lambda url: json.loads(urlopen(url).read().decode()), API_URL % "matches/current?by_date=DESC"), cmp=partial(cmp, matches), call=current_match_new_action, interval=30))
 
     for match in matches:
         if is_valid(match):

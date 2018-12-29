@@ -4,6 +4,7 @@
 
 import email
 from email.utils import mktime_tz, parseaddr, parsedate_tz
+from functools import partial
 from nntplib import NNTP, decode_header
 import re
 import time
@@ -89,7 +90,7 @@ def _indexServer(**kwargs):
     return "{user}:{password}@{host}:{port}".format(**kwargs)
 
 def _newevt(**args):
-    context.add_event(ModuleEvent(call=_fini, call_data=args, interval=42))
+    context.add_event(ModuleEvent(call=partial(_fini, **args), interval=42))
 
 def _fini(to_server, to_channel, lastcheck, group, server):
     print("fini called")

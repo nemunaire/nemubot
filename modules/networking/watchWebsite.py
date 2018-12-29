@@ -1,5 +1,6 @@
 """Alert on changes on websites"""
 
+from functools import partial
 import logging
 from random import randint
 import urllib.parse
@@ -209,15 +210,14 @@ def start_watching(site, offset=0):
     offset -- offset time to delay the launch of the first check
     """
 
-    o = urlparse(getNormalizedURL(site["url"]), "http")
-    #print_debug("Add %s event for site: %s" % (site["type"], o.netloc))
+    #o = urlparse(getNormalizedURL(site["url"]), "http")
+    #print("Add %s event for site: %s" % (site["type"], o.netloc))
 
     try:
-        evt = ModuleEvent(func=fwatch,
-                          cmp_data=site["lastcontent"],
-                          func_data=site["url"], offset=offset,
-                          interval=site.getInt("time"),
-                          call=alert_change, call_data=site)
+        evt = ModuleEvent(func=partial(fwatch, url=site["url"]),
+                          cmp=site["lastcontent"],
+                          offset=offset, interval=site.getInt("time"),
+                          call=partial(alert_change, site=site))
         site["_evt_id"] = add_event(evt)
     except IMException:
         logger.exception("Unable to watch %s", site["url"])
