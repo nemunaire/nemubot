@@ -14,7 +14,7 @@ from nemubot.module.more import Response
 from nemubot.module.networking.page import headers
 
 PASSWD_FILE = None
-# You can get one with: curl -b "sessionid=YOURSESSIONID" 'https://accounts.cri.epita.net/api/users/' > users.json
+# You can get one with: curl -b "sessionid=YOURSESSIONID" 'https://accounts.cri.epita.net/api/users/?limit=10000' > users.json
 APIEXTRACT_FILE = None
 
 def load(context):
@@ -49,7 +49,7 @@ def load(context):
 
 class Login:
 
-    def __init__(self, line=None, login=None, uidNumber=None, cn=None, promo=None, **kwargs):
+    def __init__(self, line=None, login=None, uidNumber=None, firstname=None, lastname=None, promo=None, **kwargs):
         if line is not None:
             s = line.split(":")
             self.login = s[0]
@@ -61,19 +61,25 @@ class Login:
             self.login = login
             self.uid = uidNumber
             self.promo = promo
-            self.cn = cn
-            self.gid = "epita" + promo
+            self.cn = firstname + " " + lastname
+            try:
+                self.gid = "epita" + str(int(promo))
+            except:
+                self.gid = promo
 
     def get_promo(self):
         if hasattr(self, "promo"):
             return self.promo
         if hasattr(self, "home"):
-            return self.home.split("/")[2].replace("_", " ")
+            try:
+                return self.home.split("/")[2].replace("_", " ")
+            except:
+                return self.gid
 
     def get_photo(self):
         if self.login in context.data.getNode("pics").index:
             return context.data.getNode("pics").index[self.login]["url"]
-        for url in [ "https://photos.cri.epita.net/%s", "https://static.acu.epita.fr/photos/%s", "https://static.acu.epita.fr/photos/%s/%%s" % self.gid, "https://intra-bocal.epitech.eu/trombi/%s.jpg", "http://whois.23.tf/p/%s/%%s.jpg" % self.gid ]:
+        for url in [ "https://photos.cri.epita.fr/%s", "https://intra-bocal.epitech.eu/trombi/%s.jpg" ]:
             url = url % self.login
             try:
                 _, status, _, _ = headers(url)
@@ -91,7 +97,7 @@ def login_lookup(login, search=False):
     if APIEXTRACT_FILE:
         with open(APIEXTRACT_FILE, encoding="utf-8") as f:
             api = json.load(f)
-            for l in api:
+            for l in api["results"]:
                 if (not search and l["login"] == login) or (search and (("login" in l and l["login"].find(login) != -1) or ("cn" in l and l["cn"].find(login) != -1) or ("uid" in l and str(l["uid"]) == login))):
                     yield Login(**l)
 
