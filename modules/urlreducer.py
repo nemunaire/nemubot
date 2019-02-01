@@ -60,6 +60,12 @@ def load(context):
 
 # MODULE CORE #########################################################
 
+def reduce_inline(txt, provider=None):
+    for url in re.findall("([a-zA-Z0-9+.-]+:(?://)?(?:[^ :/]+:[0-9]+)?[^ :]+)", txt):
+        txt = txt.replace(url, reduce(url, provider))
+    return txt
+
+
 def reduce(url, provider=None):
     """Ask the url shortner website to reduce given URL
 
