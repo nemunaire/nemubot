@@ -25,8 +25,8 @@ def get_movie_by_id(imdbid):
     return {
         "imdbID": imdbid,
         "Title": soup.body.find('h1').contents[0].strip(),
-        "Year": soup.body.find(id="titleYear").find("a").text.strip() if soup.body.find(id="titleYear") else ", ".join([y.text.strip() for y in soup.body.find(attrs={"class": "seasons-and-year-nav"}).find_all("div")[3].find_all("a")[:-1]]),
-        "Duration": soup.body.find(attrs={"class": "subtext"}).find("time").text.strip(),
+        "Year": soup.body.find(id="titleYear").find("a").text.strip() if soup.body.find(id="titleYear") else ", ".join([y.text.strip() for y in soup.body.find(attrs={"class": "seasons-and-year-nav"}).find_all("a")[1:]]),
+        "Duration": soup.body.find(attrs={"class": "title_wrapper"}).find("time").text.strip() if soup.body.find(attrs={"class": "title_wrapper"}).find("time") else None,
         "imdbRating": soup.body.find(attrs={"class": "ratingValue"}).find("strong").text.strip(),
         "imdbVotes": soup.body.find(attrs={"class": "imdbRating"}).find("a").text.strip(),
         "Plot": re.sub(r"\s+", " ", soup.body.find(attrs={"class": "summary_text"}).text).strip(),
