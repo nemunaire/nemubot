@@ -60,12 +60,14 @@ def load(context):
 
 # MODULE CORE #########################################################
 
-def reduce(url, provider=DEFAULT_PROVIDER):
+def reduce(url, provider=None):
     """Ask the url shortner website to reduce given URL
 
     Argument:
     url -- the URL to reduce
     """
+    if provider is None:
+        provider = DEFAULT_PROVIDER
     return PROVIDERS[provider][0](PROVIDERS[provider][1], url)
 
 
