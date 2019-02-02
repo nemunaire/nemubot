@@ -13,6 +13,7 @@ from nemubot.hooks import hook
 from nemubot.tools import web
 
 from nemubot.module.more import Response
+from nemubot.module.urlreducer import reduce_inline
 from nemubot.tools.feed import Feed, AtomEntry
 
 
@@ -50,10 +51,11 @@ def cmd_news(msg):
     links = [x for x in find_rss_links(url)]
     if len(links) == 0: links = [ url ]
 
-    res = Response(channel=msg.channel, nomore="No more news from %s" % url)
+    res = Response(channel=msg.channel, nomore="No more news from %s" % url, line_treat=reduce_inline)
     for n in get_last_news(links[0]):
         res.append_message("%s published %s: %s %s" % (("\x02" + web.striphtml(n.title) + "\x0F") if n.title else "An article without title",
                                                        (n.updated.strftime("on %A %d. %B %Y at %H:%M") if n.updated else "someday") if isinstance(n, AtomEntry) else n.pubDate,
                                                        web.striphtml(n.summary) if n.summary else "",
                                                        n.link if n.link else ""))
+
     return res
