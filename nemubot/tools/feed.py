@@ -82,10 +82,15 @@ class RSSEntry:
         else:
             self.summary = None
 
-        if len(node.getElementsByTagName("link")) > 0 and node.getElementsByTagName("link")[0].hasAttribute("href"):
-            self.link = node.getElementsByTagName("link")[0].getAttribute("href")
+        if len(node.getElementsByTagName("link")) > 0:
+            self.link = node.getElementsByTagName("link")[0].firstChild.nodeValue
         else:
             self.link = None
+
+        if len(node.getElementsByTagName("enclosure")) > 0 and node.getElementsByTagName("enclosure")[0].hasAttribute("url"):
+            self.enclosure = node.getElementsByTagName("enclosure")[0].getAttribute("url")
+        else:
+            self.enclosure = None
 
 
     def __repr__(self):
