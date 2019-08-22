@@ -23,7 +23,6 @@ VULN_DATAS = {
     "description": "vuln-description",
     "published": "vuln-published-on",
     "last_modified": "vuln-last-modified-on",
-    "source": "vuln-source",
 
     "base_score": "vuln-cvssv3-base-score-link",
     "severity": "vuln-cvssv3-base-score-severity",
@@ -92,9 +91,9 @@ def get_cve_desc(msg):
             alert = ""
 
         if "base_score" not in cve and "description" in cve:
-            res.append_message("{alert}From \x02{source}\x0F, last modified on \x02{last_modified}\x0F. {description}".format(alert=alert, **cve), title=cve_id)
+            res.append_message("{alert}Last modified on \x02{last_modified}\x0F. {description}".format(alert=alert, **cve), title=cve_id)
         else:
             metrics = display_metrics(**cve)
-            res.append_message("{alert}Base score: \x02{base_score} {severity}\x0F (impact: \x02{impact_score}\x0F, exploitability: \x02{exploitability_score}\x0F; {metrics}), from \x02{source}\x0F, last modified on \x02{last_modified}\x0F. {description}".format(alert=alert, metrics=metrics, **cve), title=cve_id)
+            res.append_message("{alert}Base score: \x02{base_score} {severity}\x0F (impact: \x02{impact_score}\x0F, exploitability: \x02{exploitability_score}\x0F; {metrics}), last modified on \x02{last_modified}\x0F. {description}".format(alert=alert, metrics=metrics, **cve), title=cve_id)
 
     return res
