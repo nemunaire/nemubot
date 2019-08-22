@@ -39,10 +39,6 @@ def load(context):
         context.data.addChild(ModuleState("aliases"))
     context.data.getNode("aliases").setIndex("from", "alias")
 
-    if not context.data.hasNode("pics"):
-        context.data.addChild(ModuleState("pics"))
-    context.data.getNode("pics").setIndex("login", "pict")
-
     import nemubot.hooks
     context.add_hook(nemubot.hooks.Command(cmd_whois, "whois", keywords={"lookup": "Perform a lookup of the begining of the login instead of an exact search."}),
                      "in","Command")
@@ -77,8 +73,6 @@ class Login:
                 return self.gid
 
     def get_photo(self):
-        if self.login in context.data.getNode("pics").index:
-            return context.data.getNode("pics").index[self.login]["url"]
         for url in [ "https://photos.cri.epita.fr/%s", "https://intra-bocal.epitech.eu/trombi/%s.jpg" ]:
             url = url % self.login
             try:
