@@ -3,6 +3,7 @@
 # PYTHON STUFFS #######################################################
 
 import email
+import email.policy
 from email.utils import mktime_tz, parseaddr, parsedate_tz
 from functools import partial
 from nntplib import NNTP, decode_header
@@ -45,7 +46,8 @@ def read_group(group, **server):
 def read_article(msg_id, **server):
     with NNTP(**server) as srv:
         response, info = srv.article(msg_id)
-        return email.message_from_bytes(b"\r\n".join(info.lines))
+        return email.message_from_bytes(b"\r\n".join(info.lines), policy=email.policy.SMTPUTF8)
+
 
 def whatsnew(date_last_check, group="*", **server):
     fill = dict()
