@@ -181,13 +181,16 @@ class Response:
                 return self.nomore
 
         if self.line_treat is not None and self.elt == 0:
-            if isinstance(self.messages[0], list):
-                for x in self.messages[0]:
-                    print(x, self.line_treat(x))
-                self.messages[0] = [self.line_treat(x).replace("\n", " ").strip() for x in self.messages[0]]
-            else:
-                self.messages[0] = (self.line_treat(self.messages[0])
-                                    .replace("\n", " ").strip())
+            try:
+                if isinstance(self.messages[0], list):
+                    for x in self.messages[0]:
+                        print(x, self.line_treat(x))
+                    self.messages[0] = [self.line_treat(x).replace("\n", " ").strip() for x in self.messages[0]]
+                else:
+                    self.messages[0] = (self.line_treat(self.messages[0])
+                                        .replace("\n", " ").strip())
+            except Exception as e:
+                logger.exception(e)
 
         msg = ""
         if self.title is not None:
