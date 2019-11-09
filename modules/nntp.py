@@ -49,14 +49,24 @@ def read_article(msg_id, **server):
         return email.message_from_bytes(b"\r\n".join(info.lines), policy=email.policy.SMTPUTF8)
 
 
-def whatsnew(date_last_check, group="*", **server):
+servers_lastcheck = dict()
+
+def whatsnew(group="*", **server):
     fill = dict()
     if "user" in server: fill["user"] = server["user"]
     if "password" in server: fill["password"] = server["password"]
     if "host" in server: fill["host"] = server["host"]
     if "port" in server: fill["port"] = server["port"]
 
+    idx = _indexServer(**server)
+    if idx in servers_lastcheck and servers_lastcheck[idx] is not None:
+        date_last_check = servers_lastcheck[idx]
+    else:
+        date_last_check = datetime.now()
+
     with NNTP(**fill) as srv:
+        response, servers_lastcheck[idx] = srv.date()
+
         response, groups = srv.newgroups(date_last_check)
         for g in groups:
             yield g
@@ -92,13 +102,12 @@ def _indexServer(**kwargs):
     return "{user}:{password}@{host}:{port}".format(**kwargs)
 
 def _newevt(**args):
-    context.add_event(ModuleEvent(call=partial(_fini, **args), interval=42))
+    context.add_event(ModuleEvent(call=partial(_ticker, **args), interval=42))
 
-def _fini(to_server, to_channel, lastcheck, group, server):
-    print("fini called")
-    _newevt(to_server=to_server, to_channel=to_channel, group=group, lastcheck=datetime.now(), server=server)
+def _ticker(to_server, to_channel, group, server):
+    _newevt(to_server=to_server, to_channel=to_channel, group=group, server=server)
     n = 0
-    for art in whatsnew(lastcheck, group, **server):
+    for art in whatsnew(group, **server):
         n += 1
         if n > 10:
             continue
@@ -106,10 +115,8 @@ def _fini(to_server, to_channel, lastcheck, group, server):
     if n > 10:
         context.send_response(to_server, Response("... and %s others news" % (n - 10), channel=to_channel))
 
-def watch(to_server, to_channel, group="*", lastcheck=None, **server):
-    if lastcheck is None:
-        lastcheck = datetime.now()
-    _newevt(to_server=to_server, to_channel=to_channel, group=group, lastcheck=lastcheck, server=server)
+def watch(to_server, to_channel, group="*", **server):
+    _newevt(to_server=to_server, to_channel=to_channel, group=group, server=server)
 
 
 # MODULE INTERFACE ####################################################
