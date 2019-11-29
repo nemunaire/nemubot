@@ -50,6 +50,7 @@ def read_article(msg_id, **server):
 
 
 servers_lastcheck = dict()
+servers_lastseen = dict()
 
 def whatsnew(group="*", **server):
     fill = dict()
@@ -64,6 +65,9 @@ def whatsnew(group="*", **server):
     else:
         date_last_check = datetime.now()
 
+    if idx not in servers_lastseen:
+        servers_lastseen[idx] = []
+
     with NNTP(**fill) as srv:
         response, servers_lastcheck[idx] = srv.date()
 
@@ -73,8 +77,14 @@ def whatsnew(group="*", **server):
 
         response, articles = srv.newnews(group, date_last_check)
         for msg_id in articles:
-            response, info = srv.article(msg_id)
-            yield email.message_from_bytes(b"\r\n".join(info.lines))
+            if msg_id not in servers_lastseen[idx]:
+                servers_lastseen[idx].append(msg_id)
+                response, info = srv.article(msg_id)
+                yield email.message_from_bytes(b"\r\n".join(info.lines))
+
+        # Clean huge lists
+        if len(servers_lastseen[idx]) > 42:
+            servers_lastseen[idx] = servers_lastseen[idx][23:]
 
 
 def format_article(art, **response_args):
