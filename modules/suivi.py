@@ -132,7 +132,7 @@ def get_usps_info(usps_id):
 
     usps_data = getURLContent(usps_parcelurl)
     soup = BeautifulSoup(usps_data)
-    if (soup.find(class_="tracking_history")
+    if (soup.find(id="trackingHistory_1")
             and soup.find(class_="tracking_history").find(class_="row_notification")
             and soup.find(class_="tracking_history").find(class_="row_top").find_all("td")):
         notification = soup.find(class_="tracking_history").find(class_="row_notification").text.strip()
