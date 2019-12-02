@@ -9,7 +9,7 @@ import re
 
 from nemubot.hooks import hook
 from nemubot.exception import IMException
-from nemubot.tools.web import getURLContent, getJSON
+from nemubot.tools.web import getURLContent, getURLHeaders, getJSON
 from nemubot.module.more import Response
 
 
@@ -76,32 +76,17 @@ def get_colisprive_info(track_id):
 
 
 def get_laposte_info(laposte_id):
-    data = urllib.parse.urlencode({'id': laposte_id})
-    laposte_baseurl = "http://www.part.csuivi.courrier.laposte.fr/suivi/index"
+    status, laposte_headers = getURLHeaders("https://www.laposte.fr/outils/suivre-vos-envois?" + urllib.parse.urlencode({'code': laposte_id}))
 
-    laposte_data = getURLContent(laposte_baseurl, data.encode('utf-8'))
-    soup = BeautifulSoup(laposte_data)
-    search_res = soup.find(class_='resultat_rech_simple_table').tbody.tr
-    if (soup.find(class_='resultat_rech_simple_table').thead
-            and soup.find(class_='resultat_rech_simple_table').thead.tr
-            and len(search_res.find_all('td')) > 3):
-        field = search_res.find('td')
-        poste_id = field.get_text()
+    laposte_cookie = None
+    for k,v in laposte_headers:
+        if k.lower() == "set-cookie" and v.find("access_token") >= 0:
+            laposte_cookie = v.split(";")[0]
 
-        field = field.find_next('td')
-        poste_type = field.get_text()
+    laposte_data = getJSON("https://api.laposte.fr/ssu/v1/suivi-unifie/idship/%s?lang=fr_FR" % urllib.parse.quote(laposte_id), header={"Accept": "application/json", "Cookie": laposte_cookie})
 
-        field = field.find_next('td')
-        poste_date = field.get_text()
-
-        field = field.find_next('td')
-        poste_location = field.get_text()
-
-        field = field.find_next('td')
-        poste_status = field.get_text()
-
-        return (poste_type.lower(), poste_id.strip(), poste_status.lower(),
-                poste_location, poste_date)
+    shipment = laposte_data["shipment"]
+    return (shipment["product"], shipment["idShip"], shipment["event"][0]["label"], shipment["event"][0]["date"])
 
 
 def get_postnl_info(postnl_id):
@@ -210,11 +195,10 @@ def handle_tnt(tracknum):
 def handle_laposte(tracknum):
     info = get_laposte_info(tracknum)
     if info:
-        poste_type, poste_id, poste_status, poste_location, poste_date = info
-        return ("Le courrier de type \x02%s\x0F : \x02%s\x0F est actuellement "
-                "\x02%s\x0F dans la zone \x02%s\x0F (Mis à jour le \x02%s\x0F"
-                ")." % (poste_type, poste_id, poste_status,
-                        poste_location, poste_date))
+        poste_type, poste_id, poste_status, poste_date = info
+        return ("\x02%s\x0F : \x02%s\x0F est actuellement "
+                "\x02%s\x0F (Mis à jour le \x02%s\x0F"
+                ")." % (poste_type, poste_id, poste_status, poste_date))
 
 
 def handle_postnl(tracknum):
