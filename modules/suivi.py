@@ -75,6 +75,17 @@ def get_colisprive_info(track_id):
         return status
 
 
+def get_ups_info(track_id):
+    data = json.dumps({'Locale': "en_US", 'TrackingNumber': [track_id]})
+    track_baseurl = "https://www.ups.com/track/api/Track/GetStatus?loc=en_US"
+    track_data = getJSON(track_baseurl, data.encode('utf-8'), header={"Content-Type": "application/json"})
+    return (track_data["trackDetails"][0]["trackingNumber"],
+            track_data["trackDetails"][0]["packageStatus"],
+            track_data["trackDetails"][0]["shipmentProgressActivities"][0]["date"] + " " + track_data["trackDetails"][0]["shipmentProgressActivities"][0]["time"],
+            track_data["trackDetails"][0]["shipmentProgressActivities"][0]["location"],
+            track_data["trackDetails"][0]["shipmentProgressActivities"][0]["activityScan"])
+
+
 def get_laposte_info(laposte_id):
     status, laposte_headers = getURLHeaders("https://www.laposte.fr/outils/suivre-vos-envois?" + urllib.parse.urlencode({'code': laposte_id}))
 
@@ -217,6 +228,13 @@ def handle_usps(tracknum):
         return ("USPS \x02{tracknum}\x0F: {last_status} in \x02{last_location}\x0F as of {last_date}: {notif}".format(tracknum=tracknum, notif=notif, last_date=last_date, last_status=last_status.lower(), last_location=last_location))
 
 
+def handle_ups(tracknum):
+    info = get_ups_info(tracknum)
+    if info:
+        tracknum, status, last_date, last_location, last_status  = info
+        return ("UPS \x02{tracknum}\x0F: {status}: in \x02{last_location}\x0F as of {last_date}: {last_status}".format(tracknum=tracknum, status=status, last_date=last_date, last_status=last_status.lower(), last_location=last_location))
+
+
 def handle_colissimo(tracknum):
     info = get_colissimo_info(tracknum)
     if info:
@@ -267,6 +285,7 @@ TRACKING_HANDLERS = {
     'fedex': handle_fedex,
     'dhl': handle_dhl,
     'usps': handle_usps,
+    'ups': handle_ups,
 }
 
 
