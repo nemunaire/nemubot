@@ -21,5 +21,5 @@ COPY requirements.txt ./
 COPY --from=pybuild /usr/local/lib/python3.9 /usr/lib/python3.9
 COPY . .
 
-ENTRYPOINT [ "python", "-m", "nemubot", "-d", "-M", "/usr/src/app/modules" ]
+ENTRYPOINT [ "python", "-m", "nemubot", "-d", "-P", "", "-M", "/usr/src/app/modules" ]
 CMD [ "-D", "/var/lib/nemubot" ]

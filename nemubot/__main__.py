@@ -71,8 +71,8 @@ def main():
 
     # Resolve relatives paths
     args.data_path = os.path.abspath(os.path.expanduser(args.data_path))
-    args.pidfile = os.path.abspath(os.path.expanduser(args.pidfile))
-    args.socketfile = os.path.abspath(os.path.expanduser(args.socketfile))
+    args.pidfile = os.path.abspath(os.path.expanduser(args.pidfile)) if args.pidfile is not None and args.pidfile != "" else None
+    args.socketfile = os.path.abspath(os.path.expanduser(args.socketfile)) if args.socketfile is not None and args.socketfile != "" else None
     args.logfile = os.path.abspath(os.path.expanduser(args.logfile))
     args.files = [x for x in map(os.path.abspath, args.files)]
     args.modules_path = [x for x in map(os.path.abspath, args.modules_path)]
