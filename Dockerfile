@@ -2,19 +2,19 @@ FROM python:alpine
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt ./
-RUN apk add --no-cache bash build-base capstone-dev && \
+COPY requirements.txt /usr/src/app/
+RUN apk add --no-cache bash build-base capstone-dev mandoc-doc man-db w3m youtube-dl aspell aspell-fr && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install bs4 capstone dnspython
-
-
-WORKDIR /usr/src/app
+    pip install bs4 capstone dnspython && \
+    apk del build-base capstone-dev
 
 VOLUME /var/lib/nemubot
 
-RUN apk add --no-cache mandoc-doc man-db w3m youtube-dl
+COPY . /usr/src/app/
 
-COPY . .
+RUN ./setup.py install
 
+WORKDIR /var/lib/nemubot
+USER guest
 ENTRYPOINT [ "python", "-m", "nemubot", "-d", "-P", "", "-M", "/usr/src/app/modules" ]
 CMD [ "-D", "/var/lib/nemubot" ]
