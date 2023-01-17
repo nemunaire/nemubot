@@ -33,7 +33,7 @@ class Server:
             return True
 
 
-    def server(self, parent):
+    def server(self, parent, trynb=0):
         from nemubot.server import factory
 
         for a in ["nick", "owner", "realname", "encoding"]:
@@ -42,4 +42,4 @@ class Server:
 
         self.caps += parent.caps
 
-        return factory(self.uri, caps=self.caps, channels=self.channels, **self.args)
+        return factory(self.uri, caps=self.caps, channels=self.channels, trynb=trynb, **self.args)

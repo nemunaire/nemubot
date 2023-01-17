@@ -155,12 +155,18 @@ def main():
 
         # Preset each server in this file
         for server in config.servers:
-            srv = server.server(config)
             # Add the server in the context
-            if context.add_server(srv):
-                logger.info("Server '%s' successfully added.", srv.name)
-            else:
-                logger.error("Can't add server '%s'.", srv.name)
+            for i in [0,1,2,3]:
+                srv = server.server(config, trynb=i)
+                try:
+                    if context.add_server(srv):
+                        logger.info("Server '%s' successfully added.", srv.name)
+                    else:
+                        logger.error("Can't add server '%s'.", srv.name)
+                except:
+                    logger.error("Unable to connect to '%s'.", srv.name)
+                    continue
+                break
 
         # Load module and their configuration
         for mod in config.modules:

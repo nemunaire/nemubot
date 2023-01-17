@@ -79,8 +79,9 @@ class _Socket(AbstractServer):
 
 class SocketServer(_Socket):
 
-    def __init__(self, host, port, bind=None, **kwargs):
-        (family, type, proto, canonname, self._sockaddr) = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)[0]
+    def __init__(self, host, port, bind=None, trynb=0, **kwargs):
+        destlist = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+        (family, type, proto, canonname, self._sockaddr) = destlist[trynb%len(destlist)]
 
         super().__init__(fdClass=socket.socket, family=family, type=type, proto=proto, **kwargs)
 
