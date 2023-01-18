@@ -15,7 +15,7 @@ steps:
       - pip install .
 
   - name: docker
-    image: plugins/docker
+    image: plugins/docker:linux-arm
     settings:
       repo: nemunaire/nemubot
       auto_tag: true
