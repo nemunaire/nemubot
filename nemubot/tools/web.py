@@ -191,9 +191,9 @@ def getURLContent(url, body=None, timeout=7, header=None, decode_error=False,
         import http.client
 
         if res.status == http.client.OK or res.status == http.client.SEE_OTHER:
-            return data.decode(charset).strip()
+            return data.decode(charset, errors='ignore').strip()
         elif decode_error:
-            return data.decode(charset).strip()
+            return data.decode(charset, errors='ignore').strip()
         else:
             raise IMException("A HTTP error occurs: %d - %s" %
                               (res.status, http.client.responses[res.status]))
