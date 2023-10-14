@@ -9,7 +9,7 @@ platform:
 
 steps:
   - name: build
-    image: python:alpine
+    image: python:3.11-alpine
     commands:
       - pip install --no-cache-dir -r requirements.txt
       - pip install .
@@ -35,7 +35,7 @@ platform:
 
 steps:
   - name: build
-    image: python:alpine
+    image: python:3.11-alpine
     commands:
       - pip install --no-cache-dir -r requirements.txt
       - pip install .
