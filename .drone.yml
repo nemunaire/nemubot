@@ -1,32 +1,6 @@
 ---
 kind: pipeline
 type: docker
-name: default-arm
-
-platform:
-  os: linux
-  arch: arm
-
-steps:
-  - name: build
-    image: python:3.11-alpine
-    commands:
-      - pip install --no-cache-dir -r requirements.txt
-      - pip install .
-
-  - name: docker
-    image: plugins/docker:linux-arm
-    settings:
-      repo: nemunaire/nemubot
-      auto_tag: true
-      auto_tag_suffix: ${DRONE_STAGE_OS}-${DRONE_STAGE_ARCH}
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
----
-kind: pipeline
-type: docker
 name: default-arm64
 
 platform:
