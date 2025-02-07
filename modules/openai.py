@@ -6,6 +6,7 @@ from openai import OpenAI
 
 from nemubot import context
 from nemubot.hooks import hook
+from nemubot.tools import web
 
 from nemubot.module.more import Response
 
@@ -38,6 +39,32 @@ def load(context):
 
 
 # MODULE INTERFACE ####################################################
+
+@hook.command("list_models",
+      help="list available LLM")
+def cmd_listllm(msg):
+    llms = web.getJSON(ENDPOINT + "/models", timeout=6)
+    return Response(message=[m for m in map(lambda i: i["id"], llms["data"])], title="Here is the available models", channel=msg.channel)
+
+
+@hook.command("set_model",
+      help="Set the model to use when talking to nemubot")
+def cmd_setllm(msg):
+    if len(msg.args) != 1:
+        raise IMException("Indicate 1 model to use")
+
+    wanted_model = msg.args[0]
+
+    llms = web.getJSON(ENDPOINT + "/models", timeout=6)
+    for model in llms["data"]:
+        if wanted_model == model["id"]:
+            break
+    else:
+        raise IMException("Unable to set such model: unknown")
+
+    MODEL = wanted_model
+    return Response("New model in use: " + wanted_model, channel=msg.channel)
+
 
 @hook.ask()
 def parseask(msg):
