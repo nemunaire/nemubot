@@ -163,8 +163,8 @@ def main():
                         logger.info("Server '%s' successfully added.", srv.name)
                     else:
                         logger.error("Can't add server '%s'.", srv.name)
-                except:
-                    logger.error("Unable to connect to '%s'.", srv.name)
+                except Exception as e:
+                    logger.error("Unable to connect to '%s': %s", srv.name, e)
                     continue
                 break
 

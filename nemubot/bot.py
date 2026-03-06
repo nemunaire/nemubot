@@ -218,7 +218,10 @@ class Bot(threading.Thread):
                             elif args[0] == "register":
                                 self._poll.register(int(args[1]), select.POLLIN | select.POLLPRI)
                             elif args[0] == "unregister":
-                                self._poll.unregister(int(args[1]))
+                                try:
+                                    self._poll.unregister(int(args[1]))
+                                except KeyError:
+                                    pass
                         except:
                             logger.exception("Unhandled excpetion during action:")
 
