@@ -72,5 +72,37 @@ def factory(uri, ssl=False, **init_args):
             from ssl import wrap_socket
             srv._fd = context.wrap_socket(srv._fd, server_hostname=o.hostname)
 
+    elif o.scheme == "matrix":
+        # matrix://localpart:password@homeserver.tld/!room:homeserver.tld
+        # matrix://localpart:password@homeserver.tld/%23alias:homeserver.tld
+        # Use matrixs:// for https (default) vs http
+        args = dict(init_args)
+
+        homeserver = "https://" + o.hostname
+        if o.port is not None:
+            homeserver += ":%d" % o.port
+        args["homeserver"] = homeserver
+
+        if o.username is not None:
+            args["user_id"] = o.username
+        if o.password is not None:
+            args["password"] = unquote(o.password)
+
+        # Parse rooms from path (comma-separated, URL-encoded)
+        if o.path and o.path != "/":
+            rooms = [unquote(r) for r in o.path.lstrip("/").split(",") if r]
+            if rooms:
+                args.setdefault("channels", []).extend(rooms)
+
+        params = parse_qs(o.query)
+        if "token" in params:
+            args["access_token"] = params["token"][0]
+        if "nick" in params:
+            args["nick"] = params["nick"][0]
+        if "owner" in params:
+            args["owner"] = params["owner"][0]
+
+        from nemubot.server.Matrix import Matrix as MatrixServer
+        srv = MatrixServer(**args)
 
     return srv
