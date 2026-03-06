@@ -105,18 +105,25 @@ class Consumer(threading.Thread):
     def __init__(self, context):
         self.context = context
         self.stop = False
-        super().__init__(name="Nemubot consumer")
+        super().__init__(name="Nemubot consumer", daemon=True)
 
 
     def run(self):
         try:
             while not self.stop:
-                stm = self.context.cnsr_queue.get(True, 1)
-                stm.run(self.context)
-                self.context.cnsr_queue.task_done()
+                try:
+                    stm = self.context.cnsr_queue.get(True, 1)
+                except queue.Empty:
+                    break
 
-        except queue.Empty:
-            pass
+                with self.context.cnsr_lock:
+                    self.context.cnsr_active += 1
+                try:
+                    stm.run(self.context)
+                finally:
+                    self.context.cnsr_queue.task_done()
+                    with self.context.cnsr_lock:
+                        self.context.cnsr_active -= 1
         finally:
-            self.context.cnsr_thrd_size -= 2
-            self.context.cnsr_thrd.remove(self)
+            with self.context.cnsr_lock:
+                self.context.cnsr_thrd.remove(self)

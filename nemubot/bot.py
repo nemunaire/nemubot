@@ -143,11 +143,16 @@ class Bot(threading.Thread):
             return res
         self.treater.hm.add_hook(nemubot.hooks.Command(_help_msg, "help"), "in", "Command")
 
+        import os
         from queue import Queue
-        # Messages to be treated
-        self.cnsr_queue     = Queue()
-        self.cnsr_thrd      = list()
-        self.cnsr_thrd_size = -1
+        # Messages to be treated — shared across all server connections.
+        # cnsr_active tracks consumers currently inside stm.run() (not idle),
+        # which lets us spawn a new thread the moment all existing ones are busy.
+        self.cnsr_queue  = Queue()
+        self.cnsr_thrd   = list()
+        self.cnsr_lock   = threading.Lock()
+        self.cnsr_active = 0                      # consumers currently executing a task
+        self.cnsr_max    = os.cpu_count() or 4    # upper bound on concurrent consumer threads
 
 
     def __del__(self):
@@ -234,14 +239,15 @@ class Bot(threading.Thread):
                     sync_queue.task_done()
 
 
-            # Launch new consumer threads if necessary
-            while self.cnsr_queue.qsize() > self.cnsr_thrd_size:
-                # Next launch if two more items in queue
-                self.cnsr_thrd_size += 2
-
-                c = Consumer(self)
-                self.cnsr_thrd.append(c)
-                c.start()
+            # Spawn a new consumer whenever the queue has work and every
+            # existing consumer is already busy executing a task.
+            with self.cnsr_lock:
+                while (not self.cnsr_queue.empty()
+                       and self.cnsr_active >= len(self.cnsr_thrd)
+                       and len(self.cnsr_thrd) < self.cnsr_max):
+                    c = Consumer(self)
+                    self.cnsr_thrd.append(c)
+                    c.start()
         sync_queue = None
         logger.info("Ending main loop")
 
@@ -518,7 +524,8 @@ class Bot(threading.Thread):
             srv.close()
 
         logger.info("Stop consumers")
-        k = self.cnsr_thrd
+        with self.cnsr_lock:
+            k = list(self.cnsr_thrd)
         for cnsr in k:
             cnsr.stop = True
 
