@@ -71,7 +71,6 @@ setup(
         'nemubot.message.printer',
         'nemubot.module',
         'nemubot.server',
-        'nemubot.server.message',
         'nemubot.tools',
         'nemubot.tools.xmlparser',
     ],

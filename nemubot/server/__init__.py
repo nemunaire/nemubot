@@ -24,13 +24,13 @@ def factory(uri, ssl=False, **init_args):
     if o.scheme == "irc" or o.scheme == "ircs":
         # https://www.w3.org/Addressing/draft-mirashi-url-irc-01.txt
         # https://www-archive.mozilla.org/projects/rt-messaging/chatzilla/irc-urls.html
-        args = init_args
+        args = dict(init_args)
 
         if o.scheme == "ircs": ssl = True
         if o.hostname is not None: args["host"] = o.hostname
         if o.port is not None: args["port"] = o.port
         if o.username is not None: args["username"] = o.username
-        if o.password is not None: args["password"] = o.password
+        if o.password is not None: args["password"] = unquote(o.password)
 
         modifiers = o.path.split(",")
         target = unquote(modifiers.pop(0)[1:])
@@ -41,36 +41,26 @@ def factory(uri, ssl=False, **init_args):
         if "msg" in params:
             if "on_connect" not in args:
                 args["on_connect"] = []
-            args["on_connect"].append("PRIVMSG %s :%s" % (target, params["msg"]))
+            args["on_connect"].append("PRIVMSG %s :%s" % (target, params["msg"][0]))
 
         if "key" in params:
             if "channels" not in args:
                 args["channels"] = []
-            args["channels"].append((target, params["key"]))
+            args["channels"].append((target, params["key"][0]))
 
         if "pass" in params:
-            args["password"] = params["pass"]
+            args["password"] = params["pass"][0]
 
         if "charset" in params:
-            args["encoding"] = params["charset"]
+            args["encoding"] = params["charset"][0]
 
-        #
         if "channels" not in args and "isnick" not in modifiers:
-            args["channels"] = [ target ]
+            args["channels"] = [target]
 
-        from nemubot.server.IRC import IRC as IRCServer
+        args["ssl"] = ssl
+
+        from nemubot.server.IRCLib import IRCLib as IRCServer
         srv = IRCServer(**args)
-
-        if ssl:
-            try:
-                from ssl import create_default_context
-                context = create_default_context()
-            except ImportError:
-                # Python 3.3 compat
-                from ssl import SSLContext, PROTOCOL_TLSv1
-                context = SSLContext(PROTOCOL_TLSv1)
-            from ssl import wrap_socket
-            srv._fd = context.wrap_socket(srv._fd, server_hostname=o.hostname)
 
     elif o.scheme == "matrix":
         # matrix://localpart:password@homeserver.tld/!room:homeserver.tld
