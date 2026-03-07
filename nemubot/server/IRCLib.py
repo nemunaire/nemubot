@@ -66,7 +66,7 @@ class _IRCBotAdapter(irc.bot.SingleServerIRCBot):
     def on_disconnect(self, connection, event):
         """Reconnect automatically unless we are shutting down."""
         if not self._stop_event.is_set():
-            super().on_disconnect(connection, event)
+            self.jump_server()
 
 
     # Connection lifecycle
